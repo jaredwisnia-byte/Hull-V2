@@ -1,0 +1,15 @@
+{
+  "_note": "Design curve from the GDD: 11 C mean on day 1 falling toward -10 C by day 30. Only days 1-7 are needed for the apartment slice. Times are decimal hours, EST (DST ended Oct 26, 1975).",
+  "sunrise": 6.42,
+  "sunset": 16.92,
+  "max_elevation_deg": 34,
+  "days": [
+    {"day": 1, "date": "Fri Oct 31", "high": 14.0, "low": 8.0, "light": 1.00, "haze": 0.04, "sky": [0.50, 0.66, 0.86], "sunset_tint": [0.95, 0.16, 0.07], "phase": "The Long Night"},
+    {"day": 2, "date": "Sat Nov 1",  "high": 12.5, "low": 7.0, "light": 0.86, "haze": 0.12, "sky": [0.62, 0.62, 0.66], "sunset_tint": [0.85, 0.22, 0.10], "phase": "The Long Night"},
+    {"day": 3, "date": "Sun Nov 2",  "high": 11.0, "low": 5.0, "light": 0.72, "haze": 0.22, "sky": [0.66, 0.58, 0.50], "sunset_tint": [0.75, 0.25, 0.12], "phase": "The Long Night"},
+    {"day": 4, "date": "Mon Nov 3",  "high": 9.0,  "low": 3.0, "light": 0.55, "haze": 0.34, "sky": [0.58, 0.48, 0.36], "sunset_tint": [0.55, 0.30, 0.25], "phase": "Ash"},
+    {"day": 5, "date": "Tue Nov 4",  "high": 8.0,  "low": 2.0, "light": 0.48, "haze": 0.40, "sky": [0.54, 0.45, 0.34], "sunset_tint": [0.50, 0.28, 0.30], "phase": "Ash"},
+    {"day": 6, "date": "Wed Nov 5",  "high": 6.5,  "low": 0.5, "light": 0.42, "haze": 0.46, "sky": [0.50, 0.43, 0.36], "sunset_tint": [0.45, 0.28, 0.34], "phase": "Ash"},
+    {"day": 7, "date": "Thu Nov 6",  "high": 5.0,  "low": -0.5, "light": 0.37, "haze": 0.52, "sky": [0.46, 0.41, 0.38], "sunset_tint": [0.40, 0.26, 0.36], "phase": "Ash"}
+  ]
+}

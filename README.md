@@ -1,5 +1,7 @@
 # Midnight Watch
 
+> This repo also holds `long-lines/`, a Godot test slice of the game *Long Lines*. See [long-lines/README.md](long-lines/README.md).
+
 A 24-hour countdown clock in the style of the Bulletin of the Atomic Scientists' Doomsday Clock. It counts down to midnight and puts a red marker on the dial at the time of each geopolitically significant event. Every event also goes into a ledger below the clock with its source and timestamp.
 
 - **Dial:** the full face is 24 hours, with midnight at the top. The hand shows the current time, and the shaded arc is the time left until midnight.

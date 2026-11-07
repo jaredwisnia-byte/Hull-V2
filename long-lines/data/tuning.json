@@ -1,0 +1,92 @@
+{
+  "_note": "All balance numbers for the apartment slice. Rates are per game hour unless stated.",
+  "time": {
+    "game_minutes_per_real_second": 1.0,
+    "start_day": 1,
+    "start_time": "06:40"
+  },
+  "start": {
+    "warmth": 82, "food": 62, "water": 58, "rest": 48, "condition": 100, "morale": 45,
+    "indoor_temp": 17.5,
+    "carry_capacity_kg": 14.0
+  },
+  "needs": {
+    "comfort_temp": 18.0,
+    "clothing_base": 3.0,
+    "coat_bonus": 5.0,
+    "blanket_bonus": 9.0,
+    "near_stove_bonus": 6.0,
+    "warm_gain_per_degree": 2.0,
+    "warm_gain_max": 12.0,
+    "cold_loss_per_degree": 1.6,
+    "food_per_h": 3.2,
+    "water_per_h": 4.2,
+    "rest_awake_per_h": 4.2,
+    "rest_asleep_per_h": 14.0,
+    "asleep_food_mult": 0.6,
+    "asleep_water_mult": 0.5,
+    "cold_hunger_mult": 1.25,
+    "starving_damage_per_h": 5.0,
+    "thirst_damage_per_h": 7.0,
+    "exhausted_damage_per_h": 2.5,
+    "hypothermia_damage_per_h": 8.0,
+    "regen_per_h": 1.5,
+    "regen_asleep_per_h": 3.0,
+    "fever_per_missed_dose_per_h": 1.2,
+    "morale_drift_per_h": 5.0
+  },
+  "air": {
+    "_note": "Single-zone apartment. Venting costs heat, sealing costs air.",
+    "loss_k": 0.11,
+    "window_loss_mult": 1.6,
+    "building_buffer": 4.0,
+    "burner_heat": 0.9,
+    "candle_heat": 0.05,
+    "burner_co": 36.0,
+    "candle_co": 1.2,
+    "vent_base": 0.08,
+    "vent_per_window": 1.2,
+    "co_headache": 70.0,
+    "co_dizzy": 150.0,
+    "co_drowsy": 260.0,
+    "co_damage_from": 100.0,
+    "co_damage_per_ppm_h": 0.045,
+    "co_asleep_damage_mult": 3.0
+  },
+  "cooler": {
+    "_note": "Vials must stay between 2 and 8 C. In week one the danger is warmth; once nights drop below zero it flips to freezing.",
+    "start_temp": 3.4,
+    "start_ice_kg": 0.75,
+    "melt_k": 0.0045,
+    "tau_h": 3.0,
+    "held_body_bonus": 6.0,
+    "safe_min": 2.0,
+    "safe_max": 8.0,
+    "heat_loss_per_degree_h": 0.25,
+    "freeze_loss_per_h": 18.0,
+    "vials": 60,
+    "weak_dose_below": 65.0
+  },
+  "fridge": {
+    "_note": "Power died at 1 a.m. The freezer stays frozen for a while if you keep the door shut.",
+    "start_fridge_temp": 8.5,
+    "fridge_tau_h": 9.0,
+    "freezer_frozen_hours": 22.0,
+    "freezer_open_cost_h": 1.5,
+    "fridge_open_warm": 0.5,
+    "tray_melt_hours": 3.0
+  },
+  "radio": {
+    "start_freq": 1010,
+    "start_battery_h": 7.5,
+    "line_minutes": 7,
+    "capture_khz": 10,
+    "band": [540, 1600]
+  },
+  "flashlight": {
+    "battery_h": 3.5
+  },
+  "candle": {
+    "burn_h": 6.0
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "_note": "Timed captions and door visits. kind: sound | voice | thought. flag + flag_minutes opens a window during which interactions change (e.g. answering the door). wake: true wakes a sleeping player. The soundscape is built by subtraction: horns and sirens on day 1, gone by day 3.",
+  "events": [
+    {"id": "wake", "day": 1, "at": "06:41", "kind": "thought", "text": "You slept in your clothes. The radiator is cold. The cooler is on the kitchen table where you left it at two in the morning."},
+    {"id": "horn1", "day": 1, "at": "06:47", "kind": "sound", "text": "[A car horn, held down, somewhere toward Houston Street.]"},
+    {"id": "idle1", "day": 1, "at": "07:05", "kind": "sound", "text": "[Engines idling in the street below. Nobody has come back for the cars.]"},
+    {"id": "terry", "day": 1, "at": "07:20", "kind": "thought", "text": "Terry called once, after the shaking: \"I'm on till morning. Stay put. I'll come to you.\" It's morning."},
+    {"id": "sirens1", "day": 1, "at": "08:10", "kind": "sound", "text": "[Sirens, many of them, all going east.]"},
+    {"id": "walter", "day": 1, "at": "09:10", "kind": "voice", "wake": true, "flag": "walter_at_door", "flag_minutes": 25,
+     "text": "[Knocking.] WALTER (through the door): \"Lombardi! You alive in there?\""},
+    {"id": "radio_win", "day": 1, "at": "10:30", "kind": "sound", "text": "[Someone across the street has a transistor radio in the window, turned all the way up.]"},
+    {"id": "concetta", "day": 1, "at": "13:05", "kind": "voice", "text": "CONCETTA (calling up the airshaft): \"Nicky! You fill the tub? My Sal filled the tub in '65. Fill the tub!\""},
+    {"id": "lenny1", "day": 1, "at": "15:40", "kind": "sound", "text": "[Footsteps overhead, back and forth. Lenny in 5A, pacing.]"},
+    {"id": "sunset1", "day": 1, "at": "16:35", "kind": "thought", "text": "The sky over the East Side has gone the colour of a stop light. Nobody on the street is talking."},
+    {"id": "trick", "day": 1, "at": "17:40", "kind": "voice", "wake": true, "flag": "trick_or_treat", "flag_minutes": 35,
+     "text": "[Small knocks at the door.] A CHILD'S VOICE: \"Trick or treat?\" Then a woman, low: \"Mijo, I told you, just the third floor.\""},
+    {"id": "dark1", "day": 1, "at": "18:30", "kind": "thought", "text": "Every window on the block is black. You've never seen the street this dark."},
+    {"id": "dog1", "day": 1, "at": "22:15", "kind": "sound", "text": "[A dog barking in a courtyard, on and on.]"},
+    {"id": "glass1", "day": 2, "at": "02:20", "kind": "sound", "text": "[Glass breaking, a long way off. Then laughing.]"},
+    {"id": "cars2", "day": 2, "at": "07:30", "kind": "sound", "text": "[One of the idling cars coughs, shudders and dies. The street is quieter by one engine.]"},
+    {"id": "sirens2", "day": 2, "at": "11:00", "kind": "thought", "text": "You realize you haven't heard a siren since early this morning."},
+    {"id": "abe2", "day": 2, "at": "14:20", "kind": "sound", "text": "[Hammering on the roof. Abe Feldman, putting his antenna back up.]"},
+    {"id": "lights2", "day": 2, "at": "19:30", "kind": "thought", "text": "The headlights in the street have gone yellow and weak. Batteries going."},
+    {"id": "bells3", "day": 3, "at": "09:00", "kind": "sound", "text": "[Church bells from the parish on Sullivan Street. Sunday. They ring longer than usual.]"},
+    {"id": "haze3", "day": 3, "at": "12:00", "kind": "thought", "text": "You can look straight at the sun. It's a dim coin behind brown haze."},
+    {"id": "quiet3", "day": 3, "at": "20:00", "kind": "thought", "text": "No engines at all now. Just wind in the airshaft, and someone coughing."}
+  ]
+}

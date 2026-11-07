@@ -1,0 +1,110 @@
+{
+  "_note": "AM stations by day. Frequencies are kHz on 10 kHz channels. Station names are invented. Real officials are never quoted. Each block lists the lines that loop while that block is live.",
+  "stations": [
+    {
+      "freq": 640, "name": "640 · Emergency Broadcast System",
+      "blocks": [
+        {"days": [1, 7], "lines": [
+          "[A long two-tone alert. Then a steady voice.]",
+          "This is the Emergency Broadcast System. This is not a test.",
+          "Residents of New York City south of Fifty-ninth Street: remain indoors until further notice.",
+          "Do not use the telephone except to report a life-threatening emergency. Keep lines open.",
+          "Fill bathtubs, pots and clean containers with drinking water now, while pressure lasts.",
+          "Do not heat your home with a gas range, charcoal grill or open flame. Fumes can kill without warning.",
+          "Keep this radio tuned to this station or to twelve-forty for official information.",
+          "[The two-tone alert again.]"
+        ]}
+      ]
+    },
+    {
+      "freq": 1240, "name": "1240 · Civil Defense relay",
+      "blocks": [
+        {"days": [1, 3], "lines": [
+          "...relay of the Office of Civil Preparedness. Notices follow.",
+          "Notice one. Con Edison reports flood damage to substations serving lower Manhattan. No restoration time is available.",
+          "Notice two. Fallout shelter supplies in public buildings are not to be removed. Shelters are not open at this time.",
+          "Notice three. Hospitals ask that only emergencies be brought in. St. Vincent's and Beekman Downtown are on generator power.",
+          "Notice four. Subway and PATH service is suspended. Tunnels are flooded. Do not enter stations.",
+          "[A pause, papers shuffling.] Notices repeat."
+        ]},
+        {"days": [4, 7], "lines": [
+          "Relay of the Office of Civil Preparedness. Water distribution points will be announced. Boil water before drinking.",
+          "Do not gather on Canal Street. Persons removing goods from stores will be dealt with.",
+          "[Static swallows the rest.]"
+        ]}
+      ]
+    },
+    {
+      "freq": 1130, "name": "1130 · Newsradio",
+      "blocks": [
+        {"days": [1, 1], "lines": [
+          "Newsradio, all news, still on the air on our transmitter generator. The time is uncertain; our clocks stopped.",
+          "What we know: at about three o'clock yesterday afternoon contact was lost with Frankfurt, Munich and Vienna.",
+          "Wire services say an explosion of enormous size in southern Germany. The Pentagon will not comment.",
+          "A Navy spokesman says a series of large waves struck the coast overnight. The Battery and the Lower East Side flooded.",
+          "Listeners are calling to say the sky over the Atlantic glowed orange at dusk. We cannot tell you why.",
+          "Some of you are asking about the comet. Astronomers said the fragments would burn up. We have no one on the line to confirm anything.",
+          "We repeat: there is no confirmed report of any attack on the United States.",
+          "If you have family at the airports: Kennedy and LaGuardia are closed. Newark is closed."
+        ]},
+        {"days": [2, 3], "lines": [
+          "Newsradio. It was the comet. Observatories in Arizona and Chile confirm: a fragment struck Bavaria near the Czech border.",
+          "Officials say a second group of fragments fell into the North Atlantic. That is what flooded the harbor.",
+          "The governor's office says the National Guard will be deployed to the city. No date has been given.",
+          "There is no word from West Germany. Radio Moscow is broadcasting music and nothing else.",
+          "Con Edison says power south of Midtown will not be restored for some time. The company will not say how long.",
+          "Police report looting on Canal Street and on Fourteenth Street. Officers laid off in July have been asked to report. Few have.",
+          "Scientists we reached by phone in Boston say the smoke may dim the sun for weeks. They used the word winter."
+        ]},
+        {"days": [4, 7], "lines": [
+          "Newsradio. We are running on our last fuel. This may be our final day.",
+          "Downtown Hospital is out of generator fuel. Patients are being moved north on foot.",
+          "The National Guard has not arrived. We have stopped saying when it will.",
+          "If you can hear this, check on your neighbors. Especially the old ones. Goodnight, New York."
+        ]}
+      ]
+    },
+    {
+      "freq": 770, "name": "770 · The overnight call-in",
+      "blocks": [
+        {"days": [1, 1], "lines": [
+          "...you're on the air. Go ahead.",
+          "CALLER: I got a ham set in the Bronx. A guy in Maine says Germany's gone. Not bombed. Gone.",
+          "HOST: We can't confirm that, Eddie from the Bronx. Nobody can confirm anything tonight.",
+          "CALLER: It's the Russians. You watch. They hit Germany first, we're next.",
+          "HOST: Folks, I've been up since five yesterday morning. Stay inside. Talk to your neighbors. Next caller.",
+          "CALLER: My mother's on the ninth floor on Grand Street and the water won't come up. What do I do?",
+          "HOST: Get her down to a lower floor, ma'am. The pumps run on electric. The low floors still get water.",
+          "HOST: Remember 1965? We were good to each other in the blackout. Be like that. You're on the air."
+        ]},
+        {"days": [2, 2], "lines": [
+          "[Dead air. A chair creaks. Someone breathes close to the microphone.]",
+          "HOST: Still here. Lost the phones around four. So it's just me now. I'll keep talking as long as the generator does.",
+          "HOST: My wife's in Queens. If you're listening, Rose, I'm okay."
+        ]}
+      ]
+    },
+    {
+      "freq": 1550, "name": "1550 · Gold 1550",
+      "blocks": [
+        {"days": [1, 2], "lines": [
+          "[A soul record, warbling slightly off speed.]",
+          "DJ: That's the generator making it wobble, not your radio. I'm staying on till somebody tells me to stop.",
+          "[A Philadelphia ballad, strings swelling.]",
+          "DJ: Nobody's told me to stop. Here's a slow one for everybody in the dark.",
+          "[A disco instrumental, too cheerful for the hour.]"
+        ]}
+      ]
+    },
+    {
+      "freq": 1600, "name": "1600 · Radio Borinquen",
+      "blocks": [
+        {"days": [1, 2], "lines": [
+          "...quédense en casa. Stay in your homes. Llenen la bañera de agua.",
+          "Fill the bathtub with water. Llenen la bañera. Do not go to the subway.",
+          "[Salsa, briefly, then the announcer again, reading names of people looking for family.]"
+        ]}
+      ]
+    }
+  ]
+}
