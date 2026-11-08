@@ -65,3 +65,16 @@ add to it whenever something goes wrong.
 - System scipy/skimage only work inside Blender's Python (system numpy is too new);
   run mask debugging through `blender -b -P script.py`.
 - Small views (~300 px) give soft textures: ask for large views when a prop matters.
+
+## Painted parts and critique (Nov 9)
+- Hull models leave painted knobs flat: detect round features (Hough circles) and build them
+  with `part_rules`. Tiny radii (<2.5% of view width) are edge noise; when circles overlap keep
+  the larger, or highlights inside a knob crowd out the knob itself.
+- Prefer the painting's evidence over rules: a side view shows how far parts stick out
+  (`hull.side_evidence`). Rules alone made the knobs 35 mm deep where the drawing showed ~10 mm.
+- The critic found both problems by numbers before anyone looked: run it every time.
+- Image texture v runs bottom-up in Blender; mask rows run top-down. The hull's top view was
+  painted front-to-back flipped because of this (found by looking at the turnaround, not by
+  the numbers: the critic measures shape, not texture placement).
+- AI sheets are inconsistent between views (the TV's side views omit the knobs): absent
+  evidence is not evidence of flatness. Only a distinct bump counts.

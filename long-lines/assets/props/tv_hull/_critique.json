@@ -1,0 +1,39 @@
+{
+ "prop": "tv_hull",
+ "size_m": [
+  0.655,
+  0.308,
+  0.48
+ ],
+ "parts_beyond_painted_outline": [
+  "front",
+  "right",
+  "left",
+  "top"
+ ],
+ "silhouette_iou": {
+  "front": 1.0,
+  "back": null,
+  "right": 0.892,
+  "left": 0.906,
+  "top": 0.915
+ },
+ "front_relief_mm": 28.1,
+ "painted_features": [
+  {
+   "part": "knob",
+   "diameter_mm": 59.2,
+   "protrudes_mm": 24.7,
+   "expected_mm": 25.0
+  },
+  {
+   "part": "knob",
+   "diameter_mm": 36.4,
+   "protrudes_mm": 20.8,
+   "expected_mm": 21.8
+  }
+ ],
+ "lowest_z_m": -0.0001,
+ "front_holes_px": 0,
+ "complaints": []
+}

@@ -41,6 +41,9 @@ Build once, reuse everywhere. Do not hand-code one-off geometry in game code.
   (front/right/left/back/top). Register one line in `HULLS` (`tools/props/hull_props.py`):
   views live in `assets/source_textures/<folder>/v_<view>.png`. Free (scipy/skimage via apt).
   Jared does not want to spend money: no paid image-to-3D services.
+- **Critique every prop** with `tools/critique.py` (turnaround + automatic checks) and
+  follow `docs/CRITIQUE.md`. Part knowledge (how far knobs stick out, etc.) lives in
+  `tools/propkit/part_rules.py`; the hull builder uses it to give painted parts real depth.
 - **Read `docs/LESSONS.md`** before starting; add to it when something goes wrong.
 
 ## How to work here
