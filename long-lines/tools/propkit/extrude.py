@@ -43,14 +43,14 @@ def section_from_drawing(png, kind, simplify=1.0):
     m = _mask(png)
     lab, n = ndimage.label(m)
     if n == 0:
-        return PROFILES[kind]
+        return None
     big = lab == (np.argmax(np.bincount(lab.ravel())[1:]) + 1)
     big = ndimage.binary_fill_holes(big)
     ys, xs = np.nonzero(big)
     big = big[ys.min():ys.max() + 1, xs.min():xs.max() + 1]
     h, w = big.shape
     if h < 10 or w < 4:
-        return PROFILES[kind]
+        return None
     edge = max(1, w // 10)
     wall_left = big[:, :edge].mean() >= big[:, -edge:].mean()
     c = max(find_contours(np.pad(big, 1).astype(float), 0.5), key=len)
@@ -59,7 +59,7 @@ def section_from_drawing(png, kind, simplify=1.0):
     for r, col in c[:-1]:
         y = (col - 1) / h if wall_left else (w - (col - 1)) / h  # depth from the wall, in heights
         pts.append((max(0.0, y), 1 - (r - 1) / h))
-    return pts if len(pts) >= 3 else PROFILES[kind]
+    return pts if len(pts) >= 3 else None
 
 
 def moulding(sheet, strip, profile, kind, height_m, src_dir, strip_frac=None, name="trim", section_tolerance=1.0):
@@ -77,6 +77,8 @@ def moulding(sheet, strip, profile, kind, height_m, src_dir, strip_frac=None, na
     spng = _crop(img, sb, src_dir, "strip")
     sec = section_from_drawing(_crop(img, boxes[profile], src_dir, "section"), kind, section_tolerance) if profile is not None \
         else PROFILES[kind]
+    if sec is None:
+        raise ValueError("unusable drawn moulding cross-section: " + name)
     sec = [(-y * height_m, z * height_m) for y, z in sec]
     sw, sh = Image.open(spng).size
     repeat_m = height_m * sw / sh
