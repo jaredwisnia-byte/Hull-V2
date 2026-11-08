@@ -4,6 +4,9 @@ extends RefCounted
 ## Run with a display (e.g. xvfb-run):  godot -- --shots=/path/to/dir
 
 const SHOTS := [
+	{"name": "tv1_front_room_morning", "day": 1, "time": "09:40", "pos": [1.7, 0, 2.4], "look": [0.3, 0.75, 1.6]},
+	{"name": "tv2_close", "day": 1, "time": "10:30", "pos": [1.25, 0, 1.6], "look": [0.35, 0.72, 1.6]},
+	{"name": "tv3_candle_night", "day": 1, "time": "21:00", "pos": [1.6, 0, 2.0], "look": [0.3, 0.75, 1.6], "candles": true},
 	{"name": "a01_front_room", "day": 1, "time": "09:40", "pos": [2.9, 0, 3.0], "look": [0.8, 0.9, 0.6]},
 	{"name": "a02_front_room_sofa", "day": 1, "time": "10:30", "pos": [0.9, 0, 0.9], "look": [2.4, 0.7, 3.5]},
 	{"name": "a03_office", "day": 1, "time": "10:00", "pos": [0.7, 0, 4.3], "look": [3.0, 0.9, 5.4]},
