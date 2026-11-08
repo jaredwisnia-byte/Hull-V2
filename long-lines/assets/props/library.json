@@ -291,6 +291,88 @@
   "desc": "baseboard_util_cream",
   "kind": "baseboard"
  },
+ "baseboard_util_gray": {
+  "size": [
+   1.2,
+   0.12,
+   0.0478
+  ],
+  "min": [
+   0.0,
+   0.0,
+   -0.0
+  ],
+  "max": [
+   1.2,
+   0.12,
+   0.0478
+  ],
+  "tris": 24,
+  "tex": 1024,
+  "standardized": [
+   "seated on floor (-0.001 m)"
+  ],
+  "tags": [
+   "moulding",
+   "factory"
+  ],
+  "desc": "baseboard_util_gray",
+  "kind": "baseboard"
+ },
+ "baseboard_util_tan": {
+  "size": [
+   1.2,
+   0.12,
+   0.0478
+  ],
+  "min": [
+   0.0,
+   0.0,
+   -0.0
+  ],
+  "max": [
+   1.2,
+   0.12,
+   0.0478
+  ],
+  "tris": 24,
+  "tex": 1024,
+  "standardized": [
+   "seated on floor (-0.001 m)"
+  ],
+  "tags": [
+   "moulding",
+   "factory"
+  ],
+  "desc": "baseboard_util_tan",
+  "kind": "baseboard"
+ },
+ "baseboard_walnut": {
+  "size": [
+   1.2,
+   0.16,
+   0.0144
+  ],
+  "min": [
+   0.0,
+   0.0,
+   -0.0
+  ],
+  "max": [
+   1.2,
+   0.16,
+   0.0144
+  ],
+  "tris": 24,
+  "tex": 1024,
+  "standardized": [],
+  "tags": [
+   "moulding",
+   "factory"
+  ],
+  "desc": "baseboard_walnut",
+  "kind": "baseboard"
+ },
  "bed_double": {
   "size": [
    1.4868,
@@ -521,6 +603,32 @@
    "factory"
   ],
   "desc": "bldg_tribeca_01",
+  "kind": "static"
+ },
+ "bldg_tribeca_02": {
+  "size": [
+   9.6299,
+   14.5,
+   12.2
+  ],
+  "min": [
+   -4.815,
+   0.0,
+   -12.0
+  ],
+  "max": [
+   4.815,
+   14.5,
+   0.2
+  ],
+  "tris": 198,
+  "tex": 2048,
+  "standardized": [],
+  "tags": [
+   "building",
+   "factory"
+  ],
+  "desc": "bldg_tribeca_02",
   "kind": "static"
  },
  "bldg_tribeca_03": {
@@ -1184,6 +1292,116 @@
   "desc": "A box of Sunny Oats, the top folded shut.",
   "kind": "carry"
  },
+ "chair_cap_bath": {
+  "size": [
+   1.2,
+   0.05,
+   0.0517
+  ],
+  "min": [
+   0.0,
+   0.0,
+   0.0007
+  ],
+  "max": [
+   1.2,
+   0.05,
+   0.0524
+  ],
+  "tris": 40,
+  "tex": 1024,
+  "standardized": [
+   "seated on floor (-0.000 m)"
+  ],
+  "tags": [
+   "moulding",
+   "factory"
+  ],
+  "desc": "chair_cap_bath",
+  "kind": "chair_rail"
+ },
+ "chair_rail_cream": {
+  "size": [
+   1.2,
+   0.06,
+   0.0288
+  ],
+  "min": [
+   0.0,
+   0.0,
+   -0.0
+  ],
+  "max": [
+   1.2,
+   0.06,
+   0.0288
+  ],
+  "tris": 24,
+  "tex": 1024,
+  "standardized": [],
+  "tags": [
+   "moulding",
+   "factory"
+  ],
+  "desc": "chair_rail_cream",
+  "kind": "chair_rail"
+ },
+ "chair_rail_hall": {
+  "size": [
+   1.2,
+   0.07,
+   0.0281
+  ],
+  "min": [
+   0.0,
+   0.0,
+   -0.0
+  ],
+  "max": [
+   1.2,
+   0.07,
+   0.0281
+  ],
+  "tris": 40,
+  "tex": 1024,
+  "standardized": [
+   "seated on floor (-0.000 m)"
+  ],
+  "tags": [
+   "moulding",
+   "factory"
+  ],
+  "desc": "chair_rail_hall",
+  "kind": "chair_rail"
+ },
+ "chair_rail_living": {
+  "size": [
+   1.2,
+   0.065,
+   0.0325
+  ],
+  "min": [
+   0.0,
+   0.0,
+   -0.0
+  ],
+  "max": [
+   1.2,
+   0.065,
+   0.0325
+  ],
+  "tris": 56,
+  "tex": 1024,
+  "standardized": [
+   "seated on floor (-0.000 m)"
+  ],
+  "tags": [
+   "moulding",
+   "factory"
+  ],
+  "desc": "chair_rail_living",
+  "kind": "chair_rail"
+ },
  "cigarette_pack": {
   "size": [
    0.055,
@@ -1233,6 +1451,32 @@
    "closet"
   ],
   "desc": "A closet rod hung with shirts, a suit jacket and a pea coat, a shelf of boxes above.",
+  "kind": "static"
+ },
+ "closet_trim_bedroom": {
+  "size": [
+   2.1239,
+   2.1,
+   0.022
+  ],
+  "min": [
+   -1.062,
+   0.0,
+   -0.0
+  ],
+  "max": [
+   1.062,
+   2.1,
+   0.022
+  ],
+  "tris": 188,
+  "tex": 1024,
+  "standardized": [],
+  "tags": [
+   "frame",
+   "factory"
+  ],
+  "desc": "closet_trim_bedroom",
   "kind": "static"
  },
  "coat_rack": {
@@ -1310,6 +1554,170 @@
   ],
   "desc": "A walnut mid-century coffee table with a magazine shelf, rings on the top.",
   "kind": "static"
+ },
+ "compactor_brown": {
+  "size": [
+   0.4835,
+   0.863,
+   0.6433
+  ],
+  "min": [
+   -0.2417,
+   0.0,
+   -0.598
+  ],
+  "max": [
+   0.2417,
+   0.863,
+   0.0453
+  ],
+  "tris": 1672,
+  "tex": 1024,
+  "standardized": [],
+  "tags": [
+   "trash_compactor",
+   "factory"
+  ],
+  "desc": "Woodgrain trash compactor",
+  "kind": "static"
+ },
+ "crown_bedroom": {
+  "size": [
+   1.2,
+   0.08,
+   0.064
+  ],
+  "min": [
+   0.0,
+   0.0,
+   -0.0
+  ],
+  "max": [
+   1.2,
+   0.08,
+   0.064
+  ],
+  "tris": 28,
+  "tex": 1024,
+  "standardized": [],
+  "tags": [
+   "moulding",
+   "factory"
+  ],
+  "desc": "crown_bedroom",
+  "kind": "crown"
+ },
+ "crown_cream": {
+  "size": [
+   1.2,
+   0.14,
+   0.1156
+  ],
+  "min": [
+   0.0,
+   0.0,
+   -0.0
+  ],
+  "max": [
+   1.2,
+   0.14,
+   0.1156
+  ],
+  "tris": 56,
+  "tex": 1024,
+  "standardized": [
+   "seated on floor (-0.001 m)"
+  ],
+  "tags": [
+   "moulding",
+   "factory"
+  ],
+  "desc": "crown_cream",
+  "kind": "crown"
+ },
+ "crown_hall": {
+  "size": [
+   1.2,
+   0.14,
+   0.0527
+  ],
+  "min": [
+   0.0,
+   0.0,
+   -0.0
+  ],
+  "max": [
+   1.2,
+   0.14,
+   0.0527
+  ],
+  "tris": 56,
+  "tex": 1024,
+  "standardized": [
+   "seated on floor (-0.001 m)"
+  ],
+  "tags": [
+   "moulding",
+   "factory"
+  ],
+  "desc": "crown_hall",
+  "kind": "crown"
+ },
+ "crown_living": {
+  "size": [
+   1.2,
+   0.16,
+   0.0881
+  ],
+  "min": [
+   0.0,
+   0.0,
+   -0.0
+  ],
+  "max": [
+   1.2,
+   0.16,
+   0.0881
+  ],
+  "tris": 52,
+  "tex": 1024,
+  "standardized": [
+   "seated on floor (-0.001 m)"
+  ],
+  "tags": [
+   "moulding",
+   "factory"
+  ],
+  "desc": "crown_living",
+  "kind": "crown"
+ },
+ "crown_ornate": {
+  "size": [
+   1.2,
+   0.28,
+   0.165
+  ],
+  "min": [
+   0.0,
+   0.0,
+   -0.0
+  ],
+  "max": [
+   1.2,
+   0.28,
+   0.165
+  ],
+  "tris": 76,
+  "tex": 1024,
+  "standardized": [
+   "seated on floor (-0.001 m)"
+  ],
+  "tags": [
+   "moulding",
+   "factory"
+  ],
+  "desc": "crown_ornate",
+  "kind": "crown"
  },
  "crucifix": {
   "size": [

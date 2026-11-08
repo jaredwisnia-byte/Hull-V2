@@ -18,10 +18,26 @@
  "source": "appl_10.png",
  "class": "medium",
  "views_folder": "compactor_brown",
- "status": "pending",
+ "status": "shipped",
  "assumptions": [
   "height 0.86 m from category 'trash_compactor'"
  ],
  "height_m": 0.86,
- "cat_depth_m": 0.6
+ "cat_depth_m": 0.6,
+ "measured": {
+  "width_m": 0.477,
+  "depth_m": 0.6,
+  "height_m": 0.86,
+  "panels": [
+   0
+  ],
+  "knobs": [
+   {
+    "part": "knob",
+    "diameter_mm": 40.4,
+    "depth_mm": 24.3
+   }
+  ]
+ },
+ "attempts": 1
 }

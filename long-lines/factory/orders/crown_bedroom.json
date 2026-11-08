@@ -10,9 +10,17 @@
  "source": "trim_2.png",
  "class": null,
  "views_folder": "crown_bedroom",
- "status": "pending",
+ "status": "shipped",
  "assumptions": [
   "height 0.08 m from category 'moulding'"
  ],
- "notes": ""
+ "notes": "",
+ "measured": {
+  "length_m": 1.2,
+  "height_m": 0.08,
+  "depth_m": 0.064,
+  "section_points": 8,
+  "section_from": "default:crown"
+ },
+ "attempts": 1
 }
