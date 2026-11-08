@@ -83,6 +83,27 @@ Things worth trying: fill the tub before the water goes, ration the freezer's ic
 
 ![The cooler's thermometer](docs/07_cooler_close.png)
 
+## Hero prop: the television
+
+A test of how far procedural modelling and texturing can go. `tools/build_tv.py` builds a mid-1970s 19-inch table TV entirely in a Blender script. It has a walnut-grain cabinet on a tapered-leg stand with brass caps, a curved CRT, a brushed-aluminium control panel with a numbered channel dial and knurled knobs, a speaker grille, chrome "Westbury" script (an invented brand), a vented back with a maker's plate, rabbit ears with a UHF loop, and a doily. It is about 30k triangles.
+
+The script then bakes 2048 px textures: colour with dirt in the crevices, worn edges and dust on top; a normal map; and roughness/metal. In Godot, `shaders/baked_prop.gdshader` keeps the prop on the same toon lighting as the rest of the apartment.
+
+![The TV, rendered in Blender](docs/props/tv_blender_closeup.png)
+
+| In the front room, morning | By candlelight |
+| --- | --- |
+| ![](docs/props/tv_in_game_morning.png) | ![](docs/props/tv_in_game_night.png) |
+
+To rebuild it (Blender 4.0 or later; about 4 minutes on 4 CPU cores):
+
+```bash
+blender --background --factory-startup --python long-lines/tools/build_tv.py
+blender --background --factory-startup --python long-lines/tools/preview_prop.py -- long-lines/assets/props/tv tv /tmp/tv.png
+```
+
+`PropFactory.baked_prop("name")` loads any prop built this way from `assets/props/<name>/`.
+
 ## Layout of the project
 
 ```
