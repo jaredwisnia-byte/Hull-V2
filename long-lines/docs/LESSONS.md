@@ -78,3 +78,16 @@ add to it whenever something goes wrong.
   the numbers: the critic measures shape, not texture placement).
 - AI sheets are inconsistent between views (the TV's side views omit the knobs): absent
   evidence is not evidence of flatness. Only a distinct bump counts.
+
+## Factory (Nov 9)
+- Calibrate the gate on known-good assets before trusting it: the first library run failed 36
+  of 118, and over half were the gate's fault (chairs "have holes", wall frames "float").
+  Mounting (floor/wall/ceiling/top) and solid-vs-open are part of the standard.
+- Fix defects in the machine, not the asset: seating on the floor, outward normals, triangle
+  budget and texture size are enforced in `bake.standardize`/`fit_texture` for every asset.
+- Texture size must come from the measured UV coverage after unwrapping; estimates were
+  4x off on many-island props.
+- GLB bytes are not reproducible (Blender's UV packer); reproducibility is measured on the
+  gate's gauges (triangles, dimensions, outline scores) via `gauge_hash`.
+- When a correction fires for a category, move it into `categories.json` so the next asset
+  of that kind passes first time (tv: back view paint-only).

@@ -1,0 +1,111 @@
+{
+ "_note": "What a person used to decide per object, codified: which production line, the real size, the size class. intake uses this; an order can override any field. Heights are typical for 1960s-70s New York objects.",
+ "tv": {
+  "line": "hull",
+  "height_m": 0.48,
+  "class": "medium",
+  "hull": {
+   "convex": true,
+   "paint_only": [
+    "back"
+   ]
+  }
+ },
+ "radio": {
+  "line": "hull",
+  "height_m": 0.16,
+  "class": "small",
+  "hull": {
+   "convex": true
+  }
+ },
+ "appliance": {
+  "line": "hull",
+  "height_m": 0.9,
+  "class": "medium",
+  "hull": {
+   "convex": true
+  }
+ },
+ "fridge": {
+  "line": "hull",
+  "height_m": 1.55,
+  "class": "medium",
+  "hull": {
+   "convex": true
+  }
+ },
+ "cabinet": {
+  "line": "hull",
+  "height_m": 0.9,
+  "class": "medium",
+  "hull": {
+   "convex": true
+  }
+ },
+ "crate": {
+  "line": "hull",
+  "height_m": 0.4,
+  "class": "medium",
+  "hull": {
+   "convex": true
+  }
+ },
+ "suitcase": {
+  "line": "hull",
+  "height_m": 0.45,
+  "class": "medium",
+  "hull": {
+   "convex": true
+  }
+ },
+ "lamp": {
+  "line": "hull",
+  "height_m": 0.6,
+  "class": "medium",
+  "hull": {}
+ },
+ "chair": {
+  "line": "hull",
+  "height_m": 0.85,
+  "class": "medium",
+  "hull": {}
+ },
+ "table": {
+  "line": "hull",
+  "height_m": 0.75,
+  "class": "medium",
+  "hull": {}
+ },
+ "sofa": {
+  "line": "hull",
+  "height_m": 0.85,
+  "class": "large",
+  "hull": {}
+ },
+ "street": {
+  "line": "hull",
+  "height_m": 1.0,
+  "class": "medium",
+  "hull": {}
+ },
+ "car": {
+  "line": "car",
+  "length_m": 5.3,
+  "class": "vehicle"
+ },
+ "can": {
+  "line": "can",
+  "height_m": 0.11,
+  "class": "small"
+ },
+ "surface": {
+  "line": "surface",
+  "repeat_m": 1.0
+ },
+ "recipe": {
+  "line": "recipe",
+  "class": "medium"
+ },
+ "_learned": "tv: back view made paint-only by default after the gate's correction fired on the first TV (dark backs on dark sheets)."
+}

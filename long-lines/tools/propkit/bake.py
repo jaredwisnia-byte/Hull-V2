@@ -10,7 +10,61 @@ import numpy as np
 from . import core, mats
 
 
-def finish(name, out_root, tex=1024, samples=24):
+STANDARDS = json.load(open(os.path.join(os.path.dirname(__file__), "..", "..", "factory", "standards.json")))
+
+
+def standardize(obj, name, tex, tags=()):
+    """Machine-level enforcement of factory/standards.json on the joined mesh, so no
+    asset needs these fixed by hand: normals outward, seated on the floor (floor-mounted
+    objects), within its size class's triangle budget, and a texture big enough for the
+    minimum texel density. Returns (texture size, notes)."""
+    import bmesh as _bm
+    notes = []
+    me = obj.data
+    bm = _bm.new()
+    bm.from_mesh(me)
+    _bm.ops.recalc_face_normals(bm, faces=bm.faces)
+    bm.to_mesh(me)
+    bm.free()
+    mt = STANDARDS["mounting"]
+    mount = mt["by_name"].get(name) or next((m for t, m in mt["by_tag"].items() if t in tags), "floor")
+    zs = [v.co.z for v in me.vertices]
+    if mount == "floor" and zs and abs(min(zs)) > 1e-4:
+        dz = -min(zs)
+        for v in me.vertices:
+            v.co.z += dz
+        notes.append("seated on floor (%+.3f m)" % dz)
+    dims = obj.dimensions
+    cls = next((k for k, v in STANDARDS["size_classes"].items() if max(dims) <= v["max_dim_m"]), "building")
+    budget = STANDARDS["size_classes"][cls]["tri_budget"]
+    tris = sum(len(p.vertices) - 2 for p in me.polygons)
+    if tris > budget:
+        d = obj.modifiers.new("budget", "DECIMATE")
+        d.ratio = budget / tris * 0.95
+        core.apply_mods(obj)
+        notes.append("decimated %d -> %d tris" % (tris, sum(len(p.vertices) - 2 for p in me.polygons)))
+    return tex, notes
+
+
+def fit_texture(me, tex):
+    """After unwrapping: measure real UV coverage and raise the texture size until the
+    texel density meets the standard (estimates were wrong by 4x on many-island props)."""
+    uv = me.uv_layers.active
+    area = uv_area = 0.0
+    for p in me.polygons:
+        area += p.area
+        pts = [uv.data[li].uv for li in p.loop_indices]
+        uv_area += 0.5 * abs(sum(pts[i].x * pts[(i + 1) % len(pts)].y - pts[(i + 1) % len(pts)].x * pts[i].y
+                                 for i in range(len(pts))))
+    lo_density = STANDARDS["minimum_acceptable"]["texel_density_px_per_m"][0]
+    notes = []
+    while area > 0 and uv_area > 0 and tex * (uv_area / area) ** 0.5 < lo_density * 1.1 and tex < 2048:
+        tex *= 2
+        notes.append("texture raised to %d for texel density" % tex)
+    return tex, notes
+
+
+def finish(name, out_root, tex=1024, samples=24, tags=()):
     """Bakes albedo / normal / ORM maps for everything built since core.reset()
     and writes <out_root>/<name>/<name>.glb plus textures. Returns manifest info."""
     out = os.path.join(out_root, name)
@@ -27,6 +81,7 @@ def finish(name, out_root, tex=1024, samples=24):
     obj.name = name
     bpy.context.scene.cursor.location = (0, 0, 0)
     bpy.ops.object.origin_set(type="ORIGIN_CURSOR")
+    tex, std_notes = standardize(obj, name, tex, tags)
     me = obj.data
     for uv in list(me.uv_layers):
         me.uv_layers.remove(uv)
@@ -36,6 +91,8 @@ def finish(name, out_root, tex=1024, samples=24):
     bpy.ops.uv.smart_project(angle_limit=math.radians(60), island_margin=0.004, area_weight=0.0, scale_to_bounds=True)
     bpy.ops.uv.pack_islands(margin=0.004)
     bpy.ops.object.mode_set(mode="OBJECT")
+    tex, fit_notes = fit_texture(me, tex)
+    std_notes += fit_notes
 
     scene = bpy.context.scene
     scene.render.engine = "CYCLES"
@@ -122,7 +179,7 @@ def finish(name, out_root, tex=1024, samples=24):
     return {"size": [round(dims.x, 4), round(dims.z, 4), round(dims.y, 4)],
             "min": [round(lo[0], 4), round(lo[2], 4), round(-hi[1], 4)],
             "max": [round(hi[0], 4), round(hi[2], 4), round(-lo[1], 4)],
-            "tris": tris, "tex": tex}
+            "tris": tris, "tex": tex, "standardized": std_notes}
 
 
 def update_manifest(path, name, entry):

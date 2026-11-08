@@ -19,7 +19,23 @@ static func from_entry(e: Dictionary) -> Node3D:
 		n = make(type, id)
 		if e.has("model"):
 			swap_model(n, String(e.model))
+	if e.has("condition") or e.has("snow") or e.has("frost"):
+		set_condition(n, float(e.get("condition", 0.0)), float(e.get("snow", 0.0)), float(e.get("frost", 0.0)))
 	return n
+
+
+## Condition variants on any baked library model: aged/derelict, snowed, frosted.
+## Each placement gets its own material copy, so one model can appear in many states.
+static func set_condition(n: Node, condition: float, snow := 0.0, frost := 0.0) -> void:
+	for mi in n.find_children("*", "MeshInstance3D", true, false):
+		var m := (mi as MeshInstance3D).material_override as ShaderMaterial
+		if m == null or m.shader != preload("res://shaders/baked_prop.gdshader"):
+			continue
+		m = m.duplicate()
+		m.set_shader_parameter("condition", condition)
+		m.set_shader_parameter("snow", snow)
+		m.set_shader_parameter("frost", frost)
+		(mi as MeshInstance3D).material_override = m
 
 
 static var _manifest := {}

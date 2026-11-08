@@ -11,6 +11,14 @@ Read this first. It is the handoff between sessions.
   (`docs/props/`) as "exactly what I wanted": that is the fidelity bar for every prop.
 - Current milestone: the apartment vertical slice (Nick's flat, 4A Sullivan St).
 
+## The factory (start here for any new asset)
+Jared's directive: industrialize asset production. The factory is the product.
+`factory/README.md` is the manual: work orders, production lines, the quality gate at a
+**minimum acceptable standard** (one automatic correction, then flag, never polish),
+standards (`factory/standards.json`, `categories.json`), the input spec
+(`factory/REFERENCE_SPEC.md`), the ledger and KPIs (`factory/REPORT.md`).
+`blender -b --factory-startup -P long-lines/tools/factory.py -- intake|build|qa|report ...`
+
 ## Doctrine: interchangeable parts
 Build once, reuse everywhere. Do not hand-code one-off geometry in game code.
 - **Props** are Blender recipes in `tools/props/*.py` built with the shared kit

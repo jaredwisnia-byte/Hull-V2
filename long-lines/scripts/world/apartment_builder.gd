@@ -549,6 +549,8 @@ func _street() -> void:
 	for c in street.get("cars", []):
 		var pos: Array = c.pos
 		var car := _lib(String(c.prop), Vector3(pos[0], sy, pos[1]), deg_to_rad(float(c.get("rot", 90.0))))
+		if car and (c.has("condition") or c.has("snow")):
+			PropFactory.set_condition(car, float(c.get("condition", 0.0)), float(c.get("snow", 0.0)))
 		if car and c.get("lights", false):
 			_car_lights(car, float(c.get("length", 5.5)))
 

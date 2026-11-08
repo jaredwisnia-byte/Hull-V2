@@ -64,7 +64,7 @@ for n in names:
         core.reset()
         mats.reset()
         p["fn"]()
-        info = bake.finish(n, OUT, tex_override or p["tex"], samples)
+        info = bake.finish(n, OUT, tex_override or p["tex"], samples, tags=p["tags"])
         info.update({"tags": p["tags"], "desc": p["desc"], "kind": p["kind"]})
         bake.update_manifest(MANIFEST, n, info)
         print("BUILT %-22s %6d tris  %4d px  %5.1fs" % (n, info["tris"], info["tex"], time.time() - t0))

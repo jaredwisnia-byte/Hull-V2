@@ -1,0 +1,325 @@
+"""The asset factory: work orders in, game-ready assets out, every run measured.
+
+Run under Blender (all stations share one process):
+    blender -b --factory-startup -P tools/factory.py -- intake IMAGE NAME --category tv [--height 0.5]
+    blender -b --factory-startup -P tools/factory.py -- build NAME... | --pending | --all-orders
+    blender -b --factory-startup -P tools/factory.py -- qa NAME... | --library
+    blender -b --factory-startup -P tools/factory.py -- report
+
+Stations: intake (classify the reference, split views, size from the category table,
+write a work order) -> build (the order's production line) -> bake/export (propkit.bake)
+-> gate (propkit.qa against factory/standards.json, one codified automatic correction,
+then flag for a person) -> ledger (factory/ledger.jsonl) -> report (factory/REPORT.md).
+Work orders live in factory/orders/<name>.json; lines read them, so a new asset needs
+no code. See factory/README.md.
+"""
+import glob
+import hashlib
+import importlib
+import json
+import os
+import pkgutil
+import sys
+import time
+import traceback
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+ROOT = os.path.normpath(os.path.join(HERE, ".."))
+FACT = os.path.join(ROOT, "factory")
+ORDERS = os.path.join(FACT, "orders")
+LEDGER = os.path.join(FACT, "ledger.jsonl")
+LIB = os.path.join(ROOT, "assets", "props")
+SRC = os.path.join(ROOT, "assets", "source_textures")
+STANDARDS = json.load(open(os.path.join(FACT, "standards.json")))
+CATS = json.load(open(os.path.join(FACT, "categories.json")))
+
+import propkit  # noqa: E402
+from propkit import bake, core, mats, qa  # noqa: E402
+import props  # noqa: E402
+
+for _m in pkgutil.iter_modules(props.__path__):
+    importlib.import_module("props." + _m.name)
+
+
+def load_order(name):
+    p = os.path.join(ORDERS, name + ".json")
+    return json.load(open(p)) if os.path.exists(p) else None
+
+
+def save_order(o):
+    os.makedirs(ORDERS, exist_ok=True)
+    with open(os.path.join(ORDERS, o["name"] + ".json"), "w") as f:
+        json.dump(o, f, indent=1)
+
+
+def ledger(entry):
+    entry["t"] = time.strftime("%Y-%m-%dT%H:%M:%S")
+    with open(LEDGER, "a") as f:
+        f.write(json.dumps(entry) + "\n")
+
+
+def file_hash(paths):
+    h = hashlib.sha1()
+    for p in sorted(paths):
+        if os.path.exists(p):
+            h.update(open(p, "rb").read())
+    return h.hexdigest()[:12]
+
+
+# ------------------------------------------------------------------ intake
+
+def split_views(image_path, out_dir):
+    """Finds the top row of object views on a reference sheet (REFERENCE_SPEC.md) and
+    saves them as v_front/right/back/left/top. Returns the list of views found."""
+    import numpy as np
+    from PIL import Image
+    from scipy import ndimage
+    im = Image.open(image_path).convert("RGB")
+    a = np.asarray(im).astype(int)
+    border = np.concatenate([a[0], a[-1], a[:, 0], a[:, -1]])
+    bg = np.median(border, axis=0)
+    mask = np.abs(a - bg).sum(2) > 40
+    mask = ndimage.binary_closing(mask, iterations=3)
+    lab, n = ndimage.label(mask)
+    boxes = ndimage.find_objects(lab)
+    H, W = mask.shape
+    blobs = []
+    for i, sl in enumerate(boxes):
+        if sl is None:
+            continue
+        ys, xs = sl
+        h, w = ys.stop - ys.start, xs.stop - xs.start
+        if h * w > H * W * 0.004 and h > H * 0.06:
+            blobs.append((ys.start, ys.stop, xs.start, xs.stop))
+    if not blobs:
+        return []
+    top = min(b[0] for b in blobs)
+    row_h = max(b[1] - b[0] for b in blobs if b[0] < top + H * 0.08)
+    row = sorted([b for b in blobs if b[0] < top + row_h * 0.5], key=lambda b: b[2])
+    names = ["front", "right", "back", "left", "top"]
+    os.makedirs(out_dir, exist_ok=True)
+    found = []
+    for nm, (y0, y1, x0, x1) in zip(names, row):
+        pad = 4
+        im.crop((max(0, x0 - pad), max(0, y0 - pad), min(W, x1 + pad), min(H, y1 + pad))).save(os.path.join(out_dir, "v_%s.png" % nm))
+        found.append(nm)
+    return found
+
+
+def intake(image, name, category, height=None, notes=""):
+    cat = CATS[category]
+    line = cat["line"]
+    order = {"name": name, "category": category, "line": line, "source": os.path.basename(image),
+             "class": cat.get("class"), "assumptions": [], "status": "pending", "notes": notes}
+    if line == "hull":
+        d = os.path.join(SRC, name)
+        found = split_views(image, d)
+        order["views_folder"] = name
+        order["views"] = found
+        order["height_m"] = height or cat["height_m"]
+        if height is None:
+            order["assumptions"].append("height %.2f m from category '%s' (typical period size)" % (cat["height_m"], category))
+        order["hull"] = dict(cat.get("hull", {}))
+        missing = [v for v in ("front", "right", "top") if v not in found]
+        if missing:
+            order["assumptions"].append("views missing: %s (fewer constraints on shape)" % ", ".join(missing))
+        if "front" not in found or ("right" not in found and "left" not in found):
+            order["status"] = "needs_person"
+            order["assumptions"].append("sheet does not follow REFERENCE_SPEC: need front and a side view")
+    order["assumptions"].append("BRAND CHECK REQUIRED: look at the views for real marks before shipping")
+    save_order(order)
+    print("ORDER", json.dumps(order))
+    return order
+
+
+# ------------------------------------------------------------------ lines
+
+def run_line(order):
+    """Builds the order's geometry in the current scene. One function per line."""
+    line = order["line"]
+    if line == "hull":
+        from propkit.hull import hull_prop
+        d = os.path.join(SRC, order["views_folder"])
+        views = {k: os.path.join(d, "v_%s.png" % k) for k in order.get("views", [])}
+        hull_prop(views, order["height_m"], name=order["name"], **order.get("hull", {}))
+    elif line == "car":
+        from props.cars_painted import painted_car
+        painted_car(order["name"], order.get("body", "car_coupe"))
+    elif line == "can":
+        from props.goods_painted import painted_can
+        painted_can(order["label"], order["radius_m"], order["height_m"])
+    elif line == "recipe":
+        propkit.PROPS[order["name"]]["fn"]()
+    else:
+        raise ValueError("unknown line " + line)
+
+
+def correct(order, result):
+    """Codified corrections for known failure modes (docs/LESSONS.md). Returns True if
+    the order was changed and is worth one more attempt."""
+    changed = False
+    fails = " ".join(result["fails"])
+    if order["line"] == "hull":
+        h = order.setdefault("hull", {})
+        for v in ("back", "left", "right", "top"):
+            if (v + " outline") in fails and v not in h.get("paint_only", []):
+                h.setdefault("paint_only", []).append(v)  # unreliable view: paint, don't carve
+                changed = True
+        if "holes" in fails and not h.get("convex"):
+            h["convex"] = True
+            changed = True
+        if "triangle budget" in fails:
+            h["decimate"] = round(h.get("decimate", 0.35) * 0.5, 3)
+            changed = True
+    if changed:
+        order.setdefault("corrections", []).append(result["fails"])
+    return changed
+
+
+def tex_for(order):
+    cls = order.get("class") or "medium"
+    return STANDARDS["size_classes"].get(cls, STANDARDS["size_classes"]["medium"])["tex"]
+
+
+def build(order, samples=16):
+    t0 = time.time()
+    attempt, result = 0, None
+    while True:
+        attempt += 1
+        try:
+            core.reset()
+            mats.reset()
+            run_line(order)
+            info = bake.finish(order["name"], LIB, tex_for(order), samples, tags=[order["category"]])
+            info.update({"tags": [order["category"], "factory"], "desc": order.get("notes") or order["name"],
+                         "kind": order.get("kind", "static")})
+            bake.update_manifest(os.path.join(LIB, "library.json"), order["name"], info)
+            vd = os.path.join(SRC, order["views_folder"]) if order.get("views_folder") else None
+            result = qa.check(order["name"], vd, order.get("class"), tuple(order.get("hull", {}).get("paint_only", ())),
+                              solid=order["line"] in STANDARDS["solid_lines"], mount=order.get("mount", "floor"))
+        except Exception as e:
+            traceback.print_exc()
+            result = {"pass": False, "fails": ["build error: %s" % e], "metrics": {}}
+        if result["pass"] or attempt > STANDARDS["minimum_acceptable"]["max_retries"] or not correct(order, result):
+            break
+    order["status"] = "shipped" if result["pass"] else "needs_person"
+    order["attempts"] = attempt
+    save_order(order)
+    srcs = glob.glob(os.path.join(SRC, order.get("views_folder", "-"), "*.png"))
+    ledger({"op": "build", "name": order["name"], "line": order["line"], "pass": result["pass"],
+            "attempts": attempt, "auto": result["pass"] and attempt == 1, "seconds": round(time.time() - t0, 1),
+            "fails": result["fails"], "metrics": result["metrics"],
+            "input_hash": file_hash(srcs + [os.path.join(ORDERS, order["name"] + ".json")]),
+            "output_hash": file_hash([os.path.join(LIB, order["name"], order["name"] + ".glb")]),
+            # Reproducibility is judged on the gauges, not bytes: Blender's UV packer is not
+            # deterministic, so GLB bytes differ run to run while the product is the same.
+            "gauge_hash": hashlib.sha1(json.dumps([result["metrics"].get(k) for k in ("tris", "size_m", "silhouette_iou")],
+                                                  sort_keys=True).encode()).hexdigest()[:12]})
+    print("BUILT" if result["pass"] else "FLAGGED", order["name"], result["fails"])
+    return result
+
+
+def mount_of(name):
+    mt = STANDARDS["mounting"]
+    if name in mt["by_name"]:
+        return mt["by_name"][name]
+    tags = json.load(open(os.path.join(LIB, "library.json"))).get(name, {}).get("tags", [])
+    for t, m in mt["by_tag"].items():
+        if t in tags:
+            return m
+    return "floor"
+
+
+def gate(names):
+    for n in names:
+        t0 = time.time()
+        o = load_order(n) or {}
+        vd = os.path.join(SRC, o["views_folder"]) if o.get("views_folder") else None
+        line = o.get("line") or ("painted" if n.startswith(("car_coupe", "can_", "tv_painted", "range_")) else "recipe")
+        try:
+            r = qa.check(n, vd, o.get("class"), tuple(o.get("hull", {}).get("paint_only", ())),
+                         solid=line in STANDARDS["solid_lines"] and n not in STANDARDS["open_by_design"]["names"],
+                         mount=mount_of(n))
+        except Exception as e:
+            r = {"pass": False, "fails": ["qa error: %s" % e], "metrics": {}}
+        ledger({"op": "qa", "name": n, "line": line, "pass": r["pass"], "seconds": round(time.time() - t0, 1),
+                "fails": r["fails"], "metrics": r["metrics"]})
+        print("PASS" if r["pass"] else "FAIL", n, r["fails"])
+
+
+def report():
+    rows = [json.loads(l) for l in open(LEDGER)] if os.path.exists(LEDGER) else []
+    latest = {}
+    for r in rows:
+        latest[(r["op"], r["name"])] = r
+    builds = [r for (op, _), r in latest.items() if op == "build"]
+    reps = {}
+    for r in rows:
+        if r["op"] == "build" and r.get("gauge_hash"):
+            reps.setdefault((r["name"], r["input_hash"]), set()).add(r["gauge_hash"])
+    repeated = [v for v in reps.values()]
+    repro = sum(1 for v in repeated if len(v) == 1)
+    qas = [r for (op, _), r in latest.items() if op == "qa"]
+    assets = {}
+    for r in qas + builds:  # a build result supersedes a gate-only result
+        assets[r["name"]] = r
+    vals = list(assets.values())
+    passed = [r for r in vals if r["pass"]]
+    tris = sorted(r["metrics"].get("tris", 0) for r in vals if r["metrics"].get("tris"))
+    fail_kinds = {}
+    for r in vals:
+        for f in r["fails"]:
+            k = f.split(":")[0].split(" (")[0]
+            k = " ".join(w for w in k.split() if not any(c.isdigit() for c in w))
+            fail_kinds[k] = fail_kinds.get(k, 0) + 1
+    by_line = {}
+    for r in vals:
+        b = by_line.setdefault(r.get("line", "?"), [0, 0])
+        b[0] += 1
+        b[1] += r["pass"]
+    lines = ["# Factory report", "", "Generated from `factory/ledger.jsonl` (latest result per asset).", "",
+             "| Measure | Value |", "| --- | --- |",
+             "| Assets measured | %d |" % len(vals),
+             "| Pass the minimum standard | %d (%.0f%%) |" % (len(passed), 100 * len(passed) / max(len(vals), 1)),
+             "| Factory builds | %d |" % len(builds),
+             "| Factory builds passing with no correction | %d |" % sum(1 for r in builds if r.get("auto")),
+             "| Factory builds needing a person | %d |" % sum(1 for r in builds if not r["pass"]),
+             "| Mean build time (s) | %.0f |" % (sum(r["seconds"] for r in builds) / max(len(builds), 1)),
+             "| Same inputs -> same gauges | %d of %d order/input pairs |" % (repro, len(repeated)),
+             "| Median triangles | %d |" % (tris[len(tris) // 2] if tris else 0),
+             "| Max triangles | %d |" % (tris[-1] if tris else 0), "",
+             "## By production line", "", "| Line | Assets | Passing |", "| --- | --- | --- |"]
+    lines += ["| %s | %d | %d |" % (k, v[0], v[1]) for k, v in sorted(by_line.items())]
+    lines += ["", "## Failure kinds", "", "| Failure | Count |", "| --- | --- |"]
+    lines += ["| %s | %d |" % (k, v) for k, v in sorted(fail_kinds.items(), key=lambda kv: -kv[1])]
+    lines += ["", "## Failing assets", ""]
+    lines += ["- **%s** (%s): %s" % (r["name"], r.get("line", "?"), "; ".join(r["fails"])) for r in vals if not r["pass"]]
+    open(os.path.join(FACT, "REPORT.md"), "w").write("\n".join(lines) + "\n")
+    print("\n".join(lines[:16]))
+
+
+if __name__ == "__main__":
+    a = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
+    cmd, rest = (a[0], a[1:]) if a else ("report", [])
+    if cmd == "intake":
+        kw = {}
+        if "--height" in rest:
+            kw["height"] = float(rest[rest.index("--height") + 1])
+        intake(rest[0], rest[1], rest[rest.index("--category") + 1], **kw)
+    elif cmd == "build":
+        if "--pending" in rest or "--all-orders" in rest:
+            names = [os.path.basename(p)[:-5] for p in sorted(glob.glob(os.path.join(ORDERS, "*.json")))]
+            if "--pending" in rest:
+                names = [n for n in names if load_order(n)["status"] == "pending"]
+        else:
+            names = rest
+        for n in names:
+            build(load_order(n))
+        report()
+    elif cmd == "qa":
+        names = sorted(json.load(open(os.path.join(LIB, "library.json")))) if "--library" in rest else rest
+        gate(names)
+        report()
+    else:
+        report()

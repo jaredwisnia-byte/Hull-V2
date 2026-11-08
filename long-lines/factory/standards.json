@@ -1,0 +1,80 @@
+{
+ "_note": "The factory's gauges. Every asset is built to these and checked against them. Change a number here, not in code.",
+ "conventions": {
+  "units": "metres",
+  "axes": "Blender Z-up, front faces -Y; exported GLB is Y-up, front faces +Z in Godot",
+  "origin": "bottom centre: the object stands on z = 0",
+  "naming": "lowercase <category>_<descriptor>[_<variant>]; pre-factory names are grandfathered",
+  "files": "assets/props/<name>/<name>.glb + _albedo.png + _normal.png + _orm.png (R=1, G=roughness, B=metal)",
+  "brands": "fictional only; every supplied image is reviewed for real marks before building"
+ },
+ "size_classes": {
+  "small": {
+   "max_dim_m": 0.4,
+   "tex": 512,
+   "tri_budget": 6000
+  },
+  "medium": {
+   "max_dim_m": 1.6,
+   "tex": 1024,
+   "tri_budget": 25000
+  },
+  "large": {
+   "max_dim_m": 4.0,
+   "tex": 2048,
+   "tri_budget": 40000
+  },
+  "vehicle": {
+   "max_dim_m": 7.0,
+   "tex": 2048,
+   "tri_budget": 40000
+  },
+  "building": {
+   "max_dim_m": 300,
+   "tex": 2048,
+   "tri_budget": 60000
+  }
+ },
+ "minimum_acceptable": {
+  "_note": "Pass the gate, ship it. Do not polish past these: one automatic retry, then the order is flagged for a person.",
+  "silhouette_iou": 0.8,
+  "floor_tolerance_m": 0.02,
+  "max_hole_fraction": 0.003,
+  "max_backfacing_fraction": 0.05,
+  "texel_density_px_per_m": [
+   120,
+   6000
+  ],
+  "painted_part_min_protrusion": 0.4,
+  "max_retries": 1,
+  "_holes_note": "see-through holes are only checked for solid production lines: chairs and tables have gaps by design"
+ },
+ "mounting": {
+  "_note": "How an object attaches decides the floor check. floor: must stand on z=0. wall/ceiling: origin is the mounting point. Set by tag or by name.",
+  "by_tag": {
+   "wall": "wall",
+   "light": "ceiling"
+  },
+  "by_name": {
+   "phone_wall": "wall",
+   "towel_bar": "wall",
+   "medicine_cabinet": "wall",
+   "switch_plate": "wall",
+   "outlet": "wall",
+   "closet_clothes": "wall",
+   "stair_flight": "top"
+  }
+ },
+ "solid_lines": [
+  "hull",
+  "car",
+  "can",
+  "painted"
+ ],
+ "open_by_design": {
+  "_note": "Objects with intended see-through gaps inside their outline (stands, frames, racks) even on solid lines.",
+  "names": [
+   "tv_painted"
+  ]
+ }
+}

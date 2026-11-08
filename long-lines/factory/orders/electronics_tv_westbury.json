@@ -1,0 +1,29 @@
+{
+ "name": "electronics_tv_westbury",
+ "category": "tv",
+ "line": "hull",
+ "source": "sheet_clean.png",
+ "class": "medium",
+ "assumptions": [
+  "height 0.48 m from category 'tv' (typical period size)",
+  "BRAND CHECK REQUIRED: look at the views for real marks before shipping"
+ ],
+ "status": "shipped",
+ "notes": "",
+ "views_folder": "electronics_tv_westbury",
+ "views": [
+  "front",
+  "right",
+  "back",
+  "left",
+  "top"
+ ],
+ "height_m": 0.48,
+ "hull": {
+  "convex": true,
+  "paint_only": [
+   "back"
+  ]
+ },
+ "attempts": 1
+}
