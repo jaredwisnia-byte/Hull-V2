@@ -56,3 +56,12 @@ add to it whenever something goes wrong.
 - Store tiles as JPEG (quality 90): a fifth of the PNG size, no visible loss.
 - Drive files land in the connected account only (jared.wisnia@gmail.com); downloads come
   back as base64 JSON saved to tool-results files: decode them there, never into context.
+
+## Visual hull (Nov 8)
+- Outlines on dark sheets: dark object parts (screens, back panels) read as background.
+  Fill anything bounded along both its row and column; for boxy objects use `convex=True`;
+  mark unreliable views `paint_only` so they texture without carving.
+- Check each view's mask image before blaming the 3D step (the back view caused the hole).
+- System scipy/skimage only work inside Blender's Python (system numpy is too new);
+  run mask debugging through `blender -b -P script.py`.
+- Small views (~300 px) give soft textures: ask for large views when a prop matters.

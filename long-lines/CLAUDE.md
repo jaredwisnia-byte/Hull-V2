@@ -37,6 +37,10 @@ Build once, reuse everywhere. Do not hand-code one-off geometry in game code.
   them by name (`"floor"`/`"wall"` in `data/apartment.json`); props use them through
   `mats.painted(name)` in recipes. 51 surfaces so far: floors, carpets, ~36 wallpapers,
   furniture materials (`mat_*`).
+- Visual hull: `tools/propkit/hull.py` builds a textured prop from orthographic painted views
+  (front/right/left/back/top). Register one line in `HULLS` (`tools/props/hull_props.py`):
+  views live in `assets/source_textures/<folder>/v_<view>.png`. Free (scipy/skimage via apt).
+  Jared does not want to spend money: no paid image-to-3D services.
 - **Read `docs/LESSONS.md`** before starting; add to it when something goes wrong.
 
 ## How to work here

@@ -2764,6 +2764,31 @@
   "desc": "1975 19-inch 'Westbury' colour TV on a tapered-leg stand, with rabbit ears and a doily.",
   "kind": "fixture"
  },
+ "tv_hull": {
+  "size": [
+   0.6553,
+   0.4801,
+   0.2842
+  ],
+  "min": [
+   -0.3276,
+   -0.0001,
+   -0.1413
+  ],
+  "max": [
+   0.3276,
+   0.4801,
+   0.143
+  ],
+  "tris": 23808,
+  "tex": 2048,
+  "tags": [
+   "electronics",
+   "hull"
+  ],
+  "desc": "The painted 'Westbury' TV rebuilt by visual hull from its five sheet views.",
+  "kind": "fixture"
+ },
  "tv_painted": {
   "size": [
    0.74,
