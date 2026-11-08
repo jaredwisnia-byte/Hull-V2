@@ -2570,6 +2570,84 @@
   "desc": "A round-shouldered 1950s refrigerator, cream enamel gone yellow, chrome lever handle.",
   "kind": "container"
  },
+ "fridge_avocado_atlas": {
+  "size": [
+   0.6551,
+   1.603,
+   0.745
+  ],
+  "min": [
+   -0.3276,
+   -0.0,
+   -0.723
+  ],
+  "max": [
+   0.3276,
+   1.603,
+   0.022
+  ],
+  "tris": 1316,
+  "tex": 1024,
+  "standardized": [],
+  "tags": [
+   "fridge_atlas",
+   "factory"
+  ],
+  "desc": "Avocado single-door refrigerator",
+  "kind": "static"
+ },
+ "fridge_avocado_sxs": {
+  "size": [
+   0.916,
+   1.703,
+   0.745
+  ],
+  "min": [
+   -0.458,
+   0.0,
+   -0.723
+  ],
+  "max": [
+   0.458,
+   1.703,
+   0.022
+  ],
+  "tris": 1504,
+  "tex": 1024,
+  "standardized": [],
+  "tags": [
+   "fridge_atlas",
+   "factory"
+  ],
+  "desc": "Avocado side-by-side refrigerator with water dispenser",
+  "kind": "static"
+ },
+ "fridge_cream_atlas": {
+  "size": [
+   0.5542,
+   1.603,
+   0.745
+  ],
+  "min": [
+   -0.2771,
+   0.0,
+   -0.723
+  ],
+  "max": [
+   0.2771,
+   1.603,
+   0.022
+  ],
+  "tris": 1316,
+  "tex": 1024,
+  "standardized": [],
+  "tags": [
+   "fridge_atlas",
+   "factory"
+  ],
+  "desc": "Cream top-freezer refrigerator",
+  "kind": "static"
+ },
  "frying_pan": {
   "size": [
    0.4095,
@@ -2619,6 +2697,34 @@
   ],
   "desc": "A 1950s apartment gas range with a clock in the back panel and a towel on the oven door.",
   "kind": "fixture"
+ },
+ "hood_harvest_gold": {
+  "size": [
+   0.8525,
+   0.181,
+   0.52
+  ],
+  "min": [
+   -0.4263,
+   0.0,
+   -0.498
+  ],
+  "max": [
+   0.4263,
+   0.181,
+   0.022
+  ],
+  "tris": 940,
+  "tex": 1024,
+  "standardized": [
+   "seated on floor (-0.002 m)"
+  ],
+  "tags": [
+   "range_hood",
+   "factory"
+  ],
+  "desc": "Harvest gold range hood (under-cabinet)",
+  "kind": "static"
  },
  "lamp_floor": {
   "size": [

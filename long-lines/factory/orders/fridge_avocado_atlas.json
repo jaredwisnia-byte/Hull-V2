@@ -16,10 +16,20 @@
  "source": "appl_8.png",
  "class": null,
  "views_folder": "fridge_avocado_atlas",
- "status": "pending",
+ "status": "shipped",
  "assumptions": [
   "height 1.60 m from category 'fridge_atlas'"
  ],
  "height_m": 1.6,
- "cat_depth_m": 0.72
+ "cat_depth_m": 0.72,
+ "measured": {
+  "width_m": 0.649,
+  "depth_m": 0.72,
+  "height_m": 1.6,
+  "panels": [
+   0
+  ],
+  "knobs": []
+ },
+ "attempts": 1
 }

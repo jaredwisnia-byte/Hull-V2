@@ -19,9 +19,20 @@
  "source": "appl_2.png",
  "class": null,
  "views_folder": "fridge_avocado_sxs",
- "status": "pending",
+ "status": "shipped",
  "assumptions": [
   "height 1.70 m from category 'fridge_atlas'"
  ],
- "cat_depth_m": 0.72
+ "cat_depth_m": 0.72,
+ "measured": {
+  "width_m": 0.91,
+  "depth_m": 0.72,
+  "height_m": 1.7,
+  "panels": [
+   0,
+   1
+  ],
+  "knobs": []
+ },
+ "attempts": 1
 }

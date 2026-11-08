@@ -16,10 +16,20 @@
  "source": "appl_9.png",
  "class": "medium",
  "views_folder": "hood_harvest_gold",
- "status": "pending",
+ "status": "shipped",
  "assumptions": [
   "height 0.18 m from category 'range_hood'"
  ],
  "height_m": 0.18,
- "cat_depth_m": 0.5
+ "cat_depth_m": 0.5,
+ "measured": {
+  "width_m": 0.847,
+  "depth_m": 0.5,
+  "height_m": 0.18,
+  "panels": [
+   5
+  ],
+  "knobs": []
+ },
+ "attempts": 1
 }
