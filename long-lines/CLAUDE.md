@@ -32,6 +32,11 @@ Build once, reuse everywhere. Do not hand-code one-off geometry in game code.
   are one line in `CARS` (`tools/props/cars_painted.py`), cans one line in `goods_painted.py`.
 - Wall materials: any tiling image becomes a wall finish via a palette entry with pattern 13
   in `scripts/world/geo.gd`; the shader layers grime, cracks, peeling and stains on top.
+- Surfaces: `tools/make_tiles.py tools/tile_specs/<batch>.json` turns painted images into
+  seamless tiles in `assets/surfaces/` and registers them in `data/surfaces.json`. Rooms use
+  them by name (`"floor"`/`"wall"` in `data/apartment.json`); props use them through
+  `mats.painted(name)` in recipes. 51 surfaces so far: floors, carpets, ~36 wallpapers,
+  furniture materials (`mat_*`).
 - **Read `docs/LESSONS.md`** before starting; add to it when something goes wrong.
 
 ## How to work here

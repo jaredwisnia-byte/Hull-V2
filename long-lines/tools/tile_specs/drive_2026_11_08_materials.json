@@ -1,0 +1,12 @@
+{
+ "_note": "Furniture materials cut from the large clean panels of Jared's painted furniture sheets (Nov 8 2026). Used by propkit mats.painted().",
+ "source_dir": "/tmp/claude-0/-home-user-claude/8fad63a4-1d51-5675-8629-973c02b37fcb/scratchpad/drive",
+ "surfaces": {
+  "mat_upholstery_orange": {"src": "ChatGPT_Image_Nov_8_2026_11_24_02_AM-1.png", "box": [40, 30, 770, 190], "kind": "material", "repeat_m": 0.8},
+  "mat_leather_tan": {"src": "ChatGPT_Image_Nov_8_2026_11_24_02_AM-1.png", "box": [40, 445, 320, 585], "kind": "material", "repeat_m": 0.5},
+  "mat_burlap": {"src": "ChatGPT_Image_Nov_8_2026_11_24_02_AM-1.png", "box": [50, 750, 760, 880], "kind": "material", "repeat_m": 0.6},
+  "mat_wood_honey": {"src": "ChatGPT_Image_Nov_8_2026_11_24_06_AM-8.png", "box": [34, 40, 222, 650], "kind": "material", "repeat_m": 0.6},
+  "mat_wood_plank": {"src": "ChatGPT_Image_Nov_8_2026_11_24_06_AM-8.png", "box": [470, 186, 1100, 276], "kind": "material", "repeat_m": 0.6},
+  "mat_wood_walnut": {"src": "ChatGPT_Image_Nov_8_2026_11_24_06_AM-8.png", "box": [1136, 30, 1420, 650], "kind": "material", "repeat_m": 0.7}
+ }
+}

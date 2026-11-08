@@ -47,3 +47,12 @@ add to it whenever something goes wrong.
   floating wheels.
 - Rebuilding props: change shared parts (`propkit/parts.py`) rather than patching recipes,
   so every prop using the part improves at once.
+
+## Tiles and surfaces (Nov 8)
+- Painted organic tiles (wallpaper, wood, carpet) are made seamless by edge cross-fading;
+  regular grids (checkerboards, tile) must not be blended: crop a whole number of repeats,
+  measured from per-row autocorrelation (averaging rows first cancels a checkerboard).
+- Wide AI strips (2172x724) usually hold three variants side by side: crop one.
+- Store tiles as JPEG (quality 90): a fifth of the PNG size, no visible loss.
+- Drive files land in the connected account only (jared.wisnia@gmail.com); downloads come
+  back as base64 JSON saved to tool-results files: decode them there, never into context.

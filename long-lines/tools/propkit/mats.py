@@ -312,3 +312,31 @@ def cardboard():
     n = noise(nt, 30.0, detail=6)
     base = mix(nt, m_(nt, "MULTIPLY", n, 0.4), (0.5, 0.36, 0.2), (0.36, 0.25, 0.13))
     return register("cardboard", m, bsdf, out, weathered(nt, base, 0.15, 0.5, 0.25), 0.9, 0.0, bump(nt, n, 0.1))
+
+
+SURFACES = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", "assets", "surfaces"))
+
+
+def painted(name, repeat_m=None, rough=0.6, edge=0.2, grime=0.4, dust=0.15, metal_v=0.0):
+    """A painted surface tile (assets/surfaces/<name>.png, made by tools/make_tiles.py)
+    wrapped onto any shape with box projection, plus the shared weathering. The same
+    tiles dress walls and floors in the game, so props and rooms share one look."""
+    key = "painted_%s_%s" % (name, repeat_m)
+    if _cached(key):
+        return _cached(key)
+    import json
+    cat = json.load(open(os.path.join(SURFACES, "..", "..", "data", "surfaces.json")))
+    rep = repeat_m or float(cat.get(name, {}).get("repeat_m", 0.6))
+    m, nt, bsdf, out = _new(key)
+    tc = nt.nodes.new("ShaderNodeTexCoord")
+    mp = nt.nodes.new("ShaderNodeMapping")
+    mp.inputs["Scale"].default_value = (1 / rep, 1 / rep, 1 / rep)
+    nt.links.new(tc.outputs["Object"], mp.inputs["Vector"])
+    img = nt.nodes.new("ShaderNodeTexImage")
+    fn = os.path.basename(cat.get(name, {}).get("file", name + ".jpg"))
+    img.image = bpy.data.images.load(os.path.join(SURFACES, fn), check_existing=True)
+    img.projection = "BOX"
+    img.projection_blend = 0.25
+    nt.links.new(mp.outputs["Vector"], img.inputs["Vector"])
+    col = weathered(nt, img.outputs["Color"], edge, grime, dust)
+    return register(key, m, bsdf, out, col, rough, metal_v, bump(nt, img.outputs["Color"], 0.12))

@@ -97,6 +97,20 @@ static func mat(name: String) -> Material:
 		return _cache[name]
 	var m := ShaderMaterial.new()
 	m.shader = PAINT
+	var surf: Dictionary = surfaces().get(name, {})
+	if not surf.is_empty() and not PALETTE.has(name):
+		# A painted surface from data/surfaces.json (made by tools/make_tiles.py).
+		m.set_shader_parameter("pattern", 13)
+		m.set_shader_parameter("albedo", Color(1, 1, 1))
+		m.set_shader_parameter("albedo2", Color(1, 1, 1))
+		m.set_shader_parameter("scale", 1.0 / float(surf.get("repeat_m", 1.0)))
+		m.set_shader_parameter("grain", 0.03)
+		m.set_shader_parameter("tex_img", load(String(surf.file)))
+		var wear: Dictionary = surf.get("wear", {})
+		for k in wear:
+			m.set_shader_parameter(k, wear[k])
+		_cache[name] = m
+		return m
 	var p: Array = PALETTE.get(name, PALETTE["plaster_cream"])
 	m.set_shader_parameter("albedo", p[0])
 	m.set_shader_parameter("albedo2", p[1])
@@ -111,6 +125,19 @@ static func mat(name: String) -> Material:
 			m.set_shader_parameter(k, extra[k])
 	_cache[name] = m
 	return m
+
+
+static var _surfaces := {}
+
+
+## The painted surface catalogue (data/surfaces.json): floors, walls, carpets.
+static func surfaces() -> Dictionary:
+	if _surfaces.is_empty() and FileAccess.file_exists("res://data/surfaces.json"):
+		var f := FileAccess.open("res://data/surfaces.json", FileAccess.READ)
+		var parsed: Variant = JSON.parse_string(f.get_as_text())
+		if typeof(parsed) == TYPE_DICTIONARY:
+			_surfaces = parsed
+	return _surfaces
 
 
 static func emissive(color: Color, energy: float) -> Material:

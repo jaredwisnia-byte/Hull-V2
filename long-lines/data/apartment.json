@@ -11,31 +11,31 @@
    "name": "Front room",
    "z0": 0.0,
    "z1": 3.95,
-   "floor": "boards",
-   "wall": "wallpaper_teardrop"
+   "floor": "floor_parquet_oak",
+   "wall": "wall_retro_wave"
   },
   {
    "id": "office",
    "name": "Office",
    "z0": 4.05,
    "z1": 6.25,
-   "floor": "boards",
-   "wall": "plaster_office"
+   "floor": "floor_planks_honey_oak",
+   "wall": "wall_leaf_cream"
   },
   {
    "id": "bedroom",
    "name": "Bedroom",
    "z0": 6.35,
    "z1": 9.15,
-   "floor": "boards",
-   "wall": "wall_blue"
+   "floor": "floor_boards_honey",
+   "wall": "wall_floral_mustard"
   },
   {
    "id": "kitchen",
    "name": "Kitchen",
    "z0": 9.25,
    "z1": 12.75,
-   "floor": "linoleum_oct",
+   "floor": "floor_lino_olive_geo",
    "wall": "plaster_kitchen",
    "wainscot": {
     "material": "tile_gold",
@@ -50,8 +50,8 @@
    "x1": 3.4,
    "z0": 8.5,
    "z1": 9.15,
-   "floor": "boards",
-   "wall": "plaster_office"
+   "floor": "floor_boards_honey",
+   "wall": "wall_leaf_cream"
   },
   {
    "id": "bath",
@@ -60,7 +60,7 @@
    "x1": 3.4,
    "z0": 11.65,
    "z1": 12.75,
-   "floor": "tile_hex",
+   "floor": "floor_check_mustard",
    "wall": "plaster_kitchen",
    "wainscot": {
     "material": "tile_bath",

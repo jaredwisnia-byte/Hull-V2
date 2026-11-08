@@ -1,0 +1,166 @@
+{
+ "_note": "Jared's Drive folder 'Long Dark Style Game', Nov 8 2026: painted floors and wallpapers. Wide strips (2172x724) hold three variants side by side; the box takes the first.",
+ "source_dir": "/tmp/claude-0/-home-user-claude/8fad63a4-1d51-5675-8629-973c02b37fcb/scratchpad/drive",
+ "surfaces": {
+  "floor_parquet_oak": {
+   "src": "Aged_Golden_Oak_Parquet_Flooring-6.png",
+   "kind": "floor",
+   "repeat_m": 1.2
+  },
+  "floor_boards_honey": {
+   "src": "Aged_Honey-Brown_Wooden_Floor_Texture-5.png",
+   "kind": "floor",
+   "repeat_m": 1.4
+  },
+  "floor_terrazzo_warm": {
+   "src": "Aged_Warm_Terrazzo_Flooring-11.png",
+   "kind": "floor",
+   "repeat_m": 1.0
+  },
+  "floor_lino_olive_geo": {
+   "src": "Vintage_Olive_Geometric_Linoleum_Texture-8.png",
+   "kind": "floor",
+   "repeat_m": 1.2,
+   "periodic": true
+  },
+  "floor_check_teal": {
+   "src": "Vintage_Teal_and_Cream_Checkerboard_Floor-15.png",
+   "kind": "floor",
+   "repeat_m": 1.2,
+   "periodic": true
+  },
+  "floor_terrazzo_cream": {
+   "src": "Weathered_Cream_Terrazzo_Vinyl_Texture-9.png",
+   "kind": "floor",
+   "repeat_m": 1.0
+  },
+  "floor_planks_honey_oak": {
+   "src": "Weathered_Honey_Oak_Plank_Flooring-4.png",
+   "box": [
+    0,
+    0,
+    724,
+    724
+   ],
+   "kind": "floor",
+   "repeat_m": 1.0
+  },
+  "floor_terracotta": {
+   "src": "Weathered_Terracotta_Tile_Grid-14.png",
+   "kind": "floor",
+   "repeat_m": 0.9,
+   "periodic": true
+  },
+  "floor_carpet_beige": {
+   "src": "Worn_Beige_Loop-Pile_Carpet_Texture-3.png",
+   "kind": "carpet",
+   "repeat_m": 0.8
+  },
+  "floor_carpet_beige_2": {
+   "src": "Worn_Beige_Loop_Carpet_Texture-1.png",
+   "box": [
+    0,
+    0,
+    887,
+    887
+   ],
+   "kind": "carpet",
+   "repeat_m": 0.8
+  },
+  "floor_herringbone": {
+   "src": "Worn_Herringbone_Wood_Floor_Texture-7.png",
+   "box": [
+    0,
+    0,
+    724,
+    724
+   ],
+   "kind": "floor",
+   "repeat_m": 1.0
+  },
+  "floor_check_olive": {
+   "src": "Worn_Olive_and_Cream_Checkerboard_Tiles-12.png",
+   "kind": "floor",
+   "repeat_m": 0.9,
+   "periodic": true,
+   "box": [
+    0,
+    0,
+    724,
+    724
+   ]
+  },
+  "floor_carpet_brown": {
+   "src": "Worn_Vintage_Brown_Loop-Pile_Carpet_Texture-2.png",
+   "kind": "carpet",
+   "repeat_m": 0.8
+  },
+  "floor_check_mustard": {
+   "src": "Worn_Vintage_Checkerboard_Tile_Texture-13.png",
+   "kind": "floor",
+   "repeat_m": 1.2,
+   "periodic": true
+  },
+  "floor_lino_cream": {
+   "src": "Worn_Vintage_Linoleum_Floor_Texture-10.png",
+   "box": [
+    0,
+    0,
+    724,
+    724
+   ],
+   "kind": "floor",
+   "repeat_m": 1.0
+  },
+  "wall_retro_wave": {
+   "src": "Distressed_1970s_Retro_Wave_Wallpaper-1.png",
+   "kind": "wall",
+   "repeat_m": 0.9
+  },
+  "wall_atomic": {
+   "src": "Distressed_Mid-Century_Atomic_Boomerangs-7.png",
+   "kind": "wall",
+   "repeat_m": 0.9
+  },
+  "wall_floral_orange": {
+   "src": "Vintage_1970s_Floral_Wallpaper_Pattern-3.png",
+   "kind": "wall",
+   "repeat_m": 0.9
+  },
+  "wall_leaf_cream": {
+   "src": "Vintage_Mid-Century_Leaf_Wallpaper-8.png",
+   "kind": "wall",
+   "repeat_m": 0.7
+  },
+  "wall_floral_mustard": {
+   "src": "Vintage_Mustard_Floral_Wallpaper-5.png",
+   "kind": "wall",
+   "repeat_m": 0.7
+  },
+  "wall_swirl": {
+   "src": "Worn_Retro_Psychedelic_Swirl_Wallpaper-6.png",
+   "kind": "wall",
+   "repeat_m": 0.9
+  },
+  "wall_sample": {
+   "src": "Vintage_Retro_Wallpaper_Sample_Grid-4.png",
+   "kind": "wall",
+   "repeat_m": 0.6,
+   "grid": [
+    5,
+    3,
+    0.06
+   ]
+  },
+  "wall_swatch": {
+   "src": "Vintage_Wallpaper_Swatch_Board-2.png",
+   "kind": "wall",
+   "repeat_m": 0.6,
+   "grid": [
+    5,
+    3,
+    0.06
+   ]
+  }
+ }
+}

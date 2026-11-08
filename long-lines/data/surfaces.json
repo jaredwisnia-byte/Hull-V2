@@ -1,0 +1,602 @@
+{
+ "floor_boards_honey": {
+  "file": "res://assets/surfaces/floor_boards_honey.jpg",
+  "kind": "floor",
+  "repeat_m": 1.4,
+  "wear": {
+   "grime": 0.45
+  }
+ },
+ "floor_carpet_beige": {
+  "file": "res://assets/surfaces/floor_carpet_beige.jpg",
+  "kind": "carpet",
+  "repeat_m": 0.8,
+  "wear": {
+   "grime": 0.55
+  }
+ },
+ "floor_carpet_beige_2": {
+  "file": "res://assets/surfaces/floor_carpet_beige_2.jpg",
+  "kind": "carpet",
+  "repeat_m": 0.8,
+  "wear": {
+   "grime": 0.55
+  }
+ },
+ "floor_carpet_brown": {
+  "file": "res://assets/surfaces/floor_carpet_brown.jpg",
+  "kind": "carpet",
+  "repeat_m": 0.8,
+  "wear": {
+   "grime": 0.55
+  }
+ },
+ "floor_check_mustard": {
+  "file": "res://assets/surfaces/floor_check_mustard.jpg",
+  "kind": "floor",
+  "repeat_m": 1.2,
+  "wear": {
+   "grime": 0.45
+  }
+ },
+ "floor_check_olive": {
+  "file": "res://assets/surfaces/floor_check_olive.jpg",
+  "kind": "floor",
+  "repeat_m": 0.9,
+  "wear": {
+   "grime": 0.45
+  }
+ },
+ "floor_check_teal": {
+  "file": "res://assets/surfaces/floor_check_teal.jpg",
+  "kind": "floor",
+  "repeat_m": 1.2,
+  "wear": {
+   "grime": 0.45
+  }
+ },
+ "floor_herringbone": {
+  "file": "res://assets/surfaces/floor_herringbone.jpg",
+  "kind": "floor",
+  "repeat_m": 1.0,
+  "wear": {
+   "grime": 0.45
+  }
+ },
+ "floor_lino_cream": {
+  "file": "res://assets/surfaces/floor_lino_cream.jpg",
+  "kind": "floor",
+  "repeat_m": 1.0,
+  "wear": {
+   "grime": 0.45
+  }
+ },
+ "floor_lino_olive_geo": {
+  "file": "res://assets/surfaces/floor_lino_olive_geo.jpg",
+  "kind": "floor",
+  "repeat_m": 1.2,
+  "wear": {
+   "grime": 0.45
+  }
+ },
+ "floor_parquet_oak": {
+  "file": "res://assets/surfaces/floor_parquet_oak.jpg",
+  "kind": "floor",
+  "repeat_m": 1.2,
+  "wear": {
+   "grime": 0.45
+  }
+ },
+ "floor_planks_honey_oak": {
+  "file": "res://assets/surfaces/floor_planks_honey_oak.jpg",
+  "kind": "floor",
+  "repeat_m": 1.0,
+  "wear": {
+   "grime": 0.45
+  }
+ },
+ "floor_terracotta": {
+  "file": "res://assets/surfaces/floor_terracotta.jpg",
+  "kind": "floor",
+  "repeat_m": 0.9,
+  "wear": {
+   "grime": 0.45
+  }
+ },
+ "floor_terrazzo_cream": {
+  "file": "res://assets/surfaces/floor_terrazzo_cream.jpg",
+  "kind": "floor",
+  "repeat_m": 1.0,
+  "wear": {
+   "grime": 0.45
+  }
+ },
+ "floor_terrazzo_warm": {
+  "file": "res://assets/surfaces/floor_terrazzo_warm.jpg",
+  "kind": "floor",
+  "repeat_m": 1.0,
+  "wear": {
+   "grime": 0.45
+  }
+ },
+ "mat_burlap": {
+  "file": "res://assets/surfaces/mat_burlap.jpg",
+  "kind": "material",
+  "repeat_m": 0.6,
+  "wear": {
+   "grime": 0.45
+  }
+ },
+ "mat_leather_tan": {
+  "file": "res://assets/surfaces/mat_leather_tan.jpg",
+  "kind": "material",
+  "repeat_m": 0.5,
+  "wear": {
+   "grime": 0.45
+  }
+ },
+ "mat_upholstery_orange": {
+  "file": "res://assets/surfaces/mat_upholstery_orange.jpg",
+  "kind": "material",
+  "repeat_m": 0.8,
+  "wear": {
+   "grime": 0.45
+  }
+ },
+ "mat_wood_honey": {
+  "file": "res://assets/surfaces/mat_wood_honey.jpg",
+  "kind": "material",
+  "repeat_m": 0.6,
+  "wear": {
+   "grime": 0.45
+  }
+ },
+ "mat_wood_plank": {
+  "file": "res://assets/surfaces/mat_wood_plank.jpg",
+  "kind": "material",
+  "repeat_m": 0.6,
+  "wear": {
+   "grime": 0.45
+  }
+ },
+ "mat_wood_walnut": {
+  "file": "res://assets/surfaces/mat_wood_walnut.jpg",
+  "kind": "material",
+  "repeat_m": 0.7,
+  "wear": {
+   "grime": 0.45
+  }
+ },
+ "wall_atomic": {
+  "file": "res://assets/surfaces/wall_atomic.jpg",
+  "kind": "wall",
+  "repeat_m": 0.9,
+  "wear": {
+   "grime": 0.45,
+   "floor_grime": 0.4,
+   "cracks": 0.35,
+   "peel": 0.45,
+   "stains": 0.45
+  }
+ },
+ "wall_floral_mustard": {
+  "file": "res://assets/surfaces/wall_floral_mustard.jpg",
+  "kind": "wall",
+  "repeat_m": 0.7,
+  "wear": {
+   "grime": 0.45,
+   "floor_grime": 0.4,
+   "cracks": 0.35,
+   "peel": 0.45,
+   "stains": 0.45
+  }
+ },
+ "wall_floral_orange": {
+  "file": "res://assets/surfaces/wall_floral_orange.jpg",
+  "kind": "wall",
+  "repeat_m": 0.9,
+  "wear": {
+   "grime": 0.45,
+   "floor_grime": 0.4,
+   "cracks": 0.35,
+   "peel": 0.45,
+   "stains": 0.45
+  }
+ },
+ "wall_leaf_cream": {
+  "file": "res://assets/surfaces/wall_leaf_cream.jpg",
+  "kind": "wall",
+  "repeat_m": 0.7,
+  "wear": {
+   "grime": 0.45,
+   "floor_grime": 0.4,
+   "cracks": 0.35,
+   "peel": 0.45,
+   "stains": 0.45
+  }
+ },
+ "wall_retro_wave": {
+  "file": "res://assets/surfaces/wall_retro_wave.jpg",
+  "kind": "wall",
+  "repeat_m": 0.9,
+  "wear": {
+   "grime": 0.45,
+   "floor_grime": 0.4,
+   "cracks": 0.35,
+   "peel": 0.45,
+   "stains": 0.45
+  }
+ },
+ "wall_sample_00": {
+  "file": "res://assets/surfaces/wall_sample_00.jpg",
+  "kind": "wall",
+  "repeat_m": 0.6,
+  "wear": {
+   "grime": 0.45,
+   "floor_grime": 0.4,
+   "cracks": 0.35,
+   "peel": 0.45,
+   "stains": 0.45
+  }
+ },
+ "wall_sample_01": {
+  "file": "res://assets/surfaces/wall_sample_01.jpg",
+  "kind": "wall",
+  "repeat_m": 0.6,
+  "wear": {
+   "grime": 0.45,
+   "floor_grime": 0.4,
+   "cracks": 0.35,
+   "peel": 0.45,
+   "stains": 0.45
+  }
+ },
+ "wall_sample_02": {
+  "file": "res://assets/surfaces/wall_sample_02.jpg",
+  "kind": "wall",
+  "repeat_m": 0.6,
+  "wear": {
+   "grime": 0.45,
+   "floor_grime": 0.4,
+   "cracks": 0.35,
+   "peel": 0.45,
+   "stains": 0.45
+  }
+ },
+ "wall_sample_03": {
+  "file": "res://assets/surfaces/wall_sample_03.jpg",
+  "kind": "wall",
+  "repeat_m": 0.6,
+  "wear": {
+   "grime": 0.45,
+   "floor_grime": 0.4,
+   "cracks": 0.35,
+   "peel": 0.45,
+   "stains": 0.45
+  }
+ },
+ "wall_sample_04": {
+  "file": "res://assets/surfaces/wall_sample_04.jpg",
+  "kind": "wall",
+  "repeat_m": 0.6,
+  "wear": {
+   "grime": 0.45,
+   "floor_grime": 0.4,
+   "cracks": 0.35,
+   "peel": 0.45,
+   "stains": 0.45
+  }
+ },
+ "wall_sample_05": {
+  "file": "res://assets/surfaces/wall_sample_05.jpg",
+  "kind": "wall",
+  "repeat_m": 0.6,
+  "wear": {
+   "grime": 0.45,
+   "floor_grime": 0.4,
+   "cracks": 0.35,
+   "peel": 0.45,
+   "stains": 0.45
+  }
+ },
+ "wall_sample_06": {
+  "file": "res://assets/surfaces/wall_sample_06.jpg",
+  "kind": "wall",
+  "repeat_m": 0.6,
+  "wear": {
+   "grime": 0.45,
+   "floor_grime": 0.4,
+   "cracks": 0.35,
+   "peel": 0.45,
+   "stains": 0.45
+  }
+ },
+ "wall_sample_07": {
+  "file": "res://assets/surfaces/wall_sample_07.jpg",
+  "kind": "wall",
+  "repeat_m": 0.6,
+  "wear": {
+   "grime": 0.45,
+   "floor_grime": 0.4,
+   "cracks": 0.35,
+   "peel": 0.45,
+   "stains": 0.45
+  }
+ },
+ "wall_sample_08": {
+  "file": "res://assets/surfaces/wall_sample_08.jpg",
+  "kind": "wall",
+  "repeat_m": 0.6,
+  "wear": {
+   "grime": 0.45,
+   "floor_grime": 0.4,
+   "cracks": 0.35,
+   "peel": 0.45,
+   "stains": 0.45
+  }
+ },
+ "wall_sample_09": {
+  "file": "res://assets/surfaces/wall_sample_09.jpg",
+  "kind": "wall",
+  "repeat_m": 0.6,
+  "wear": {
+   "grime": 0.45,
+   "floor_grime": 0.4,
+   "cracks": 0.35,
+   "peel": 0.45,
+   "stains": 0.45
+  }
+ },
+ "wall_sample_10": {
+  "file": "res://assets/surfaces/wall_sample_10.jpg",
+  "kind": "wall",
+  "repeat_m": 0.6,
+  "wear": {
+   "grime": 0.45,
+   "floor_grime": 0.4,
+   "cracks": 0.35,
+   "peel": 0.45,
+   "stains": 0.45
+  }
+ },
+ "wall_sample_11": {
+  "file": "res://assets/surfaces/wall_sample_11.jpg",
+  "kind": "wall",
+  "repeat_m": 0.6,
+  "wear": {
+   "grime": 0.45,
+   "floor_grime": 0.4,
+   "cracks": 0.35,
+   "peel": 0.45,
+   "stains": 0.45
+  }
+ },
+ "wall_sample_12": {
+  "file": "res://assets/surfaces/wall_sample_12.jpg",
+  "kind": "wall",
+  "repeat_m": 0.6,
+  "wear": {
+   "grime": 0.45,
+   "floor_grime": 0.4,
+   "cracks": 0.35,
+   "peel": 0.45,
+   "stains": 0.45
+  }
+ },
+ "wall_sample_13": {
+  "file": "res://assets/surfaces/wall_sample_13.jpg",
+  "kind": "wall",
+  "repeat_m": 0.6,
+  "wear": {
+   "grime": 0.45,
+   "floor_grime": 0.4,
+   "cracks": 0.35,
+   "peel": 0.45,
+   "stains": 0.45
+  }
+ },
+ "wall_sample_14": {
+  "file": "res://assets/surfaces/wall_sample_14.jpg",
+  "kind": "wall",
+  "repeat_m": 0.6,
+  "wear": {
+   "grime": 0.45,
+   "floor_grime": 0.4,
+   "cracks": 0.35,
+   "peel": 0.45,
+   "stains": 0.45
+  }
+ },
+ "wall_swatch_00": {
+  "file": "res://assets/surfaces/wall_swatch_00.jpg",
+  "kind": "wall",
+  "repeat_m": 0.6,
+  "wear": {
+   "grime": 0.45,
+   "floor_grime": 0.4,
+   "cracks": 0.35,
+   "peel": 0.45,
+   "stains": 0.45
+  }
+ },
+ "wall_swatch_01": {
+  "file": "res://assets/surfaces/wall_swatch_01.jpg",
+  "kind": "wall",
+  "repeat_m": 0.6,
+  "wear": {
+   "grime": 0.45,
+   "floor_grime": 0.4,
+   "cracks": 0.35,
+   "peel": 0.45,
+   "stains": 0.45
+  }
+ },
+ "wall_swatch_02": {
+  "file": "res://assets/surfaces/wall_swatch_02.jpg",
+  "kind": "wall",
+  "repeat_m": 0.6,
+  "wear": {
+   "grime": 0.45,
+   "floor_grime": 0.4,
+   "cracks": 0.35,
+   "peel": 0.45,
+   "stains": 0.45
+  }
+ },
+ "wall_swatch_03": {
+  "file": "res://assets/surfaces/wall_swatch_03.jpg",
+  "kind": "wall",
+  "repeat_m": 0.6,
+  "wear": {
+   "grime": 0.45,
+   "floor_grime": 0.4,
+   "cracks": 0.35,
+   "peel": 0.45,
+   "stains": 0.45
+  }
+ },
+ "wall_swatch_04": {
+  "file": "res://assets/surfaces/wall_swatch_04.jpg",
+  "kind": "wall",
+  "repeat_m": 0.6,
+  "wear": {
+   "grime": 0.45,
+   "floor_grime": 0.4,
+   "cracks": 0.35,
+   "peel": 0.45,
+   "stains": 0.45
+  }
+ },
+ "wall_swatch_05": {
+  "file": "res://assets/surfaces/wall_swatch_05.jpg",
+  "kind": "wall",
+  "repeat_m": 0.6,
+  "wear": {
+   "grime": 0.45,
+   "floor_grime": 0.4,
+   "cracks": 0.35,
+   "peel": 0.45,
+   "stains": 0.45
+  }
+ },
+ "wall_swatch_06": {
+  "file": "res://assets/surfaces/wall_swatch_06.jpg",
+  "kind": "wall",
+  "repeat_m": 0.6,
+  "wear": {
+   "grime": 0.45,
+   "floor_grime": 0.4,
+   "cracks": 0.35,
+   "peel": 0.45,
+   "stains": 0.45
+  }
+ },
+ "wall_swatch_07": {
+  "file": "res://assets/surfaces/wall_swatch_07.jpg",
+  "kind": "wall",
+  "repeat_m": 0.6,
+  "wear": {
+   "grime": 0.45,
+   "floor_grime": 0.4,
+   "cracks": 0.35,
+   "peel": 0.45,
+   "stains": 0.45
+  }
+ },
+ "wall_swatch_08": {
+  "file": "res://assets/surfaces/wall_swatch_08.jpg",
+  "kind": "wall",
+  "repeat_m": 0.6,
+  "wear": {
+   "grime": 0.45,
+   "floor_grime": 0.4,
+   "cracks": 0.35,
+   "peel": 0.45,
+   "stains": 0.45
+  }
+ },
+ "wall_swatch_09": {
+  "file": "res://assets/surfaces/wall_swatch_09.jpg",
+  "kind": "wall",
+  "repeat_m": 0.6,
+  "wear": {
+   "grime": 0.45,
+   "floor_grime": 0.4,
+   "cracks": 0.35,
+   "peel": 0.45,
+   "stains": 0.45
+  }
+ },
+ "wall_swatch_10": {
+  "file": "res://assets/surfaces/wall_swatch_10.jpg",
+  "kind": "wall",
+  "repeat_m": 0.6,
+  "wear": {
+   "grime": 0.45,
+   "floor_grime": 0.4,
+   "cracks": 0.35,
+   "peel": 0.45,
+   "stains": 0.45
+  }
+ },
+ "wall_swatch_11": {
+  "file": "res://assets/surfaces/wall_swatch_11.jpg",
+  "kind": "wall",
+  "repeat_m": 0.6,
+  "wear": {
+   "grime": 0.45,
+   "floor_grime": 0.4,
+   "cracks": 0.35,
+   "peel": 0.45,
+   "stains": 0.45
+  }
+ },
+ "wall_swatch_12": {
+  "file": "res://assets/surfaces/wall_swatch_12.jpg",
+  "kind": "wall",
+  "repeat_m": 0.6,
+  "wear": {
+   "grime": 0.45,
+   "floor_grime": 0.4,
+   "cracks": 0.35,
+   "peel": 0.45,
+   "stains": 0.45
+  }
+ },
+ "wall_swatch_13": {
+  "file": "res://assets/surfaces/wall_swatch_13.jpg",
+  "kind": "wall",
+  "repeat_m": 0.6,
+  "wear": {
+   "grime": 0.45,
+   "floor_grime": 0.4,
+   "cracks": 0.35,
+   "peel": 0.45,
+   "stains": 0.45
+  }
+ },
+ "wall_swatch_14": {
+  "file": "res://assets/surfaces/wall_swatch_14.jpg",
+  "kind": "wall",
+  "repeat_m": 0.6,
+  "wear": {
+   "grime": 0.45,
+   "floor_grime": 0.4,
+   "cracks": 0.35,
+   "peel": 0.45,
+   "stains": 0.45
+  }
+ },
+ "wall_swirl": {
+  "file": "res://assets/surfaces/wall_swirl.jpg",
+  "kind": "wall",
+  "repeat_m": 0.9,
+  "wear": {
+   "grime": 0.45,
+   "floor_grime": 0.4,
+   "cracks": 0.35,
+   "peel": 0.45,
+   "stains": 0.45
+  }
+ }
+}

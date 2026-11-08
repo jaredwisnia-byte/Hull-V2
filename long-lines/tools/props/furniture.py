@@ -35,8 +35,8 @@ def drawer_front(w, h, x, z, y, mat, pull, knob=False):
 @prop("sofa_plaid", tex=2048, tags=["furniture", "living"])
 def sofa_plaid():
     """A 1970s plaid three-seat sofa on stubby legs, cushions sagging, an afghan over the back."""
-    plaid = M.fabric((0.42, 0.26, 0.12), (0.22, 0.14, 0.08), "plaid", 9)
-    wood = M.wood("walnut")
+    plaid = M.painted("mat_upholstery_orange", rough=0.9, edge=0.05)
+    wood = M.painted("mat_wood_walnut", rough=0.45)
     W, D = 2.0, 0.88
     floor_box((W - 0.1, D - 0.1, 0.22), z=0.1, mat=plaid, bevel=0.03)
     for x in (-0.86, 0.86):
@@ -56,8 +56,8 @@ def sofa_plaid():
 @prop("armchair_vinyl", tex=1024, tags=["furniture", "living"])
 def armchair_vinyl():
     """A brown vinyl club chair, the arms worn pale where hands went."""
-    vinyl = M.plain((0.2, 0.1, 0.05), 0.32, edge=0.6, grime=0.5, dust=0.1)
-    wood = M.wood("walnut")
+    vinyl = M.painted("mat_leather_tan", rough=0.4, edge=0.5, grime=0.5, dust=0.1)
+    wood = M.painted("mat_wood_walnut", rough=0.45)
     floor_box((0.74, 0.74, 0.26), z=0.1, mat=vinyl, bevel=0.04)
     sag(cushion((0.52, 0.6, 0.13), (0, -0.04, 0.42), vinyl, puff=0.15), 0.02)
     cushion((0.56, 0.2, 0.5), (0, 0.29, 0.66), vinyl, puff=0.12, rot=(math.radians(-10), 0, 0))
@@ -71,7 +71,7 @@ def armchair_vinyl():
 @prop("coffee_table", tex=1024, tags=["furniture", "living"])
 def coffee_table():
     """A walnut mid-century coffee table with a magazine shelf, rings on the top."""
-    wood = M.wood("walnut", "X")
+    wood = M.painted("mat_wood_walnut", rough=0.4)
     floor_box((1.1, 0.52, 0.035), z=0.37, mat=wood, bevel=0.012)
     floor_box((0.98, 0.42, 0.018), z=0.12, mat=wood, bevel=0.004)
     for x in (-0.48, 0.48):
@@ -85,7 +85,7 @@ def coffee_table():
 @prop("side_table", tex=512, tags=["furniture", "living"])
 def side_table():
     """A small walnut end table with a drawer."""
-    wood, brass = M.wood("walnut", "X"), M.brass()
+    wood, brass = M.painted("mat_wood_walnut", rough=0.4), M.brass()
     floor_box((0.45, 0.45, 0.03), z=0.55, mat=wood, bevel=0.008)
     floor_box((0.4, 0.4, 0.1), z=0.45, mat=wood, bevel=0.004)
     drawer_front(0.34, 0.07, 0, 0.5, -0.2, wood, brass, knob=True)
@@ -98,7 +98,7 @@ def side_table():
 @prop("bookcase", tex=2048, tags=["furniture", "living", "office"])
 def bookcase():
     """An oak bookcase, crammed: novels, a baseball almanac, an atlas, a souvenir or two."""
-    wood = M.wood("oak", "Y")
+    wood = M.painted("mat_wood_honey", rough=0.5)
     W, D, H = 0.9, 0.3, 1.8
     for x in (-W / 2 + 0.01, W / 2 - 0.01):
         floor_box((0.02, D, H), x=x, mat=wood, bevel=0.003)
@@ -131,7 +131,7 @@ def bookcase():
 @prop("bed_double", tex=2048, tags=["furniture", "bedroom"])
 def bed_double():
     """A maple spindle double bed, unmade: chenille spread kicked back, two dented pillows."""
-    maple = M.wood("maple", "X")
+    maple = M.painted("mat_wood_honey", rough=0.45)
     spread = M.fabric((0.82, 0.62, 0.62), (0.92, 0.88, 0.78), "chenille", 18)
     sheet = M.plain((0.88, 0.86, 0.8), 0.9, edge=0, grime=0.3)
     W, Lg = 1.37, 1.95
@@ -163,7 +163,7 @@ def bed_double():
 @prop("nightstand", tex=512, tags=["furniture", "bedroom"])
 def nightstand():
     """A maple nightstand with one drawer and an open shelf."""
-    maple, brass = M.wood("maple", "X"), M.brass()
+    maple, brass = M.painted("mat_wood_honey", rough=0.45), M.brass()
     floor_box((0.46, 0.38, 0.03), z=0.6, mat=maple, bevel=0.008)
     for x in (-0.21, 0.21):
         floor_box((0.03, 0.36, 0.6), x=x, mat=maple)
@@ -176,7 +176,7 @@ def nightstand():
 @prop("dresser", tex=1024, tags=["furniture", "bedroom"])
 def dresser():
     """A walnut six-drawer dresser with brass bail pulls, one drawer not quite shut."""
-    wood, brass = M.wood("walnut", "X"), M.brass()
+    wood, brass = M.painted("mat_wood_walnut", rough=0.4), M.brass()
     W, D, H = 1.2, 0.48, 0.82
     floor_box((W, D, H - 0.1), z=0.08, mat=wood, bevel=0.01)
     floor_box((W + 0.03, D + 0.02, 0.03), z=H - 0.03, mat=wood, bevel=0.01)
@@ -220,7 +220,7 @@ def desk_steel():
 @prop("desk_chair", tex=1024, tags=["furniture", "office"])
 def desk_chair():
     """An oak swivel banker's chair on casters."""
-    oak, iron = M.wood("oak", "X"), M.iron()
+    oak, iron = M.painted("mat_wood_honey", rough=0.45), M.iron()
     seat = box((0.46, 0.44, 0.05), (0, 0, 0.47), oak, bevel=0.02)
     sag(seat, 0.012)
     for i in range(6):
