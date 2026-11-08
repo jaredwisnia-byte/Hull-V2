@@ -1,23 +1,22 @@
 {
- "name": "telephone_desk_set",
+ "name": "telephone_desk",
  "category": "telephone",
  "line": "sheetset",
  "source": "phone_2_manifest.json",
  "class": null,
- "views_folder": "telephone_desk_set",
+ "views_folder": "telephone_desk",
  "status": "shipped",
- "height_m": 0.14,
+ "height_m": 0.13,
  "depth_m": 0.22,
  "object_type": "telephone",
  "notes": "",
  "assumptions": [
   "size from the manifest (approximate)"
  ],
- "attempts": 1,
  "measured": {
-  "width_m": 0.166,
+  "width_m": 0.154,
   "depth_m": 0.22,
-  "height_m": 0.14,
+  "height_m": 0.13,
   "parts": 15,
   "by_kind": {
    "front key": 9,
@@ -36,20 +35,20 @@
   },
   "renamed": {},
   "size_warnings": [
-   "width 166 mm is outside 180-240 mm for a telephone"
+   "width 154 mm is outside 180-240 mm for a telephone"
   ],
   "shell_warnings": [
-   "width -42 mm off at 0.02 m",
-   "width -42 mm off at 0.02 m",
-   "width -8 mm off at 0.09 m",
-   "width -9 mm off at 0.09 m",
-   "width -9 mm off at 0.09 m",
-   "width -9 mm off at 0.10 m",
-   "width -11 mm off at 0.10 m",
-   "width -12 mm off at 0.10 m"
+   "width -8 mm off the reference at 0.02 m",
+   "width -8 mm off the reference at 0.02 m",
+   "width -8 mm off the reference at 0.02 m",
+   "width -8 mm off the reference at 0.02 m",
+   "width -8 mm off the reference at 0.03 m",
+   "depth -10 mm off the reference at 0.08 m",
+   "depth -13 mm off the reference at 0.08 m",
+   "depth -12 mm off the reference at 0.08 m"
   ],
   "texturing": {
-   "telephone_desk_set": {
+   "telephone_desk": {
     "views": [
      "front",
      "back",
@@ -58,16 +57,16 @@
      "top"
     ],
     "dominant_share": {
-     "front": 0.161,
-     "back": 0.161,
-     "right": 0.131,
-     "left": 0.183,
-     "top": 0.342
+     "front": 0.151,
+     "back": 0.159,
+     "right": 0.146,
+     "left": 0.206,
+     "top": 0.318
     },
     "grazing_share": 0.037,
-    "single_view_vertices": 255
+    "single_view_vertices": 254
    },
-   "telephone_desk_set_assy": {
+   "telephone_desk_assy": {
     "views": [
      "front",
      "back",
@@ -76,15 +75,16 @@
      "top"
     ],
     "dominant_share": {
-     "front": 0.252,
-     "back": 0.227,
-     "right": 0.213,
-     "left": 0.208,
-     "top": 0.082
+     "front": 0.271,
+     "back": 0.257,
+     "right": 0.093,
+     "left": 0.095,
+     "top": 0.274
     },
-    "grazing_share": 0.136,
-    "single_view_vertices": 1178
+    "grazing_share": 0.178,
+    "single_view_vertices": 861
    }
   }
- }
+ },
+ "attempts": 1
 }

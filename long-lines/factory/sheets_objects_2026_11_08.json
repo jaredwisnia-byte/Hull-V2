@@ -1,41 +1,7 @@
 {
  "_note": "Desk telephone from the 20-object sheet (objects1.png, top-left cell), built from paint + reasoning only: no depth or part map. Panel numbers: propkit.atlas.panels(sheet, min_area=150).",
- "items": {
-  "telephone_desk_kit": {
-   "sheet": "objects1_phone.png",
-   "category": "telephone",
-   "line": "kit",
-   "min_area": 150,
-   "components": [
-    {
-     "type": "body",
-     "front": 3,
-     "back": 4,
-     "profile": "telephone"
-    },
-    {
-     "type": "keys",
-     "region": [
-      0.25,
-      0.32,
-      0.76,
-      0.72
-     ],
-     "kind": "key"
-    },
-    {
-     "type": "rest",
-     "panel": 0,
-     "width_mm": 50,
-     "y_frac": 0.62,
-     "sink": 0.3
-    },
-    {
-     "type": "cord",
-     "colour_panel": 7
-    }
-   ],
-   "notes": "Push-button desk telephone (the sheet calls it rotary, the painting shows keys)"
-  }
+ "items": {},
+ "_retired": {
+  "telephone_desk_kit": "paint-only test, deleted Nov 8; the telephone is built from its sheet set (telephone_desk)"
  }
 }

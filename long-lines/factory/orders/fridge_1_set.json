@@ -43,10 +43,7 @@
    "seam -> vent": 4
   },
   "size_warnings": [],
-  "shell_warnings": [
-   "width 87 mm off at 1.13 m",
-   "depth -9 mm off at 1.13 m"
-  ],
+  "shell_warnings": [],
   "texturing": {
    "fridge_1_set": {
     "views": [

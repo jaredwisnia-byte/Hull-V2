@@ -379,7 +379,18 @@ def build_set(manifest_path, name, height_m=None, depth_m=None, object_type=None
         for k, v in V.items():
             m_ = v["assy"] if v["assy"].any() else v["obj"]
             asil[k] = (ndimage_fill(m_), v["paint"])
-        assy_obj = polygon_hull({k: a_[0] for k, a_ in asil.items()}, W, D, H, name=name + "_assy")
+        # A long thin assembly (handset, bar) is lofted with rounded sections from the front and
+        # top views; anything else is the exact polygonal hull of its outlines.
+        from .hull import loft_from_views
+        fa, sa = asil["front"][0], asil.get("right", asil.get("left"))[0]
+        fl = np.nonzero(fa.any(0))[0].ptp() / fa.shape[1] * W
+        fh = np.nonzero(fa.any(1))[0].ptp() / fa.shape[0] * H
+        sd = np.nonzero(sa.any(0))[0].ptp() / sa.shape[1] * D
+        assy_obj = None
+        if "top" in asil and fl > 2.0 * fh:   # long in front view; the top view gives width per station
+            assy_obj = loft_from_views(fa, asil["top"][0], W, D, H, name=name + "_assy")
+        if assy_obj is None:
+            assy_obj = polygon_hull({k: a_[0] for k, a_ in asil.items()}, W, D, H, name=name + "_assy")
     else:
         assy_obj = None
     # Texture manufacturing: each assembly coloured from blended views, the others occluding it.
@@ -629,17 +640,35 @@ def build_set(manifest_path, name, height_m=None, depth_m=None, object_type=None
     shell = []
     vz = np.array([list(v.co) for v in body.data.vertices])
     if len(vz):
-        zs = np.linspace(0.12 * H, 0.88 * H, 40)
-        ext = []
-        for z0 in zs:
-            sl = vz[np.abs(vz[:, 2] - z0) < 0.006]
-            ext.append((sl[:, 0].max() - sl[:, 0].min(), sl[:, 1].max() - sl[:, 1].min()) if len(sl) > 3 else (np.nan, np.nan))
-        ext = np.array(ext)
-        for axis, nm in ((0, "width"), (1, "depth")):
-            med = np.nanmedian(ext[:, axis])
-            for z0, e in zip(zs, ext[:, axis]):
-                if np.isfinite(e) and abs(e - med) > 0.008:
-                    shell.append("%s %.0f mm off at %.2f m" % (nm, (e - med) * 1000, z0))
+        # Compare each height slice with the reference outline at that height (front view for
+        # width, side view for depth), not with the median: a phone narrows on purpose, a bump or
+        # groove the reference doesn't show is what we're after.
+        def ref_extent(mask, span, z):
+            r = min(mask.shape[0] - 1, max(0, int((1 - z / H) * mask.shape[0])))
+            cols = np.nonzero(mask[r])[0]
+            return (cols.max() + 1 - cols.min()) / mask.shape[1] * span if len(cols) else None
+        side_k = "right" if "right" in V else ("left" if "left" in V else None)
+        import bmesh as _bm
+        from mathutils import Vector as _V2
+        for z0 in np.linspace(0.12 * H, 0.88 * H, 40):
+            # A true planar cut (a polygon mesh has no vertices in the middle of its faces).
+            bmc = _bm.new()
+            bmc.from_mesh(body.data)
+            res_ = _bm.ops.bisect_plane(bmc, geom=bmc.verts[:] + bmc.edges[:] + bmc.faces[:],
+                                        plane_co=_V2((0, 0, z0)), plane_no=_V2((0, 0, 1)))
+            pts = [v.co for v in res_["geom_cut"] if isinstance(v, _bm.types.BMVert)]
+            sl = np.array([[p_.x, p_.y, p_.z] for p_ in pts])
+            bmc.free()
+            if len(sl) <= 3:
+                continue
+            for axis, nm, mask, span in ((0, "width", V["front"]["carve"], W),
+                                         (1, "depth", V[side_k]["carve"] if side_k else None, D)):
+                if mask is None:
+                    continue
+                exp_ = ref_extent(mask, span, z0)
+                got = sl[:, axis].max() - sl[:, axis].min()
+                if exp_ is not None and abs(got - exp_) > max(0.008, 0.04 * span):
+                    shell.append("%s %.0f mm off the reference at %.2f m" % (nm, (got - exp_) * 1000, z0))
     summary = {}
     for r in report:
         key = "%s %s" % (r["view"], r["kind"])

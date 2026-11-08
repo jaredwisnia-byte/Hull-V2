@@ -351,3 +351,57 @@ def polygon_hull(masks, W, D, H, name="phull", bevel_frac=0.015, tolerance=1.0):
     result["hull_frame"] = [W, D, H]
     smooth(result, 35)
     return result
+
+
+def loft_from_views(front, top, W, D, H, name="loft", stations=64, sides=28, exponent=2.6):
+    """A long, smooth part (handset, handle bar, rail) lofted along x. At every station the
+    front view gives its top and bottom, the top view its front and back; the cross-section is a
+    superellipse fitted into that box (exponent 2 = ellipse, higher = squarer, 2.6 = moulded
+    plastic). Masks are in the object's view frames (front: cols = x, rows = z; top: cols = x,
+    rows = y with the front at the bottom). Smooth by construction: no voxel or facet steps."""
+    hf, wf = front.shape
+    ht, wt = top.shape
+    cols = np.nonzero(front.any(0))[0]
+    if len(cols) < 4:
+        return None
+    x0, x1 = cols.min(), cols.max() + 1
+    rings = []
+    for s in range(stations + 1):
+        c = x0 + (x1 - x0) * (0.02 + 0.96 * s / stations)
+        cf = min(wf - 1, int(c))
+        rows = np.nonzero(front[:, cf])[0]
+        ct = min(wt - 1, int(c / wf * wt))
+        trow = np.nonzero(top[:, ct])[0]
+        if not len(rows) or not len(trow):
+            continue
+        x = (c / wf - 0.5) * W
+        z_top, z_bot = (1 - rows.min() / hf) * H, (1 - (rows.max() + 1) / hf) * H
+        y_back, y_front = (0.5 - trow.min() / ht) * D, (0.5 - (trow.max() + 1) / ht) * D
+        yc, zc, ry, rz = (y_back + y_front) / 2, (z_top + z_bot) / 2, (y_back - y_front) / 2, (z_top - z_bot) / 2
+        ring = []
+        for k in range(sides):
+            t = 2 * math.pi * k / sides
+            ct_, st_ = math.cos(t), math.sin(t)
+            ring.append((x, yc + ry * math.copysign(abs(ct_) ** (2 / exponent), ct_),
+                         zc + rz * math.copysign(abs(st_) ** (2 / exponent), st_)))
+        rings.append(ring)
+    if len(rings) < 3:
+        return None
+    bm = bmesh.new()
+    vr = [[bm.verts.new(p) for p in ring] for ring in rings]
+    for a, b in zip(vr, vr[1:]):
+        for k in range(sides):
+            bm.faces.new((a[k], a[(k + 1) % sides], b[(k + 1) % sides], b[k]))
+    for ring, rev in ((vr[0], True), (vr[-1], False)):          # rounded end caps
+        c = bm.verts.new(tuple(sum(v.co[i] for v in ring) / sides for i in range(3)))
+        for k in range(sides):
+            f = (ring[k], ring[(k + 1) % sides], c)
+            bm.faces.new(tuple(reversed(f)) if rev else f)
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    me = bpy.data.meshes.new(name)
+    bm.to_mesh(me)
+    bm.free()
+    obj = link(bpy.data.objects.new(name, me))
+    obj["hull_frame"] = [W, D, H]
+    smooth(obj, 60)
+    return obj

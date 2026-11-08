@@ -185,3 +185,16 @@ add to it whenever something goes wrong.
   Keys are 6-9 mm (manual fixed); clamped values are now reported as low confidence.
 - Cross-view check: a part seen in a side view is only built if the front view shows a compact part
   sticking past that edge at the same height (a handset overhang doesn't count).
+
+## Telephone rebuilt from scratch with the current process (Nov 8)
+- Old phones deleted (paint-only kit test and the voxel sheet-set build); one clean run:
+  make_manifest -> intake_set -> build -> gate -> critic -> match_check.
+- Long separate parts (handset, bars, rails) are lofted: front view gives height per station, top
+  view gives width per station, cross-section = superellipse (2.6, moulded plastic). Outline
+  intersection can never make a rounded section. Test "long" in the front view only: earpiece cups
+  make a handset deep, and the loft takes width per station anyway.
+- The shell check must compare each height with the reference outline at that height (a phone narrows
+  on purpose), and must slice with a true planar cut: a polygon mesh has no vertices mid-face, so
+  vertex slicing returned nonsense (-700 mm) on the new hull.
+- ChatGPT drew this phone narrower than real desk sets (154 mm vs 180-240): the factory reports it
+  instead of stretching the mesh. Ask for corrected proportions in the reference if it matters.
