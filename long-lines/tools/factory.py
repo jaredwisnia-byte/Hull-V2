@@ -234,10 +234,12 @@ def run_line(order):
         sheet = os.path.join(SRC, "_sheets", order["sheet"])
         if order["category"] == "moulding":
             order["measured"] = extrude.moulding(sheet, order["strip"], order.get("profile"), order["kind"],
-                                                 order["height_m"], d, order.get("strip_frac"), order["name"])
+                                                 order["height_m"], d, order.get("strip_frac"), order["name"],
+                                                  order.get("section_tolerance", 1.0))
         else:
             order["measured"] = extrude.frame(sheet, order["panel"], order["height_m"], d,
-                                              order.get("depth_m", 0.022), order["name"])
+                                              order.get("depth_m", 0.022), order["name"],
+                                               order.get("opening_mode", "strict"))
     elif line == "sheetset":
         from propkit.sheetset import build_set
         d = os.path.join(SRC, order["views_folder"])
@@ -270,6 +272,15 @@ def correct(order, result):
         if "triangle budget" in fails:
             h["decimate"] = round(h.get("decimate", 0.35) * 0.5, 3)
             changed = True
+    if order["line"] == "extrude":
+        if "trim section differs" in fails and order.get("profile") is not None:
+            if order.get("section_tolerance", 1.0) > 0.31:
+                order["section_tolerance"] = 0.3  # follow the drawing more closely
+                changed = True
+        if "frame reference opening not found" in fails or "frame opening is blocked" in fails:
+            if order.get("opening_mode", "strict") != "interior":
+                order["opening_mode"] = "interior"
+                changed = True
     if changed:
         order.setdefault("corrections", []).append(result["fails"])
     return changed
@@ -278,6 +289,22 @@ def correct(order, result):
 def tex_for(order):
     cls = order.get("class") or "medium"
     return STANDARDS["size_classes"].get(cls, STANDARDS["size_classes"]["medium"])["tex"]
+
+
+def render_trim_preview(name):
+    """Always make a PNG turnaround of a shipped extruded asset. No source sheets."""
+    import bpy
+    import subprocess
+    script = os.path.join(HERE, "preview_trim.py")
+    proc = subprocess.run([bpy.app.binary_path, "-b", "--factory-startup",
+                           "-P", script, "--", name], text=True, capture_output=True,
+                          timeout=180)
+    if proc.returncode:
+        raise RuntimeError("preview Blender failed: " + (proc.stderr or proc.stdout)[-1200:])
+    out = os.path.join(LIB, name, "_preview.png")
+    if not os.path.exists(out):
+        raise RuntimeError("render completed but preview PNG is missing")
+    return out
 
 
 def build(order, samples=16):
@@ -295,12 +322,20 @@ def build(order, samples=16):
             bake.update_manifest(os.path.join(LIB, "library.json"), order["name"], info)
             vd = os.path.join(SRC, order["views_folder"]) if order.get("views_folder") else None
             result = qa.check(order["name"], vd, order.get("class"), tuple(order.get("hull", {}).get("paint_only", ())),
-                              solid=order["line"] in STANDARDS["solid_lines"], mount=order.get("mount", "floor"))
+                              solid=order["line"] in STANDARDS["solid_lines"], mount=order.get("mount", "floor"),
+                               trim_order=order)
         except Exception as e:
             traceback.print_exc()
             result = {"pass": False, "fails": ["build error: %s" % e], "metrics": {}}
         if result["pass"] or attempt > STANDARDS["minimum_acceptable"]["max_retries"] or not correct(order, result):
             break
+    if result["pass"] and order["line"] == "extrude":
+        try:
+            preview = render_trim_preview(order["name"])
+            result["metrics"]["preview_png"] = os.path.relpath(preview, ROOT)
+        except Exception as e:
+            result["pass"] = False
+            result["fails"].append("preview generation failed: %s" % e)
     order["status"] = "shipped" if result["pass"] else "needs_person"
     order["attempts"] = attempt
     save_order(order)
@@ -312,7 +347,8 @@ def build(order, samples=16):
             "output_hash": file_hash([os.path.join(LIB, order["name"], order["name"] + ".glb")]),
             # Reproducibility is judged on the gauges, not bytes: Blender's UV packer is not
             # deterministic, so GLB bytes differ run to run while the product is the same.
-            "gauge_hash": hashlib.sha1(json.dumps([result["metrics"].get(k) for k in ("tris", "size_m", "silhouette_iou")],
+            "gauge_hash": hashlib.sha1(json.dumps([result["metrics"].get(k) for k in ("tris", "size_m", "silhouette_iou", "geometry_signature", "texture_signature",
+                                                              "trim_section_iou", "frame_opening_occlusion", "trim_colour_difference")],
                                                   sort_keys=True).encode()).hexdigest()[:12]})
     print("BUILT" if result["pass"] else "FLAGGED", order["name"], result["fails"])
     return result
@@ -338,7 +374,7 @@ def gate(names):
         try:
             r = qa.check(n, vd, o.get("class"), tuple(o.get("hull", {}).get("paint_only", ())),
                          solid=line in STANDARDS["solid_lines"] and n not in STANDARDS["open_by_design"]["names"],
-                         mount=mount_of(n))
+                         mount=mount_of(n), trim_order=o)
         except Exception as e:
             r = {"pass": False, "fails": ["qa error: %s" % e], "metrics": {}}
         ledger({"op": "qa", "name": n, "line": line, "pass": r["pass"], "seconds": round(time.time() - t0, 1),
@@ -420,6 +456,9 @@ if __name__ == "__main__":
         for n in names:
             build(load_order(n))
         report()
+    elif cmd == "preview":
+        for n in rest:
+            print("PREVIEW", render_trim_preview(n))
     elif cmd == "qa":
         names = sorted(json.load(open(os.path.join(LIB, "library.json")))) if "--library" in rest else rest
         gate(names)
