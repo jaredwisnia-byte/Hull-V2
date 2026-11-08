@@ -657,6 +657,32 @@
   "desc": "bldg_tribeca_03",
   "kind": "static"
  },
+ "bldg_tribeca_04": {
+  "size": [
+   7.7849,
+   14.5,
+   12.2
+  ],
+  "min": [
+   -3.8924,
+   0.0,
+   -12.0
+  ],
+  "max": [
+   3.8924,
+   14.5,
+   0.2
+  ],
+  "tris": 406,
+  "tex": 2048,
+  "standardized": [],
+  "tags": [
+   "building",
+   "factory"
+  ],
+  "desc": "bldg_tribeca_04",
+  "kind": "static"
+ },
  "book_stack": {
   "size": [
    0.2367,
@@ -1719,6 +1745,118 @@
   "desc": "crown_ornate",
   "kind": "crown"
  },
+ "crown_util_cream": {
+  "size": [
+   1.2,
+   0.09,
+   0.0787
+  ],
+  "min": [
+   0.0,
+   0.0,
+   -0.0
+  ],
+  "max": [
+   1.2,
+   0.09,
+   0.0787
+  ],
+  "tris": 52,
+  "tex": 1024,
+  "standardized": [
+   "seated on floor (-0.001 m)"
+  ],
+  "tags": [
+   "moulding",
+   "factory"
+  ],
+  "desc": "crown_util_cream",
+  "kind": "crown"
+ },
+ "crown_util_gray": {
+  "size": [
+   1.2,
+   0.09,
+   0.0787
+  ],
+  "min": [
+   0.0,
+   0.0,
+   -0.0
+  ],
+  "max": [
+   1.2,
+   0.09,
+   0.0787
+  ],
+  "tris": 52,
+  "tex": 1024,
+  "standardized": [
+   "seated on floor (-0.001 m)"
+  ],
+  "tags": [
+   "moulding",
+   "factory"
+  ],
+  "desc": "crown_util_gray",
+  "kind": "crown"
+ },
+ "crown_util_tan": {
+  "size": [
+   1.2,
+   0.09,
+   0.0787
+  ],
+  "min": [
+   0.0,
+   0.0,
+   -0.0
+  ],
+  "max": [
+   1.2,
+   0.09,
+   0.0787
+  ],
+  "tris": 52,
+  "tex": 1024,
+  "standardized": [
+   "seated on floor (-0.001 m)"
+  ],
+  "tags": [
+   "moulding",
+   "factory"
+  ],
+  "desc": "crown_util_tan",
+  "kind": "crown"
+ },
+ "crown_walnut": {
+  "size": [
+   1.2,
+   0.15,
+   0.1333
+  ],
+  "min": [
+   0.0,
+   0.0,
+   -0.0
+  ],
+  "max": [
+   1.2,
+   0.15,
+   0.1333
+  ],
+  "tris": 80,
+  "tex": 1024,
+  "standardized": [
+   "seated on floor (-0.001 m)"
+  ],
+  "tags": [
+   "moulding",
+   "factory"
+  ],
+  "desc": "crown_walnut",
+  "kind": "crown"
+ },
  "crucifix": {
   "size": [
    0.17,
@@ -1896,6 +2034,32 @@
   "desc": "A coated-wire dish rack with plates, a cup and a glass drying.",
   "kind": "static"
  },
+ "dishwasher_cream": {
+  "size": [
+   0.6576,
+   0.863,
+   0.644
+  ],
+  "min": [
+   -0.3288,
+   0.0,
+   -0.598
+  ],
+  "max": [
+   0.3288,
+   0.863,
+   0.046
+  ],
+  "tris": 1860,
+  "tex": 1024,
+  "standardized": [],
+  "tags": [
+   "dishwasher",
+   "factory"
+  ],
+  "desc": "Cream built-in dishwasher",
+  "kind": "static"
+ },
  "door_casing": {
   "size": [
    0.96,
@@ -1919,6 +2083,110 @@
    "door"
   ],
   "desc": "Moulded door casing for a 0.8 m by 2.05 m opening (both faces), with a threshold.",
+  "kind": "static"
+ },
+ "door_casing_bath": {
+  "size": [
+   1.3206,
+   2.15,
+   0.022
+  ],
+  "min": [
+   -0.6603,
+   0.0,
+   -0.0
+  ],
+  "max": [
+   0.6603,
+   2.15,
+   0.022
+  ],
+  "tris": 228,
+  "tex": 1024,
+  "standardized": [],
+  "tags": [
+   "frame",
+   "factory"
+  ],
+  "desc": "door_casing_bath",
+  "kind": "static"
+ },
+ "door_casing_bedroom": {
+  "size": [
+   1.3193,
+   2.15,
+   0.022
+  ],
+  "min": [
+   -0.6597,
+   0.0,
+   -0.0
+  ],
+  "max": [
+   0.6597,
+   2.15,
+   0.022
+  ],
+  "tris": 228,
+  "tex": 1024,
+  "standardized": [],
+  "tags": [
+   "frame",
+   "factory"
+  ],
+  "desc": "door_casing_bedroom",
+  "kind": "static"
+ },
+ "door_casing_hall": {
+  "size": [
+   1.2872,
+   2.2,
+   0.022
+  ],
+  "min": [
+   -0.6436,
+   0.0,
+   -0.0
+  ],
+  "max": [
+   0.6436,
+   2.2,
+   0.022
+  ],
+  "tris": 228,
+  "tex": 1024,
+  "standardized": [],
+  "tags": [
+   "frame",
+   "factory"
+  ],
+  "desc": "door_casing_hall",
+  "kind": "static"
+ },
+ "door_casing_living": {
+  "size": [
+   1.3382,
+   2.2,
+   0.022
+  ],
+  "min": [
+   -0.6691,
+   0.0,
+   -0.0
+  ],
+  "max": [
+   0.6691,
+   2.2,
+   0.022
+  ],
+  "tris": 228,
+  "tex": 1024,
+  "standardized": [],
+  "tags": [
+   "frame",
+   "factory"
+  ],
+  "desc": "door_casing_living",
   "kind": "static"
  },
  "door_entry_4a": {

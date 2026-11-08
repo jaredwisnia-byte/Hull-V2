@@ -21,10 +21,27 @@
  "source": "appl_6.png",
  "class": "medium",
  "views_folder": "dishwasher_cream",
- "status": "pending",
+ "status": "shipped",
  "assumptions": [
   "height 0.86 m from category 'dishwasher'"
  ],
  "height_m": 0.86,
- "cat_depth_m": 0.6
+ "cat_depth_m": 0.6,
+ "measured": {
+  "width_m": 0.652,
+  "depth_m": 0.6,
+  "height_m": 0.86,
+  "panels": [
+   5,
+   4
+  ],
+  "knobs": [
+   {
+    "part": "knob",
+    "diameter_mm": 55.0,
+    "depth_mm": 25.0
+   }
+  ]
+ },
+ "attempts": 1
 }
