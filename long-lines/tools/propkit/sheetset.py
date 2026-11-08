@@ -71,7 +71,16 @@ def view(m, imgs, name):
     # lies outside the body's outline, and the outline at each row is judged from the rows
     # around it: so a handle seen side-on goes, a hinge overlapping the edge leaves neither a
     # notch nor a ridge, and nothing cuts through the whole object.
-    body = ndimage.binary_fill_holes(obj & (cls != CLASSES["out"]))
+    # Only compact parts can stick out of an outline (handles, hinges, knobs). A rim or frame
+    # running along the edge (the back panel's raised border) is on the surface: removing it
+    # would shave the outline (it pulled one side of the fridge in by 27 mm).
+    lab_o, n_o = ndimage.label(cls == CLASSES["out"])
+    removable = np.zeros_like(obj)
+    for i_, sl_ in enumerate(ndimage.find_objects(lab_o), 1):
+        comp_ = lab_o[sl_] == i_
+        if comp_.mean() >= 0.3 and comp_.sum() < 0.05 * obj.sum():
+            removable[sl_] |= comp_
+    body = ndimage.binary_fill_holes(obj & ~removable)
     Hc = body.shape[0]
     lft = np.full(Hc, body.shape[1]); rgt = np.full(Hc, -1)
     for rr in range(Hc):
@@ -86,6 +95,11 @@ def view(m, imgs, name):
         if r_ >= l_:
             exp[rr, l_:r_ + 1] = True
     carve = ndimage.binary_fill_holes(obj & exp)
+    # Where two rounded doors meet, the outline pinches in; the cabinet behind them doesn't.
+    # Bridge short pinches vertically (convex top and bottom corners are unaffected).
+    vh = max(5, int(0.05 * Hc))
+    padc = np.pad(carve, vh)
+    carve = ndimage.binary_closing(padc, structure=np.ones((2 * vh + 1, 1)))[vh:-vh, vh:-vh] | carve
     paint = imgs["painted_sheet"].crop(box).crop(bb)
     # Pad the painting past the outline with the object's own colours, so rounded edges never
     # pick up the sheet background (the dark band along the top).
@@ -409,6 +423,23 @@ def build_set(manifest_path, name, height_m=None, depth_m=None, object_type=None
         else:
             bpy.data.meshes.remove(before)
         bpy.data.objects.remove(cut)
+    # Shell continuity: slice the body by height; within the middle of the object, the width and
+    # depth should not jump (a bump or groove the reference doesn't show). Catches the 27 mm
+    # shaved side and the seam-height groove that a person found by eye.
+    shell = []
+    vz = np.array([list(v.co) for v in body.data.vertices])
+    if len(vz):
+        zs = np.linspace(0.12 * H, 0.88 * H, 40)
+        ext = []
+        for z0 in zs:
+            sl = vz[np.abs(vz[:, 2] - z0) < 0.006]
+            ext.append((sl[:, 0].max() - sl[:, 0].min(), sl[:, 1].max() - sl[:, 1].min()) if len(sl) > 3 else (np.nan, np.nan))
+        ext = np.array(ext)
+        for axis, nm in ((0, "width"), (1, "depth")):
+            med = np.nanmedian(ext[:, axis])
+            for z0, e in zip(zs, ext[:, axis]):
+                if np.isfinite(e) and abs(e - med) > 0.008:
+                    shell.append("%s %.0f mm off at %.2f m" % (nm, (e - med) * 1000, z0))
     summary = {}
     for r in report:
         key = "%s %s" % (r["view"], r["kind"])
@@ -421,4 +452,4 @@ def build_set(manifest_path, name, height_m=None, depth_m=None, object_type=None
             "sources": {s: sum(1 for r in report if r["from"] == s) for s in ("side view", "depth map", "catalogue", "painted only (no depth evidence)")},
             "renamed": {"%s -> %s" % (r["was"], r["kind"]): sum(1 for q in report if q.get("was") == r["was"] and q["kind"] == r["kind"])
                         for r in report if "was" in r},
-            "size_warnings": sizing.envelope(otype, W, D, H)}
+            "size_warnings": sizing.envelope(otype, W, D, H), "shell_warnings": shell[:8]}

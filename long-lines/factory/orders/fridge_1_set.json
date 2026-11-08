@@ -42,7 +42,8 @@
   "renamed": {
    "seam -> vent": 4
   },
-  "size_warnings": []
+  "size_warnings": [],
+  "shell_warnings": []
  },
  "attempts": 1
 }
