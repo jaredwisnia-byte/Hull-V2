@@ -83,26 +83,48 @@ Things worth trying: fill the tub before the water goes, ration the freezer's ic
 
 ![The cooler's thermometer](docs/07_cooler_close.png)
 
-## Hero prop: the television
+## The prop library
 
-A test of how far procedural modelling and texturing can go. `tools/build_tv.py` builds a mid-1970s 19-inch table TV entirely in a Blender script. It has a walnut-grain cabinet on a tapered-leg stand with brass caps, a curved CRT, a brushed-aluminium control panel with a numbered channel dial and knurled knobs, a speaker grille, chrome "Westbury" script (an invented brand), a vented back with a maker's plate, rabbit ears with a UHF loop, and a doily. It is about 30k triangles.
+Every object in the apartment, and the street outside, comes from one library of reusable parts: **108 props** built and baked by script in Blender at the fidelity of the TV prop. That covers furniture, appliances, consumer goods with invented 1970s packaging, decorations, junk, architectural pieces, building fronts and three cars.
 
-The script then bakes 2048 px textures: colour with dirt in the crevices, worn edges and dust on top; a normal map; and roughness/metal. In Godot, `shaders/baked_prop.gdshader` keeps the prop on the same toon lighting as the rest of the apartment.
+![Library contact sheet](docs/library/contact_sheet_1.png)
 
-![The TV, rendered in Blender](docs/props/tv_blender_closeup.png)
+**How it fits together (interchangeable parts):**
 
-| In the front room, morning | By candlelight |
-| --- | --- |
-| ![](docs/props/tv_in_game_morning.png) | ![](docs/props/tv_in_game_night.png) |
-
-To rebuild it (Blender 4.0 or later; about 4 minutes on 4 CPU cores):
+| Part | Where | Role |
+| --- | --- | --- |
+| Prop kit | `tools/propkit/` | Shared shapes (`core`), weathered materials (`mats`), period print graphics (`labels`), bake and export (`bake`) |
+| Recipes | `tools/props/*.py` | One short `@prop` function per object, written against the kit |
+| Builder | `tools/build_props.py` | Builds props by name or tag, bakes 128 to 2048 px textures, exports `assets/props/<name>/` |
+| Catalogue | `assets/props/library.json` | Size, bounds, triangle count, texture size, tags and default behaviour for every prop |
+| Loader | `PropFactory.from_entry()` | Places any library prop by name in any scene, with a behaviour kind |
+| Layout | `data/apartment.json` | Rooms, walls, doorways and every placed object, as data |
 
 ```bash
-blender --background --factory-startup --python long-lines/tools/build_tv.py
-blender --background --factory-startup --python long-lines/tools/preview_prop.py -- long-lines/assets/props/tv tv /tmp/tv.png
+# Build everything, or by name or tag (Blender 4.0+, apt python3-pil python3-numpy)
+blender -b --factory-startup -P long-lines/tools/build_props.py -- all
+blender -b --factory-startup -P long-lines/tools/build_props.py -- --tag kitchen
+blender -b --factory-startup -P long-lines/tools/build_props.py -- --list
+# Review grid
+blender -b --factory-startup -P long-lines/tools/contact_sheet.py -- /tmp/sheet.png --tag decor
 ```
 
-`PropFactory.baked_prop("name")` loads any prop built this way from `assets/props/<name>/`.
+To place a prop in a scene, add one line to its layout JSON, for example
+`{"type": "lib", "prop": "ashtray_full", "id": "ashtray", "pos": [2.6, 0.4, 2.6], "kind": "carry"}`.
+Kinds are `static`, `fixture` (a "try it" response), `carry`, `container` (searchable) and `readable`. To give a gameplay object a library model, add `"model": "<prop>"` to its entry.
+
+## The apartment
+
+Nick's railroad flat, front to back: **front room**, **office** (steel desk, typewriter, filing cabinet, bookcase), **bedroom** with a **closet**, and the **kitchen** with a tenement **water closet** and the **entrance** from the stair landing. The hall door opens on its chain to show the landing and the door to 4B. Walls carry cracks, flaking paint, water stains and scuffs.
+
+| | |
+| --- | --- |
+| ![](docs/tour/a01_front_room.png) | ![](docs/tour/a02_front_room_sofa.png) |
+| ![](docs/tour/a03_office.png) | ![](docs/tour/a04_bedroom.png) |
+| ![](docs/tour/a06_kitchen.png) | ![](docs/tour/a08_bathroom.png) |
+| ![](docs/tour/a09_street_fire_escape.png) | ![](docs/tour/a12_front_room_night.png) |
+
+The street through the windows is assembled from library facade bays, cornices and shopfronts, with lampposts, hydrants, trash cans, and the three cars (sedan, taxi, station wagon) left where they stopped.
 
 ## Layout of the project
 

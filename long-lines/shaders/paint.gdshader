@@ -150,11 +150,11 @@ void fragment() {
 
 	// Old plaster: flaking paint, hairline cracks, water stains from the flat above.
 	if (peel > 0.0) {
-		float pn = fbm(wpos * 2.3 + vec3(11.0));
-		float patch = smoothstep(0.66, 0.7, pn) * step(0.0, 1.0 - n.y);
+		float pn = fbm(wpos * 4.5 + vec3(11.0));
+		float patch = smoothstep(0.76, 0.79, pn) * step(0.0, 1.0 - n.y);
 		vec3 under = mix(vec3(0.78, 0.74, 0.64), c, 0.25);
 		c = mix(c, under, patch * peel);
-		c *= 1.0 - (smoothstep(0.64, 0.66, pn) - smoothstep(0.66, 0.68, pn)) * peel * 0.5;
+		c *= 1.0 - (smoothstep(0.745, 0.76, pn) - smoothstep(0.76, 0.775, pn)) * peel * 0.5;
 	}
 	if (cracks > 0.0) {
 		float cn = abs(fbm(wpos * 1.4 + vec3(5.0)) - 0.5);

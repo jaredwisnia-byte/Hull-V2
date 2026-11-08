@@ -201,6 +201,33 @@
   "desc": "Sanitation Department work boots by the door, still muddy.",
   "kind": "static"
  },
+ "bottle_beer": {
+  "size": [
+   0.064,
+   0.245,
+   0.064
+  ],
+  "min": [
+   -0.032,
+   0.0,
+   -0.032
+  ],
+  "max": [
+   0.032,
+   0.245,
+   0.032
+  ],
+  "tris": 382,
+  "tex": 256,
+  "tags": [
+   "goods",
+   "drink",
+   "small",
+   "junk"
+  ],
+  "desc": "A brown longneck, empty.",
+  "kind": "carry"
+ },
  "bottle_liquor": {
   "size": [
    0.092,
@@ -225,6 +252,32 @@
    "small"
   ],
   "desc": "A fifth of Old Battery bourbon, a third left.",
+  "kind": "carry"
+ },
+ "bottle_soda": {
+  "size": [
+   0.066,
+   0.246,
+   0.066
+  ],
+  "min": [
+   -0.033,
+   0.0,
+   -0.033
+  ],
+  "max": [
+   0.033,
+   0.246,
+   0.033
+  ],
+  "tris": 446,
+  "tex": 256,
+  "tags": [
+   "goods",
+   "drink",
+   "small"
+  ],
+  "desc": "A returnable glass bottle of Bronx Bell cream soda.",
   "kind": "carry"
  },
  "bowling_trophy": {
@@ -402,6 +455,81 @@
    "kitchen"
   ],
   "desc": "A set of tin canisters: flour, sugar, coffee, tea.",
+  "kind": "static"
+ },
+ "car_sedan": {
+  "size": [
+   2.12,
+   1.46,
+   5.814
+  ],
+  "min": [
+   -1.06,
+   0.0,
+   -2.909
+  ],
+  "max": [
+   1.06,
+   1.46,
+   2.905
+  ],
+  "tris": 11536,
+  "tex": 2048,
+  "tags": [
+   "exterior",
+   "car"
+  ],
+  "desc": "A full-size 1970s four-door sedan in copper brown with a vinyl roof and whitewalls.",
+  "kind": "static"
+ },
+ "car_taxi": {
+  "size": [
+   2.12,
+   1.62,
+   5.614
+  ],
+  "min": [
+   -1.06,
+   0.0,
+   -2.809
+  ],
+  "max": [
+   1.06,
+   1.62,
+   2.805
+  ],
+  "tris": 12520,
+  "tex": 2048,
+  "tags": [
+   "exterior",
+   "car"
+  ],
+  "desc": "A yellow city taxi with a roof light and medallion number.",
+  "kind": "static"
+ },
+ "car_wagon": {
+  "size": [
+   2.12,
+   1.515,
+   5.914
+  ],
+  "min": [
+   -1.06,
+   0.0,
+   -2.959
+  ],
+  "max": [
+   1.06,
+   1.515,
+   2.955
+  ],
+  "tris": 12824,
+  "tex": 2048,
+  "tags": [
+   "exterior",
+   "car"
+  ],
+  "desc": "An avocado-green station wagon with woodgrain sides and a roof rack.",
   "kind": "static"
  },
  "cardboard_box_open": {
@@ -831,6 +959,32 @@
   "desc": "The steel-clad apartment door: police lock bar, deadbolt, chain, peephole, brass 4A.",
   "kind": "fixture"
  },
+ "door_entry_4b": {
+  "size": [
+   1.02,
+   2.04,
+   0.1626
+  ],
+  "min": [
+   -0.45,
+   0.0,
+   -0.0876
+  ],
+  "max": [
+   0.57,
+   2.04,
+   0.075
+  ],
+  "tris": 4008,
+  "tex": 1024,
+  "tags": [
+   "arch",
+   "door",
+   "hall"
+  ],
+  "desc": "A neighbour's apartment door across the landing.",
+  "kind": "static"
+ },
  "door_interior": {
   "size": [
    0.76,
@@ -881,6 +1035,56 @@
   "desc": "A walnut six-drawer dresser with brass bail pulls, one drawer not quite shut.",
   "kind": "static"
  },
+ "facade_bay": {
+  "size": [
+   1.8,
+   3.0,
+   0.38
+  ],
+  "min": [
+   -0.9,
+   0.0,
+   -0.3
+  ],
+  "max": [
+   0.9,
+   3.0,
+   0.08
+  ],
+  "tris": 1752,
+  "tex": 2048,
+  "tags": [
+   "exterior",
+   "facade"
+  ],
+  "desc": "One storey, one window bay of a brick tenement front: 1.8 m wide, 3 m tall,\n    a dark double-hung window with brownstone lintel and sill. Tiles side by side.",
+  "kind": "static"
+ },
+ "facade_cornice": {
+  "size": [
+   1.84,
+   0.57,
+   0.575
+  ],
+  "min": [
+   -0.92,
+   0.0,
+   -0.3
+  ],
+  "max": [
+   0.92,
+   0.57,
+   0.275
+  ],
+  "tris": 4336,
+  "tex": 1024,
+  "tags": [
+   "exterior",
+   "facade"
+  ],
+  "desc": "A pressed-metal cornice with brackets, 1.8 m wide, for the top of a tenement front.",
+  "kind": "static"
+ },
  "filing_cabinet": {
   "size": [
    0.38,
@@ -904,6 +1108,31 @@
    "office"
   ],
   "desc": "A four-drawer steel filing cabinet with label holders, one drawer dented.",
+  "kind": "static"
+ },
+ "fire_hydrant": {
+  "size": [
+   0.43,
+   0.73,
+   0.32
+  ],
+  "min": [
+   -0.215,
+   0.0,
+   -0.16
+  ],
+  "max": [
+   0.215,
+   0.73,
+   0.16
+  ],
+  "tris": 804,
+  "tex": 512,
+  "tags": [
+   "exterior",
+   "street"
+  ],
+  "desc": "A squat New York fire hydrant, red paint flaking.",
   "kind": "static"
  },
  "frame_landscape": {
@@ -1157,6 +1386,57 @@
   "desc": "A heap of laundry waiting for the laundromat that will never open again.",
   "kind": "static"
  },
+ "light_bulb_chain": {
+  "size": [
+   0.1,
+   0.4997,
+   0.1
+  ],
+  "min": [
+   -0.05,
+   -0.4997,
+   -0.05
+  ],
+  "max": [
+   0.05,
+   0.0,
+   0.05
+  ],
+  "tris": 4478,
+  "tex": 256,
+  "tags": [
+   "arch",
+   "light",
+   "closet"
+  ],
+  "desc": "A bare bulb in a porcelain socket with a pull chain. Origin at the ceiling.",
+  "kind": "fixture"
+ },
+ "light_globe": {
+  "size": [
+   0.26,
+   0.305,
+   0.26
+  ],
+  "min": [
+   -0.13,
+   -0.305,
+   -0.13
+  ],
+  "max": [
+   0.13,
+   0.0,
+   0.13
+  ],
+  "tris": 502,
+  "tex": 256,
+  "tags": [
+   "arch",
+   "light"
+  ],
+  "desc": "A milk-glass ceiling globe on a brass fitter. Origin at the ceiling.",
+  "kind": "fixture"
+ },
  "magazine_pile": {
   "size": [
    0.3238,
@@ -1385,6 +1665,31 @@
   "desc": "A maple nightstand with one drawer and an open shelf.",
   "kind": "static"
  },
+ "outlet": {
+  "size": [
+   0.07,
+   0.115,
+   0.01
+  ],
+  "min": [
+   -0.035,
+   0.0,
+   -0.0
+  ],
+  "max": [
+   0.035,
+   0.115,
+   0.01
+  ],
+  "tris": 316,
+  "tex": 128,
+  "tags": [
+   "arch",
+   "small"
+  ],
+  "desc": "A two-prong duplex outlet, painted over.",
+  "kind": "static"
+ },
  "paper_bags": {
   "size": [
    0.4939,
@@ -1532,6 +1837,30 @@
    "living"
   ],
   "desc": "A needlepoint throw pillow.",
+  "kind": "static"
+ },
+ "pipe_riser": {
+  "size": [
+   0.181,
+   2.76,
+   0.0935
+  ],
+  "min": [
+   -0.0455,
+   -0.005,
+   -0.0555
+  ],
+  "max": [
+   0.1355,
+   2.755,
+   0.038
+  ],
+  "tris": 3088,
+  "tex": 512,
+  "tags": [
+   "arch"
+  ],
+  "desc": "Steam and water risers running floor to ceiling in the corner, painted over.",
   "kind": "static"
  },
  "plant_pothos": {
@@ -1908,10 +2237,35 @@
   "desc": "A souvenir plate from Coney Island on a wire hanger.",
   "kind": "static"
  },
+ "stair_flight": {
+  "size": [
+   1.08,
+   5.1922,
+   3.8787
+  ],
+  "min": [
+   -0.5,
+   -4.1422,
+   -3.7687
+  ],
+  "max": [
+   0.58,
+   1.05,
+   0.11
+  ],
+  "tris": 6484,
+  "tex": 2048,
+  "tags": [
+   "arch",
+   "hall"
+  ],
+  "desc": "A tenement stair flight going down, worn treads, a turned newel and balusters.\n    Origin at the top of the flight; it descends toward +Y, one storey.",
+  "kind": "static"
+ },
  "statue_madonna": {
   "size": [
    0.11,
-   0.28,
+   0.3,
    0.1035
   ],
   "min": [
@@ -1921,16 +2275,66 @@
   ],
   "max": [
    0.055,
-   0.28,
+   0.3,
    0.05
   ],
-  "tris": 710,
+  "tris": 670,
   "tex": 512,
   "tags": [
    "decor",
    "small"
   ],
   "desc": "A plaster Madonna, blue robe, paint rubbed off her nose.",
+  "kind": "static"
+ },
+ "storefront": {
+  "size": [
+   3.6,
+   3.6,
+   1.5401
+  ],
+  "min": [
+   -1.8,
+   -0.0,
+   -0.62
+  ],
+  "max": [
+   1.8,
+   3.6,
+   0.9201
+  ],
+  "tris": 1864,
+  "tex": 2048,
+  "tags": [
+   "exterior",
+   "facade"
+  ],
+  "desc": "A ground-floor shopfront, 3.6 m wide: big dark window, recessed door, painted sign.",
+  "kind": "static"
+ },
+ "streetlamp": {
+  "size": [
+   2.185,
+   7.7832,
+   0.32
+  ],
+  "min": [
+   -0.16,
+   0.0,
+   -0.16
+  ],
+  "max": [
+   2.025,
+   7.7832,
+   0.16
+  ],
+  "tris": 1398,
+  "tex": 512,
+  "tags": [
+   "exterior",
+   "street"
+  ],
+  "desc": "A cast-iron city lamppost with a cobra head, dark.",
   "kind": "static"
  },
  "suitcase": {
@@ -1957,6 +2361,31 @@
   ],
   "desc": "A tweed suitcase with leather corners, Dad's, from the Navy.",
   "kind": "container"
+ },
+ "switch_plate": {
+  "size": [
+   0.07,
+   0.115,
+   0.0251
+  ],
+  "min": [
+   -0.035,
+   0.0,
+   -0.0
+  ],
+  "max": [
+   0.035,
+   0.115,
+   0.0251
+  ],
+  "tris": 376,
+  "tex": 128,
+  "tags": [
+   "arch",
+   "small"
+  ],
+  "desc": "A brass toggle switch plate.",
+  "kind": "fixture"
  },
  "toaster": {
   "size": [
@@ -2079,6 +2508,32 @@
    "kitchen"
   ],
   "desc": "A full black garbage bag, tied, waiting for a collection that won't come.",
+  "kind": "static"
+ },
+ "trash_can_metal": {
+  "size": [
+   0.6192,
+   0.7734,
+   0.5232
+  ],
+  "min": [
+   -0.2992,
+   0.0,
+   -0.2616
+  ],
+  "max": [
+   0.32,
+   0.7734,
+   0.2616
+  ],
+  "tris": 952,
+  "tex": 512,
+  "tags": [
+   "exterior",
+   "street",
+   "junk"
+  ],
+  "desc": "A dented galvanised trash can, lid askew, garbage piling up.",
   "kind": "static"
  },
  "tub_claw": {

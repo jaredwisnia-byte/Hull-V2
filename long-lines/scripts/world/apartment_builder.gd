@@ -402,7 +402,6 @@ func _hall_door(_side: String, op: Dictionary) -> void:
 	door.add_child(leaf)
 	var model := PropFactory.baked_prop("door_entry_4a")
 	if model:
-		model.rotation.y = PI  # its inside face (police lock) toward the apartment
 		model.position = Vector3((b - a) * 0.5 - 0.02, 0, 0)
 		leaf.add_child(model)
 	else:
