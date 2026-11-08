@@ -4,7 +4,8 @@ import os
 
 from propkit import prop
 from propkit import mats as M
-from propkit.core import cyl, planar_uv, tube, wrap_uv
+from propkit.core import cyl, planar_uv, wrap_uv
+from propkit.parts import rolled_rim
 
 SRC = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", "assets", "source_textures", "cans"))
 
@@ -19,8 +20,7 @@ def painted_can(name, r, h, repeat=1.0):
     body = cyl(r, h - 0.008, (0, 0, h / 2), label, 40)
     wrap_uv(body, h - 0.008, -(h - 0.008) / 2, repeat)
     for z in (0.003, h - 0.003):
-        ring = [(math.cos(a) * (r + 0.0005), math.sin(a) * (r + 0.0005), z) for a in [i * math.pi / 24 for i in range(49)]]
-        tube(ring, 0.0032, rim, 8)
+        rolled_rim(r + 0.0005, z, rim, 0.0032)
         cap = cyl(r * 0.99, 0.002, (0, 0, z + (-0.0005 if z > h / 2 else 0.0005)), lid, 40)
         planar_uv(cap, 0, 1, r * 2 * 0.99, r * 2 * 0.99)
 

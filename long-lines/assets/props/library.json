@@ -557,7 +557,57 @@
    "exterior",
    "car"
   ],
-  "desc": "A 1972 'Statesman' two-door hardtop in faded green with a cream vinyl roof, rusting, from Jared's painted sheet.",
+  "desc": "A 1972 'Statesman' two-door hardtop in faded green with a cream vinyl roof, rusting.",
+  "kind": "static"
+ },
+ "car_coupe_burnt": {
+  "size": [
+   2.02,
+   1.3809,
+   5.56
+  ],
+  "min": [
+   -1.01,
+   0.0,
+   -2.78
+  ],
+  "max": [
+   1.01,
+   1.3809,
+   2.78
+  ],
+  "tris": 15308,
+  "tex": 2048,
+  "tags": [
+   "exterior",
+   "car"
+  ],
+  "desc": "A burnt-out 'Statesman' hardtop: blistered paint, rust, glass gone, seats charred.",
+  "kind": "static"
+ },
+ "car_coupe_yellow": {
+  "size": [
+   2.02,
+   1.3809,
+   5.56
+  ],
+  "min": [
+   -1.01,
+   0.0,
+   -2.78
+  ],
+  "max": [
+   1.01,
+   1.3809,
+   2.78
+  ],
+  "tris": 15308,
+  "tex": 2048,
+  "tags": [
+   "exterior",
+   "car"
+  ],
+  "desc": "A 'Statesman' hardtop in sun-faded harvest gold, rust bubbling through, brown vinyl roof.",
   "kind": "static"
  },
  "car_sedan": {
@@ -2115,6 +2165,31 @@
   ],
   "desc": "A battery transistor radio in a teal leatherette case with a chrome grille.",
   "kind": "carry"
+ },
+ "range_electric": {
+  "size": [
+   0.764,
+   1.102,
+   0.677
+  ],
+  "min": [
+   -0.382,
+   0.0,
+   -0.322
+  ],
+  "max": [
+   0.382,
+   1.102,
+   0.355
+  ],
+  "tris": 4160,
+  "tex": 2048,
+  "tags": [
+   "kitchen",
+   "appliance"
+  ],
+  "desc": "A 1960s electric range with a clock backsplash, coil burners and a broiler drawer.",
+  "kind": "fixture"
  },
  "record_player": {
   "size": [

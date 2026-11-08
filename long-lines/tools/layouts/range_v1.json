@@ -1,0 +1,12 @@
+{
+ "_note": "Painted kitchen range sheet layout v1 (1536x1024).",
+ "size": [1536, 1024],
+ "background_sample": [4, 1020],
+ "scrub": [],
+ "crops": {
+  "backsplash": [14, 22, 578, 176], "oven_door": [14, 186, 552, 512], "cooktop": [562, 196, 904, 508],
+  "side_l": [910, 16, 1203, 488], "side_r": [1222, 16, 1517, 488], "drawer": [14, 528, 410, 748],
+  "oven_inside": [436, 526, 720, 752], "panel_plain": [534, 766, 975, 948], "toe_kick": [536, 948, 975, 1006],
+  "back": [10, 766, 516, 948], "knob": [1104, 863, 1162, 925]
+ }
+}

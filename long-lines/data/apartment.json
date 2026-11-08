@@ -12,7 +12,7 @@
    "z0": 0.0,
    "z1": 3.95,
    "floor": "boards",
-   "wall": "wallpaper_green"
+   "wall": "wallpaper_teardrop"
   },
   {
    "id": "office",
@@ -1629,13 +1629,13 @@
     "length": 5.3
    },
    {
-    "prop": "car_wagon",
+    "prop": "car_coupe_yellow",
     "pos": [
      9.2,
-     -4.0
+     -4.1
     ],
     "rot": 90,
-    "length": 5.6
+    "length": 5.3
    },
    {
     "prop": "car_wagon",
@@ -1657,10 +1657,10 @@
     "length": 5.3
    },
    {
-    "prop": "car_taxi",
+    "prop": "car_coupe_burnt",
     "pos": [
      14.5,
-     -11.8
+     -11.6
     ],
     "rot": -90,
     "length": 5.3

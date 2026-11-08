@@ -1,0 +1,23 @@
+{
+ "_note": "Painted car sheet layout v1 (1536x1024): two side views, nose and tail with bumpers, glass, wheel, tread, hubcap, hood, trunk, roof, interior. Brand regions are where generators tend to paint real makes and model names; they are always scrubbed.",
+ "size": [1536, 1024],
+ "background_sample": [4, 1020],
+ "scrub": [
+  {"what": "side script (upper view)", "type": "wash", "box": [52, 138, 140, 174], "src": [128, 0]},
+  {"what": "grille badge", "type": "wash", "box": [385, 510, 490, 534], "src": [-205, 0]},
+  {"what": "tail panel badge", "type": "plate", "box": [900, 510, 1035, 534], "text": "{BRAND}"},
+  {"what": "wheel centre logo", "type": "disc", "center": [135, 885], "r": 26},
+  {"what": "hubcap logo", "type": "disc", "center": [433, 846], "r": 27},
+  {"what": "steering wheel badge", "type": "disc", "center": [1200, 750], "r": 15}
+ ],
+ "crops": {
+  "side_l": [8, 8, 975, 222], "side_r": [8, 222, 978, 446],
+  "front": [12, 458, 642, 562], "front_bumper": [5, 562, 642, 634],
+  "rear": [664, 458, 1270, 562], "rear_bumper": [660, 562, 1270, 634],
+  "hood": [985, 8, 1268, 326], "roof": [1285, 8, 1532, 358], "trunk": [985, 340, 1275, 452],
+  "windshield": [22, 655, 342, 756], "rear_glass": [350, 655, 652, 756],
+  "tire": [8, 758, 265, 1012], "hubcap": [368, 788, 500, 906],
+  "dash": [1065, 655, 1532, 732], "seat": [805, 760, 1115, 1010], "door_card": [540, 760, 790, 925]
+ },
+ "rotate": {"tread": [[270, 762, 352, 1018], 90]}
+}

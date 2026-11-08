@@ -8,8 +8,9 @@ uniform vec3 albedo : source_color = vec3(0.8);
 uniform vec3 albedo2 : source_color = vec3(0.6);
 // 0 plain, 1 checker, 2 stripes, 3 floorboards, 4 brick, 5 floral, 6 grille,
 // 7 octagon linoleum, 8 ornamental tile, 10 flame-stitch zigzag,
-// 11 wood grain, 12 formica speckle
+// 11 wood grain, 12 formica speckle, 13 image tile (tex_img, one repeat per 1/scale m)
 uniform int pattern = 0;
+uniform sampler2D tex_img : source_color, filter_linear_mipmap_anisotropic, repeat_enable;
 uniform float scale = 1.0;
 uniform float grain = 0.07;
 uniform float wear = 0.0;         // lighten and chip bevelled edges
@@ -119,13 +120,15 @@ void fragment() {
 		// Wood grain.
 		float g = vnoise(vec3(uv.x * 0.15, uv.y * 4.0, 0.0)) + vnoise(vec3(uv.x * 0.5, uv.y * 14.0, 3.0)) * 0.5;
 		c = mix(albedo, albedo2, smoothstep(0.4, 1.2, g));
+	} else if (pattern == 13) {
+		c = texture(tex_img, vec2(uv.x, -uv.y)).rgb * albedo;
 	} else if (pattern == 12) {
 		// Formica speckle.
 		float s1 = step(0.93, hash(vec3(floor(uv * 1.0), 1.0)));
 		c = mix(albedo, albedo2, s1 * 0.8);
 	}
 	// Fade fine patterns to their average colour at a distance (no moire).
-	float period = pattern == 4 ? 0.075 : 1.0;
+	float period = pattern == 4 ? 0.075 : (pattern == 13 ? 1000.0 : 1.0);
 	float fw = max(length(dFdx(uv)), length(dFdy(uv)));
 	float far = smoothstep(0.2 * period, 0.55 * period, fw);
 	c = mix(c, mix(albedo, albedo2, pattern == 4 ? 0.25 : 0.4), far);

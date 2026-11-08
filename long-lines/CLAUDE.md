@@ -24,6 +24,16 @@ Build once, reuse everywhere. Do not hand-code one-off geometry in game code.
 - **Simulation** lives in pure classes (`scripts/sim/`), tuned by `data/*.json`.
 - Real brands, trademarks and real people's words are never used; invent period names.
 
+## Reuse first
+- Shared parts: `tools/propkit/parts.py` (wheel, sheet_box, rolled_rim, rails). Check here
+  before modelling anything a second time.
+- Painted sheets: `tools/prepare_sheet.py IMAGE LAYOUT NAME` with layouts in `tools/layouts/`
+  (car_v1, range_v1, wallpaper_v1). A new sheet with a known layout needs no new code: cars
+  are one line in `CARS` (`tools/props/cars_painted.py`), cans one line in `goods_painted.py`.
+- Wall materials: any tiling image becomes a wall finish via a palette entry with pattern 13
+  in `scripts/world/geo.gd`; the shader layers grime, cracks, peeling and stains on top.
+- **Read `docs/LESSONS.md`** before starting; add to it when something goes wrong.
+
 ## How to work here
 - Godot binary: download Godot 4.4.1 (Linux x86_64) from GitHub releases into the
   scratchpad. First run on a checkout: `godot --headless --path long-lines --import`.

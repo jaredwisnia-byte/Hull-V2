@@ -16,6 +16,7 @@ from PIL import Image
 from propkit import prop
 from propkit import mats as M
 from propkit.core import apply_mods, cyl, link, planar_uv, smooth, box, tube, wrap_uv
+from propkit.parts import wheel
 
 SRC = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", "assets", "source_textures"))
 
@@ -117,10 +118,14 @@ def _extrude(poly_yz, x0, x1, taper=0.0):
     return link(bpy.data.objects.new("body", me))
 
 
-def painted_car(name, length=5.3, width=1.98, cabin_width=1.62, clearance=0.2, belt=0.47):
+def painted_car(name, body="car_coupe", length=5.3, width=1.98, cabin_width=1.62, clearance=0.2, belt=0.47):
+    """body: the sheet whose side views define the shape. Repaints of the same car
+    (rusted, burnt, other colours) reuse one clean reference outline, because wrecks
+    and loose trim pieces on a sheet make outlines unreliable."""
     d = os.path.join(SRC, name)
+    shape = os.path.join(SRC, body)
     T = lambda part, rough=0.45, rep="EXTEND": M.image(os.path.join(d, part + ".png"), rough, 0.25, 0.02, name="%s_%s" % (name, part), extension=rep)
-    cols, top, bot, (hpx, wpx) = _profile(os.path.join(d, "side_l.png"), os.path.join(d, "side_r.png"))
+    cols, top, bot, (hpx, wpx) = _profile(os.path.join(shape, "side_l.png"), os.path.join(shape, "side_r.png"))
     x0p, x1p = cols[0], cols[-1]
     s = length / (x1p - x0p)
     rocker = max(bot.values())
@@ -129,12 +134,20 @@ def painted_car(name, length=5.3, width=1.98, cabin_width=1.62, clearance=0.2, b
     belt_px = min(top.values()) + belt * (rocker - min(top.values()))
     # Lower body: silhouette clipped at the beltline. Greenhouse: what's above it.
     low = [(Y(x), Z(max(top[x], belt_px))) for x in cols] + [(Y(x), Z(bot[x])) for x in reversed(cols)]
-    gcols = [x for x in cols if top[x] < belt_px - 2]
+    # Greenhouse: the one continuous run of columns around the roof's highest point
+    # that rises above the beltline (bumper ends near the beltline don't count).
+    peak = cols.index(min(cols, key=lambda x: top[x]))
+    lo = hi = peak
+    while lo > 0 and top[cols[lo - 1]] < belt_px - 2:
+        lo -= 1
+    while hi < len(cols) - 1 and top[cols[hi + 1]] < belt_px - 2:
+        hi += 1
+    gcols = cols[lo:hi + 1]
     green = [(Y(x), Z(top[x])) for x in gcols] + [(Y(gcols[-1]), Z(belt_px)), (Y(gcols[0]), Z(belt_px))]
     hgt = Z(min(top.values()))
     y_ws, y_rw = Y(gcols[0]), Y(gcols[-1])
     # Side views: map each by its own measured outline (car spans x0..x1, rocker row).
-    mr = _mask(os.path.join(d, "side_r.png"))
+    mr = _mask(os.path.join(shape, "side_r.png"))
     r0, r1 = _span(mr)
     hr, wr = mr.shape
     rrock = int(np.nonzero(mr.any(1))[0][-1])
@@ -160,8 +173,8 @@ def painted_car(name, length=5.3, width=1.98, cabin_width=1.62, clearance=0.2, b
         if n.y > 0.5:
             return 3, lambda v: (0.5 - v.x / width, (v.z - clearance) / (Z(belt_px) - clearance))
         if c.y < y_ws:
-            return 4, lambda v: (v.x / width + 0.5, 1 - (v.y + length / 2) / (y_ws + length / 2))
-        return 6, lambda v: (v.x / width + 0.5, 1 - (v.y - y_rw) / (length / 2 - y_rw))
+            return 4, lambda v: (v.x / width + 0.5, 1 - (v.y + length / 2) / max(y_ws + length / 2, 0.1))
+        return 6, lambda v: (v.x / width + 0.5, 1 - (v.y - y_rw) / max(length / 2 - y_rw, 0.1))
 
     for poly, (wa, wb, taper) in ((low, (width, width, 0.0)), (green, (cabin_width, cabin_width, 0.12))):
         o = _extrude(poly, -wa / 2, wa / 2, taper)
@@ -192,15 +205,24 @@ def painted_car(name, length=5.3, width=1.98, cabin_width=1.62, clearance=0.2, b
     for g in groups[:2]:
         yc = Y((g[0] + g[-1]) / 2)
         for side in (-1, 1):
-            w = cyl(0.355, 0.22, (side * (width / 2 - 0.13), yc, 0.355), tread, 40, (0, math.radians(90), 0), bevel=0.04)
-            wrap_uv(w, 0.22, -0.11, 5.0)
-            cap = cyl(0.35, 0.005, (side * (width / 2 - 0.018), yc, 0.355), tire, 40, (0, math.radians(90), 0))
-            planar_uv(cap, 0, 1, 0.7, 0.7)
+            wheel(side * (width / 2 - 0.13), yc, 0.355, 0.22, tread, tire, outer_sign=side)
     # Shadowed underside so the gap above the road isn't see-through.
     box((width - 0.2, length - 1.0, 0.12), (0, 0, clearance + 0.06), M.plain((0.04, 0.04, 0.04), 0.9, edge=0), bevel=0.02)
 
 
-@prop("car_coupe", tex=2048, tags=["exterior", "car"])
-def car_coupe():
-    """A 1972 'Statesman' two-door hardtop in faded green with a cream vinyl roof, rusting, from Jared's painted sheet."""
-    painted_car("car_coupe")
+# Every painted car sheet with the car_v1 layout becomes a prop here: prepare the
+# sheet with tools/prepare_sheet.py IMAGE car_v1 NAME, then add one line.
+# name -> (description, reference body sheet)
+CARS = {
+    "car_coupe": ("A 1972 'Statesman' two-door hardtop in faded green with a cream vinyl roof, rusting.", "car_coupe"),
+    "car_coupe_yellow": ("A 'Statesman' hardtop in sun-faded harvest gold, rust bubbling through, brown vinyl roof.", "car_coupe"),
+    "car_coupe_burnt": ("A burnt-out 'Statesman' hardtop: blistered paint, rust, glass gone, seats charred.", "car_coupe"),
+}
+
+
+def _register(name, desc, body):
+    prop(name, tex=2048, tags=["exterior", "car"], desc=desc)(lambda: painted_car(name, body))
+
+
+for _n, (_d, _b) in CARS.items():
+    _register(_n, _d, _b)

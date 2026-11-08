@@ -56,6 +56,8 @@ const PALETTE := {
 	# Kitchen test pass: 1970s New York, Long Dark-style rendering.
 	"linoleum_oct":    [Color(0.80, 0.64, 0.30), Color(0.93, 0.85, 0.62), 7, 5.5, 0.07, {"wear": 0.0, "grime": 0.35}],
 	"tile_gold":       [Color(0.84, 0.66, 0.22), Color(0.95, 0.86, 0.55), 8, 6.6, 0.05, {"grime": 0.3, "floor_grime": 0.5}],
+	# Painted tiles from assets/source_textures/<name>/tile.png (pattern 13); scale = 1 / repeat in metres.
+	"wallpaper_teardrop": [Color(0.92, 0.9, 0.86), Color(0.8, 0.78, 0.74), 13, 1.25, 0.03, {"tex": "res://assets/source_textures/wallpaper_teardrop/tile.png", "grime": 0.45, "floor_grime": 0.4, "cracks": 0.35, "peel": 0.45, "stains": 0.45}],
 	"plaster_kitchen": [Color(0.86, 0.82, 0.70), Color(0.80, 0.75, 0.62), 0, 1.0, 0.10, {"grime": 0.7, "floor_grime": 0.5, "cracks": 0.7, "peel": 0.5, "stains": 0.6}],
 	"plaster_hall":    [Color(0.62, 0.58, 0.48), Color(0.45, 0.42, 0.35), 0, 1.0, 0.12, {"grime": 0.9, "floor_grime": 0.7, "cracks": 0.9, "peel": 0.8, "stains": 0.8}],
 	"plaster_office":  [Color(0.72, 0.70, 0.60), Color(0.66, 0.64, 0.55), 0, 1.0, 0.10, {"grime": 0.6, "floor_grime": 0.45, "cracks": 0.6, "peel": 0.4, "stains": 0.5}],
@@ -103,7 +105,10 @@ static func mat(name: String) -> Material:
 	m.set_shader_parameter("grain", p[4])
 	var extra: Dictionary = p[5] if p.size() > 5 else {}
 	for k in extra:
-		m.set_shader_parameter(k, extra[k])
+		if k == "tex":
+			m.set_shader_parameter("tex_img", load(String(extra[k])))
+		else:
+			m.set_shader_parameter(k, extra[k])
 	_cache[name] = m
 	return m
 
