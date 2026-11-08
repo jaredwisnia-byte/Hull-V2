@@ -1,0 +1,22 @@
+{
+ "prop": "telephone_desk_kit",
+ "size_m": [
+  0.119,
+  0.223,
+  0.144
+ ],
+ "silhouette_iou": {
+  "front": null,
+  "back": null,
+  "right": null,
+  "left": null,
+  "top": null
+ },
+ "front_relief_mm": 127.1,
+ "painted_features": [],
+ "lowest_z_m": -0.0,
+ "front_holes_px": 2180,
+ "complaints": [
+  "There are see-through holes in the front (2180 px)."
+ ]
+}

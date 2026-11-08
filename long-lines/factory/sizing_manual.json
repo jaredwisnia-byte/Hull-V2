@@ -592,6 +592,21 @@
     60,
     300
    ]
+  },
+  "telephone": {
+   "width": [
+    180,
+    240
+   ],
+   "depth": [
+    190,
+    240
+   ],
+   "height": [
+    100,
+    150
+   ],
+   "why": "1960s-70s desk set (push-button or rotary): wedge base, handset on a cradle"
   }
  },
  "assembly_rules": [
@@ -599,5 +614,41 @@
   "A part seen in several views is one part: build it once, from the view that faces it.",
   "Panels that open (doors, drawers, lids) are separate pieces with a gap all round.",
   "Feet and kick plates are one standard base, not one piece per view."
- ]
+ ],
+ "profiles": {
+  "_note": "Side profiles by convention, for sheets with no side view (low confidence; the report says so). Points (depth fraction from the front, height fraction from the top), front at the left.",
+  "telephone": {
+   "points": [
+    [
+     0,
+     1
+    ],
+    [
+     0,
+     0.55
+    ],
+    [
+     0.55,
+     0.15
+    ],
+    [
+     0.6,
+     0.0
+    ],
+    [
+     0.97,
+     0.0
+    ],
+    [
+     1,
+     0.1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "why": "desk sets slope up from a low front to the cradle at the back so the dial or keys face the user"
+  }
+ }
 }

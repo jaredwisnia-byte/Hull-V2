@@ -146,3 +146,13 @@ add to it whenever something goes wrong.
   but tall): judge the body outline row by row from neighbouring rows instead.
 - `tools/match_check.py` puts the model's ray-cast front depth beside the reference depth map:
   run it on every sheet-set build; it shows liberties at a glance.
+
+## Paint-only test: desk telephone from the 20-object sheet (Nov 8)
+- Without depth/part maps and without a true side view, the kit line got a recognisable phone
+  (wedge base by convention, keys from the painted keypad, handset from its side outline resting
+  in the cradle, coiled cord) but the gate flagged it: the painted "front" is the sloped keypad
+  face drawn square-on, not an elevation, so it can't match the model's front outline (64%).
+  That is protocol rule 4 working: the views conflict and the factory says so instead of shipping.
+- Faces with no painted view (sides, the flat rear top) get the nearest view stretched along
+  them: visible streaks. A face needs its own painting or a padded flat fill.
+- Small multi-object cells (~110 px per view) limit detail: 11 "keys" found for 9 painted.

@@ -243,6 +243,10 @@ def run_line(order):
         d = os.path.join(SRC, order["views_folder"])
         order["measured"] = build_set(os.path.join(d, "manifest.json"), order["name"], order["height_m"],
                                       order["depth_m"], order.get("object_type"))
+    elif line == "kit":
+        from propkit.kit import build as kit_build
+        d = os.path.join(SRC, order["views_folder"])
+        order["measured"] = kit_build(os.path.join(SRC, "_sheets", order["sheet"]), order, d)
     elif line == "recipe":
         propkit.PROPS[order["name"]]["fn"]()
     else:
