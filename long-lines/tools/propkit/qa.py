@@ -182,7 +182,7 @@ def check(name, views_dir=None, category_class=None, paint_only=(), solid=False,
                     iou, ratio_error = match
                     m["trim_section_iou"] = iou
                     m["trim_section_ratio_error"] = ratio_error
-                    if iou < 0.68 or ratio_error > 0.30:
+                    if iou < MIN["trim"]["section_iou_min"] or ratio_error > MIN["trim"]["section_ratio_error_max"]:
                         fails.append("trim section differs from reference: IoU %.2f, ratio error %.2f" %
                                      (iou, ratio_error))
         elif category == "moulding":
@@ -211,7 +211,7 @@ def check(name, views_dir=None, category_class=None, paint_only=(), solid=False,
                     bottom = max(top + 1, min(H, int((y1 - (y1 - y0) * .2) * H)))
                     occlusion = float(fg[top:bottom, left:right].mean())
                     m["frame_opening_occlusion"] = round(occlusion, 3)
-                    if occlusion > 0.1:
+                    if occlusion > MIN["trim"]["frame_opening_occlusion_max"]:
                         fails.append("frame opening is blocked by mesh: %.0f%% occupied" %
                                      (occlusion * 100))
 
@@ -222,6 +222,6 @@ def check(name, views_dir=None, category_class=None, paint_only=(), solid=False,
         else:
             difference = trim_checks.texture_difference(reference, albedo_path)
             m["trim_colour_difference"] = difference
-            if difference is None or difference > 0.40:
+            if difference is None or difference > MIN["trim"]["colour_difference_max"]:
                 fails.append("trim baked colour differs from painted reference: %s" % difference)
     return {"pass": not fails, "fails": fails, "metrics": m}

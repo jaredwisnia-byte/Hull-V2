@@ -7,10 +7,10 @@ Generated from `factory/ledger.jsonl` (latest result per asset).
 | Assets measured | 188 |
 | Pass the minimum standard | 187 (99%) |
 | Factory builds | 71 |
-| Factory builds passing with no correction | 70 |
+| Factory builds passing with no correction | 69 |
 | Factory builds needing a person | 1 |
-| Mean build time (s) | 54 |
-| Same inputs -> same gauges | 101 of 104 order/input pairs |
+| Mean build time (s) | 49 |
+| Same inputs -> same gauges | 68 of 108 order/input pairs |
 | Median triangles | 1128 |
 | Max triangles | 38000 |
 

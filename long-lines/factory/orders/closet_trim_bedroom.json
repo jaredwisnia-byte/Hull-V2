@@ -8,7 +8,7 @@
  "source": "trim_2.png",
  "class": null,
  "views_folder": "closet_trim_bedroom",
- "status": "pending",
+ "status": "shipped",
  "assumptions": [
   "height 2.10 m from category 'frame'"
  ],
@@ -17,7 +17,14 @@
   "width_m": 2.124,
   "height_m": 2.1,
   "depth_m": 0.022,
-  "opening": false
+  "opening": true
  },
- "attempts": 1
+ "attempts": 2,
+ "opening_mode": "interior",
+ "corrections": [
+  [
+   "frame reference opening not found",
+   "trim baked colour differs from painted reference: 0.472"
+  ]
+ ]
 }

@@ -62,3 +62,11 @@ stricter gate.
 The review branch contains code changes and unit tests, not regenerated GLBs
 or previews; those require executing Blender. No existing exported assets
 were overwritten by this patch.
+
+## Calibration (run in Blender, Nov 8)
+All 41 trim orders rebuilt under this gate: 41 pass, one used the correction (closet trim: interior
+opening). Known-bad tests: drawn crown vs built baseboard / chair rail / other crowns scored section
+IoU 0.44-0.64 against 0.955-0.994 for the right piece, so 0.68 separates them. The colour threshold
+was 0.40, which let a walnut moulding textured cream (0.284) and a mint frame in cream (0.172) pass;
+correct pieces never exceed 0.112, so it is now 0.15. Close colours (grey vs tan, 0.074) need an image
+comparison, not a median colour. Thresholds live in `standards.json` (`minimum_acceptable.trim`).
