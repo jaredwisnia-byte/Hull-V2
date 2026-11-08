@@ -175,7 +175,9 @@ def wall_colour(im, wins):
     keep = np.ones((H, W), bool)
     for u0, v0, u1, v1 in wins:
         keep[int((1 - v1) * H):int((1 - v0) * H) + 1, int(u0 * W):int(u1 * W) + 1] = False
-    return np.median(a[keep], 0)
+    px = a[keep]
+    lum = px.mean(1)
+    return np.median(px[lum >= np.percentile(lum, 40)], 0)  # windows, shadows, fire escapes are the dark 40%
 
 
 def nearest_surface(col, prefix="ext_"):

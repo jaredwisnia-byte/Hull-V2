@@ -761,6 +761,32 @@
   "desc": "bldg_tribeca_07",
   "kind": "static"
  },
+ "bldg_tribeca_08": {
+  "size": [
+   9.0278,
+   14.5,
+   12.2
+  ],
+  "min": [
+   -4.5139,
+   0.0,
+   -12.0
+  ],
+  "max": [
+   4.5139,
+   14.5,
+   0.2
+  ],
+  "tris": 398,
+  "tex": 2048,
+  "standardized": [],
+  "tags": [
+   "building",
+   "factory"
+  ],
+  "desc": "bldg_tribeca_08",
+  "kind": "static"
+ },
  "book_stack": {
   "size": [
    0.2367,
