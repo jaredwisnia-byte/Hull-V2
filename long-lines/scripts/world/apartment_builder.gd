@@ -43,16 +43,16 @@ func build(parent: Node3D) -> Node3D:
 	return root
 
 
-## One reflection probe per room, so chrome and glass reflect the room
-## instead of going black.
+## One reflection probe per room, so chrome and glass reflect the room.
 func _reflection_probes() -> void:
 	for r in d.rooms:
+		var rx := _rx(r)
 		var z0 := float(r.z0)
 		var z1 := float(r.z1)
 		var p := ReflectionProbe.new()
 		p.name = "Probe_" + String(r.id)
-		p.size = Vector3(W, H, z1 - z0)
-		p.position = Vector3(W * 0.5, H * 0.5, (z0 + z1) * 0.5)
+		p.size = Vector3(rx[1] - rx[0], H, z1 - z0)
+		p.position = Vector3((rx[0] + rx[1]) * 0.5, H * 0.5, (z0 + z1) * 0.5)
 		p.box_projection = true
 		p.interior = true
 		p.ambient_mode = ReflectionProbe.AMBIENT_DISABLED
@@ -61,23 +61,46 @@ func _reflection_probes() -> void:
 		root.add_child(p)
 
 
-func _room_at(z: float) -> Dictionary:
+## Rooms carry an optional x range (x0, x1); sub-rooms such as a closet or a
+## bathroom sit inside a main room's footprint and take precedence there.
+func _rx(r: Dictionary) -> Array:
+	return [float(r.get("x0", 0.0)), float(r.get("x1", W))]
+
+
+func _is_sub(r: Dictionary) -> bool:
+	return r.has("x0") or r.has("x1")
+
+
+func _room_at(z: float, x := -1.0) -> Dictionary:
+	if x >= 0.0:
+		for r in d.rooms:
+			var rx := _rx(r)
+			if _is_sub(r) and z >= float(r.z0) - 0.06 and z <= float(r.z1) + 0.06 and x >= rx[0] - 0.06 and x <= rx[1] + 0.06:
+				return r
 	for r in d.rooms:
-		if z >= float(r.z0) - 0.06 and z <= float(r.z1) + 0.06:
+		if not _is_sub(r) and z >= float(r.z0) - 0.06 and z <= float(r.z1) + 0.06:
 			return r
 	return d.rooms[0]
 
 
-# ------------------------------------------------------------ shell
+func _room_by_id(id: String) -> Dictionary:
+	for r in d.rooms:
+		if r.id == id:
+			return r
+	return d.rooms[0]
+
 
 func _floors_and_ceiling() -> void:
 	var body := StaticBody3D.new()
 	body.name = "Shell"
 	root.add_child(body)
 	for r in d.rooms:
+		var rx := _rx(r)
 		var z0 := float(r.z0) - 0.05
 		var z1 := float(r.z1) + 0.05
-		Geo.box(body, Vector3(W, 0.2, z1 - z0), Vector3(W * 0.5, -0.1, (z0 + z1) * 0.5), String(r.floor))
+		var lift := 0.003 if _is_sub(r) else 0.0
+		Geo.box(body, Vector3(rx[1] - rx[0] + (0.0 if _is_sub(r) else 0.0), 0.2, z1 - z0),
+			Vector3((rx[0] + rx[1]) * 0.5, -0.1 + lift, (z0 + z1) * 0.5), String(r.floor), not _is_sub(r))
 	Geo.box(body, Vector3(W + 0.5, 0.25, D + 0.5), Vector3(W * 0.5, H + 0.125, D * 0.5), "ceiling")
 
 
@@ -115,6 +138,45 @@ func wall_run(body: Node3D, axis: String, fixed: float, out_dir: float, thicknes
 		else:
 			Geo.box(body, Vector3(thickness, hgt, len), Vector3(mid, cy, c), material)
 
+## Splits one outer wall into stretches by the room behind each stretch.
+## side: front/back run along x; left/right run along z.
+func _wall_stretches(side: String) -> Array:
+	var along_x := side == "front" or side == "back"
+	var fixed := 0.0
+	match side:
+		"back":
+			fixed = D
+		"right":
+			fixed = W
+	var length := W if along_x else D
+	var cuts := [0.0, length]
+	for r in d.rooms:
+		var rx := _rx(r)
+		if along_x:
+			cuts.append(rx[0])
+			cuts.append(rx[1])
+		else:
+			cuts.append(float(r.z0) - 0.05)
+			cuts.append(float(r.z1) + 0.05)
+	var pts: Array = []
+	for c in cuts:
+		var v := clampf(float(c), 0.0, length)
+		if not pts.any(func(q): return absf(q - v) < 0.02):
+			pts.append(v)
+	pts.sort()
+	var out: Array = []
+	for i in pts.size() - 1:
+		var a: float = pts[i]
+		var b: float = pts[i + 1]
+		var mid := (a + b) * 0.5
+		var r: Dictionary
+		if along_x:
+			r = _room_at(clampf(fixed, 0.01, D - 0.01), mid)
+		else:
+			r = _room_at(mid, clampf(fixed, 0.01, W - 0.01))
+		out.append([a, b, r])
+	return out
+
 
 func _outer_walls() -> void:
 	var body := StaticBody3D.new()
@@ -123,22 +185,16 @@ func _outer_walls() -> void:
 	var ops: Dictionary = d.openings
 	var paint := 0.03
 	var brick := 0.25
-	# Front (street) wall: wallpaper inside, brick outside.
-	wall_run(body, "x", 0.0, -1.0, paint, 0.0, W, ops.front, String(_room_at(0.0).wall))
+	for st in _wall_stretches("front"):
+		wall_run(body, "x", 0.0, -1.0, paint, st[0], st[1], ops.front, String(st[2].wall))
+	for st in _wall_stretches("back"):
+		wall_run(body, "x", D, 1.0, paint, st[0], st[1], ops.back, String(st[2].wall))
+	for st in _wall_stretches("left"):
+		wall_run(body, "z", 0.0, -1.0, paint, st[0], st[1], ops.left, String(st[2].wall))
+	for st in _wall_stretches("right"):
+		wall_run(body, "z", W, 1.0, paint, st[0], st[1], ops.right, String(st[2].wall))
 	wall_run(body, "x", 0.0, -1.0, brick, -0.25, W + 0.25, ops.front, "brick", paint)
-	# Back wall to the stair hall.
-	wall_run(body, "x", D, 1.0, paint, 0.0, W, ops.back, String(_room_at(D).wall))
-	wall_run(body, "x", D, 1.0, brick, -0.25, W + 0.25, ops.back, "plaster_cream", paint)
-	# Side walls, painted per room.
-	for r in d.rooms:
-		var z0 := float(r.z0) - 0.05
-		var z1 := float(r.z1) + 0.05
-		if r == d.rooms[0]:
-			z0 = 0.0
-		if r == d.rooms[d.rooms.size() - 1]:
-			z1 = D
-		wall_run(body, "z", 0.0, -1.0, paint, z0, z1, ops.left, String(r.wall))
-		wall_run(body, "z", W, 1.0, paint, z0, z1, ops.right, String(r.wall))
+	wall_run(body, "x", D, 1.0, brick, -0.25, W + 0.25, ops.back, "plaster_hall", paint)
 	wall_run(body, "z", 0.0, -1.0, brick, -0.25, D + 0.25, ops.left, "brick", paint)
 	wall_run(body, "z", W, 1.0, brick, -0.25, D + 0.25, ops.right, "brick", paint)
 
@@ -152,35 +208,46 @@ func _outer_walls() -> void:
 			Geo.bevel = false
 
 
+## Interior walls: {"axis": "x" (runs along x at z = at) or "z" (along z at x = at),
+## "at", "from", "to", "doorways": [[a, b, top], ...], "a": room on the low side,
+## "b": room on the high side, "door": optional library door for each doorway}.
 func _partitions() -> void:
 	var body := StaticBody3D.new()
 	body.name = "Partitions"
 	root.add_child(body)
-	for p in d.partitions:
-		var z := float(p.z)
-		var dw: Array = p.doorway
-		var op := {"a": dw[0], "b": dw[1], "y0": 0.0, "y1": dw[2]}
-		var front_room: Dictionary = _room_by_id(String(p.front_room))
-		var back_room: Dictionary = _room_by_id(String(p.back_room))
-		wall_run(body, "x", z, -1.0, 0.05, 0.0, W, [op], String(front_room.wall))
-		wall_run(body, "x", z, 1.0, 0.05, 0.0, W, [op], String(back_room.wall))
-		# Door frame trim.
-		var a := float(dw[0])
-		var b := float(dw[1])
-		var top := float(dw[2])
-		Geo.box(body, Vector3(0.06, top, 0.14), Vector3(a - 0.03, top * 0.5, z), "trim", false)
-		Geo.box(body, Vector3(0.06, top, 0.14), Vector3(b + 0.03, top * 0.5, z), "trim", false)
-		Geo.box(body, Vector3(b - a + 0.12, 0.07, 0.14), Vector3((a + b) * 0.5, top + 0.035, z), "trim", false)
+	for p in d.get("walls", []):
+		var axis := String(p.axis)
+		var at := float(p.at)
+		var a0 := float(p.get("from", 0.0))
+		var a1 := float(p.get("to", W if axis == "x" else D))
+		var ops: Array = []
+		for dw in p.get("doorways", []):
+			ops.append({"a": dw[0], "b": dw[1], "y0": 0.0, "y1": dw[2]})
+		var ra := _room_by_id(String(p.a))
+		var rb := _room_by_id(String(p.b))
+		wall_run(body, axis, at, -1.0, 0.05, a0, a1, ops, String(ra.wall))
+		wall_run(body, axis, at, 1.0, 0.05, a0, a1, ops, String(rb.wall))
+		for dw in p.get("doorways", []):
+			var mid := (float(dw[0]) + float(dw[1])) * 0.5
+			var pos := Vector3(mid, 0, at) if axis == "x" else Vector3(at, 0, mid)
+			var rot := 0.0 if axis == "x" else PI * 0.5
+			var casing := PropFactory.baked_prop("door_casing")
+			if casing:
+				casing.position = pos
+				casing.rotation.y = rot
+				root.add_child(casing)
+			if dw.size() > 3 and String(dw[3]) != "":
+				var door := PropFactory.baked_prop(String(dw[3]))
+				if door:
+					# Hung open against the wall on the low side.
+					var hinge := float(dw[0]) + 0.02
+					door.position = (Vector3(hinge, 0, at - 0.03) if axis == "x" else Vector3(at - 0.03, 0, hinge))
+					door.rotation.y = rot + PI * 0.5 + 0.25
+					door.position += (Vector3(0, 0, -0.38) if axis == "x" else Vector3(-0.38, 0, 0))
+					root.add_child(door)
 
 
-func _room_by_id(id: String) -> Dictionary:
-	for r in d.rooms:
-		if r.id == id:
-			return r
-	return d.rooms[0]
-
-
-## Glazed tile up the lower part of a room's walls (the kitchen), with a cap.
+## Glazed tile up the lower part of a room's walls (kitchen, bathroom), with a cap.
 func _wainscots() -> void:
 	var body := StaticBody3D.new()
 	body.name = "Wainscot"
@@ -193,25 +260,32 @@ func _wainscots() -> void:
 		var ws: Dictionary = r.wainscot
 		var top := float(ws.height)
 		var m := String(ws.material)
+		var rx := _rx(r)
 		var z0 := float(r.z0)
 		var z1 := float(r.z1)
-		wall_run(body, "z", 0.0, 1.0, t, z0, z1, ops.left, m, 0.0, top)
-		wall_run(body, "z", W, -1.0, t, z0, z1, ops.right, m, 0.0, top)
+		if rx[0] <= 0.01:
+			wall_run(body, "z", 0.0, 1.0, t, z0, z1, ops.left, m, 0.0, top)
+		if rx[1] >= W - 0.01:
+			wall_run(body, "z", W, -1.0, t, z0, z1, ops.right, m, 0.0, top)
 		if z1 >= D - 0.01:
-			wall_run(body, "x", D, -1.0, t, 0.0, W, ops.back, m, 0.0, top)
+			wall_run(body, "x", D, -1.0, t, rx[0], rx[1], ops.back, m, 0.0, top)
 		if z0 <= 0.01:
-			wall_run(body, "x", 0.0, 1.0, t, 0.0, W, ops.front, m, 0.0, top)
-		for p in d.partitions:
-			var dw: Array = p.doorway
-			var op := {"a": dw[0], "b": dw[1], "y0": 0.0, "y1": dw[2]}
-			if String(p.back_room) == String(r.id):
-				wall_run(body, "x", float(p.z) + 0.05, 1.0, t, 0.0, W, [op], m, 0.0, top)
-			if String(p.front_room) == String(r.id):
-				wall_run(body, "x", float(p.z) - 0.05, -1.0, t, 0.0, W, [op], m, 0.0, top)
-		# Bullnose cap along the top edge.
-		var cap := String(ws.get("cap", "trim"))
-		Geo.box(body, Vector3(0.025, 0.03, z1 - z0), Vector3(0.012, top, (z0 + z1) * 0.5), cap, false)
-		Geo.box(body, Vector3(0.025, 0.03, z1 - z0), Vector3(W - 0.012, top, (z0 + z1) * 0.5), cap, false)
+			wall_run(body, "x", 0.0, 1.0, t, rx[0], rx[1], ops.front, m, 0.0, top)
+		for p in d.get("walls", []):
+			var ops2: Array = []
+			for dw in p.get("doorways", []):
+				ops2.append({"a": dw[0], "b": dw[1], "y0": 0.0, "y1": dw[2]})
+			var axis := String(p.axis)
+			var at := float(p.at)
+			var a0 := maxf(float(p.get("from", 0.0)), rx[0] if axis == "x" else z0)
+			var a1 := minf(float(p.get("to", W if axis == "x" else D)), rx[1] if axis == "x" else z1)
+			if a1 <= a0:
+				continue
+			if String(p.b) == String(r.id):
+				wall_run(body, axis, at + 0.05, 1.0, t, a0, a1, ops2, m, 0.0, top)
+			if String(p.a) == String(r.id):
+				wall_run(body, axis, at - 0.05, -1.0, t, a0, a1, ops2, m, 0.0, top)
+
 
 
 func _trim() -> void:
@@ -312,31 +386,71 @@ func _sash_geometry(parent: Node3D, w: float, h: float) -> void:
 	Geo.box(parent, Vector3(0.035, h, 0.045), Vector3(-w * 0.5 + 0.0175, h * 0.5, 0), "trim", false)
 	Geo.box(parent, Vector3(0.035, h, 0.045), Vector3(w * 0.5 - 0.0175, h * 0.5, 0), "trim", false)
 
-
+## The apartment door (a library model) and, behind it, the stair landing.
 func _hall_door(_side: String, op: Dictionary) -> void:
 	var a := float(op.a)
 	var b := float(op.b)
-	var h := float(op.y1)
 	var door := HallDoor.new()
 	door.name = "hall_door"
 	door.persist_id = "hall_door"
 	door.display_name = "door"
 	root.add_child(door)
-	door.position = Vector3((a + b) * 0.5, 0, D + 0.12)
-	var w := b - a
-	Geo.box(door, Vector3(w, h, 0.05), Vector3(0, h * 0.5, 0), "wood_mid")
-	for i in 2:
-		Geo.box(door, Vector3(w * 0.7, h * 0.32, 0.01), Vector3(0, h * (0.3 + i * 0.4), -0.03), "wood_light", false)
-	Geo.sphere(door, 0.03, Vector3(w * 0.38, 0.95, -0.06), "chrome")
-	Geo.box(door, Vector3(0.1, 0.02, 0.02), Vector3(w * 0.3, 1.45, -0.04), "chrome", false)
-	Geo.box(door, Vector3(0.012, 0.012, 0.18), Vector3(w * 0.33, 1.4, -0.06), "chrome", false).rotation.x = 0.4
-	Geo.box(door, Vector3(0.06, 0.1, 0.03), Vector3(w * 0.38, 1.25, -0.05), "chrome", false)
-	Geo.box(door, Vector3(0.14, 0.06, 0.005), Vector3(0, 1.65, -0.028), "chrome", false)
-	Geo.label3d(door, "4A", Vector3(0, 1.65, -0.032), 0.05).rotation.y = PI
-	# Frame
-	Geo.box(door, Vector3(0.07, h, 0.14), Vector3(-w * 0.5 - 0.035, h * 0.5, -0.05), "trim", false)
-	Geo.box(door, Vector3(0.07, h, 0.14), Vector3(w * 0.5 + 0.035, h * 0.5, -0.05), "trim", false)
-	Geo.box(door, Vector3(w + 0.14, 0.08, 0.14), Vector3(0, h + 0.04, -0.05), "trim", false)
+	door.position = Vector3(a + 0.02, 0, D + 0.03)
+	door.hinge_open = -1.2
+	var leaf := Node3D.new()
+	leaf.position = Vector3(0, 0, 0)
+	door.add_child(leaf)
+	var model := PropFactory.baked_prop("door_entry_4a")
+	if model:
+		model.rotation.y = PI  # its inside face (police lock) toward the apartment
+		model.position = Vector3((b - a) * 0.5 - 0.02, 0, 0)
+		leaf.add_child(model)
+	else:
+		Geo.box(leaf, Vector3(b - a, float(op.y1), 0.05), Vector3((b - a) * 0.5, float(op.y1) * 0.5, 0), "wood_mid", false)
+	door.leaf = leaf
+	var cs := CollisionShape3D.new()
+	var bs := BoxShape3D.new()
+	bs.size = Vector3(b - a, float(op.y1), 0.06)
+	cs.shape = bs
+	cs.position = Vector3((b - a) * 0.5, float(op.y1) * 0.5, 0)
+	door.add_child(cs)
+	var casing := PropFactory.baked_prop("door_casing")
+	if casing:
+		casing.position = Vector3((a + b) * 0.5, 0, D + 0.12)
+		root.add_child(casing)
+	_landing(a, b)
+
+
+## The fourth-floor landing outside 4A: hall tile, a neighbour's door, the stair down.
+func _landing(a: float, b: float) -> void:
+	var n := StaticBody3D.new()
+	n.name = "Landing"
+	root.add_child(n)
+	var z0 := D + 0.28
+	var z1 := z0 + 2.4
+	Geo.bevel = false
+	Geo.box(n, Vector3(W + 1.0, 0.2, z1 - z0), Vector3(W * 0.5, -0.1, (z0 + z1) * 0.5), "tile_hex")
+	Geo.box(n, Vector3(W + 1.0, 0.2, z1 - z0), Vector3(W * 0.5, H + 0.1, (z0 + z1) * 0.5), "ceiling")
+	Geo.box(n, Vector3(W + 1.0, H, 0.2), Vector3(W * 0.5, H * 0.5, z1 + 0.1), "plaster_hall")
+	Geo.box(n, Vector3(0.2, H, z1 - z0), Vector3(-0.6, H * 0.5, (z0 + z1) * 0.5), "plaster_hall")
+	Geo.box(n, Vector3(0.2, H, z1 - z0), Vector3(W + 0.6, H * 0.5, (z0 + z1) * 0.5), "plaster_hall")
+	Geo.bevel = true
+	var other := PropFactory.baked_prop("door_entry_4b")
+	if other:
+		other.position = Vector3(0.6, 0, z1 - 0.03)
+		other.rotation.y = PI
+		root.add_child(other)
+	var stair := PropFactory.baked_prop("stair_flight")
+	if stair:
+		stair.position = Vector3(W - 0.35, 0, z0 + 0.6)
+		stair.rotation.y = PI * 0.5
+		root.add_child(stair)
+	var lamp := OmniLight3D.new()
+	lamp.position = Vector3(W * 0.5, H - 0.3, (z0 + z1) * 0.5)
+	lamp.light_color = Color(0.7, 0.75, 0.85)
+	lamp.light_energy = 0.15
+	lamp.omni_range = 4.0
+	root.add_child(lamp)
 
 
 # ------------------------------------------------------------ fire escape and outside
@@ -377,139 +491,96 @@ func _fire_escape() -> void:
 		Geo.box(body, Vector3(x1 - x0, 0.04, 0.04), Vector3(cx, level + rail_h, z0), "iron", false)
 	Geo.box(body, Vector3(x1 - x0, 0.03, z1 - z0), Vector3(cx, 3.0, cz), "grille", false)
 
-
 func _exterior() -> void:
 	var n := StaticBody3D.new()
 	n.name = "Facade"
 	root.add_child(n)
 	var top := H + 3.6
 	var front_z := -0.28 - 0.06
-	# Our building's face around the apartment, five storeys of brick.
+	# Our building's face around the apartment.
 	Geo.box(n, Vector3(8.0, top - street_y, 0.3), Vector3(-4.25, (top + street_y) * 0.5, front_z + 0.15), "brick")
 	Geo.box(n, Vector3(8.0, top - street_y, 0.3), Vector3(W + 4.25, (top + street_y) * 0.5, front_z + 0.15), "brick")
 	Geo.box(n, Vector3(W + 0.5, -0.2 - street_y, 0.3), Vector3(W * 0.5, (street_y - 0.2) * 0.5, front_z + 0.15), "brick")
 	Geo.box(n, Vector3(W + 0.5, top - H - 0.25, 0.3), Vector3(W * 0.5, (top + H + 0.25) * 0.5, front_z + 0.15), "brick")
-	# Cornice.
-	Geo.box(n, Vector3(W + 16.5, 0.4, 0.6), Vector3(W * 0.5, top, front_z), "brownstone", false)
-	# Neighbour windows on our own facade (dark: nobody has light).
-	for floor_i in range(-3, 2):
-		var y := floor_i * 3.0 + 0.75
-		for x in [-6.2, -4.8, -2.0, -0.6, 4.0, 5.4, 8.2, 9.6]:
-			if floor_i == 0 and x > -0.5 and x < W + 0.5:
-				continue
-			Geo.box(n, Vector3(0.9, 1.5, 0.02), Vector3(x, y + 0.75, front_z - 0.01), "window_dark", false)
-			Geo.box(n, Vector3(1.0, 0.06, 0.12), Vector3(x, y, front_z - 0.05), "brownstone", false)
-	# Airshaft: a brick wall 1.2 m away from the side windows.
+	# Airshaft: a brick wall 1.2 m from the side windows, with the neighbours' windows.
 	Geo.box(n, Vector3(0.3, top - street_y, D + 1.0), Vector3(W + 0.25 + 1.2 + 0.15, (top + street_y) * 0.5, D * 0.5), "brick_dark")
 	for floor_i in range(-3, 2):
-		Geo.box(n, Vector3(0.02, 1.2, 0.7), Vector3(W + 0.25 + 1.19, floor_i * 3.0 + 1.6, 6.0), "window_dark", false)
-	# Neighbouring roofs and a water tower, seen across the street.
-	Geo.box(n, Vector3(0.6, 0.2, 2.0), Vector3(W + 1.0, top - 0.1, D * 0.5), "brownstone", false)
+		for zz in [5.2, 8.0, 10.8]:
+			Geo.box(n, Vector3(0.02, 1.2, 0.7), Vector3(W + 0.25 + 1.19, floor_i * 3.0 + 1.6, zz), "window_dark", false)
 
 
+## Sullivan Street below, assembled from library parts: facade bays, cornices,
+## shopfronts, street furniture and cars. Interchangeable pieces, placed by data.
 func _street() -> void:
 	var n := StaticBody3D.new()
 	n.name = "Street"
 	root.add_child(n)
 	var sy := street_y
+	Geo.bevel = false
 	Geo.box(n, Vector3(80, 0.2, 2.6), Vector3(W * 0.5, sy + 0.05, -1.65), "sidewalk")
 	Geo.box(n, Vector3(80, 0.1, 10.0), Vector3(W * 0.5, sy - 0.05, -7.95), "asphalt")
 	Geo.box(n, Vector3(80, 0.2, 2.6), Vector3(W * 0.5, sy + 0.05, -14.25), "sidewalk")
 	Geo.box(n, Vector3(80, 0.02, 0.12), Vector3(W * 0.5, sy + 0.01, -7.95), "car_yellow", false)
-	# Across the street: tenements and a loft building, all dark.
-	var fronts := [
-		{"x": -14.0, "w": 7.6, "h": 16.0, "m": "brick"},
-		{"x": -6.2, "w": 7.6, "h": 14.5, "m": "brick_dark"},
-		{"x": 1.6, "w": 7.6, "h": 16.0, "m": "brick"},
-		{"x": 9.4, "w": 7.6, "h": 17.5, "m": "brownstone"},
-		{"x": 17.2, "w": 7.6, "h": 15.0, "m": "brick_dark"},
-	]
-	var far_z := -15.55
-	for f in fronts:
-		var fx := float(f.x)
-		var fw := float(f.w)
-		var fh := float(f.h)
-		Geo.box(n, Vector3(fw, fh, 1.0), Vector3(fx, sy + fh * 0.5, far_z - 0.5), String(f.m))
-		Geo.box(n, Vector3(fw + 0.2, 0.35, 0.4), Vector3(fx, sy + fh, far_z + 0.1), "brownstone", false)
-		var floors := int((fh - 3.0) / 3.0)
-		for fi in floors:
-			for wi in 4:
-				var wx := fx - fw * 0.5 + 1.0 + wi * (fw - 2.0) / 3.0
-				var wy := sy + 3.6 + fi * 3.0
-				Geo.box(n, Vector3(0.9, 1.5, 0.05), Vector3(wx, wy + 0.75, far_z + 0.01), "window_dark", false)
-				Geo.box(n, Vector3(1.0, 0.07, 0.15), Vector3(wx, wy, far_z + 0.05), "brownstone", false)
-				# Halloween paper in a few windows.
-				if (fi * 7 + wi * 3 + int(fx)) % 9 == 0:
-					var sk := PropFactory.make("skeleton", "sk")
-					sk.position = Vector3(wx, wy + 0.4, far_z + 0.06)
-					sk.scale = Vector3(1.6, 1.6, 1.6)
-					sk.rotation.y = PI
-					n.add_child(sk)
-		# Fire escape across the street.
-		for fi in floors:
-			var ey := sy + 3.5 + fi * 3.0
-			Geo.box(n, Vector3(fw * 0.6, 0.04, 0.8), Vector3(fx, ey, far_z + 0.4), "grille", false)
-			Geo.box(n, Vector3(fw * 0.6, 0.04, 0.04), Vector3(fx, ey + 0.9, far_z + 0.8), "iron", false)
-		# Storefront at street level.
-		Geo.box(n, Vector3(fw - 1.0, 2.6, 0.05), Vector3(fx, sy + 1.4, far_z + 0.02), "window_dark", false)
-		Geo.box(n, Vector3(fw - 0.6, 0.5, 0.12), Vector3(fx, sy + 3.0, far_z + 0.08), "car_green" if int(fx) % 2 == 0 else "cooler_red", false)
-	# Water tower on the roof across the street.
-	var wt := Node3D.new()
-	n.add_child(wt)
-	wt.position = Vector3(3.0, sy + 16.0, far_z - 3.0)
-	for lx in [-1.0, 1.0]:
-		for lz in [-1.0, 1.0]:
-			Geo.box(wt, Vector3(0.12, 2.0, 0.12), Vector3(lx, 1.0, lz), "iron", false)
-	Geo.cylinder(wt, 1.5, 2.8, Vector3(0, 3.4, 0), "water_tower", false, 18)
-	var cone := MeshInstance3D.new()
-	var cm := CylinderMesh.new()
-	cm.top_radius = 0.05
-	cm.bottom_radius = 1.6
-	cm.height = 0.9
-	cone.mesh = cm
-	cone.position = Vector3(0, 5.25, 0)
-	cone.material_override = Geo.mat("wood_dark")
-	wt.add_child(cone)
-	# Cars, left where they stopped, some still idling with their lights on.
-	var car_specs := [
-		{"x": -7.0, "z": -4.0, "m": "car_cream", "dir": 1.0, "lights": true},
-		{"x": -1.0, "z": -4.0, "m": "car_green", "dir": 1.0, "lights": false},
-		{"x": 5.5, "z": -5.5, "m": "car_yellow", "dir": 1.0, "lights": true},
-		{"x": 12.0, "z": -4.2, "m": "car_brown", "dir": 1.0, "lights": true},
-		{"x": 0.5, "z": -11.6, "m": "car_brown", "dir": -1.0, "lights": false},
-		{"x": 9.0, "z": -11.6, "m": "car_cream", "dir": -1.0, "lights": true},
-	]
-	for c in car_specs:
-		_car(n, Vector3(float(c.x), sy, float(c.z)), String(c.m), float(c.dir), bool(c.lights))
-
-
-func _car(parent: Node3D, pos: Vector3, material: String, dir: float, lights: bool) -> void:
+	Geo.box(n, Vector3(80, 0.25, 0.2), Vector3(W * 0.5, sy + 0.05, -2.95), "sidewalk")
+	Geo.box(n, Vector3(80, 0.25, 0.2), Vector3(W * 0.5, sy + 0.05, -12.95), "sidewalk")
 	Geo.bevel = true
-	var car := Node3D.new()
-	parent.add_child(car)
-	car.position = pos
-	car.rotation.y = 0.0 if dir > 0.0 else PI
-	car.rotation.y += randf_range(-0.06, 0.06)
-	# Big American sedan: about 5.4 m long.
-	Geo.box(car, Vector3(5.4, 0.7, 1.95), Vector3(0, 0.6, 0), material, false)
-	Geo.box(car, Vector3(2.6, 0.55, 1.75), Vector3(-0.3, 1.22, 0), material, false)
-	Geo.box(car, Vector3(2.4, 0.42, 1.78), Vector3(-0.3, 1.2, 0), "window_dark", false)
-	for wx in [-1.7, 1.6]:
-		for wz in [-0.9, 0.9]:
-			var t := Geo.cylinder(car, 0.36, 0.25, Vector3(wx, 0.36, wz), "tire", false)
-			t.rotation.x = PI * 0.5
-	Geo.box(car, Vector3(0.06, 0.18, 1.9), Vector3(2.72, 0.5, 0), "chrome", false)
+	var street: Dictionary = d.get("street", {})
+	var far_z := -15.55
+	var x := float(street.get("start_x", -18.0))
+	for bld in street.get("buildings", []):
+		var bays := int(bld.get("bays", 4))
+		var storeys := int(bld.get("storeys", 5))
+		var width := bays * 1.8
+		for k in range(int(width / 3.6)):
+			_lib(String(bld.get("shop", "storefront")), Vector3(x + 1.8 + k * 3.6, sy + 0.1, far_z), 0.0)
+		for s_i in range(storeys - 1):
+			for b_i in bays:
+				_lib("facade_bay", Vector3(x + 0.9 + b_i * 1.8, sy + 0.1 + 3.6 + s_i * 3.0, far_z), 0.0)
+		for b_i in bays:
+			_lib("facade_cornice", Vector3(x + 0.9 + b_i * 1.8, sy + 0.1 + 3.6 + (storeys - 1) * 3.0, far_z), 0.0)
+		# Fire escapes on the upper floors.
+		for s_i in range(storeys - 1):
+			var ey := sy + 0.1 + 3.6 + s_i * 3.0
+			Geo.box(n, Vector3(width * 0.55, 0.04, 0.8), Vector3(x + width * 0.5, ey, far_z + 0.4), "grille", false)
+			Geo.box(n, Vector3(width * 0.55, 0.04, 0.04), Vector3(x + width * 0.5, ey + 0.95, far_z + 0.8), "iron", false)
+		x += width + float(bld.get("gap", 0.1))
+	for item in street.get("furniture", []):
+		var pos: Array = item.pos
+		_lib(String(item.prop), Vector3(pos[0], sy + 0.15 + float(pos[1]), pos[2]), deg_to_rad(float(item.get("rot", 0.0))))
+	for c in street.get("cars", []):
+		var pos: Array = c.pos
+		var car := _lib(String(c.prop), Vector3(pos[0], sy, pos[1]), deg_to_rad(float(c.get("rot", 90.0))))
+		if car and c.get("lights", false):
+			_car_lights(car, float(c.get("length", 5.5)))
+
+
+func _lib(prop: String, pos: Vector3, rot_y: float) -> Node3D:
+	var m := PropFactory.baked_prop(prop)
+	if m == null:
+		return null
+	m.position = pos
+	m.rotation.y = rot_y
+	root.add_child(m)
+	return m
+
+
+## An idling car's headlights: they fade as the battery dies over days 1 to 3.
+func _car_lights(car: Node3D, length: float) -> void:
 	var lamps: Array = []
-	if lights:
-		for lz in [-0.68, 0.68]:
-			var l := Geo.box(car, Vector3(0.04, 0.16, 0.22), Vector3(2.73, 0.72, lz), Geo.emissive(Color(1.0, 0.92, 0.7), 2.0), false)
-			lamps.append(l)
-		var spot := SpotLight3D.new()
-		spot.position = Vector3(2.9, 0.75, 0)
-		spot.rotation = Vector3(-0.15, -PI * 0.5, 0)
-		spot.spot_range = 14.0
-		spot.spot_angle = 28.0
-		spot.light_energy = 1.5
-		spot.light_color = Color(1.0, 0.9, 0.7)
-		car.add_child(spot)
-		cars.append({"lamps": lamps, "spot": spot, "seed": randf()})
+	for lx in [-0.75, 0.75]:
+		var l := Geo.sphere(car, 0.07, Vector3(lx, 0.7, length * 0.5 + 0.02), Geo.emissive(Color(1.0, 0.92, 0.7), 2.5))
+		l.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		lamps.append(l)
+	var spot := SpotLight3D.new()
+	spot.position = Vector3(0, 0.75, length * 0.5 + 0.2)
+	spot.spot_range = 14.0
+	spot.spot_angle = 28.0
+	spot.light_energy = 1.5
+	spot.light_color = Color(1.0, 0.9, 0.7)
+	spot.rotation = Vector3(-0.12, 0, 0)
+	spot.rotation.y = PI
+	car.add_child(spot)
+	cars.append({"lamps": lamps, "spot": spot, "seed": randf()})
+
+
+

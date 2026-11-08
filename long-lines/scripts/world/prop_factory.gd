@@ -5,6 +5,108 @@ extends RefCounted
 
 
 
+## Builds a prop from a layout entry: {"type", "id", optional "prop"/"model"/"kind"/...}.
+## "type": "lib" places any baked library prop by name with a behaviour kind.
+## Any other type builds that object's gameplay node; "model" swaps its visuals
+## for a library model (functional visuals such as flames are kept).
+static func from_entry(e: Dictionary) -> Node3D:
+	var type := String(e.type)
+	var id := String(e.get("id", e.get("prop", type)))
+	var n: Node3D
+	if type == "lib":
+		n = lib_node(e, id)
+	else:
+		n = make(type, id)
+		if e.has("model"):
+			swap_model(n, String(e.model))
+	return n
+
+
+static var _manifest := {}
+
+
+static func manifest() -> Dictionary:
+	if _manifest.is_empty() and FileAccess.file_exists("res://assets/props/library.json"):
+		_manifest = Data.load_json("res://assets/props/library.json")
+	return _manifest
+
+
+## A library prop with behaviour. Kinds: static, fixture, carry, container, readable.
+static func lib_node(e: Dictionary, id: String) -> Node3D:
+	var name := String(e.prop)
+	var info: Dictionary = manifest().get(name, {})
+	var kind := String(e.get("kind", info.get("kind", "static")))
+	var label := String(e.get("name", String(info.get("desc", name)).split(",")[0].split(":")[0].to_lower()))
+	var n: Node3D
+	match kind:
+		"fixture":
+			var f := Fixture.new()
+			f.verb = String(e.get("verb", "Look at the %s" % label))
+			f.lines = e.get("lines", [String(info.get("desc", ""))])
+			n = f
+		"carry":
+			var c := Carriable.new()
+			c.prop_type = "lib:" + name
+			c.doc_id = String(e.get("doc", ""))
+			var sz: Array = info.get("size", [0.2, 0.2, 0.2])
+			c.two_handed = float(sz[0]) > 0.45 or float(sz[2]) > 0.45 or bool(e.get("heavy", false))
+			n = c
+		"container":
+			var k := ContainerProp.new()
+			k.cid = String(e.get("cid", id))
+			k.title = String(e.get("title", label.capitalize()))
+			k.verb = String(e.get("verb", "Search the %s" % label))
+			n = k
+		"readable":
+			var r := Readable.new()
+			r.doc_id = String(e.get("doc", ""))
+			n = r
+		_:
+			n = StaticBody3D.new()
+	n.name = id
+	if n is Interactable:
+		n.persist_id = id
+		n.display_name = label
+	var model := baked_prop(name)
+	if model:
+		n.add_child(model)
+	if bool(e.get("collide", true)) and info.has("min"):
+		var lo: Array = info.min
+		var hi: Array = info.max
+		var size := Vector3(hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2])
+		var center := Vector3(hi[0] + lo[0], hi[1] + lo[1], hi[2] + lo[2]) * 0.5
+		var body: Node3D = n if n is CollisionObject3D else null
+		if body == null:
+			body = StaticBody3D.new()
+			n.add_child(body)
+		var cs := CollisionShape3D.new()
+		var bs := BoxShape3D.new()
+		bs.size = size.max(Vector3(0.01, 0.01, 0.01))
+		cs.shape = bs
+		cs.position = center
+		body.add_child(cs)
+	return n
+
+
+## Replaces a code-built prop's placeholder meshes with a library model, keeping
+## its collision, lights and anything tagged "functional".
+static func swap_model(n: Node3D, name: String) -> void:
+	var model := baked_prop(name)
+	if model == null:
+		return
+	for c in n.find_children("*", "GeometryInstance3D", true, false):
+		var keep := false
+		var p: Node = c
+		while p != null and p != n:
+			if p.is_in_group("functional"):
+				keep = true
+				break
+			p = p.get_parent()
+		if not keep:
+			c.queue_free()
+	n.add_child(model)
+
+
 static func make(type: String, id: String) -> Node3D:
 	var n: Node3D
 	match type:
@@ -275,7 +377,7 @@ static func _stove() -> Node3D:
 	# A dish towel over the oven handle.
 	Geo.box(s, Vector3(0.22, 0.26, 0.012), Vector3(-0.12, 0.57, 0.36), "towel", false, 0.005)
 	Geo.box(s, Vector3(0.22, 0.04, 0.05), Vector3(-0.12, 0.69, 0.35), "towel", false, 0.012)
-	var positions := [Vector3(-0.18, 0.905, -0.12), Vector3(0.18, 0.905, -0.12), Vector3(-0.18, 0.905, 0.15), Vector3(0.18, 0.905, 0.15)]
+	var positions := [Vector3(-0.18, 0.905, 0.12), Vector3(0.18, 0.905, 0.12), Vector3(-0.18, 0.905, -0.15), Vector3(0.18, 0.905, -0.15)]
 	for p in positions:
 		Geo.cylinder(s, 0.09, 0.01, p, "chrome_worn", false, 18)
 		Geo.cylinder(s, 0.035, 0.016, p + Vector3(0, 0.006, 0), "iron", false, 12)
@@ -285,6 +387,7 @@ static func _stove() -> Node3D:
 		flame.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		flame.visible = false
 		s.flames.append(flame)
+		flame.add_to_group("functional")
 	# The percolator on the back burner.
 	var perc := Node3D.new()
 	perc.position = positions[1] + Vector3(0, 0.02, 0)
@@ -366,6 +469,7 @@ static func _tub() -> Node3D:
 	var w := Geo.box(t, Vector3(1.4, 0.01, 0.56), Vector3(0, 0.52, 0), Geo.emissive(Color(0.25, 0.32, 0.36), 1.0), false)
 	w.visible = false
 	t.water = w
+	w.add_to_group("functional")
 	return t
 
 
@@ -562,6 +666,7 @@ static func _coat_hook() -> Node3D:
 	Geo.box(coat, Vector3(0.2, 0.12, 0.17), Vector3(0, 0.0, 0.12), "coat", false)
 	Geo.add_box_shape(h, Vector3(0.48, 0.9, 0.2), Vector3(0, -0.4, 0.12))
 	h.coat = coat
+	coat.add_to_group("functional")
 	return h
 
 
@@ -586,6 +691,7 @@ static func _radio() -> Node3D:
 	Geo.cylinder(r, 0.018, 0.02, Vector3(0.065, 0.04, 0.04), "chrome", false).rotation.x = PI * 0.5
 	Geo.box(r, Vector3(0.2, 0.015, 0.01), Vector3(0, 0.16, 0), "chrome", false)
 	r.dial_label = Geo.label3d(r, "1010", Vector3(0.065, 0.1, 0.04), 0.035)
+	r.dial_label.add_to_group("functional")
 	return r
 
 
@@ -609,6 +715,7 @@ static func _cooler() -> Node3D:
 	c.add_child(pivot)
 	Geo.box(pivot, Vector3(0.004, 0.034, 0.003), Vector3(0, 0.017, 0), "cooler_red", false)
 	c.needle = pivot
+	pivot.add_to_group("functional")
 	Geo.box(c, Vector3(0.05, 0.007, 0.002), Vector3(0.1, 0.19, 0.166), Geo.emissive(Color(0.2, 0.55, 0.2), 1.0), false)
 	Geo.box(c, Vector3(0.12, 0.05, 0.003), Vector3(-0.09, 0.15, 0.151), "paper", false, 0.002)
 	Geo.add_box_shape(c, Vector3(0.44, 0.33, 0.32), Vector3(0, 0.165, 0))

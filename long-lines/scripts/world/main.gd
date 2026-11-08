@@ -63,7 +63,7 @@ func _ready() -> void:
 
 
 func _place_prop(p: Dictionary) -> Node3D:
-	var n := PropFactory.make(String(p.type), String(p.id))
+	var n := PropFactory.from_entry(p)
 	props_root.add_child(n)
 	var pos: Array = p.pos
 	n.position = Vector3(pos[0], pos[1], pos[2])

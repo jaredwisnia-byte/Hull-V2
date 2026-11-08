@@ -1,13 +1,45 @@
 {
   "_note": "Readable documents. Newspaper names and brands are invented; the headline paraphrases the real October 30, 1975 front page the GDD calls for.",
   "docs": {
-    "newspaper": {"title": "New York Daily Record, Thursday, October 30, 1975", "body": "[size=28][b]FORD TO CITY:\nDROP DEAD[/b][/size]\n\nVows He'll Veto Any Bail-Out\n\n[i]Abe, Carey rip Ford; stocks dive; city weeks from default[/i]\n\nInside: COMET \"FIREWORKS\" TONIGHT? Astronomers say fragments will burn up harmlessly high over the Atlantic. Best viewing after dusk, look east.\n\nWorld Series hangover, Page 72. Halloween costume contest, Page 19.\n\n[color=#777]Yesterday's paper. You bought it on the way home. That was before.[/color]"},
-    "notepad": {"title": "Notepad by the phone", "body": "In your handwriting:\n\n[i]T. - overnight at Thomas St. Back Fri a.m.\nCall Lola re: ice for cooler??\nPharmacy refill Nov 28\nUnemployment office Mon 9:00 - bring letter[/i]\n\nUnder that, shakier, from last night:\n[b]2 AM - power out. Moved vials to cooler w/ freezer ice. Keep it SHUT.[/b]"},
-    "calendar": {"title": "Calendar, October 1975 (Bruno's Pork Store)", "body": "A free calendar from the pork store on Carmine Street, the picture a painted Bay of Naples.\n\nThe 30th has [i]\"T. overnight\"[/i] written in it. The 31st is circled, with a little pumpkin Terry drew when she came for dinner.\n\nNovember is still behind it, clean. December 29 has a star: [i]\"LAST DOSE!!\"[/i]"},
-    "photo": {"title": "Photo in a dime-store frame", "body": "You and Terry on the boardwalk at Coney Island, summer 1968. She's 20 and holding a Cyclone ticket like a trophy. You're squinting. Dad took it.\n\nOn the back, in her handwriting: [i]\"Nicky - next time you ride it too.\"[/i]"},
-    "fear_city": {"title": "WELCOME TO FEAR CITY", "body": "[b]A Survival Guide for Visitors to the City of New York[/b]\n\nA hooded skull on the cover. Printed by the police unions in June, when the layoffs were announced.\n\n[i]\"Stay off the streets after 6 P.M. Do not walk. Avoid public transportation. Remain in Manhattan...\"[/i]\n\nSomeone handed it to you outside the Sanitation garage the week they laid you off. You kept it as a joke. It's less funny this morning."},
-    "cd_booklet": {"title": "In Time of Emergency (civil defense booklet)", "body": "A government booklet from the '60s, pages gone soft.\n\n[b]WATER.[/b] Your hot water heater and toilet tank hold safe water. Fill containers early.\n\n[b]HEAT.[/b] [i]Never use charcoal or a gas range to heat a closed room. Carbon monoxide has no colour or smell. Headache, dizziness and drowsiness are warning signs. Open a window.[/i]\n\n[b]FOOD.[/b] Eat perishable food first, then frozen, then canned.\n\nSomeone, probably Dad, has underlined the part about the window twice."},
-    "rx_card": {"title": "Prescription card", "body": "[b]St. Vincent's Hospital Pharmacy[/b]\nPatient: N. LOMBARDI\n\nOne vial daily, by injection, every morning.\n[b]REFRIGERATE 2 to 8 C (36 to 46 F). DO NOT FREEZE.[/b]\nDiscard if frozen or left warm.\n\nCourse ends: 12/29/75.\n\n[color=#777]Two months to go. Then you're done with this for good.[/color]"},
-    "wall_note": {"title": "Taped to the fridge", "body": "A note in Concetta Bruno's spidery hand:\n\n[i]\"Nicky - lasagna for you and Teresa. Eat it Sunday not Monday. Bring back my pan. - C.B.\"[/i]"}
+    "newspaper": {
+      "title": "New York Daily Record, Thursday, October 30, 1975",
+      "body": "[size=28][b]FORD TO CITY:\nDROP DEAD[/b][/size]\n\nVows He'll Veto Any Bail-Out\n\n[i]Abe, Carey rip Ford; stocks dive; city weeks from default[/i]\n\nInside: COMET \"FIREWORKS\" TONIGHT? Astronomers say fragments will burn up harmlessly high over the Atlantic. Best viewing after dusk, look east.\n\nWorld Series hangover, Page 72. Halloween costume contest, Page 19.\n\n[color=#777]Yesterday's paper. You bought it on the way home. That was before.[/color]"
+    },
+    "notepad": {
+      "title": "Notepad by the phone",
+      "body": "In your handwriting:\n\n[i]T. - overnight at Thomas St. Back Fri a.m.\nCall Lola re: ice for cooler??\nPharmacy refill Nov 28\nUnemployment office Mon 9:00 - bring letter[/i]\n\nUnder that, shakier, from last night:\n[b]2 AM - power out. Moved vials to cooler w/ freezer ice. Keep it SHUT.[/b]"
+    },
+    "calendar": {
+      "title": "Calendar, October 1975 (Bruno's Pork Store)",
+      "body": "A free calendar from the pork store on Carmine Street, the picture a painted Bay of Naples.\n\nThe 30th has [i]\"T. overnight\"[/i] written in it. The 31st is circled, with a little pumpkin Terry drew when she came for dinner.\n\nNovember is still behind it, clean. December 29 has a star: [i]\"LAST DOSE!!\"[/i]"
+    },
+    "photo": {
+      "title": "Photo in a dime-store frame",
+      "body": "You and Terry on the boardwalk at Coney Island, summer 1968. She's 20 and holding a Cyclone ticket like a trophy. You're squinting. Dad took it.\n\nOn the back, in her handwriting: [i]\"Nicky - next time you ride it too.\"[/i]"
+    },
+    "fear_city": {
+      "title": "WELCOME TO FEAR CITY",
+      "body": "[b]A Survival Guide for Visitors to the City of New York[/b]\n\nA hooded skull on the cover. Printed by the police unions in June, when the layoffs were announced.\n\n[i]\"Stay off the streets after 6 P.M. Do not walk. Avoid public transportation. Remain in Manhattan...\"[/i]\n\nSomeone handed it to you outside the Sanitation garage the week they laid you off. You kept it as a joke. It's less funny this morning."
+    },
+    "cd_booklet": {
+      "title": "In Time of Emergency (civil defense booklet)",
+      "body": "A government booklet from the '60s, pages gone soft.\n\n[b]WATER.[/b] Your hot water heater and toilet tank hold safe water. Fill containers early.\n\n[b]HEAT.[/b] [i]Never use charcoal or a gas range to heat a closed room. Carbon monoxide has no colour or smell. Headache, dizziness and drowsiness are warning signs. Open a window.[/i]\n\n[b]FOOD.[/b] Eat perishable food first, then frozen, then canned.\n\nSomeone, probably Dad, has underlined the part about the window twice."
+    },
+    "rx_card": {
+      "title": "Prescription card",
+      "body": "[b]St. Vincent's Hospital Pharmacy[/b]\nPatient: N. LOMBARDI\n\nOne vial daily, by injection, every morning.\n[b]REFRIGERATE 2 to 8 C (36 to 46 F). DO NOT FREEZE.[/b]\nDiscard if frozen or left warm.\n\nCourse ends: 12/29/75.\n\n[color=#777]Two months to go. Then you're done with this for good.[/color]"
+    },
+    "wall_note": {
+      "title": "Taped to the fridge",
+      "body": "A note in Concetta Bruno's spidery hand:\n\n[i]\"Nicky - lasagna for you and Teresa. Eat it Sunday not Monday. Bring back my pan. - C.B.\"[/i]"
+    },
+    "letter_terry": {
+      "title": "A letter from Terry, April 1975",
+      "body": "[i]Nicky,\n\nThey say you can go home Thursday. Two months of the shots after that and you're done, the doctor promised. I'll come every Sunday. Don't argue.\n\nWork is good. Some of the guys still won't talk to me but the switches don't care if I'm a girl. Mr. Pryor says I'm the best they've got on the night shift. Don't tell Ma I said that, I'd never hear the end of it.\n\nLove, T.[/i]"
+    },
+    "photo_letters": {
+      "title": "Old letters and photographs",
+      "body": "Postcards from Dad in the Navy, 1944. Your First Communion. Terry at eight, missing both front teeth. A newspaper clipping: [i]Sanitation Dept. Honors 20-Year Men[/i], with Dad in the second row.\n\nAt the bottom, a note in Ma's hand: [i]For the kids, when I'm gone. Look after each other.[/i]"
+    }
   }
 }

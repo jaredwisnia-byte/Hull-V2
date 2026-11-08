@@ -4,24 +4,18 @@ extends RefCounted
 ## Run with a display (e.g. xvfb-run):  godot -- --shots=/path/to/dir
 
 const SHOTS := [
-	{"name": "tv1_front_room_morning", "day": 1, "time": "09:40", "pos": [1.7, 0, 2.4], "look": [0.3, 0.75, 1.6]},
-	{"name": "tv2_close", "day": 1, "time": "10:30", "pos": [1.2, 0, 1.25], "look": [0.35, 0.8, 1.65]},
-	{"name": "tv3_candle_night", "day": 1, "time": "21:00", "pos": [1.6, 0, 2.0], "look": [0.3, 0.75, 1.6], "candles": true},
-	{"name": "k1_kitchen_morning", "day": 1, "time": "08:20", "pos": [0.75, 0, 6.85], "look": [2.9, 1.0, 8.6]},
-	{"name": "k2_kitchen_door_tub", "day": 1, "time": "11:30", "pos": [2.6, 0, 7.0], "look": [1.2, 0.8, 10.1]},
-	{"name": "k3_kitchen_gas_dusk", "day": 1, "time": "17:30", "pos": [1.0, 0, 7.4], "look": [3.0, 1.0, 8.2], "burners": 2},
-	{"name": "k4_kitchen_candle_night", "day": 1, "time": "21:30", "pos": [0.6, 0, 7.1], "look": [1.7, 0.75, 8.6], "candles": true},
-	{"name": "k5_cooler_table", "day": 1, "time": "09:00", "pos": [1.55, 0, 7.55], "look": [1.85, 0.85, 8.3]},
-	{"name": "k6_range_close", "day": 1, "time": "10:30", "pos": [2.0, 0, 7.5], "look": [3.0, 0.8, 7.95]},
-	{"name": "01_dawn_front_room", "day": 1, "time": "06:55", "pos": [1.0, 0, 3.6], "look": [2.0, 1.2, 0.0]},
-	{"name": "02_kitchen_morning", "day": 1, "time": "09:30", "pos": [0.7, 0, 6.9], "look": [2.6, 0.9, 9.6]},
-	{"name": "03_bedroom", "day": 1, "time": "11:00", "pos": [0.7, 0, 4.3], "look": [2.6, 0.6, 5.6]},
-	{"name": "04_fire_escape_street", "day": 1, "time": "13:00", "pos": [1.6, 0.05, -0.5], "look": [3.0, -6.0, -12.0], "open": true},
-	{"name": "05_sunset_day1", "day": 1, "time": "16:45", "pos": [1.4, 0, 2.8], "look": [1.8, 1.5, -6.0]},
-	{"name": "06_night_candles", "day": 1, "time": "20:30", "pos": [0.6, 0, 7.0], "look": [1.6, 0.8, 8.5], "candles": true},
-	{"name": "07_cooler_close", "day": 1, "time": "10:00", "pos": [1.75, 0, 7.45], "look": [1.95, 0.9, 8.3]},
-	{"name": "09_midmorning_sun", "day": 1, "time": "10:15", "pos": [2.6, 0, 3.4], "look": [1.2, 0.0, 1.2]},
-	{"name": "08_day3_haze", "day": 3, "time": "12:00", "pos": [1.0, 0, 3.6], "look": [2.0, 1.2, 0.0]},
+	{"name": "a01_front_room", "day": 1, "time": "09:40", "pos": [2.9, 0, 3.0], "look": [0.8, 0.9, 0.6]},
+	{"name": "a02_front_room_sofa", "day": 1, "time": "10:30", "pos": [0.9, 0, 0.9], "look": [2.4, 0.7, 3.5]},
+	{"name": "a03_office", "day": 1, "time": "10:00", "pos": [0.7, 0, 4.3], "look": [3.0, 0.9, 5.4]},
+	{"name": "a04_bedroom", "day": 1, "time": "11:00", "pos": [0.6, 0, 6.5], "look": [2.6, 0.6, 8.0]},
+	{"name": "a05_closet", "day": 1, "time": "11:10", "pos": [2.85, 0, 7.7], "look": [2.85, 1.1, 8.9]},
+	{"name": "a06_kitchen", "day": 1, "time": "09:00", "pos": [0.85, 0, 9.4], "look": [2.6, 1.0, 11.4]},
+	{"name": "a07_entrance", "day": 1, "time": "12:00", "pos": [1.4, 0, 10.9], "look": [1.45, 1.1, 12.75]},
+	{"name": "a08_bathroom", "day": 1, "time": "12:10", "pos": [2.8, 0, 11.2], "look": [2.75, 0.9, 12.6]},
+	{"name": "a09_street_fire_escape", "day": 1, "time": "13:00", "pos": [1.6, 0.05, -0.5], "look": [3.0, -6.5, -12.0], "open": true},
+	{"name": "a10_street_from_window", "day": 1, "time": "10:30", "pos": [1.5, 0, 1.0], "look": [1.0, -2.5, -12.0]},
+	{"name": "a11_kitchen_candle_night", "day": 1, "time": "21:30", "pos": [0.85, 0, 9.5], "look": [1.7, 0.8, 10.8], "candles": true},
+	{"name": "a12_front_room_night", "day": 1, "time": "20:00", "pos": [2.4, 0, 3.2], "look": [0.6, 0.9, 0.5], "candles": true},
 ]
 
 

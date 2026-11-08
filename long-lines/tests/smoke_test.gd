@@ -50,7 +50,7 @@ func run(m: Node3D) -> void:
 	check(Game.clock.day() == 1 and Game.clock.time_text() == "6:40 AM", "starts day 1 at 6:40 AM: %s" % Game.clock.time_text())
 
 	# Look at the cooler on the kitchen table and take the morning dose.
-	await look_at_point(Vector3(1.9, 0, 7.3), Vector3(1.9, 0.9, 8.3))
+	await look_at_point(Vector3(2.3, 0, 10.05), Vector3(1.85, 0.9, 10.6))
 	check(player.target is CoolerProp, "raycast finds the cooler (got %s)" % [player.target])
 	var vials := Game.cooler.vials
 	player.try_primary()
@@ -107,7 +107,7 @@ func run(m: Node3D) -> void:
 	check(player.global_position.z > 0.2, "climbed back in")
 
 	# Carry the cooler to the fire escape and set it down outside.
-	await look_at_point(Vector3(1.9, 0, 7.3), Vector3(1.9, 0.9, 8.3))
+	await look_at_point(Vector3(2.3, 0, 10.05), Vector3(1.85, 0.9, 10.6))
 	player.try_secondary()
 	check(player.held is CoolerProp and Game.cooler_place == "held", "picked up the cooler with both hands")
 	player.teleport(Vector3(0.85, 0.05, -0.62))
@@ -122,7 +122,7 @@ func run(m: Node3D) -> void:
 	await frames(2)
 
 	# Gas range with the windows shut: carbon monoxide builds.
-	await look_at_point(Vector3(2.2, 0, 8.15), Vector3(3.09, 0.9, 8.15))
+	await look_at_point(Vector3(2.3, 0, 9.75), Vector3(3.09, 0.9, 9.75))
 	check(player.target is GasRange, "raycast finds the gas range")
 	player.try_primary()
 	player.try_primary()
@@ -149,7 +149,7 @@ func run(m: Node3D) -> void:
 
 	# Bring the cooler back in before night and check it is safe-ish.
 	var cooler: CoolerProp = props.get_node("cooler")
-	cooler.global_position = Vector3(1.9, 0.76, 8.3)
+	cooler.global_position = Vector3(1.85, 0.76, 10.6)
 	cooler.on_placed()
 	check(Game.cooler_place == "inside", "cooler back on the table")
 
@@ -163,17 +163,17 @@ func run(m: Node3D) -> void:
 	check(Game.trick_or_treat_given and Game.needs.v.morale > morale, "gave the Rivera kids candy")
 
 	# Save, change things, load.
-	cooler.global_position = Vector3(1.5, 0.76, 8.4)
+	cooler.global_position = Vector3(1.5, 0.76, 10.7)
 	check(Game.save_game(), "saved")
 	var saved_min := Game.clock.minutes
 	var saved_pot := Game.cooler.potency
 	Game.advance(300)
-	cooler.global_position = Vector3(2.0, 0.6, 9.8)
+	cooler.global_position = Vector3(2.0, 0.6, 11.0)
 	check(Game.load_game(), "loaded")
 	await frames(2)
 	check(absf(Game.clock.minutes - saved_min) < 0.01, "clock restored")
 	check(absf(Game.cooler.potency - saved_pot) < 0.01, "cooler restored")
-	check(cooler.global_position.distance_to(Vector3(1.5, 0.76, 8.4)) < 0.01, "cooler position restored")
+	check(cooler.global_position.distance_to(Vector3(1.5, 0.76, 10.7)) < 0.01, "cooler position restored")
 
 	# Eat and drink, then sleep the night.
 	Game.use_item("hot_lasagna")
@@ -194,6 +194,11 @@ func run(m: Node3D) -> void:
 	check(not Game.dead, "still alive (condition %d)" % roundi(Game.needs.v.condition))
 	Game.end_slice()
 	check(Game.slice_over, "door ends the slice")
+	var libs := 0
+	for n in props.get_children():
+		if n.find_children("*", "MeshInstance3D", true, false).size() > 0:
+			libs += 1
+	check(props.get_child_count() >= 90, "the dressed apartment has %d props" % props.get_child_count())
 	print(Game.summary())
 
 	print("SMOKE TEST: %d checks, %d failed" % [checks, fails.size()])

@@ -294,6 +294,47 @@
       "kg": 0.01,
       "kind": "doc",
       "doc": "rx_card"
+    },
+    "aspirin": {
+      "name": "Bottle of aspirin (half full)",
+      "kg": 0.08,
+      "kind": "medicine",
+      "use": {
+        "condition": 4,
+        "morale": 2
+      },
+      "verb": "Take two"
+    },
+    "bandage": {
+      "name": "Box of adhesive bandages",
+      "kg": 0.05,
+      "kind": "medicine",
+      "use": {
+        "condition": 3
+      },
+      "verb": "Patch up the cuts on your hands"
+    },
+    "hammer": {
+      "name": "Claw hammer",
+      "kg": 0.65,
+      "kind": "tool"
+    },
+    "nails": {
+      "name": "Box of nails",
+      "kg": 0.4,
+      "kind": "tool"
+    },
+    "letter_terry": {
+      "name": "Terry's letter from last spring",
+      "kg": 0.01,
+      "kind": "doc",
+      "doc": "letter_terry"
+    },
+    "photo_letters": {
+      "name": "Bundle of old letters and photos",
+      "kg": 0.2,
+      "kind": "doc",
+      "doc": "photo_letters"
     }
   }
 }

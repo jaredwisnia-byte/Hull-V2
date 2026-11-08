@@ -1,6 +1,11 @@
 class_name HallDoor
 extends Interactable
-## The door to the landing. Chained on the inside. Stepping out ends the slice.
+## The door to the landing. Chained on the inside: it opens a few inches so you
+## can look out at the landing. Stepping out ends the slice.
+
+var leaf: Node3D          # swings about this node's origin (the hinge)
+var hinge_open := -1.2    # radians when fully open
+var ajar := false
 
 
 func prompt_primary(_p: Node) -> String:
@@ -22,10 +27,15 @@ func primary(p: Node) -> void:
 
 
 func prompt_secondary(_p: Node) -> String:
-	return "Listen at the door"
+	return "Shut the door" if ajar else "Open the door on the chain"
 
 
 func secondary(_p: Node) -> void:
+	ajar = not ajar
+	if leaf:
+		leaf.rotation.y = -0.32 if ajar else 0.0
+	if not ajar:
+		return
 	var day := Game.clock.day()
 	var h := Game.clock.hour_f()
 	if h < 6.0 or h > 22.0:

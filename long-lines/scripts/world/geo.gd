@@ -7,9 +7,9 @@ const PAINT := preload("res://shaders/paint.gdshader")
 ## name: [albedo, albedo2, pattern, scale, grain]
 const PALETTE := {
 	"plaster_cream":   [Color(0.86, 0.80, 0.64), Color(0.80, 0.74, 0.58), 0, 1.0, 0.08],
-	"wallpaper_green": [Color(0.55, 0.61, 0.46), Color(0.70, 0.66, 0.48), 5, 5.0, 0.06],
-	"wall_blue":       [Color(0.40, 0.54, 0.68), Color(0.36, 0.50, 0.63), 0, 1.0, 0.08],
-	"ceiling":         [Color(0.88, 0.86, 0.80), Color(0.85, 0.83, 0.77), 0, 1.0, 0.05],
+	"wallpaper_green": [Color(0.55, 0.61, 0.46), Color(0.70, 0.66, 0.48), 5, 5.0, 0.06, {"grime": 0.5, "floor_grime": 0.4, "cracks": 0.4, "peel": 0.6, "stains": 0.5}],
+	"wall_blue":       [Color(0.40, 0.54, 0.68), Color(0.36, 0.50, 0.63), 0, 1.0, 0.08, {"grime": 0.55, "floor_grime": 0.45, "cracks": 0.6, "peel": 0.5, "stains": 0.5}],
+	"ceiling":         [Color(0.84, 0.82, 0.76), Color(0.85, 0.83, 0.77), 0, 1.0, 0.05, {"grime": 0.6, "cracks": 0.7, "stains": 0.9}],
 	"boards":          [Color(0.46, 0.31, 0.19), Color(0.33, 0.21, 0.12), 3, 6.6, 0.07],
 	"linoleum":        [Color(0.83, 0.81, 0.74), Color(0.20, 0.30, 0.28), 1, 3.3, 0.05],
 	"brick":           [Color(0.52, 0.25, 0.18), Color(0.60, 0.57, 0.52), 4, 1.0, 0.10],
@@ -56,7 +56,12 @@ const PALETTE := {
 	# Kitchen test pass: 1970s New York, Long Dark-style rendering.
 	"linoleum_oct":    [Color(0.80, 0.64, 0.30), Color(0.93, 0.85, 0.62), 7, 5.5, 0.07, {"wear": 0.0, "grime": 0.35}],
 	"tile_gold":       [Color(0.84, 0.66, 0.22), Color(0.95, 0.86, 0.55), 8, 6.6, 0.05, {"grime": 0.3, "floor_grime": 0.5}],
-	"plaster_kitchen": [Color(0.86, 0.82, 0.70), Color(0.80, 0.75, 0.62), 0, 1.0, 0.10, {"grime": 0.55, "floor_grime": 0.4}],
+	"plaster_kitchen": [Color(0.86, 0.82, 0.70), Color(0.80, 0.75, 0.62), 0, 1.0, 0.10, {"grime": 0.7, "floor_grime": 0.5, "cracks": 0.7, "peel": 0.5, "stains": 0.6}],
+	"plaster_hall":    [Color(0.62, 0.58, 0.48), Color(0.45, 0.42, 0.35), 0, 1.0, 0.12, {"grime": 0.9, "floor_grime": 0.7, "cracks": 0.9, "peel": 0.8, "stains": 0.8}],
+	"plaster_office":  [Color(0.72, 0.70, 0.60), Color(0.66, 0.64, 0.55), 0, 1.0, 0.10, {"grime": 0.6, "floor_grime": 0.45, "cracks": 0.6, "peel": 0.4, "stains": 0.5}],
+	"wall_rose":       [Color(0.74, 0.58, 0.54), Color(0.66, 0.5, 0.46), 0, 1.0, 0.10, {"grime": 0.6, "floor_grime": 0.45, "cracks": 0.5, "peel": 0.5, "stains": 0.4}],
+	"tile_hex":        [Color(0.88, 0.87, 0.82), Color(0.22, 0.22, 0.22), 7, 22.0, 0.05, {"grime": 0.6}],
+	"tile_bath":       [Color(0.86, 0.88, 0.84), Color(0.72, 0.76, 0.74), 1, 6.6, 0.05, {"grime": 0.5, "floor_grime": 0.5}],
 	"cabinet_paint":   [Color(0.90, 0.88, 0.80), Color(0.90, 0.88, 0.80), 0, 1.0, 0.05, {"wear": 0.9, "grime": 0.35}],
 	"cabinet_wood":    [Color(0.40, 0.24, 0.13), Color(0.33, 0.19, 0.10), 11, 9.0, 0.06, {"wear": 0.7, "grime": 0.2}],
 	"enamel_old":      [Color(0.92, 0.90, 0.83), Color(0.92, 0.90, 0.83), 0, 1.0, 0.04, {"wear": 0.6, "grime": 0.3}],

@@ -15,6 +15,9 @@ uniform float grain = 0.07;
 uniform float wear = 0.0;         // lighten and chip bevelled edges
 uniform float grime = 0.0;        // low-frequency dirty blotches
 uniform float floor_grime = 0.0;  // darkening near the floor (walls)
+uniform float cracks = 0.0;       // hairline plaster cracks
+uniform float peel = 0.0;         // patches where paint has flaked to the coat below
+uniform float stains = 0.0;       // brown water stains (ceilings, upper walls)
 uniform float roughness_v = 0.85;
 uniform vec3 emission_color : source_color = vec3(0.0);
 uniform float emission_energy = 0.0;
@@ -143,6 +146,37 @@ void fragment() {
 		float h = fract(wpos.y / 3.0 + 1000.0) * 3.0; // height above this storey's floor
 		float low = 1.0 - smoothstep(0.0, 0.7, h + (vnoise(wpos * 4.0) - 0.5) * 0.25);
 		c *= 1.0 - floor_grime * 0.35 * low;
+	}
+
+	// Old plaster: flaking paint, hairline cracks, water stains from the flat above.
+	if (peel > 0.0) {
+		float pn = fbm(wpos * 2.3 + vec3(11.0));
+		float patch = smoothstep(0.66, 0.7, pn) * step(0.0, 1.0 - n.y);
+		vec3 under = mix(vec3(0.78, 0.74, 0.64), c, 0.25);
+		c = mix(c, under, patch * peel);
+		c *= 1.0 - (smoothstep(0.64, 0.66, pn) - smoothstep(0.66, 0.68, pn)) * peel * 0.5;
+	}
+	if (cracks > 0.0) {
+		float cn = abs(fbm(wpos * 1.4 + vec3(5.0)) - 0.5);
+		float cn2 = abs(vnoise(wpos * 6.0) - 0.5);
+		float crack = (1.0 - smoothstep(0.0, 0.006, cn)) * smoothstep(0.55, 0.75, fbm(wpos * 0.7));
+		crack += (1.0 - smoothstep(0.0, 0.01, cn2)) * smoothstep(0.7, 0.85, fbm(wpos * 0.5 + vec3(3.0))) * 0.6;
+		c *= 1.0 - clamp(crack, 0.0, 1.0) * cracks * 0.6;
+	}
+	if (stains > 0.0) {
+		float h2 = fract(wpos.y / 3.0 + 1000.0) * 3.0;
+		float sn = fbm(wpos * 0.9 + vec3(21.0));
+		float near_top = smoothstep(1.6, 2.7, h2) + step(0.6, n.y) * 0.0 + step(n.y, -0.6);
+		float blot = smoothstep(0.58, 0.62, sn) * clamp(near_top, 0.0, 1.0);
+		float ring = (smoothstep(0.58, 0.6, sn) - smoothstep(0.6, 0.63, sn)) * clamp(near_top, 0.0, 1.0);
+		c = mix(c, c * vec3(0.82, 0.7, 0.5), blot * stains * 0.6);
+		c = mix(c, c * vec3(0.55, 0.42, 0.28), ring * stains);
+	}
+	if (floor_grime > 0.0 && n.y < 0.5) {
+		// Scuffs where furniture and feet hit the wall.
+		float h3 = fract(wpos.y / 3.0 + 1000.0) * 3.0;
+		float sc = step(0.82, vnoise(vec3(wpos.x * 8.0, h3 * 30.0, wpos.z * 8.0))) * (1.0 - smoothstep(0.1, 0.9, h3));
+		c *= 1.0 - sc * floor_grime * 0.25;
 	}
 
 	// Worn, light-catching edges on bevels.
