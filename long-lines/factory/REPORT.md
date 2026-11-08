@@ -4,21 +4,23 @@ Generated from `factory/ledger.jsonl` (latest result per asset).
 
 | Measure | Value |
 | --- | --- |
-| Assets measured | 119 |
-| Pass the minimum standard | 119 (100%) |
-| Factory builds | 2 |
-| Factory builds passing with no correction | 2 |
+| Assets measured | 181 |
+| Pass the minimum standard | 181 (100%) |
+| Factory builds | 64 |
+| Factory builds passing with no correction | 64 |
 | Factory builds needing a person | 0 |
-| Mean build time (s) | 70 |
-| Same inputs -> same gauges | 1 of 2 order/input pairs |
-| Median triangles | 1788 |
+| Mean build time (s) | 56 |
+| Same inputs -> same gauges | 63 of 64 order/input pairs |
+| Median triangles | 1128 |
 | Max triangles | 38000 |
 
 ## By production line
 
 | Line | Assets | Passing |
 | --- | --- | --- |
-| facade | 1 | 1 |
+| atlas | 10 | 10 |
+| extrude | 41 | 41 |
+| facade | 12 | 12 |
 | hull | 1 | 1 |
 | painted | 11 | 11 |
 | recipe | 106 | 106 |

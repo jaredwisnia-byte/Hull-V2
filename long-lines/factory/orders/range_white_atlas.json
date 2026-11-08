@@ -22,10 +22,42 @@
  "source": "appl_3.png",
  "class": "medium",
  "views_folder": "range_white_atlas",
- "status": "pending",
+ "status": "shipped",
  "assumptions": [
   "height 0.91 m from category 'range_atlas'"
  ],
  "height_m": 0.91,
- "cat_depth_m": 0.66
+ "cat_depth_m": 0.66,
+ "measured": {
+  "width_m": 0.795,
+  "depth_m": 0.66,
+  "height_m": 0.91,
+  "panels": [
+   15,
+   32
+  ],
+  "knobs": [
+   {
+    "part": "knob",
+    "diameter_mm": 55.0,
+    "depth_mm": 25.0
+   },
+   {
+    "part": "knob",
+    "diameter_mm": 55.0,
+    "depth_mm": 25.0
+   },
+   {
+    "part": "knob",
+    "diameter_mm": 55.0,
+    "depth_mm": 25.0
+   },
+   {
+    "part": "knob",
+    "diameter_mm": 55.0,
+    "depth_mm": 25.0
+   }
+  ]
+ },
+ "attempts": 1
 }

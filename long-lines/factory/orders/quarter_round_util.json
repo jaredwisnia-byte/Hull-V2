@@ -10,9 +10,17 @@
  "source": "trim_9.png",
  "class": null,
  "views_folder": "quarter_round_util",
- "status": "pending",
+ "status": "shipped",
  "assumptions": [
   "height 0.03 m from category 'moulding'"
  ],
- "notes": ""
+ "notes": "",
+ "measured": {
+  "length_m": 1.2,
+  "height_m": 0.025,
+  "depth_m": 0.027,
+  "section_points": 6,
+  "section_from": "drawing"
+ },
+ "attempts": 1
 }

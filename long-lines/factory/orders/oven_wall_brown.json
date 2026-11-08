@@ -23,10 +23,28 @@
  "source": "appl_5.png",
  "class": "medium",
  "views_folder": "oven_wall_brown",
- "status": "pending",
+ "status": "shipped",
  "assumptions": [
   "height 1.30 m from category 'wall_oven'"
  ],
  "height_m": 1.3,
- "cat_depth_m": 0.6
+ "cat_depth_m": 0.6,
+ "measured": {
+  "width_m": 0.755,
+  "depth_m": 0.6,
+  "height_m": 1.3,
+  "panels": [
+   1,
+   0,
+   12
+  ],
+  "knobs": [
+   {
+    "part": "knob",
+    "diameter_mm": 55.0,
+    "depth_mm": 25.0
+   }
+  ]
+ },
+ "attempts": 1
 }

@@ -23,10 +23,42 @@
  "source": "appl_4.png",
  "class": "medium",
  "views_folder": "range_harvest_gold",
- "status": "pending",
+ "status": "shipped",
  "assumptions": [
   "height 0.91 m from category 'range_atlas'"
  ],
  "height_m": 0.91,
- "cat_depth_m": 0.66
+ "cat_depth_m": 0.66,
+ "measured": {
+  "width_m": 0.661,
+  "depth_m": 0.66,
+  "height_m": 0.91,
+  "panels": [
+   10,
+   20
+  ],
+  "knobs": [
+   {
+    "part": "knob",
+    "diameter_mm": 55.0,
+    "depth_mm": 25.0
+   },
+   {
+    "part": "knob",
+    "diameter_mm": 55.0,
+    "depth_mm": 25.0
+   },
+   {
+    "part": "knob",
+    "diameter_mm": 55.0,
+    "depth_mm": 25.0
+   },
+   {
+    "part": "knob",
+    "diameter_mm": 55.0,
+    "depth_mm": 25.0
+   }
+  ]
+ },
+ "attempts": 1
 }

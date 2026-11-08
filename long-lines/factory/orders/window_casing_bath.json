@@ -8,9 +8,16 @@
  "source": "trim_4.png",
  "class": null,
  "views_folder": "window_casing_bath",
- "status": "pending",
+ "status": "shipped",
  "assumptions": [
   "height 1.00 m from category 'frame'"
  ],
- "notes": ""
+ "notes": "",
+ "measured": {
+  "width_m": 0.812,
+  "height_m": 1.0,
+  "depth_m": 0.022,
+  "opening": true
+ },
+ "attempts": 1
 }

@@ -10,9 +10,17 @@
  "source": "trim_6.png",
  "class": null,
  "views_folder": "picture_rail_walnut",
- "status": "pending",
+ "status": "shipped",
  "assumptions": [
   "height 0.05 m from category 'moulding'"
  ],
- "notes": ""
+ "notes": "",
+ "measured": {
+  "length_m": 1.2,
+  "height_m": 0.05,
+  "depth_m": 0.0225,
+  "section_points": 6,
+  "section_from": "default:picture_rail"
+ },
+ "attempts": 1
 }
