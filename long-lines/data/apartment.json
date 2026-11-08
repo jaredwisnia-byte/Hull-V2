@@ -1368,6 +1368,54 @@
    ],
    "rot": 0,
    "collide": false
+  },
+  {
+   "type": "lib",
+   "prop": "can_soup",
+   "id": "can_soup_1",
+   "pos": [
+    2.55,
+    0.915,
+    10.6
+   ],
+   "rot": -70,
+   "kind": "carry"
+  },
+  {
+   "type": "lib",
+   "prop": "can_chili",
+   "id": "can_chili_1",
+   "pos": [
+    2.62,
+    0.915,
+    10.72
+   ],
+   "rot": -40,
+   "kind": "carry"
+  },
+  {
+   "type": "lib",
+   "prop": "can_peaches",
+   "id": "can_peaches_1",
+   "pos": [
+    1.35,
+    0.76,
+    10.95
+   ],
+   "rot": 20,
+   "kind": "carry"
+  },
+  {
+   "type": "lib",
+   "prop": "can_tuna",
+   "id": "can_tuna_1",
+   "pos": [
+    2.05,
+    0.76,
+    10.85
+   ],
+   "rot": 0,
+   "kind": "carry"
   }
  ],
  "player_start": {
@@ -1571,7 +1619,7 @@
     "length": 5.5
    },
    {
-    "prop": "car_taxi",
+    "prop": "car_coupe",
     "pos": [
      2.4,
      -4.2
@@ -1600,13 +1648,13 @@
     "length": 5.6
    },
    {
-    "prop": "car_sedan",
+    "prop": "car_coupe",
     "pos": [
      6.5,
      -11.6
     ],
     "rot": -90,
-    "length": 5.5
+    "length": 5.3
    },
    {
     "prop": "car_taxi",

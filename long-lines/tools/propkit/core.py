@@ -182,25 +182,40 @@ def label_card(size, loc, mat, rot=(0, 0, 0), name="label"):
 
 
 def planar_uv(obj, ax_u, ax_v, w, h, flip_u=False):
-    """Stores 0..1 planar coordinates (object space) in a 'label_uv' attribute so an
-    image survives joining and re-unwrapping."""
+    """Stores 0..1 planar coordinates (object space) in a 'label_uv' face-corner
+    attribute so an image survives joining and re-unwrapping. All label coordinates
+    use the corner domain so parts with labels can be joined together safely."""
     me = obj.data
-    attr = me.color_attributes.get("label_uv") or me.color_attributes.new("label_uv", "FLOAT_COLOR", "POINT")
-    for i, v in enumerate(me.vertices):
-        u = v.co[ax_u] / w + 0.5
+    if "label_uv" in me.color_attributes:
+        me.color_attributes.remove(me.color_attributes["label_uv"])
+    attr = me.color_attributes.new("label_uv", "FLOAT_COLOR", "CORNER")
+    for li, loop in enumerate(me.loops):
+        v = me.vertices[loop.vertex_index].co
+        u = v[ax_u] / w + 0.5
         if flip_u:
             u = 1.0 - u
-        attr.data[i].color = (u, v.co[ax_v] / h + 0.5, 0, 1)
+        attr.data[li].color = (u, v[ax_v] / h + 0.5, 0, 1)
     return obj
 
 
-def wrap_uv(obj, h, z0=0.0):
-    """Cylindrical 0..1 coordinates around Z (labels on cans, bottles, jars)."""
+def wrap_uv(obj, h, z0=0.0, repeat=1.0):
+    """Cylindrical label coordinates around local Z (cans, bottles, jars), stored per
+    face corner so the seam where the label wraps round doesn't smear. repeat > 1
+    tiles the label around (short, wide cans); use mats.image(..., extension="REPEAT")."""
     me = obj.data
-    attr = me.color_attributes.get("label_uv") or me.color_attributes.new("label_uv", "FLOAT_COLOR", "POINT")
-    for i, v in enumerate(me.vertices):
-        u = (math.atan2(v.co.x, -v.co.y) / (2 * math.pi)) % 1.0
-        attr.data[i].color = (u, (v.co.z - z0) / h, 0, 1)
+    if "label_uv" in me.color_attributes:
+        me.color_attributes.remove(me.color_attributes["label_uv"])
+    attr = me.color_attributes.new("label_uv", "FLOAT_COLOR", "CORNER")
+    for poly in me.polygons:
+        us = []
+        for li in poly.loop_indices:
+            v = me.vertices[me.loops[li].vertex_index].co
+            us.append((math.atan2(v.x, -v.y) / (2 * math.pi)) % 1.0)
+        if max(us) - min(us) > 0.5:
+            us = [u + 1.0 if u < 0.5 else u for u in us]
+        for li, u in zip(poly.loop_indices, us):
+            v = me.vertices[me.loops[li].vertex_index].co
+            attr.data[li].color = (u * repeat, (v.z - z0) / h, 0, 1)
     return obj
 
 

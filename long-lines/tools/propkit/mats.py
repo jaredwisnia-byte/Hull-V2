@@ -284,7 +284,7 @@ def glass(tint=(0.2, 0.35, 0.25), name=None):
     return register(name, m, bsdf, out, weathered(nt, base, 0.0, 0.3, 0.3), 0.08, 0.0)
 
 
-def image(path, rough=0.5, grime=0.35, edge=0.0, name=None):
+def image(path, rough=0.5, grime=0.35, edge=0.0, name=None, extension="EXTEND"):
     """A printed surface (label, box art, record sleeve, poster) mapped through the
     'label_uv' attribute that core.planar_uv / core.wrap_uv store."""
     name = name or "img_" + os.path.basename(path)
@@ -296,7 +296,7 @@ def image(path, rough=0.5, grime=0.35, edge=0.0, name=None):
     attr.attribute_name = "label_uv"
     img = nt.nodes.new("ShaderNodeTexImage")
     img.image = bpy.data.images.load(path, check_existing=True)
-    img.extension = "EXTEND"
+    img.extension = extension
     nt.links.new(attr.outputs["Vector"], img.inputs["Vector"])
     return register(name, m, bsdf, out, weathered(nt, img.outputs["Color"], edge, grime, 0.1), rough, 0.0)
 

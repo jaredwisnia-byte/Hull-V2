@@ -39,12 +39,6 @@ BEANS = lambda: L.wrap_label("beans", "Harbor", "PORK & BEANS", (40, 80, 50), (2
 BEER = lambda: L.wrap_label("beer", "Gotham", "LAGER BEER", (235, 225, 205), (180, 30, 30), (30, 50, 110), "BREWED IN BROOKLYN")
 
 
-@prop("can_soup", tex=256, tags=["goods", "food", "small"], kind="carry")
-def can_soup():
-    """A can of Kettlewood tomato soup."""
-    can(0.033, 0.1, SOUP())
-
-
 @prop("can_beans", tex=256, tags=["goods", "food", "small"], kind="carry")
 def can_beans():
     """A can of Harbor pork and beans."""
