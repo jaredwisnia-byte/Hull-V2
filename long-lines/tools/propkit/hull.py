@@ -96,20 +96,22 @@ def _sample(mask, u, v):
 
 
 def hull_prop(views, height, res=110, smooth_iters=4, decimate=0.35, rough=0.5, name="hull",
-              convex=False, paint_only=(), features=True):
+              convex=False, paint_only=(), features=True, sil_override=None, depth_m=None):
     """convex: fill each outline to its convex shape (boxy objects; dark areas can't
     punch holes). paint_only: views used for texture but not trusted to carve (e.g. a
     dark back panel on a dark sheet)."""
-    sil = {k: silhouette(p, convex=convex) for k, p in views.items()}
+    # sil_override: {view: (mask, image)} from a part map, when the sheet set provides exact outlines.
+    sil = dict(sil_override) if sil_override else {k: silhouette(p, convex=convex) for k, p in views.items()}
     # Raw (non-convex) side outlines keep small bumps such as knobs seen side-on.
-    raw_sides = {k: silhouette(p) for k, p in views.items() if k in ("right", "left")}
+    raw_sides = {k: v for k, v in sil.items() if k in ("right", "left")} if sil_override else \
+        {k: silhouette(p) for k, p in views.items() if k in ("right", "left")}
     carve = {k: v for k, v in sil.items() if k not in paint_only}
     fm, fim = sil["front"]
     side_key = "right" if "right" in sil else "left"
     sm, _ = sil[side_key]
     H = height
     W = H * fm.shape[1] / fm.shape[0]
-    D = H * sm.shape[1] / sm.shape[0]
+    D = depth_m or H * sm.shape[1] / sm.shape[0]
     nx = res
     ny = max(8, int(res * D / W))
     nz = max(8, int(res * H / W))

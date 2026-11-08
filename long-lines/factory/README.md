@@ -20,6 +20,7 @@ every step ─► factory/ledger.jsonl ─► factory/REPORT.md (KPIs)
 F="blender -b --factory-startup -P long-lines/tools/factory.py --"
 $F intake sheet.png furniture_chair_kitchen --category chair     # writes the work order + views
 $F intake_sheet factory/sheets_appliances_2026_11_08.json --source-dir DIR   # many orders from one sheet spec
+$F intake_set fridge_1_manifest.json --category fridge --name fridge_1_set   # a v2 sheet set (depth + part map)
 $F build furniture_chair_kitchen                                 # or --pending, --all-orders
 $F qa --library                                                  # gate every asset in the library
 $F report                                                        # rewrite REPORT.md
@@ -45,6 +46,7 @@ blender -b --factory-startup -P long-lines/tools/critique.py -- NAME [VIEWS]   #
 | recipe | none (code) | `props/*.py` hand recipes | open or thin shapes the hull can't see (bowls, frames, chairs with gaps) and one-off hero props |
 | facade | facade atlas sheet (whole elevations) | `propkit/facade.py`: elevation trimmed, storey period by autocorrelation, window lattice recessed only when confident, cornice extruded, sides/roof from the nearest `ext_*` surface | street buildings up to ~10 storeys |
 | atlas | parts atlas sheet (panels laid flat) | `propkit/atlas.py`: panels found automatically; the order names front rows / side / top / back / kick / backguard / burners; each front panel is its own bevelled slab; knobs on control panels get depth from `part_rules.py` | appliances, cabinets, any boxy object drawn as parts |
+| sheetset | v2 sheet set: painted + depth + part map (+ section) + manifest | `propkit/sheetset.py`: outlines from the part map (protruding parts left out of the carve), body by the hull, every part-map region classified (handle, hinge, foot, seam, vent, pit, dispenser...) and built from its own outline; depth measured side-on, else depth map scaled by the measured parts, clamped by `factory/parts_catalog.json` | any object, best quality; the preferred input from Nov 2026 |
 | extrude | trim sheet | `propkit/extrude.py`: mouldings = drawn cross-section (or a default per kind) swept 1.2 m and wrapped with the painted strip; frames = painted front extruded with its opening cut | baseboards, crown, rails, casings, mirror surrounds, access panels |
 
 A new line is justified only when a category repeatedly fails another line's gate.

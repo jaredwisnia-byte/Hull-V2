@@ -113,3 +113,15 @@ add to it whenever something goes wrong.
   asset (the first intake duplicated ~80 MB).
 - Labelling a sheet (which numbered panel is which face) is the one person step: ~1 line per
   asset. Automating it further costs more than it saves at this volume.
+
+## Sheet sets v2 (first test: fridge_1, Nov 8)
+- A part map makes the outlines exact and tells the hull what to ignore: leave protruding
+  parts out of the carve and add them as their own geometry, or a handle seen side-on
+  becomes a slab across the whole front.
+- Depth maps are relative. Calibrate them per asset from parts that can be measured
+  side-on (handles in the side view), then clamp every part to the parts catalogue.
+- Never cut recesses with traced outlines joined into one cutter: open or self-touching
+  cutters wreck the EXACT boolean (the first fridge lost its front). Cut closed boxes one at
+  a time and undo any cut that changes the body's size.
+- Tiny "in" regions are screw heads, not 30 mm holes: the catalogue's `pit` class.
+- The critic's turnaround has one light: check albedo numerically before blaming the texture.

@@ -26,11 +26,11 @@
   "depth_m": 12.0,
   "storeys": 4,
   "windows": 0,
-  "side": "ext_siding_painted",
+  "side": "ext_concrete_c",
   "wall_rgb": [
-   92,
-   82,
-   76
+   133,
+   111,
+   96
   ]
  },
  "attempts": 1

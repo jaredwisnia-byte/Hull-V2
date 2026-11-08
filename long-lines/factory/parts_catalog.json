@@ -1,0 +1,144 @@
+{
+ "_note": "What real parts are like, by function. The sheetset line classifies every region of a part map into one of these and sizes it here: the painting says where, the depth map says relatively how much, this file says how much is believable. Millimetres. 'out' = stands proud of the surface, 'in' = recess depth. Add a class when a new kind of part shows up; every asset after that benefits.",
+ "out": {
+  "handle": {
+   "depth_mm": [
+    18,
+    45
+   ],
+   "default": 30,
+   "why": "fingers must fit behind a pull handle: 15-25 mm gap plus the grip"
+  },
+  "hinge": {
+   "depth_mm": [
+    4,
+    15
+   ],
+   "default": 8,
+   "why": "exposed appliance and door hinges are a knuckle a few mm proud"
+  },
+  "foot": {
+   "depth_mm": [
+    8,
+    40
+   ],
+   "default": 20,
+   "why": "levelling feet and kick bases lift the body off the floor"
+  },
+  "knob": {
+   "depth_mm": [
+    8,
+    25
+   ],
+   "default": 18,
+   "why": "see part_rules.py: 2-6 cm knobs stand out 60% of their diameter"
+  },
+  "key": {
+   "depth_mm": [
+    4,
+    12
+   ],
+   "default": 8,
+   "why": "typewriter and keyboard keys stand on stems above the deck"
+  },
+  "button": {
+   "depth_mm": [
+    2,
+    8
+   ],
+   "default": 4,
+   "why": "push buttons are shallow"
+  },
+  "trim": {
+   "depth_mm": [
+    2,
+    20
+   ],
+   "default": 6,
+   "why": "rims, frames, mouldings, rails"
+  },
+  "cornice": {
+   "depth_mm": [
+    150,
+    600
+   ],
+   "default": 350,
+   "why": "building cornices overhang the wall to shed rain"
+  },
+  "sill": {
+   "depth_mm": [
+    40,
+    120
+   ],
+   "default": 70,
+   "why": "window sills project to drip water clear of the wall"
+  }
+ },
+ "in": {
+  "seam": {
+   "depth_mm": [
+    3,
+    8
+   ],
+   "default": 5,
+   "width_min_mm": 4,
+   "why": "the gap round a door or drawer: a fingernail, not a slot"
+  },
+  "vent": {
+   "depth_mm": [
+    6,
+    20
+   ],
+   "default": 12,
+   "why": "louvres and grilles: shadow, not a hole"
+  },
+  "slot": {
+   "depth_mm": [
+    10,
+    60
+   ],
+   "default": 25,
+   "why": "coin, card and mail slots"
+  },
+  "dispenser": {
+   "depth_mm": [
+    80,
+    140
+   ],
+   "default": 110,
+   "why": "a glass must fit under the spout: a tumbler is ~9 cm across"
+  },
+  "recess": {
+   "depth_mm": [
+    10,
+    80
+   ],
+   "default": 30,
+   "why": "general pockets, handles cut into a panel, display niches"
+  },
+  "window": {
+   "depth_mm": [
+    120,
+    300
+   ],
+   "default": 200,
+   "why": "window glass sits back in a masonry wall"
+  },
+  "door_opening": {
+   "depth_mm": [
+    100,
+    300
+   ],
+   "default": 150,
+   "why": "street doors sit back in their frames"
+  },
+  "pit": {
+   "depth_mm": [
+    1,
+    6
+   ],
+   "default": 3,
+   "why": "screw heads, rivets and small holes drawn as dots: shadow only"
+  }
+ }
+}

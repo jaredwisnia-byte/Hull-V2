@@ -1,0 +1,46 @@
+{
+ "name": "fridge_1_set",
+ "category": "fridge",
+ "line": "sheetset",
+ "source": "fridge_1_manifest.json",
+ "class": null,
+ "views_folder": "fridge_1_set",
+ "status": "shipped",
+ "height_m": 1.65,
+ "depth_m": 0.75,
+ "object_type": "fridge",
+ "notes": "1970s top-freezer refrigerator",
+ "assumptions": [
+  "size from the manifest (approximate)"
+ ],
+ "measured": {
+  "width_m": 0.775,
+  "depth_m": 0.75,
+  "height_m": 1.65,
+  "parts": 57,
+  "by_kind": {
+   "front handle": 4,
+   "front hinge": 3,
+   "front foot": 7,
+   "front seam": 5,
+   "right hinge": 2,
+   "right foot": 2,
+   "right vent": 1,
+   "right pit": 2,
+   "back foot": 1,
+   "back pit": 4,
+   "back vent": 21,
+   "left foot": 2,
+   "left vent": 1,
+   "left pit": 2
+  },
+  "depth_scale_mm_per_unit": 108.3,
+  "recess_cuts_undone": 0,
+  "sources": {
+   "side view": 13,
+   "depth map": 30,
+   "catalogue": 14
+  }
+ },
+ "attempts": 1
+}

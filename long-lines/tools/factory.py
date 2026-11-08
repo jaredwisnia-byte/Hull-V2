@@ -3,6 +3,7 @@
 Run under Blender (all stations share one process):
     blender -b --factory-startup -P tools/factory.py -- intake IMAGE NAME --category tv [--height 0.5]
     blender -b --factory-startup -P tools/factory.py -- intake_sheet SHEET_SPEC.json --source-dir DIR
+    blender -b --factory-startup -P tools/factory.py -- intake_set MANIFEST.json [--category fridge] [--name N]
     blender -b --factory-startup -P tools/factory.py -- build NAME... | --pending | --all-orders
     blender -b --factory-startup -P tools/factory.py -- qa NAME... | --library
     blender -b --factory-startup -P tools/factory.py -- report
@@ -174,6 +175,31 @@ def intake_sheet(spec_path, source_dir):
     return out
 
 
+def intake_set(manifest, category=None, name=None):
+    """A v2 sheet set (painted + depth + part map + section + manifest, REFERENCE_SPEC.md):
+    files copied to source_textures/<name>/, size from the manifest's dimensions."""
+    import shutil
+    m = json.load(open(manifest))
+    name = name or m["asset_id"]
+    d = os.path.join(SRC, name)
+    os.makedirs(d, exist_ok=True)
+    src = os.path.dirname(os.path.abspath(manifest))
+    for k in ("painted_sheet", "depth_map", "part_map", "section"):
+        if k in m:
+            shutil.copy(os.path.join(src, m[k]["filename"]), os.path.join(d, m[k]["filename"]))
+    shutil.copy(manifest, os.path.join(d, "manifest.json"))
+    dims = m.get("dimensions_cm", {})
+    category = category or m.get("object_type")
+    order = {"name": name, "category": category, "line": "sheetset", "source": os.path.basename(manifest),
+             "class": None, "views_folder": name, "status": "pending",   # size class from the real size
+             "height_m": dims.get("height", 100) / 100, "depth_m": dims.get("depth", 60) / 100,
+             "object_type": m.get("object_type"), "notes": m.get("display_name", ""),
+             "assumptions": ["size from the manifest (%s)" % ("approximate" if dims.get("approximate") else "given")]}
+    save_order(order)
+    print("ORDER", json.dumps(order))
+    return order
+
+
 # ------------------------------------------------------------------ lines
 
 def run_line(order):
@@ -209,6 +235,11 @@ def run_line(order):
         else:
             order["measured"] = extrude.frame(sheet, order["panel"], order["height_m"], d,
                                               order.get("depth_m", 0.022), order["name"])
+    elif line == "sheetset":
+        from propkit.sheetset import build_set
+        d = os.path.join(SRC, order["views_folder"])
+        order["measured"] = build_set(os.path.join(d, "manifest.json"), order["name"], order["height_m"],
+                                      order["depth_m"], order.get("object_type"))
     elif line == "recipe":
         propkit.PROPS[order["name"]]["fn"]()
     else:
@@ -367,6 +398,9 @@ if __name__ == "__main__":
         if "--height" in rest:
             kw["height"] = float(rest[rest.index("--height") + 1])
         intake(rest[0], rest[1], rest[rest.index("--category") + 1], **kw)
+    elif cmd == "intake_set":
+        intake_set(rest[0], rest[rest.index("--category") + 1] if "--category" in rest else None,
+                   rest[rest.index("--name") + 1] if "--name" in rest else None)
     elif cmd == "intake_sheet":
         intake_sheet(rest[0], rest[rest.index("--source-dir") + 1])
     elif cmd == "build":

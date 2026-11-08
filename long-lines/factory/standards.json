@@ -75,7 +75,8 @@
   "car",
   "can",
   "painted",
-  "facade"
+  "facade",
+  "sheetset"
  ],
  "open_by_design": {
   "_note": "Objects with intended see-through gaps inside their outline (stands, frames, racks) even on solid lines.",
