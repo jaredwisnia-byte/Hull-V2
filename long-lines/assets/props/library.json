@@ -2517,6 +2517,34 @@
   "desc": "A holy card print of a saint, palm frond tucked behind the frame.",
   "kind": "static"
  },
+ "freezer_chest_blue": {
+  "size": [
+   1.7091,
+   0.861,
+   0.775
+  ],
+  "min": [
+   -0.8546,
+   0.0,
+   -0.753
+  ],
+  "max": [
+   0.8546,
+   0.861,
+   0.022
+  ],
+  "tris": 1128,
+  "tex": 1024,
+  "standardized": [
+   "seated on floor (-0.002 m)"
+  ],
+  "tags": [
+   "chest_freezer",
+   "factory"
+  ],
+  "desc": "Pale blue chest freezer",
+  "kind": "static"
+ },
  "fridge_50s": {
   "size": [
    0.72,

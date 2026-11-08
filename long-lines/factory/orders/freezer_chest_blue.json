@@ -15,10 +15,20 @@
  "source": "appl_7.png",
  "class": "medium",
  "views_folder": "freezer_chest_blue",
- "status": "pending",
+ "status": "shipped",
  "assumptions": [
   "height 0.86 m from category 'chest_freezer'"
  ],
  "height_m": 0.86,
- "cat_depth_m": 0.75
+ "cat_depth_m": 0.75,
+ "measured": {
+  "width_m": 1.703,
+  "depth_m": 0.75,
+  "height_m": 0.86,
+  "panels": [
+   6
+  ],
+  "knobs": []
+ },
+ "attempts": 1
 }
