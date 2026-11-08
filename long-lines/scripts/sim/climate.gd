@@ -54,8 +54,8 @@ func outdoor_temp(minutes: float) -> float:
 func daylight(minutes: float) -> float:
 	var d := int(floor(minutes / 1440.0)) + 1
 	var hod := fposmod(minutes, 1440.0) / 60.0
-	var up := smoothstep(sunrise - 0.45, sunrise + 0.7, hod)
-	var down := 1.0 - smoothstep(sunset - 0.7, sunset + 0.45, hod)
+	var up := smoothstep(sunrise - 0.6, sunrise + 0.7, hod)
+	var down := 1.0 - smoothstep(sunset - 0.7, sunset + 0.8, hod)
 	return up * down * float(day_data(d).get("light", 1.0))
 
 

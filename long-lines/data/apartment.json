@@ -8,7 +8,8 @@
   "rooms": [
     {"id": "parlor",  "name": "Front room", "z0": 0.0,  "z1": 3.95, "floor": "boards",    "wall": "wallpaper_green"},
     {"id": "bedroom", "name": "Bedroom",    "z0": 4.05, "z1": 6.55, "floor": "boards",    "wall": "wall_blue"},
-    {"id": "kitchen", "name": "Kitchen",    "z0": 6.65, "z1": 10.2, "floor": "linoleum",  "wall": "plaster_cream"}
+    {"id": "kitchen", "name": "Kitchen",    "z0": 6.65, "z1": 10.2, "floor": "linoleum_oct", "wall": "plaster_kitchen",
+     "wainscot": {"material": "tile_gold", "height": 1.25, "cap": "enamel_old"}}
   ],
   "partitions": [
     {"z": 4.0, "doorway": [0.3, 1.1, 2.05], "front_room": "parlor", "back_room": "bedroom"},
@@ -59,10 +60,10 @@
     {"type": "radiator",      "id": "radiator_bedroom", "pos": [0.09, 0, 5.3],   "rot": 90},
     {"type": "ceiling_lamp",  "id": "lamp_bedroom",     "pos": [1.7, 2.75, 5.3], "rot": 0},
 
-    {"type": "fridge",        "id": "fridge",           "pos": [3.06, 0, 7.25],  "rot": -90},
-    {"type": "stove",         "id": "stove",            "pos": [3.09, 0, 8.15],  "rot": -90},
-    {"type": "sink",          "id": "sink",             "pos": [3.15, 0, 9.0],   "rot": -90},
-    {"type": "wall_cabinet",  "id": "wall_cabinet",     "pos": [3.235, 1.5, 7.6], "rot": -90},
+    {"type": "fridge",        "id": "fridge",           "pos": [3.05, 0, 7.1],   "rot": -90},
+    {"type": "stove",         "id": "stove",            "pos": [3.09, 0, 7.95],  "rot": -90},
+    {"type": "sink",          "id": "sink",             "pos": [3.1, 0, 8.9],    "rot": -90},
+    {"type": "wall_cabinet",  "id": "wall_cabinet",     "pos": [3.24, 1.64, 7.5], "rot": -90},
     {"type": "tub",           "id": "tub",              "pos": [2.35, 0, 9.825], "rot": 180},
     {"type": "kitchen_table", "id": "kitchen_drawer",   "pos": [1.6, 0, 8.3],    "rot": 0},
     {"type": "chair",         "id": "chair_a",          "pos": [1.6, 0, 7.62],   "rot": 0},
@@ -75,9 +76,15 @@
     {"type": "notepad",       "id": "notepad",          "pos": [0.0, 1.0, 8.0],  "rot": 90},
     {"type": "calendar",      "id": "calendar",         "pos": [0.0, 1.3, 9.0],  "rot": 90},
     {"type": "coat_hook",     "id": "coat_hook",        "pos": [0.0, 1.55, 9.75], "rot": 90},
-    {"type": "fridge_note",   "id": "fridge_note",      "pos": [2.71, 1.25, 7.25], "rot": -90},
+    {"type": "fridge_note",   "id": "fridge_note",      "pos": [2.715, 1.25, 7.0], "rot": -90},
     {"type": "light_switch",  "id": "light_switch",     "pos": [1.3, 1.2, 10.2], "rot": 180},
-    {"type": "ceiling_lamp",  "id": "lamp_kitchen",     "pos": [1.7, 2.75, 8.4], "rot": 0}
+    {"type": "ceiling_globe", "id": "lamp_kitchen",     "pos": [1.7, 2.75, 8.4], "rot": 0},
+    {"type": "jars",          "id": "jars",             "pos": [3.2, 0.912, 8.55], "rot": -90},
+    {"type": "cafe_curtain",  "id": "cafe_curtain",     "pos": [3.36, 1.16, 9.0], "rot": -90},
+    {"type": "plant",         "id": "plant",            "pos": [3.33, 1.18, 9.17], "rot": 0},
+    {"type": "doorway_curtain","id": "doorway_curtain", "pos": [0.7, 0, 6.68],   "rot": 0},
+    {"type": "paper_bags",    "id": "paper_bags",       "pos": [0.28, 0, 8.75],  "rot": 90},
+    {"type": "wall_clock",    "id": "wall_clock",       "pos": [0.0, 1.95, 7.3], "rot": 90}
   ],
   "player_start": {"pos": [0.9, 0, 5.2], "yaw_deg": 0}
 }

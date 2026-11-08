@@ -53,9 +53,36 @@ const PALETTE := {
 	"car_brown":       [Color(0.40, 0.26, 0.16), Color(0.40, 0.26, 0.16), 0, 1.0, 0.03],
 	"tire":            [Color(0.08, 0.08, 0.08), Color(0.08, 0.08, 0.08), 0, 1.0, 0.03],
 	"skeleton_paper":  [Color(0.95, 0.94, 0.88), Color(0.95, 0.94, 0.88), 0, 1.0, 0.02],
+	# Kitchen test pass: 1970s New York, Long Dark-style rendering.
+	"linoleum_oct":    [Color(0.80, 0.64, 0.30), Color(0.93, 0.85, 0.62), 7, 5.5, 0.07, {"wear": 0.0, "grime": 0.35}],
+	"tile_gold":       [Color(0.84, 0.66, 0.22), Color(0.95, 0.86, 0.55), 8, 6.6, 0.05, {"grime": 0.3, "floor_grime": 0.5}],
+	"plaster_kitchen": [Color(0.86, 0.82, 0.70), Color(0.80, 0.75, 0.62), 0, 1.0, 0.10, {"grime": 0.55, "floor_grime": 0.4}],
+	"cabinet_paint":   [Color(0.90, 0.88, 0.80), Color(0.90, 0.88, 0.80), 0, 1.0, 0.05, {"wear": 0.9, "grime": 0.35}],
+	"cabinet_wood":    [Color(0.40, 0.24, 0.13), Color(0.33, 0.19, 0.10), 11, 9.0, 0.06, {"wear": 0.7, "grime": 0.2}],
+	"enamel_old":      [Color(0.92, 0.90, 0.83), Color(0.92, 0.90, 0.83), 0, 1.0, 0.04, {"wear": 0.6, "grime": 0.3}],
+	"enamel_cream":    [Color(0.90, 0.86, 0.72), Color(0.90, 0.86, 0.72), 0, 1.0, 0.04, {"wear": 0.6, "grime": 0.3}],
+	"formica_yellow":  [Color(0.90, 0.80, 0.45), Color(0.82, 0.70, 0.38), 12, 70.0, 0.04, {"wear": 0.5}],
+	"chrome_worn":     [Color(0.70, 0.71, 0.72), Color(0.55, 0.56, 0.58), 0, 1.0, 0.05, {"wear": 0.9}],
+	"vinyl_red":       [Color(0.62, 0.13, 0.10), Color(0.62, 0.13, 0.10), 0, 1.0, 0.05, {"wear": 0.9}],
+	"paper_bag":       [Color(0.66, 0.50, 0.32), Color(0.58, 0.43, 0.26), 0, 1.0, 0.14, {"wear": 0.4}],
+	"towel":           [Color(0.92, 0.90, 0.84), Color(0.75, 0.30, 0.20), 2, 12.0, 0.06, {}],
+	"curtain_kitchen": [Color(0.94, 0.92, 0.84), Color(0.84, 0.66, 0.28), 5, 9.0, 0.05, {}],
+	"curtain_doorway": [Color(0.82, 0.78, 0.68), Color(0.45, 0.32, 0.22), 10, 5.0, 0.07, {}],
+	"jar_label_red":   [Color(0.75, 0.22, 0.14), Color(0.95, 0.85, 0.60), 2, 40.0, 0.05, {}],
+	"jar_label_green": [Color(0.30, 0.50, 0.30), Color(0.95, 0.90, 0.70), 2, 40.0, 0.05, {}],
+	"jar_lid":         [Color(0.85, 0.70, 0.30), Color(0.85, 0.70, 0.30), 0, 1.0, 0.04, {"wear": 0.8}],
+	"can_tin":         [Color(0.70, 0.70, 0.68), Color(0.60, 0.60, 0.58), 2, 60.0, 0.05, {"wear": 0.6}],
+	"soup_label":      [Color(0.78, 0.18, 0.12), Color(0.95, 0.92, 0.82), 0, 1.0, 0.04, {}],
+	"clock_face":      [Color(0.95, 0.93, 0.86), Color(0.95, 0.93, 0.86), 0, 1.0, 0.03, {}],
+	"phone_yellow":    [Color(0.88, 0.76, 0.36), Color(0.88, 0.76, 0.36), 0, 1.0, 0.04, {"wear": 0.6}],
+	"cooler_red2":     [Color(0.66, 0.14, 0.10), Color(0.66, 0.14, 0.10), 0, 1.0, 0.05, {"wear": 0.9, "grime": 0.2}],
 }
 
 static var _cache := {}
+static var _mesh_cache := {}
+## When true, Geo.box makes bevelled boxes. The apartment builder turns it off
+## for walls, floors and ceilings, which meet each other at sharp corners.
+static var bevel := true
 
 
 static func mat(name: String) -> Material:
@@ -69,6 +96,9 @@ static func mat(name: String) -> Material:
 	m.set_shader_parameter("pattern", p[2])
 	m.set_shader_parameter("scale", p[3])
 	m.set_shader_parameter("grain", p[4])
+	var extra: Dictionary = p[5] if p.size() > 5 else {}
+	for k in extra:
+		m.set_shader_parameter(k, extra[k])
 	_cache[name] = m
 	return m
 
@@ -100,11 +130,17 @@ static func glass() -> Material:
 ## Adds a box mesh to `parent` centred at `center` (local). If `collide`, a box
 ## collision shape is added to the nearest CollisionObject3D (parent itself, or
 ## a new StaticBody3D child of parent).
-static func box(parent: Node3D, size: Vector3, center: Vector3, material: Variant, collide := true) -> MeshInstance3D:
+static func box(parent: Node3D, size: Vector3, center: Vector3, material: Variant, collide := true, radius := -1.0) -> MeshInstance3D:
 	var mi := MeshInstance3D.new()
-	var bm := BoxMesh.new()
-	bm.size = size
-	mi.mesh = bm
+	if radius > 0.0:
+		mi.mesh = rounded_box_mesh(size, radius, 3)
+	elif bevel:
+		var r := clampf(minf(size.x, minf(size.y, size.z)) * 0.22, 0.002, 0.03)
+		mi.mesh = rounded_box_mesh(size, r)
+	else:
+		var bm := BoxMesh.new()
+		bm.size = size
+		mi.mesh = bm
 	mi.position = center
 	if material is String:
 		mi.material_override = mat(material)
@@ -174,3 +210,84 @@ static func label3d(parent: Node3D, text: String, pos: Vector3, size := 0.02, co
 	l.double_sided = false
 	parent.add_child(l)
 	return l
+
+
+## A box with rounded edges and corners. Vertices on the rounded bands carry
+## vertex colour red = 0 so the shader can wear and highlight the edges, the
+## way painted props in The Long Dark catch light along their bevels.
+static func rounded_box_mesh(size: Vector3, radius: float, seg := 2) -> Mesh:
+	var key := "%.4f_%.4f_%.4f_%.4f_%d" % [size.x, size.y, size.z, radius, seg]
+	if _mesh_cache.has(key):
+		return _mesh_cache[key]
+	var h := size * 0.5
+	var r := minf(radius, minf(h.x, minf(h.y, h.z)) * 0.98)
+	var inner := h - Vector3(r, r, r)
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	# Each face: normal axis, sign, and the two in-plane axes.
+	var faces := [[0, 1, 1, 2], [0, -1, 2, 1], [1, 1, 2, 0], [1, -1, 0, 2], [2, 1, 0, 1], [2, -1, 1, 0]]
+	for f in faces:
+		var n_ax: int = f[0]
+		var sgn: float = f[1]
+		var u_ax: int = f[2]
+		var v_ax: int = f[3]
+		var cu := _band_coords(h[u_ax], r, seg)
+		var cv := _band_coords(h[v_ax], r, seg)
+		var face_n := Vector3.ZERO
+		face_n[n_ax] = sgn
+		for i in cu.size() - 1:
+			for j in cv.size() - 1:
+				var q := [
+					_rb_point(n_ax, sgn * h[n_ax], u_ax, cu[i], v_ax, cv[j]),
+					_rb_point(n_ax, sgn * h[n_ax], u_ax, cu[i + 1], v_ax, cv[j]),
+					_rb_point(n_ax, sgn * h[n_ax], u_ax, cu[i + 1], v_ax, cv[j + 1]),
+					_rb_point(n_ax, sgn * h[n_ax], u_ax, cu[i], v_ax, cv[j + 1]),
+				]
+				var verts: Array = []
+				for p in q:
+					verts.append(_rb_vertex(p, inner, r, face_n))
+				# Godot treats clockwise triangles (seen from outside) as front faces.
+				var a: Vector3 = verts[0][0]
+				var b: Vector3 = verts[1][0]
+				var c: Vector3 = verts[2][0]
+				var flip := (b - a).cross(c - a).dot(face_n) > 0.0
+				var order := [0, 2, 1, 0, 3, 2] if flip else [0, 1, 2, 0, 2, 3]
+				for k in order:
+					var vtx: Array = verts[k]
+					st.set_color(vtx[2])
+					st.set_normal(vtx[1])
+					st.add_vertex(vtx[0])
+	var mesh := st.commit()
+	_mesh_cache[key] = mesh
+	return mesh
+
+
+static func _band_coords(hh: float, r: float, seg: int) -> Array:
+	var out: Array = []
+	for k in seg + 1:
+		out.append(-hh + r * k / seg)
+	for k in seg + 1:
+		out.append(hh - r + r * k / seg)
+	return out
+
+
+static func _rb_point(n_ax: int, n_val: float, u_ax: int, u_val: float, v_ax: int, v_val: float) -> Vector3:
+	var p := Vector3.ZERO
+	p[n_ax] = n_val
+	p[u_ax] = u_val
+	p[v_ax] = v_val
+	return p
+
+
+## Returns [position, normal, colour] for a point on the unrounded box surface.
+static func _rb_vertex(p: Vector3, inner: Vector3, r: float, face_n: Vector3) -> Array:
+	var c := p.clamp(-inner, inner)
+	var d := p - c
+	var on_band := false
+	for ax in 3:
+		if absf(face_n[ax]) < 0.5 and absf(p[ax]) > inner[ax] + 1e-6:
+			on_band = true
+	if d.length() < 1e-7:
+		return [p, face_n, Color(1, 1, 1)]
+	var n := d.normalized()
+	return [c + n * r, n, Color(0, 1, 1) if on_band else Color(1, 1, 1)]

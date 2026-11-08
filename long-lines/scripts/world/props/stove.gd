@@ -62,7 +62,7 @@ func _refresh() -> void:
 		flames[i].visible = i < Game.burners
 	if glow:
 		glow.visible = Game.burners > 0
-		glow.light_energy = 0.25 * Game.burners
+		glow.light_energy = 0.08 * Game.burners
 
 
 func _process(_d: float) -> void:

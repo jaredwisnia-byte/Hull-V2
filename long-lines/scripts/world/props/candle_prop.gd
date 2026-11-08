@@ -61,7 +61,7 @@ func _process(_d: float) -> void:
 			say("A candle gutters out.")
 		_refresh()
 		if light:
-			light.light_energy = 0.55 + sin(m * 7.0) * 0.04 + randf() * 0.04
+			light.light_energy = 0.9 + sin(m * 7.0) * 0.05 + randf() * 0.05
 	_last_minutes = m
 
 

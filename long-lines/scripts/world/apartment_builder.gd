@@ -12,6 +12,7 @@ var H: float
 var street_y: float
 var root: Node3D
 var cars: Array = []      # [{lights: Array[Node3D], spot: SpotLight3D}]
+var window_lights: Array = []  # cool fill light spilling in from each window
 
 
 func _init(data: Dictionary) -> void:
@@ -26,13 +27,18 @@ func build(parent: Node3D) -> Node3D:
 	root = Node3D.new()
 	root.name = "Apartment"
 	parent.add_child(root)
+	Geo.bevel = false
 	_floors_and_ceiling()
 	_outer_walls()
 	_partitions()
+	_wainscots()
 	_trim()
+	Geo.bevel = true
 	_fire_escape()
+	Geo.bevel = false
 	_exterior()
 	_street()
+	Geo.bevel = true
 	return root
 
 
@@ -59,7 +65,8 @@ func _floors_and_ceiling() -> void:
 ## A straight wall with rectangular openings. axis "x": runs along x at
 ## z = fixed, thickness extends in out_dir. axis "z": runs along z at x = fixed.
 func wall_run(body: Node3D, axis: String, fixed: float, out_dir: float, thickness: float,
-		a0: float, a1: float, openings: Array, material: String, offset := 0.0) -> void:
+		a0: float, a1: float, openings: Array, material: String, offset := 0.0, top := -1.0) -> void:
+	var hmax := H if top < 0.0 else top
 	var ops := openings.duplicate()
 	ops.sort_custom(func(p, q): return float(p.a) < float(q.a))
 	var cursor := a0
@@ -71,14 +78,14 @@ func wall_run(body: Node3D, axis: String, fixed: float, out_dir: float, thicknes
 		if ob <= a0 or oa >= a1:
 			continue
 		if oa > cursor:
-			pieces.append([cursor, oa, 0.0, H])
+			pieces.append([cursor, oa, 0.0, hmax])
 		if float(op.y0) > 0.0:
-			pieces.append([oa, ob, 0.0, float(op.y0)])
-		if float(op.y1) < H:
-			pieces.append([oa, ob, float(op.y1), H])
+			pieces.append([oa, ob, 0.0, minf(float(op.y0), hmax)])
+		if float(op.y1) < hmax:
+			pieces.append([oa, ob, float(op.y1), hmax])
 		cursor = ob
 	if cursor < a1:
-		pieces.append([cursor, a1, 0.0, H])
+		pieces.append([cursor, a1, 0.0, hmax])
 	for p in pieces:
 		var len: float = p[1] - p[0]
 		var hgt: float = p[3] - p[2]
@@ -118,10 +125,12 @@ func _outer_walls() -> void:
 
 	for side in ["front", "right", "back", "left"]:
 		for op in ops[side]:
+			Geo.bevel = true
 			if op.kind == "window":
 				_window(side, op)
 			elif op.kind == "door":
 				_hall_door(side, op)
+			Geo.bevel = false
 
 
 func _partitions() -> void:
@@ -150,6 +159,40 @@ func _room_by_id(id: String) -> Dictionary:
 		if r.id == id:
 			return r
 	return d.rooms[0]
+
+
+## Glazed tile up the lower part of a room's walls (the kitchen), with a cap.
+func _wainscots() -> void:
+	var body := StaticBody3D.new()
+	body.name = "Wainscot"
+	root.add_child(body)
+	var ops: Dictionary = d.openings
+	var t := 0.012
+	for r in d.rooms:
+		if not r.has("wainscot"):
+			continue
+		var ws: Dictionary = r.wainscot
+		var top := float(ws.height)
+		var m := String(ws.material)
+		var z0 := float(r.z0)
+		var z1 := float(r.z1)
+		wall_run(body, "z", 0.0, 1.0, t, z0, z1, ops.left, m, 0.0, top)
+		wall_run(body, "z", W, -1.0, t, z0, z1, ops.right, m, 0.0, top)
+		if z1 >= D - 0.01:
+			wall_run(body, "x", D, -1.0, t, 0.0, W, ops.back, m, 0.0, top)
+		if z0 <= 0.01:
+			wall_run(body, "x", 0.0, 1.0, t, 0.0, W, ops.front, m, 0.0, top)
+		for p in d.partitions:
+			var dw: Array = p.doorway
+			var op := {"a": dw[0], "b": dw[1], "y0": 0.0, "y1": dw[2]}
+			if String(p.back_room) == String(r.id):
+				wall_run(body, "x", float(p.z) + 0.05, 1.0, t, 0.0, W, [op], m, 0.0, top)
+			if String(p.front_room) == String(r.id):
+				wall_run(body, "x", float(p.z) - 0.05, -1.0, t, 0.0, W, [op], m, 0.0, top)
+		# Bullnose cap along the top edge.
+		var cap := String(ws.get("cap", "trim"))
+		Geo.box(body, Vector3(0.025, 0.03, z1 - z0), Vector3(0.012, top, (z0 + z1) * 0.5), cap, false)
+		Geo.box(body, Vector3(0.025, 0.03, z1 - z0), Vector3(W - 0.012, top, (z0 + z1) * 0.5), cap, false)
 
 
 func _trim() -> void:
@@ -225,6 +268,20 @@ func _window(side: String, op: Dictionary) -> void:
 	Geo.add_box_shape(win, Vector3(w + 0.12, 0.05, 0.36), Vector3(0, 0.005, 0.07))
 	var into := frame.transform.basis * Vector3(0, 0, 1)
 	var center := frame.transform.origin
+	# Soft daylight spilling in through the window: cool, broad, no shadows.
+	var fill := SpotLight3D.new()
+	fill.light_color = Color(0.62, 0.72, 0.9)
+	fill.spot_range = 5.0
+	fill.spot_angle = 85.0
+	fill.spot_angle_attenuation = 0.35
+	fill.spot_attenuation = 1.2
+	fill.light_energy = 0.0
+	fill.shadow_enabled = false
+	fill.light_specular = 0.1
+	root.add_child(fill)
+	var fp := center + into * 0.25 + Vector3(0, h * 0.75, 0)
+	fill.look_at_from_position(fp, fp + into + Vector3(0, -0.6, 0), Vector3.UP)
+	window_lights.append({"light": fill, "outside": String(op.get("outside", "")), "area": w * h})
 	win.climb_in_point = Vector3(center.x, 0.05, center.z) + into * 0.75
 	win.climb_out_point = Vector3(center.x, 0.05, center.z) - into * 0.55
 
@@ -408,6 +465,7 @@ func _street() -> void:
 
 
 func _car(parent: Node3D, pos: Vector3, material: String, dir: float, lights: bool) -> void:
+	Geo.bevel = true
 	var car := Node3D.new()
 	parent.add_child(car)
 	car.position = pos

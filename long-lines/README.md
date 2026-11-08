@@ -2,9 +2,25 @@
 
 A first playable slice of *Long Lines*, built from the game design document. It covers only Nick Lombardi's apartment: 4A, a front railroad flat in an old-law tenement on Sullivan Street. Play starts at 6:40 a.m. on Friday, October 31, 1975, the morning after the comet. Stepping out the hall door ends the slice.
 
-It is a Godot 4.4 project, as the design doc's technical plan specifies. Systems are data-driven from the first file, and everything is built from boxes and a painterly toon shader, so there are no art assets to import.
+It is a Godot 4.4 project, as the design doc's technical plan specifies. Systems are data-driven from the first file, and every prop is generated in code (bevelled meshes and a painterly toon shader), so there are no art assets to import.
 
-![Dawn in the front room](docs/01_dawn_front_room.png)
+![The kitchen in the morning](docs/kitchen_pass/k1_kitchen_morning.png)
+
+## Art pass: the kitchen
+
+The kitchen is the test room for the final look. It combines 1970s New York apartment references with The Long Dark's rendering style:
+
+- **Period dressing.** Octagon sheet linoleum, gold glazed tile up to 1.25 m, painted wooden cabinets with chrome pulls, a round-shouldered 1950s fridge, an apartment gas range with a clock in its back panel, a formica and chrome dinette, a tub on claw feet with a board lid, a yellow rotary phone, a milk-glass ceiling globe, cafe curtains, a curtain hung in the doorway, paper grocery bags, jars, and a percolator.
+- **Chunky, bevelled props.** `Geo.rounded_box_mesh` rounds every edge. Edge vertices are tagged so the shader can lighten and chip them like painted wear.
+- **Painted surfaces.** Procedural patterns, painted grain, grime blotches, and a dirty band low on the walls (`shaders/paint.gdshader`).
+- **Lighting.** Forward+ renderer with ambient occlusion, a little bounced light, volumetric fog and glow. Warm practical lights against a cool teal ambient. Soft daylight spills in through each window, and the corners stay dark.
+- **Grade.** Teal shadows, warm highlights, vignette and film grain (`shaders/grade.gdshader`).
+
+The front room and bedroom have the new lighting and bevelled props but not yet their own dressing pass.
+
+| Range, mid-morning | Candlelight, 9:30 p.m. |
+| --- | --- |
+| ![](docs/kitchen_pass/k6_range_close.png) | ![](docs/kitchen_pass/k4_kitchen_candle_night.png) |
 
 ## Run it
 
@@ -93,8 +109,10 @@ godot --headless --path long-lines --script res://tests/run_tests.gd
 # saving and loading (44 checks)
 godot --headless --path long-lines -- --smoke
 
-# Render screenshots from fixed viewpoints and times (needs a display; xvfb-run works)
-godot --path long-lines --rendering-driver opengl3 -- --shots=/tmp/shots
+# Render screenshots from fixed viewpoints and times (needs a display and
+# Vulkan; on a headless Linux box, xvfb-run plus mesa-vulkan-drivers works).
+# --only=k renders just the kitchen set.
+godot --path long-lines -- --shots=/tmp/shots --only=k
 ```
 
 The first run of a fresh checkout needs `godot --headless --path long-lines --import` so Godot can register the script classes.
@@ -105,6 +123,7 @@ The first run of a fresh checkout needs `godot --headless --path long-lines --im
 - **No audio yet.** Sound is shown as captions. The subtraction schedule is already in `events.json`, ready for an audio layer.
 - **One air zone.** The doc imagines picking a warm room and sealing it off. Here the whole apartment shares one temperature and one CO level. Per-room zones are the next step for the shelter puzzle.
 - **No glass breaking, nailing or taping, or fires spreading.** Windows open and close.
+- **Renderer.** The project uses Forward+, which needs a Vulkan-capable GPU. For older hardware, switch `rendering/renderer/rendering_method` to `gl_compatibility`. It still runs, without ambient occlusion, volumetric fog or bounced light.
 - **Toilets on the landing** (true to old-law tenements) are outside the slice.
 - **Placeholder names.** The newspaper (*New York Daily Record*), food brands and radio station names are invented, as the doc requires. Real officials are never quoted.
 

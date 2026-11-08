@@ -48,10 +48,14 @@ func _ready() -> void:
 		_runner = SmokeTest.new()
 		_runner.run(self)
 		return
+	var only := ""
+	for a in args:
+		if a.begins_with("--only="):
+			only = a.substr(7)
 	for a in args:
 		if a.begins_with("--shots="):
 			_runner = Screenshots.new()
-			_runner.run(self, a.substr(8))
+			_runner.run(self, a.substr(8), only)
 			return
 	if DisplayServer.get_name() != "headless":
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
@@ -101,18 +105,54 @@ func _build_environment() -> void:
 	sky.sky_material = sky_mat
 	env.sky = sky
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+	env.reflected_light_source = Environment.REFLECTION_SOURCE_DISABLED
+	env.tonemap_mode = Environment.TONE_MAPPER_ACES
+	env.tonemap_exposure = 1.05
+	env.tonemap_white = 5.0
 	env.fog_enabled = true
 	env.fog_density = 0.008
 	env.fog_sky_affect = 0.3
+	# Forward+ only (ignored by the Compatibility renderer): contact shadows in
+	# corners, a little bounced colour, light shafts, glowing windows and flames.
+	env.ssao_enabled = true
+	env.ssao_radius = 0.8
+	env.ssao_intensity = 1.6
+	env.ssao_power = 1.6
+	env.ssao_light_affect = 0.15
+	env.ssil_enabled = true
+	env.ssil_radius = 2.0
+	env.ssil_intensity = 0.8
+	env.volumetric_fog_enabled = true
+	env.volumetric_fog_density = 0.012
+	env.volumetric_fog_albedo = Color(0.9, 0.88, 0.85)
+	env.volumetric_fog_length = 24.0
+	env.volumetric_fog_ambient_inject = 0.0
+	env.glow_enabled = true
+	env.glow_intensity = 0.6
+	env.glow_bloom = 0.04
+	env.glow_hdr_threshold = 1.1
+	env.glow_blend_mode = Environment.GLOW_BLEND_MODE_SOFTLIGHT
 	var we := WorldEnvironment.new()
 	we.environment = env
 	add_child(we)
+
+	# Colour grade, vignette and film grain over the 3D view, under the HUD.
+	var grade_layer := CanvasLayer.new()
+	grade_layer.layer = 5
+	add_child(grade_layer)
+	var grade := ColorRect.new()
+	grade.set_anchors_preset(Control.PRESET_FULL_RECT)
+	grade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var gm := ShaderMaterial.new()
+	gm.shader = preload("res://shaders/grade.gdshader")
+	grade.material = gm
+	grade_layer.add_child(grade)
 
 	sun = DirectionalLight3D.new()
 	sun.shadow_enabled = true
 	sun.directional_shadow_max_distance = 40.0
 	sun.shadow_bias = 0.04
+	sun.light_volumetric_fog_energy = 1.6
 	add_child(sun)
 
 
@@ -159,10 +199,23 @@ func _update_light() -> void:
 	sky_mat.sun_angle_max = 8.0
 	sky_mat.sky_energy_multiplier = 0.4 + light * 0.8
 
-	env.ambient_light_color = Color(0.55, 0.6, 0.7).lerp(sun_c, 0.12)
-	env.ambient_light_energy = 0.035 + light * 0.4
+	# Cool, low ambient: the corners stay dark and the warm lights read warm.
+	var night_amb := Color(0.36, 0.48, 0.66)
+	var day_amb := Color(0.66, 0.64, 0.60).lerp(sun_c, 0.15)
+	env.ambient_light_color = night_amb.lerp(day_amb, clampf(light * 1.5, 0.0, 1.0))
+	env.ambient_light_energy = 0.16 + light * 0.24
 	env.fog_light_color = horizon.lerp(Color(0.5, 0.5, 0.5), 0.4)
 	env.fog_density = 0.006 + haze * 0.03
+	env.volumetric_fog_density = 0.008 + haze * 0.02
+	env.volumetric_fog_albedo = Color(0.92, 0.88, 0.82).lerp(Color(0.75, 0.62, 0.48), haze)
+
+	# Daylight spilling in through each window; the airshaft gets much less.
+	for wl in builder.window_lights:
+		var l: SpotLight3D = wl.light
+		var k := 0.6 if wl.outside == "fire_escape" else 0.6
+		l.light_energy = light * 2.4 * k
+		l.light_color = Color(0.86, 0.84, 0.80).lerp(sky_c, 0.25).lerp(Color(0.85, 0.68, 0.5), haze)
+		l.visible = light > 0.01
 
 	# Idling cars: headlights fade as batteries die over days 1-3.
 	var day_f := m / 1440.0
