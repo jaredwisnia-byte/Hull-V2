@@ -10,8 +10,10 @@ giving view boxes and real dimensions.
    dispenser...) comes from its colour, shape and position; its geometry is the region's
    own outline, extruded out or cut in.
 4. How far: measured in the side view where the part shows in profile; else the depth
-   map's relief, scaled by the measured parts; always clamped to the parts catalogue
-   (factory/parts_catalog.json), which says what is believable for that kind of part.
+   map's relief, scaled by the measured parts; always clamped to the sizing manual
+   (factory/sizing_manual.json, via sizing.py), which says what is believable for that
+   kind of part. The manual also says where each kind can be (feet at the floor corners,
+   handles longer than a palm...): a part found somewhere it can't be is renamed.
 """
 import json
 import os
@@ -20,7 +22,9 @@ import numpy as np
 from PIL import Image
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-CATALOG = json.load(open(os.path.join(HERE, "..", "..", "factory", "parts_catalog.json")))
+from . import sizing  # noqa: E402
+
+CATALOG = sizing.catalogue()
 CLASSES = {"body": 1, "panel": 2, "out": 3, "in": 4, "glass": 5, "soft": 6}
 LEGEND = [((0, 0, 0), 0), ((255, 255, 255), 1), ((0, 255, 0), 2), ((0, 192, 0), 2), ((255, 0, 0), 3),
           ((0, 0, 255), 4), ((255, 255, 0), 5), ((255, 165, 0), 6), ((255, 128, 0), 6)]
@@ -93,12 +97,15 @@ def _kind(sign, comp, cls_view, W_px, H_px, object_type, area_frac):
     return "recess"
 
 
-def parts(v, sign, object_type):
-    """Regions of one class sign (+1 out, -1 in) in a view: [(mask, kind, relief)]."""
+def parts(v, sign, object_type, size=None, view_name=None):
+    """Regions of one class sign (+1 out, -1 in) in a view: [(mask, kind, relief)].
+    size = (view width m, height m): with it, each part's first guess is checked against the
+    sizing manual's placement rules and renamed when it can't be what it was taken for."""
     from scipy import ndimage
     target = CLASSES["out"] if sign > 0 else CLASSES["in"]
     lab, n = ndimage.label(v["cls"] == target)
     H_px, W_px = v["cls"].shape
+    side = "out" if sign > 0 else "in"
     out = []
     for i in range(1, n + 1):
         comp = lab == i
@@ -106,8 +113,29 @@ def parts(v, sign, object_type):
             continue
         ring = ndimage.binary_dilation(comp, iterations=4) & ~comp & v["obj"]
         rel = float(np.median(v["depth"][comp]) - (np.median(v["depth"][ring]) if ring.any() else 0))
-        kind = _kind(sign, comp, v["cls"], W_px, H_px, object_type, comp.sum() / (H_px * W_px))
-        out.append({"mask": comp, "kind": kind, "relief": rel})
+        area = comp.sum() / (H_px * W_px)
+        kind = _kind(sign, comp, v["cls"], W_px, H_px, object_type, area)
+        prt = {"mask": comp, "kind": kind, "relief": rel, "area": area}
+        if size:
+            ys, xs = np.nonzero(comp)
+            span, Hm = size[0] * 1000, size[1] * 1000
+            prt["box"] = {"x0": xs.min() / W_px * span, "x1": (xs.max() + 1) / W_px * span,
+                          "z0": (1 - (ys.max() + 1) / H_px) * Hm, "z1": (1 - ys.min() / H_px) * Hm,
+                          "span": span, "height": Hm}
+            prt["kind"], why = sizing.place(side, kind, prt["box"], object_type, view_name)
+            if why:
+                prt["was"], prt["because"] = kind, why
+        out.append(prt)
+    if size:   # e.g. a view shows two feet: keep the biggest, rename the rest
+        for kind in {p["kind"] for p in out}:
+            cap = sizing.max_per_view(side, kind, object_type)
+            same = sorted((p for p in out if p["kind"] == kind), key=lambda p: -p["area"])
+            for p in same[cap or len(same):]:
+                nk, why = sizing.place(side, sizing.fallback(side, kind, object_type) or kind,
+                                       p["box"], object_type, view_name)
+                p.setdefault("was", kind)
+                p["because"] = p.get("because", []) + ["%s: more than %d in one view" % (kind, cap)] + why
+                p["kind"] = nk
     return out
 
 
@@ -183,7 +211,9 @@ def build_set(manifest_path, name, height_m=None, depth_m=None, object_type=None
 
     # Calibrate the depth map: millimetres per unit of relief, from parts measured side-on.
     measured = {}
-    found = {k: {+1: parts(V[k], +1, otype), -1: parts(V[k], -1, otype)} for k in names if k != "top"}
+    span = {"front": W, "back": W, "right": D, "left": D}
+    found = {k: {+1: parts(V[k], +1, otype, (span[k], H), k), -1: parts(V[k], -1, otype, (span[k], H), k)}
+             for k in names if k != "top"}
     ks = []
     for i, prt in enumerate(found.get("front", {}).get(+1, [])):
         mm = side_profile_mm(prt, V["front"], V["right"], D) if "right" in V else None
@@ -258,7 +288,10 @@ def build_set(manifest_path, name, height_m=None, depth_m=None, object_type=None
                 if sign < 0:
                     core.PARTS.remove(o)
                     cutters.append((o, prt["kind"], k))
-                report.append({"view": k, "kind": prt["kind"], "mm": round(mm_c, 1), "from": src})
+                entry = {"view": k, "kind": prt["kind"], "mm": round(mm_c, 1), "from": src, "why": rule["why"]}
+                if "was" in prt:
+                    entry["was"], entry["because"] = prt["was"], prt["because"]
+                report.append(entry)
     # Cut recesses one at a time; a cut that damages the body (changes its size) is undone.
     rejected = 0
     for cut, kind, k in cutters:
@@ -291,4 +324,7 @@ def build_set(manifest_path, name, height_m=None, depth_m=None, object_type=None
     return {"width_m": round(W, 3), "depth_m": D, "height_m": H, "parts": len(report),
             "by_kind": {k: len(v) for k, v in summary.items()},
             "depth_scale_mm_per_unit": round(k_mm, 1) if k_mm else None, "recess_cuts_undone": rejected,
-            "sources": {s: sum(1 for r in report if r["from"] == s) for s in ("side view", "depth map", "catalogue")}}
+            "sources": {s: sum(1 for r in report if r["from"] == s) for s in ("side view", "depth map", "catalogue")},
+            "renamed": {"%s -> %s" % (r["was"], r["kind"]): sum(1 for q in report if q.get("was") == r["was"] and q["kind"] == r["kind"])
+                        for r in report if "was" in r},
+            "size_warnings": sizing.envelope(otype, W, D, H)}

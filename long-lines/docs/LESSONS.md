@@ -125,3 +125,7 @@ add to it whenever something goes wrong.
   a time and undo any cut that changes the body's size.
 - Tiny "in" regions are screw heads, not 30 mm holes: the catalogue's `pit` class.
 - The critic's turnaround has one light: check albedo numerically before blaming the texture.
+- Shape alone misnames parts: on fridge_1 a full-width kick plate and grille slivers became
+  seven front "feet" and the kick grille became door "seams". Placement rules in the sizing
+  manual (feet at floor corners, handles at least a palm long, seams above the toe kick on
+  appliances) rename them.

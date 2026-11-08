@@ -1,0 +1,133 @@
+{
+ "_note": "How big things should be, and why. The factory reads this file; SIZING.md explains it. Sizes are millimetres and follow from a short list of facts about bodies and everyday objects, so changing one fact (say, finger) moves every part that depends on it. Formulas may use any fact name, + - * /, min() and max(). Edit here, never in code. tools/propkit/sizing.py --catalogue regenerates parts_catalog.json from this file.",
+
+ "facts": {
+  "finger":          {"mm": 20,  "why": "adult index finger, thickness at the middle joint"},
+  "fingernail":      {"mm": 4,   "why": "the gap a fingernail can get into"},
+  "hand_width":      {"mm": 90,  "why": "adult palm breadth across the knuckles"},
+  "pinch":           {"mm": 8,   "why": "the least side a thumb and finger can grip"},
+  "clearance":       {"mm": 10,  "why": "room around a hand or object so it doesn't scrape"},
+  "handle_bar":      {"mm": 15,  "why": "thickness of a grab bar or pull you close a hand round"},
+
+  "toe_kick_height": {"mm": 100, "why": "height of the space for toes under a counter or appliance"},
+  "knee_height":     {"mm": 500, "why": "standing adult"},
+  "seat_height":     {"mm": 450, "why": "chair seat"},
+  "counter_height":  {"mm": 910, "why": "US kitchen counter, 36 in; ranges and dishwashers match it"},
+  "waist_height":    {"mm": 1000,"why": "standing adult"},
+  "chest_height":    {"mm": 1300,"why": "standing adult"},
+  "eye_height":      {"mm": 1550,"why": "standing adult"},
+  "reach_height":    {"mm": 1900,"why": "highest comfortable reach without a step"},
+
+  "glass_diameter":  {"mm": 85,  "why": "a tumbler"},
+  "glass_height":    {"mm": 120, "why": "a tumbler"},
+  "spout":           {"mm": 20,  "why": "how far a dispenser spout hangs into its recess"},
+  "door_thickness":  {"mm": 45,  "why": "a solid street or apartment door, 1 3/4 in"},
+  "screw_head":      {"mm": 8,   "why": "a typical exposed screw or rivet head"},
+
+  "brick_width":     {"mm": 92,  "why": "US modular brick bed depth, 3 5/8 in"},
+  "masonry_wall":    {"mm": 400, "why": "lower Manhattan loft and tenement walls run 300-600 mm"},
+  "rain_drip":       {"mm": 30,  "why": "how far a drip edge must clear the wall face to shed water"}
+ },
+
+ "appliance_types": ["fridge", "refrigerator", "appliance", "stove", "range", "dishwasher",
+                     "chest_freezer", "trash_compactor", "wall_oven", "washer", "dryer"],
+
+ "parts": {
+  "out": {
+   "handle": {
+    "depth": {"min": "finger", "default": "finger + clearance + handle_bar", "max": "finger + clearance + handle_bar + 15"},
+    "why": "a hand closes round it: a finger plus clearance behind the bar, plus the bar itself",
+    "where": {"min_length_mm": "hand_width", "else": "trim",
+              "why": "shorter than a palm is wide and no one can grip it: it is trim"}
+   },
+   "hinge": {
+    "depth": {"min": 4, "default": 8, "max": 15},
+    "why": "an exposed knuckle a few mm proud (period appliances and doors)",
+    "where": {"near_side": 0.08, "else": "trim", "why": "hinges sit on an edge of the door"}
+   },
+   "foot": {
+    "depth": {"min": 8, "default": 20, "max": 40},
+    "why": "levelling feet and casters lift the body off the floor",
+    "where": {"touches_floor": true, "near_side": 0.3, "max_width_mm": "hand_width * 1.5", "max_per_view": 2,
+              "else": "kick_plate",
+              "why": "feet stand on the floor at the corners, are no wider than a palm and a half, and a view shows two"}
+   },
+   "kick_plate": {
+    "depth": {"min": 3, "default": 6, "max": 15},
+    "why": "the plinth or base strip along the bottom of an appliance or cabinet",
+    "where": {"height_mm": [0, "toe_kick_height + 50"], "min_width_frac": 0.5, "else": "trim",
+              "why": "runs along most of the width, in the toe zone"}
+   },
+   "knob": {
+    "depth": {"min": "pinch", "default": 18, "max": 25},
+    "why": "you pinch its side: at least a pinch deep; 2-6 cm knobs stand out about 60% of their diameter (part_rules.py)",
+    "where": {"max_width_mm": "hand_width", "else": "trim", "why": "a knob wider than a palm is a dial plate or trim"}
+   },
+   "key":    {"depth": {"min": 4, "default": 8, "max": 12}, "why": "typewriter and keyboard keys stand on stems above the deck"},
+   "button": {"depth": {"min": 2, "default": 4, "max": 8},  "why": "push buttons are shallow"},
+   "trim":   {"depth": {"min": 2, "default": 6, "max": 20}, "why": "rims, frames, mouldings, rails"},
+   "cornice": {
+    "depth": {"min": 150, "default": 350, "max": 600},
+    "why": "building cornices overhang the wall to shed rain; bigger buildings, bigger cornices"
+   },
+   "sill": {
+    "depth": {"min": "rain_drip + 10", "default": "rain_drip + 40", "max": "rain_drip + 90"},
+    "why": "the nose of a sill must throw water clear of the wall face"
+   }
+  },
+  "in": {
+   "seam": {
+    "depth": {"min": 3, "default": 5, "max": 8},
+    "width_min": "fingernail",
+    "why": "the gap round a door or drawer: a fingernail, not a slot",
+    "where": {"for": {"appliance": {"height_mm": ["toe_kick_height", null], "else": "vent",
+                                    "why": "on an appliance, parallel gaps in the toe zone are the kick grille"}}}
+   },
+   "vent":   {"depth": {"min": 6, "default": 12, "max": 20}, "why": "louvres and grilles: shadow, not a hole"},
+   "slot": {
+    "depth": {"min": 10, "default": 25, "max": "door_thickness + 15"},
+    "why": "coin, card and mail slots; a mail slot goes through a door"
+   },
+   "dispenser": {
+    "depth": {"min": "glass_diameter + clearance", "default": "glass_diameter + 2 * clearance", "max": "glass_diameter + 55"},
+    "why": "a glass must fit under the spout",
+    "where": {"min_height_mm": "glass_height + spout + clearance", "height_mm": ["waist_height - 200", "eye_height"],
+              "views": ["front"], "else": "recess",
+              "why": "tall enough for a glass, between waist and eye height, on the front"}
+   },
+   "recess": {"depth": {"min": 10, "default": 30, "max": 80}, "why": "general pockets, handles cut into a panel, display niches"},
+   "window": {
+    "depth": {"min": "brick_width", "default": "masonry_wall / 2", "max": "masonry_wall * 3 / 4"},
+    "why": "window glass sits back in a masonry wall, usually about half its thickness"
+   },
+   "door_opening": {
+    "depth": {"min": "brick_width", "default": "masonry_wall * 3 / 8", "max": "masonry_wall * 3 / 4"},
+    "why": "street doors sit back in their frames, less deep than windows"
+   },
+   "pit": {"depth": {"min": 1, "default": 3, "max": "screw_head * 3 / 4"}, "why": "screw heads, rivets and small holes drawn as dots: shadow only"}
+  }
+ },
+
+ "envelopes": {
+  "_note": "Believable overall size per category, [min, max] mm, 1960s-70s New York. Intake and the build warn when an object falls outside.",
+  "tv":              {"width": [400, 800],   "depth": [300, 600],  "height": [300, 700],  "why": "tabletop CRT sets; a console set is 'cabinet'"},
+  "radio":           {"width": [150, 550],   "depth": [60, 250],   "height": [90, 320]},
+  "fridge":          {"width": [600, 900],   "depth": [600, 800],  "height": [1300, 1850], "why": "apartment top-freezer models"},
+  "fridge_atlas":    {"width": [600, 900],   "depth": [600, 800],  "height": [1300, 1850]},
+  "range_atlas":     {"width": [500, 1000],  "depth": [600, 750],  "height": ["counter_height - 40", "counter_height + 40"], "why": "cooktop at counter height; backguard excluded"},
+  "dishwasher":      {"width": [450, 620],   "depth": [550, 650],  "height": ["counter_height - 80", "counter_height"], "why": "fits under the counter"},
+  "trash_compactor": {"width": [300, 460],   "depth": [550, 650],  "height": ["counter_height - 80", "counter_height"], "why": "fits under the counter"},
+  "chest_freezer":   {"width": [700, 1700],  "depth": [550, 800],  "height": [800, 950]},
+  "wall_oven":       {"width": [550, 780],   "depth": [550, 650],  "height": [600, 1400]},
+  "range_hood":      {"width": [600, 1000],  "depth": [400, 560],  "height": [100, 300]},
+  "appliance":       {"width": [450, 1000],  "depth": [450, 800],  "height": [800, 1100]},
+  "cabinet":         {"width": [300, 1800],  "depth": [250, 650],  "height": [400, 2200]},
+  "crate":           {"width": [250, 1000],  "depth": [200, 800],  "height": [150, 700]},
+  "suitcase":        {"width": [400, 850],   "depth": [120, 300],  "height": [300, 650]},
+  "lamp":            {"width": [100, 600],   "depth": [100, 600],  "height": [250, 1900]},
+  "chair":           {"width": [380, 800],   "depth": [400, 900],  "height": ["seat_height + 250", "seat_height + 700"], "why": "a back rises above the seat"},
+  "table":           {"width": [450, 2400],  "depth": [450, 1200], "height": [380, 800],  "why": "coffee tables to dining tables"},
+  "sofa":            {"width": [1300, 2600], "depth": [700, 1000], "height": [650, 1000]},
+  "can":             {"width": [50, 160],    "depth": [50, 160],   "height": [60, 300]}
+ }
+}

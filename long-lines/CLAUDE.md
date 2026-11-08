@@ -56,6 +56,9 @@ Build once, reuse everywhere. Do not hand-code one-off geometry in game code.
 - **Critique every prop** with `tools/critique.py` (turnaround + automatic checks) and
   follow `docs/CRITIQUE.md`. Part knowledge (how far knobs stick out, etc.) lives in
   `tools/propkit/part_rules.py`; the hull builder uses it to give painted parts real depth.
+- **Sizes come from `factory/sizing_manual.json`** (read `factory/SIZING.md`): facts, part
+  formulas, placement rules, object envelopes. Fix a wrong size there, not in code.
+  Tests: `python3 tools/test_sizing.py`.
 - **Read `docs/LESSONS.md`** before starting; add to it when something goes wrong.
 
 ## How to work here
