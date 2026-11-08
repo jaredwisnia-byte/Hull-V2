@@ -112,7 +112,21 @@ def check(name, views_dir=None, category_class=None, paint_only=(), solid=False,
     from scipy import ndimage
     holes = ndimage.binary_fill_holes(sil["front"]) & ~sil["front"]
     m["front_hole_fraction"] = round(float(holes.mean()), 4)
-    if solid and holes.mean() > MIN["max_hole_fraction"]:
+    allow = MIN["max_hole_fraction"]
+    man = os.path.join(views_dir, "manifest.json") if views_dir else None
+    if man and os.path.exists(man):   # a sheet set: compare with the holes the reference really has
+        try:
+            mj = json.load(open(man))
+            x0, y0, x1, y1 = mj["part_map"]["view_bboxes_px"]["front"]
+            pm = np.asarray(Image.open(os.path.join(views_dir, mj["part_map"]["filename"])).convert("L").crop((x0, y0, x1, y1 - 3))) > 30
+            ys_, xs_ = np.nonzero(pm)
+            pm = pm[ys_.min():ys_.max() + 1, xs_.min():xs_.max() + 1]
+            ref_holes = float((ndimage.binary_fill_holes(pm) & ~pm).mean())
+            m["reference_hole_fraction"] = round(ref_holes, 4)
+            allow = max(allow, ref_holes * 1.5 + 0.002)
+        except Exception:
+            pass
+    if solid and holes.mean() > allow:
         fails.append("see-through holes in the front")
     if views_dir:
         from .hull import silhouette

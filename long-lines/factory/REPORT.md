@@ -4,13 +4,13 @@ Generated from `factory/ledger.jsonl` (latest result per asset).
 
 | Measure | Value |
 | --- | --- |
-| Assets measured | 187 |
-| Pass the minimum standard | 186 (99%) |
-| Factory builds | 70 |
-| Factory builds passing with no correction | 69 |
+| Assets measured | 188 |
+| Pass the minimum standard | 187 (99%) |
+| Factory builds | 71 |
+| Factory builds passing with no correction | 70 |
 | Factory builds needing a person | 1 |
 | Mean build time (s) | 55 |
-| Same inputs -> same gauges | 88 of 91 order/input pairs |
+| Same inputs -> same gauges | 93 of 96 order/input pairs |
 | Median triangles | 1128 |
 | Max triangles | 38000 |
 
@@ -25,7 +25,7 @@ Generated from `factory/ledger.jsonl` (latest result per asset).
 | kit | 1 | 0 |
 | painted | 11 | 11 |
 | recipe | 106 | 106 |
-| sheetset | 1 | 1 |
+| sheetset | 2 | 2 |
 
 ## Failure kinds
 

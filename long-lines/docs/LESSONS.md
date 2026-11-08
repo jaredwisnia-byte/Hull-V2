@@ -156,3 +156,20 @@ add to it whenever something goes wrong.
 - Faces with no painted view (sides, the flat rear top) get the nearest view stretched along
   them: visible streaks. A face needs its own painting or a padded flat fill.
 - Small multi-object cells (~110 px per view) limit detail: 11 "keys" found for 9 painted.
+
+## Second sheet set: desk telephone (Nov 8) — rules every object now gets
+- No manifest? `tools/make_manifest.py` finds the five views on the part map by gutter cut and
+  measures how well the painted and depth sheets line up (0.978 / 0.971 here) before trusting them.
+- Big separate parts (the handset) are their own assembly: carved from their own outlines in every
+  view, taken out of the body (rule 3). What is carved is not built a second time as a slab.
+- Occlusion: a cord or a separate part in front of the body hides body. Inside the body's outline
+  it counts as body; outside it, it is its own geometry. (Without this the cord and the handset cut
+  slots through the base.)
+- The body outline is judged by rows AND columns from neighbouring rows/columns: feet below the
+  body don't become legs carved through it; hinges on an edge leave no notch.
+- Raised parts are projected onto the body and stand out along the surface's own direction:
+  keys on a sloped keypad stand up from the slope.
+- Feet are boxes under the body: width from the front view, position front-to-back from the side view.
+- Cords are rebuilt as a coil round a smoothed centre line matched across two views (hanging part).
+- Square, full regions are keys; round ones (fill ~79%) are knobs.
+- See-through holes are judged against the reference's own holes (a handset arch is real).

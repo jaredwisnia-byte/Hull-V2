@@ -1,0 +1,53 @@
+{
+ "name": "telephone_desk_set",
+ "category": "telephone",
+ "line": "sheetset",
+ "source": "phone_2_manifest.json",
+ "class": null,
+ "views_folder": "telephone_desk_set",
+ "status": "shipped",
+ "height_m": 0.14,
+ "depth_m": 0.22,
+ "object_type": "telephone",
+ "notes": "",
+ "assumptions": [
+  "size from the manifest (approximate)"
+ ],
+ "attempts": 1,
+ "measured": {
+  "width_m": 0.166,
+  "depth_m": 0.22,
+  "height_m": 0.14,
+  "parts": 16,
+  "by_kind": {
+   "front key": 9,
+   "front foot": 2,
+   "front recess": 1,
+   "right trim": 1,
+   "back recess": 2,
+   "front+side cord": 1
+  },
+  "depth_scale_mm_per_unit": 48.1,
+  "recess_cuts_undone": 0,
+  "sources": {
+   "side view": 9,
+   "depth map": 4,
+   "catalogue": 0,
+   "painted only (no depth evidence)": 0
+  },
+  "renamed": {},
+  "size_warnings": [
+   "width 166 mm is outside 180-240 mm for a telephone"
+  ],
+  "shell_warnings": [
+   "width -9 mm off at 0.08 m",
+   "width -11 mm off at 0.09 m",
+   "width -12 mm off at 0.09 m",
+   "width -12 mm off at 0.09 m",
+   "width -12 mm off at 0.09 m",
+   "width -12 mm off at 0.10 m",
+   "width -14 mm off at 0.10 m",
+   "width -15 mm off at 0.10 m"
+  ]
+ }
+}

@@ -59,13 +59,15 @@ def view(m, imgs, name):
     y1 -= 3                                     # the ground line is drawn in the part map
     box = (x0, y0, x1, y1)
     cls = classify_pixels(imgs["part_map"].crop(box))
-    obj = ndimage.binary_opening(cls > 0, iterations=1)
+    soft_all = cls == CLASSES["soft"]          # cords and cables are their own geometry
+    obj = ndimage.binary_opening((cls > 0) & ~soft_all, iterations=1)
     lab, n = ndimage.label(obj)
     if n:
         obj = lab == (np.argmax(np.bincount(lab.ravel())[1:]) + 1)
     ys, xs = np.nonzero(obj)
     bb = (xs.min(), ys.min(), xs.max() + 1, ys.max() + 1)
     sl = (slice(bb[1], bb[3]), slice(bb[0], bb[2]))
+    soft = soft_all[sl]
     obj, cls = obj[sl], np.where(obj, cls, 0)[sl]
     # The shell is continuous. A protruding part (handle, hinge) is taken off only where it
     # lies outside the body's outline, and the outline at each row is judged from the rows
@@ -80,7 +82,15 @@ def view(m, imgs, name):
         comp_ = lab_o[sl_] == i_
         if comp_.mean() >= 0.3 and comp_.sum() < 0.05 * obj.sum():
             removable[sl_] |= comp_
-    body = ndimage.binary_fill_holes(obj & ~removable)
+    # Big separate parts (a handset on its cradle) are their own assembly: carved on their own,
+    # and taken out of the body (protocol rule 3). They touch the outline's top or sides.
+    assy = np.zeros_like(obj)
+    for i_, sl_ in enumerate(ndimage.find_objects(lab_o), 1):
+        comp_ = lab_o[sl_] == i_
+        if comp_.sum() >= 0.08 * obj.sum() and comp_.mean() >= 0.3:
+            assy[sl_] |= comp_
+    obj_b = obj & ~assy
+    body = ndimage.binary_fill_holes(obj_b & ~removable)
     Hc = body.shape[0]
     lft = np.full(Hc, body.shape[1]); rgt = np.full(Hc, -1)
     for rr in range(Hc):
@@ -94,7 +104,26 @@ def view(m, imgs, name):
         l_, r_ = lft[lo_:hi_].min(), rgt[lo_:hi_].max()
         if r_ >= l_:
             exp[rr, l_:r_ + 1] = True
-    carve = ndimage.binary_fill_holes(obj & exp)
+    # ...and the same judged column by column, so feet below the body don't become legs.
+    Wc = body.shape[1]
+    top_ = np.full(Wc, Hc); bot_ = np.full(Wc, -1)
+    for cc_ in range(Wc):
+        ys_ = np.nonzero(body[:, cc_])[0]
+        if len(ys_):
+            top_[cc_], bot_[cc_] = ys_[0], ys_[-1]
+    winc = max(3, int(0.06 * Wc))
+    expc = np.zeros_like(body)
+    for cc_ in range(Wc):
+        lo_, hi_ = max(0, cc_ - winc), min(Wc, cc_ + winc + 1)
+        t_, b_ = top_[lo_:hi_].min(), bot_[lo_:hi_].max()
+        if b_ >= t_:
+            expc[t_:b_ + 1, cc_] = True
+    # A cord or another part passing in front of the body hides body, it doesn't make a hole: cord pixels inside
+    # the body's outline count as body (a cord hanging outside it is excluded by the outline).
+    soft_c = soft
+    # Same for a separate assembly in front of the body (the handset hiding the base's back
+    # corner in the side view): inside the body's outline it hides body.
+    carve = ndimage.binary_fill_holes((obj_b | soft_c | assy) & exp & expc)
     # Where two rounded doors meet, the outline pinches in; the cabinet behind them doesn't.
     # Bridge short pinches vertically (convex top and bottom corners are unaffected).
     vh = max(5, int(0.05 * Hc))
@@ -109,7 +138,8 @@ def view(m, imgs, name):
     pa = pa[idx[0], idx[1]]
     paint = Image.fromarray(pa)
     depth = np.asarray(imgs["depth_map"].crop(box).crop(bb).convert("L")).astype(np.float32) / 255.0
-    return {"paint": paint, "depth": depth, "cls": cls, "obj": obj, "carve": carve}
+    return {"paint": paint, "depth": depth, "cls": cls, "obj": obj, "carve": carve, "removable": removable,
+            "soft": soft, "soft_full": soft_all, "bb": bb, "assy": assy}
 
 
 def _kind(sign, comp, cls_view, W_px, H_px, object_type, area_frac):
@@ -126,6 +156,8 @@ def _kind(sign, comp, cls_view, W_px, H_px, object_type, area_frac):
             return "hinge"
         if aspect > 2.5:
             return "handle"
+        if aspect < 1.4 and fill > 0.86 and area_frac < 0.01:
+            return "key"                       # square and full: a key (a round knob fills ~79%)
         if aspect < 1.4 and fill > 0.6 and area_frac < 0.01:
             return "knob"
         return "trim"
@@ -170,6 +202,8 @@ def parts(v, sign, object_type, view_name="front", size=None):
                 out.append({"mask": comp, "kind": "panel", "relief": rel})
         return out
     sel = v["cls"] == (CLASSES["out"] if sign > 0 else CLASSES["in"])
+    if sign > 0:   # what is carved into the body (handset, big housings) is not built a second time
+        sel = sel & v["removable"]
     if sign > 0 and view_name == "front":
         base = ndimage.binary_closing((v["cls"] == CLASSES["out"]) | (v["cls"] == CLASSES["in"]), iterations=3) & bottom
         lab_b, nb = ndimage.label(base)
@@ -241,6 +275,78 @@ def side_profile_mm(front_part, front, side, D_m):
     return best / side["cls"].shape[1] * D_m * 1000 if best > 0 else None
 
 
+def ndimage_fill(m):
+    from scipy import ndimage
+    return ndimage.binary_fill_holes(m)
+
+
+def _skeleton_by_row(mask):
+    """The cord's centre line, row by row: mean column of the cord pixels, smoothed. Rows
+    where the cord runs sideways (a wide run) are skipped: only the hanging part is traced."""
+    from scipy import ndimage
+    rows = np.nonzero(mask.any(1))[0]
+    if not len(rows):
+        return {}
+    width = np.median([mask[r].sum() for r in rows])
+    out = {}
+    for r in rows:
+        xs = np.nonzero(mask[r])[0]
+        if len(xs) <= 3 * width and xs.ptp() <= 4 * width:
+            out[int(r)] = float(xs.mean())
+    if len(out) > 5:
+        ks = sorted(out)
+        sm = ndimage.uniform_filter1d(np.array([out[k] for k in ks]), 9)
+        out = dict(zip(ks, sm.tolist()))
+    return out
+
+
+def _cord(V, W, D, H):
+    import math
+    from mathutils import Vector
+    from . import core, mats
+    f = V.get("front")
+    side = max((k for k in ("left", "right") if k in V), key=lambda k: V[k]["soft"].sum(), default=None)
+    if f is None or side is None or f["soft_full"].sum() < 30 or V[side]["soft_full"].sum() < 30:
+        return None
+    # Full-view cord masks (a cord hangs outside the body's box), scaled by the body's box.
+    fr, sr = _skeleton_by_row(f["soft_full"]), _skeleton_by_row(V[side]["soft_full"])
+    fb, sbb = f["bb"], V[side]["bb"]
+    Hf, Wf = fb[3] - fb[1], fb[2] - fb[0]
+    Hs, Ws = sbb[3] - sbb[1], sbb[2] - sbb[0]
+    fr = {r - fb[1]: c - fb[0] for r, c in fr.items()}
+    sr = {r - sbb[1]: c - sbb[0] for r, c in sr.items()}
+    pts = []
+    for r in sorted(fr):
+        z = (1 - r / Hf) * H
+        rs = int(round(r / Hf * Hs))
+        near = [k for k in sr if abs(k - rs) <= 3]
+        if not near:
+            continue
+        cs = np.mean([sr[k] for k in near])
+        x = (fr[r] / Wf - 0.5) * W
+        y = (cs / Ws - 0.5) * D if side == "right" else (0.5 - cs / Ws) * D
+        pts.append(Vector((x, y, z)))
+    if len(pts) < 6:
+        return None
+    pts = pts[::max(1, len(pts) // 40)]
+    thick = min(0.02, max(0.004, 0.6 * f["soft_full"].sum() / max(1, len(fr)) / Wf * W))
+    col = np.asarray(f["paint"]).reshape(-1, 3).mean(0) / 255
+    path = []                               # a coil round the centre line
+    for i in range(len(pts) - 1):
+        a, b = pts[i], pts[i + 1]
+        ax = (b - a)
+        if ax.length < 1e-6:
+            continue
+        e1 = ax.cross(Vector((0, 0, 1)) if abs(ax.normalized().z) < 0.9 else Vector((1, 0, 0))).normalized()
+        e2 = ax.cross(e1).normalized()
+        n = max(1, int(ax.length / 0.008 * 6))
+        for t in range(n):
+            ang = (len(path) / 6) * 2 * math.pi
+            path.append(a + ax * (t / n) + (e1 * math.cos(ang) + e2 * math.sin(ang)) * thick * 0.35)
+    core.tube(path, thick * 0.18, mats.plain(tuple(col), rough=0.5, name="set_cord"), sides=6, name="cord")
+    return round(thick * 1000, 1)
+
+
 def build_set(manifest_path, name, height_m=None, depth_m=None, object_type=None):
     import bmesh
     import bpy
@@ -265,6 +371,14 @@ def build_set(manifest_path, name, height_m=None, depth_m=None, object_type=None
     body = hull_prop({k: v["path"] for k, v in V.items()}, H, res=140, name=name, features=False,
                      sil_override=sil, depth_m=D, decimate=0.5, grime=0.0)
     W = H * V["front"]["obj"].shape[1] / V["front"]["obj"].shape[0]
+    assy_views = {k: v for k, v in V.items() if v["assy"].any()}
+    if len(assy_views) >= 3 and "front" in assy_views:
+        asil = {}
+        for k, v in V.items():
+            m_ = v["assy"] if v["assy"].any() else v["obj"]
+            asil[k] = (ndimage_fill(m_), v["paint"])
+        hull_prop({k: v["path"] for k, v in V.items()}, H, res=160, name=name + "_assy", features=False,
+                  sil_override=asil, depth_m=D, decimate=0.5, grime=0.0)
 
     # Where each view's surface is, row by row (from the perpendicular view's body outline).
     def surface(k, frac_z):
@@ -302,6 +416,19 @@ def build_set(manifest_path, name, height_m=None, depth_m=None, object_type=None
     found = {k: {+1: parts(V[k], +1, otype, k, (span[k], H)), -1: parts(V[k], -1, otype, k, (span[k], H)),
                  0: parts(V[k], 0, otype, k)}
              for k in names if k != "top"}
+    def zband(prt):
+        ys = np.nonzero(prt["mask"].any(1))[0]
+        return ys.min() / prt["mask"].shape[0], (ys.max() + 1) / prt["mask"].shape[0]
+    fb = [zband(p) for kk in ("front", "back") for p in found.get(kk, {}).get(+1, [])]
+    for kk in ("right", "left"):
+        if kk in found:
+            keep = []
+            for p in found[kk][+1]:
+                z0, z1 = zband(p)
+                if any(min(z1, b1) - max(z0, b0) > 0.5 * (z1 - z0) for b0, b1 in fb):
+                    continue   # the same physical part as one seen from the front or back
+                keep.append(p)
+            found[kk][+1] = keep
     ks = []
     for i, prt in enumerate(found.get("front", {}).get(+1, [])):
         mm = side_profile_mm(prt, V["front"], V["right"], D) if "right" in V else None
@@ -311,6 +438,30 @@ def build_set(manifest_path, name, height_m=None, depth_m=None, object_type=None
                 ks.append(mm / prt["relief"])
     k_mm = float(np.median(ks)) if ks else None
 
+    from mathutils import Vector as _V
+    from mathutils.bvhtree import BVHTree
+    _tree = BVHTree.FromPolygons([body.matrix_world @ vv.co for vv in body.data.vertices],
+                                 [pp.vertices for pp in body.data.polygons])
+    _dirs = {"front": _V((0, 1, 0)), "back": _V((0, -1, 0)), "right": _V((-1, 0, 0)), "left": _V((1, 0, 0))}
+
+    def project(k, u, w):
+        """Where a view pixel lands on the body, and the surface direction there."""
+        x, y, z = place(k, u, w, 0.0)
+        o = {"front": _V((x, -2, z)), "back": _V((x, 2, z)), "right": _V((2, y, z)), "left": _V((-2, y, z))}[k]
+        loc, nor, _, _ = _tree.ray_cast(o, _dirs[k], 5)
+        return loc, nor
+
+    side_feet = []
+    if "right" in V:
+        rv = V["right"]
+        lab_f, nf = __import__("scipy.ndimage", fromlist=["label"]).label(
+            (rv["cls"] == CLASSES["out"]) & (np.arange(rv["cls"].shape[0])[:, None] > 0.9 * rv["cls"].shape[0]))
+        for i_ in range(1, nf + 1):
+            xs_ = np.nonzero((lab_f == i_).any(0))[0]
+            side_feet.append(((xs_.min() / rv["cls"].shape[1] - 0.5) * D, ((xs_.max() + 1) / rv["cls"].shape[1] - 0.5) * D))
+    if not side_feet:
+        side_feet = [(-D / 2 + 0.1 * D, -D / 2 + 0.25 * D), (D / 2 - 0.25 * D, D / 2 - 0.1 * D)]
+    body_min_z = min((body.matrix_world @ vv.co).z for vv in body.data.vertices)
     report, cutters = [], []
     for k, signs in found.items():
         v = V[k]
@@ -367,8 +518,26 @@ def build_set(manifest_path, name, height_m=None, depth_m=None, object_type=None
                     if len(c) < 3:
                         continue
                     uv = [((cc - 1) / Wp, (rr - 1) / Hp) for rr, cc in c]
+                if prt["kind"] == "foot" and k == "front":
+                    # Feet stand under the body: x from the front view, y from the side view.
+                    ys_m, xs_m = np.nonzero(prt["mask"])
+                    x0_, x1_ = (xs_m.min() / Wp - 0.5) * W, ((xs_m.max() + 1) / Wp - 0.5) * W
+                    for y0_, y1_ in side_feet:
+                        ft = core.box((x1_ - x0_, y1_ - y0_, max(body_min_z, 0.004) + 0.003),
+                                      ((x0_ + x1_) / 2, (y0_ + y1_) / 2, max(body_min_z, 0.004) / 2), img_mat,
+                                      bevel=0.001, name="foot")
+                        core.planar_uv(ft, 0, 2, W, H)
+                    report.append({"view": k, "kind": "foot", "mm": round(body_min_z * 1000, 1), "from": "front + side view"})
+                    continue
                 bm = bmesh.new()
-                if sign >= 0:
+                hits = [project(k, u, w) for u, w in uv] if sign >= 0 else []
+                if sign >= 0 and all(hh[0] is not None for hh in hits):
+                    # Raised parts sit on the real surface and stand out along its direction
+                    # (keys on a sloped keypad stand up from the slope, not straight out).
+                    nrm = sum((hh[1] for hh in hits), _V()).normalized()
+                    a = [bm.verts.new(hh[0] - nrm * 0.003) for hh in hits]
+                    b = [bm.verts.new(hh[0] + nrm * (mm_c / 1000)) for hh in hits]
+                elif sign >= 0:
                     a = [bm.verts.new(place(k, u, w, -0.003)) for u, w in uv]
                     b = [bm.verts.new(place(k, u, w, mm_c / 1000)) for u, w in uv]
                 else:
@@ -400,6 +569,11 @@ def build_set(manifest_path, name, height_m=None, depth_m=None, object_type=None
                 if "was" in prt:
                     entry["was"], entry["because"] = prt["was"], prt["because"]
                 report.append(entry)
+    # Cords: soft parts rebuilt as a 3D curve from two views (front x(z) matched by height to the
+    # side view's y(z)), with a coil when the painting shows one.
+    cord = _cord(V, W, D, H)
+    if cord:
+        report.append({"view": "front+side", "kind": "cord", "mm": cord, "from": "two-view curve"})
     # Cut recesses one at a time; a cut that damages the body (changes its size) is undone.
     rejected = 0
     for cut, kind, k in cutters:
