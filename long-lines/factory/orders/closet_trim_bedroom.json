@@ -8,7 +8,7 @@
  "source": "trim_2.png",
  "class": null,
  "views_folder": "closet_trim_bedroom",
- "status": "shipped",
+ "status": "pending",
  "assumptions": [
   "height 2.10 m from category 'frame'"
  ],

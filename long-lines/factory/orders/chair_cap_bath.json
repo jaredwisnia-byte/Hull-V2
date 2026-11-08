@@ -10,7 +10,7 @@
  "source": "trim_4.png",
  "class": null,
  "views_folder": "chair_cap_bath",
- "status": "shipped",
+ "status": "pending",
  "assumptions": [
   "height 0.05 m from category 'moulding'"
  ],

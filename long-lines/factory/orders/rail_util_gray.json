@@ -10,7 +10,7 @@
  "source": "trim_9.png",
  "class": null,
  "views_folder": "rail_util_gray",
- "status": "shipped",
+ "status": "pending",
  "assumptions": [
   "height 0.06 m from category 'moulding'"
  ],
