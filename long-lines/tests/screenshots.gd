@@ -40,6 +40,8 @@ func run(main: Node3D, dir: String, only := "") -> void:
 			if n is WindowSash and n.outside == "fire_escape":
 				n.set_open(s.get("open", false))
 			if n is CandleProp:
+				n.burn_left_h = float(Data.tuning.candle.burn_h)
+				n._last_minutes = -1.0
 				n.set_lit(s.get("candles", false))
 		Game.set_burners(int(s.get("burners", 0)))
 		player.teleport(pos)

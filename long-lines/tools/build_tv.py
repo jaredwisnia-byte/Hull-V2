@@ -298,7 +298,7 @@ def mat_walnut():
     g = math_node(nt, "MULTIPLY", wave.outputs["Fac"], 0.75)
     g = math_node(nt, "ADD", g, math_node(nt, "MULTIPLY", fine.outputs["Fac"], 0.12))
     base = ramp(nt, g, [(0.0, (0.04, 0.019, 0.01, 1)), (0.45, (0.09, 0.045, 0.021, 1)), (0.8, (0.14, 0.073, 0.034, 1)), (1.0, (0.18, 0.095, 0.045, 1))])
-    col = weathered(nt, base, edge_light=0.3, grime=0.5, dust=0.35)
+    col = weathered(nt, base, edge_light=0.3, grime=0.5, dust=0.15)
     return register("walnut", m, bsdf, out, col, 0.42, 0.0, bump(nt, g, 0.25))
 
 
