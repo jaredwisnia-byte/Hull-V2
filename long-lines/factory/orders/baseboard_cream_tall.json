@@ -1,0 +1,26 @@
+{
+ "sheet": "trim_6.png",
+ "category": "moulding",
+ "strip": 13,
+ "profile": null,
+ "kind": "baseboard",
+ "height_m": 0.16,
+ "name": "baseboard_cream_tall",
+ "line": "extrude",
+ "source": "trim_6.png",
+ "class": null,
+ "views_folder": "baseboard_cream_tall",
+ "status": "shipped",
+ "assumptions": [
+  "height 0.16 m from category 'moulding'"
+ ],
+ "notes": "",
+ "measured": {
+  "length_m": 1.2,
+  "height_m": 0.16,
+  "depth_m": 0.0144,
+  "section_points": 7,
+  "section_from": "default:baseboard"
+ },
+ "attempts": 1
+}

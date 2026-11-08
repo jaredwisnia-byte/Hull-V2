@@ -1,0 +1,18 @@
+{
+ "sheet": "trim_4.png",
+ "category": "moulding",
+ "strip": 15,
+ "profile": 24,
+ "kind": "quarter_round",
+ "height_m": 0.035,
+ "name": "tile_edge_mint",
+ "line": "extrude",
+ "source": "trim_4.png",
+ "class": null,
+ "views_folder": "tile_edge_mint",
+ "status": "pending",
+ "assumptions": [
+  "height 0.04 m from category 'moulding'"
+ ],
+ "notes": ""
+}

@@ -1,0 +1,18 @@
+{
+ "sheet": "trim_9.png",
+ "category": "moulding",
+ "strip": 4,
+ "profile": 2,
+ "kind": "baseboard",
+ "height_m": 0.12,
+ "name": "baseboard_util_gray",
+ "line": "extrude",
+ "source": "trim_9.png",
+ "class": null,
+ "views_folder": "baseboard_util_gray",
+ "status": "pending",
+ "assumptions": [
+  "height 0.12 m from category 'moulding'"
+ ],
+ "notes": ""
+}

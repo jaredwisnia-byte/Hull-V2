@@ -1,4 +1,30 @@
 {
+ "access_panel_util": {
+  "size": [
+   0.4965,
+   0.45,
+   0.015
+  ],
+  "min": [
+   -0.2482,
+   0.0,
+   -0.0
+  ],
+  "max": [
+   0.2482,
+   0.45,
+   0.015
+  ],
+  "tris": 188,
+  "tex": 1024,
+  "standardized": [],
+  "tags": [
+   "frame",
+   "factory"
+  ],
+  "desc": "access_panel_util",
+  "kind": "static"
+ },
  "alarm_clock": {
   "size": [
    0.1394,
@@ -75,6 +101,112 @@
   "desc": "A heavy amber glass ashtray, overflowing.",
   "kind": "carry"
  },
+ "baseboard_bath": {
+  "size": [
+   1.2,
+   0.085,
+   0.1349
+  ],
+  "min": [
+   0.0,
+   0.0,
+   0.0016
+  ],
+  "max": [
+   1.2,
+   0.085,
+   0.1365
+  ],
+  "tris": 24,
+  "tex": 1024,
+  "standardized": [
+   "seated on floor (-0.001 m)"
+  ],
+  "tags": [
+   "moulding",
+   "factory"
+  ],
+  "desc": "baseboard_bath",
+  "kind": "baseboard"
+ },
+ "baseboard_bedroom": {
+  "size": [
+   1.2,
+   0.1,
+   0.009
+  ],
+  "min": [
+   0.0,
+   0.0,
+   -0.0
+  ],
+  "max": [
+   1.2,
+   0.1,
+   0.009
+  ],
+  "tris": 24,
+  "tex": 1024,
+  "standardized": [],
+  "tags": [
+   "moulding",
+   "factory"
+  ],
+  "desc": "baseboard_bedroom",
+  "kind": "baseboard"
+ },
+ "baseboard_bedroom_tall": {
+  "size": [
+   1.2,
+   0.12,
+   0.0108
+  ],
+  "min": [
+   0.0,
+   0.0,
+   -0.0
+  ],
+  "max": [
+   1.2,
+   0.12,
+   0.0108
+  ],
+  "tris": 24,
+  "tex": 1024,
+  "standardized": [],
+  "tags": [
+   "moulding",
+   "factory"
+  ],
+  "desc": "baseboard_bedroom_tall",
+  "kind": "baseboard"
+ },
+ "baseboard_cream_tall": {
+  "size": [
+   1.2,
+   0.16,
+   0.0144
+  ],
+  "min": [
+   0.0,
+   0.0,
+   -0.0
+  ],
+  "max": [
+   1.2,
+   0.16,
+   0.0144
+  ],
+  "tris": 24,
+  "tex": 1024,
+  "standardized": [],
+  "tags": [
+   "moulding",
+   "factory"
+  ],
+  "desc": "baseboard_cream_tall",
+  "kind": "baseboard"
+ },
  "bed_double": {
   "size": [
    1.4868,
@@ -123,6 +255,214 @@
    "goods"
   ],
   "desc": "Three crushed lager cans.",
+  "kind": "static"
+ },
+ "bldg_soho_corner": {
+  "size": [
+   9.6667,
+   11.1,
+   12.2
+  ],
+  "min": [
+   -4.8333,
+   0.0,
+   -12.0
+  ],
+  "max": [
+   4.8333,
+   11.1,
+   0.2
+  ],
+  "tris": 198,
+  "tex": 2048,
+  "standardized": [],
+  "tags": [
+   "building",
+   "factory"
+  ],
+  "desc": "bldg_soho_corner",
+  "kind": "static"
+ },
+ "bldg_soho_loft": {
+  "size": [
+   22.7043,
+   21.3,
+   12.2
+  ],
+  "min": [
+   -11.3521,
+   0.0,
+   -12.0
+  ],
+  "max": [
+   11.3521,
+   21.3,
+   0.2
+  ],
+  "tris": 198,
+  "tex": 2048,
+  "standardized": [],
+  "tags": [
+   "building",
+   "factory"
+  ],
+  "desc": "bldg_soho_loft",
+  "kind": "static"
+ },
+ "bldg_soho_row_a": {
+  "size": [
+   9.1552,
+   14.5,
+   12.2
+  ],
+  "min": [
+   -4.5776,
+   0.0,
+   -12.0
+  ],
+  "max": [
+   4.5776,
+   14.5,
+   0.2
+  ],
+  "tris": 198,
+  "tex": 2048,
+  "standardized": [],
+  "tags": [
+   "building",
+   "factory"
+  ],
+  "desc": "bldg_soho_row_a",
+  "kind": "static"
+ },
+ "bldg_soho_row_b": {
+  "size": [
+   9.2461,
+   14.5,
+   12.2
+  ],
+  "min": [
+   -4.623,
+   0.0,
+   -12.0
+  ],
+  "max": [
+   4.623,
+   14.5,
+   0.2
+  ],
+  "tris": 198,
+  "tex": 2048,
+  "standardized": [],
+  "tags": [
+   "building",
+   "factory"
+  ],
+  "desc": "bldg_soho_row_b",
+  "kind": "static"
+ },
+ "bldg_soho_row_c": {
+  "size": [
+   9.1611,
+   14.5,
+   12.2
+  ],
+  "min": [
+   -4.5806,
+   0.0,
+   -12.0
+  ],
+  "max": [
+   4.5806,
+   14.5,
+   0.2
+  ],
+  "tris": 198,
+  "tex": 2048,
+  "standardized": [],
+  "tags": [
+   "building",
+   "factory"
+  ],
+  "desc": "bldg_soho_row_c",
+  "kind": "static"
+ },
+ "bldg_soho_warehouse": {
+  "size": [
+   21.1801,
+   24.7,
+   12.2
+  ],
+  "min": [
+   -10.5901,
+   0.0,
+   -12.0
+  ],
+  "max": [
+   10.5901,
+   24.7,
+   0.2
+  ],
+  "tris": 198,
+  "tex": 2048,
+  "standardized": [],
+  "tags": [
+   "building",
+   "factory"
+  ],
+  "desc": "bldg_soho_warehouse",
+  "kind": "static"
+ },
+ "bldg_tribeca_01": {
+  "size": [
+   8.3755,
+   17.9,
+   12.2
+  ],
+  "min": [
+   -4.1877,
+   0.0,
+   -12.0
+  ],
+  "max": [
+   4.1877,
+   17.9,
+   0.2
+  ],
+  "tris": 198,
+  "tex": 2048,
+  "standardized": [],
+  "tags": [
+   "building",
+   "factory"
+  ],
+  "desc": "bldg_tribeca_01",
+  "kind": "static"
+ },
+ "bldg_tribeca_03": {
+  "size": [
+   11.7072,
+   17.9,
+   12.2
+  ],
+  "min": [
+   -5.8536,
+   0.0,
+   -12.0
+  ],
+  "max": [
+   5.8536,
+   17.9,
+   0.2
+  ],
+  "tris": 538,
+  "tex": 2048,
+  "standardized": [],
+  "tags": [
+   "building",
+   "factory"
+  ],
+  "desc": "bldg_tribeca_03",
   "kind": "static"
  },
  "book_stack": {

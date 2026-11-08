@@ -526,7 +526,16 @@ func _street() -> void:
 	var street: Dictionary = d.get("street", {})
 	var far_z := -15.55
 	var x := float(street.get("start_x", -18.0))
+	var lib: Dictionary = PropFactory.manifest()
 	for bld in street.get("buildings", []):
+		if bld.has("prop") and lib.has(String(bld.prop)):
+			# A whole building from the facade line: front at its origin, facing the street.
+			var bw: float = float((lib[String(bld.prop)] as Dictionary).get("size", [10.0])[0])
+			var b := _lib(String(bld.prop), Vector3(x + bw * 0.5, sy + 0.1, far_z), 0.0)
+			if b and (bld.has("condition") or bld.has("snow")):
+				PropFactory.set_condition(b, float(bld.get("condition", 0.0)), float(bld.get("snow", 0.0)))
+			x += bw + float(bld.get("gap", 0.0))
+			continue
 		var bays := int(bld.get("bays", 4))
 		var storeys := int(bld.get("storeys", 5))
 		var width := bays * 1.8

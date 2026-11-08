@@ -1,0 +1,320 @@
+{
+ "_note": "Interior trim sheets from Jared's Interior trimmings folder (Nov 8 2026). Panel numbers: propkit.atlas.panels(sheet, min_area=900). Mouldings use the drawn section where the sheet has one, else the default for the kind (propkit/extrude.PROFILES).",
+ "items": {
+  "crown_living": {
+   "sheet": "trim_1.png",
+   "category": "moulding",
+   "strip": 4,
+   "profile": 5,
+   "kind": "crown",
+   "height_m": 0.16
+  },
+  "chair_rail_living": {
+   "sheet": "trim_1.png",
+   "category": "moulding",
+   "strip": 6,
+   "profile": 7,
+   "kind": "chair_rail",
+   "height_m": 0.065
+  },
+  "baseboard_living": {
+   "sheet": "trim_1.png",
+   "category": "moulding",
+   "strip": 8,
+   "profile": 9,
+   "kind": "baseboard",
+   "height_m": 0.14
+  },
+  "window_trim_living": {
+   "sheet": "trim_1.png",
+   "category": "frame",
+   "panel": 10,
+   "height_m": 1.55
+  },
+  "door_casing_living": {
+   "sheet": "trim_1.png",
+   "category": "frame",
+   "panel": 11,
+   "height_m": 2.2
+  },
+  "crown_bedroom": {
+   "sheet": "trim_2.png",
+   "category": "moulding",
+   "strip": 0,
+   "profile": null,
+   "kind": "crown",
+   "height_m": 0.08
+  },
+  "baseboard_bedroom": {
+   "sheet": "trim_2.png",
+   "category": "moulding",
+   "strip": 1,
+   "profile": null,
+   "kind": "baseboard",
+   "height_m": 0.1
+  },
+  "baseboard_bedroom_tall": {
+   "sheet": "trim_2.png",
+   "category": "moulding",
+   "strip": 2,
+   "profile": null,
+   "kind": "baseboard",
+   "height_m": 0.12
+  },
+  "door_casing_bedroom": {
+   "sheet": "trim_2.png",
+   "category": "frame",
+   "panel": 3,
+   "height_m": 2.15
+  },
+  "window_casing_bedroom": {
+   "sheet": "trim_2.png",
+   "category": "frame",
+   "panel": 4,
+   "height_m": 1.45
+  },
+  "closet_trim_bedroom": {
+   "sheet": "trim_2.png",
+   "category": "frame",
+   "panel": 5,
+   "height_m": 2.1
+  },
+  "chair_cap_bath": {
+   "sheet": "trim_4.png",
+   "category": "moulding",
+   "strip": 9,
+   "profile": 21,
+   "kind": "chair_rail",
+   "height_m": 0.05
+  },
+  "baseboard_bath": {
+   "sheet": "trim_4.png",
+   "category": "moulding",
+   "strip": 14,
+   "profile": 20,
+   "kind": "baseboard",
+   "height_m": 0.085
+  },
+  "tile_edge_mint": {
+   "sheet": "trim_4.png",
+   "category": "moulding",
+   "strip": 15,
+   "profile": 24,
+   "kind": "quarter_round",
+   "height_m": 0.035
+  },
+  "window_casing_bath": {
+   "sheet": "trim_4.png",
+   "category": "frame",
+   "panel": 7,
+   "height_m": 1.0
+  },
+  "door_casing_bath": {
+   "sheet": "trim_4.png",
+   "category": "frame",
+   "panel": 6,
+   "height_m": 2.15
+  },
+  "mirror_surround_bath": {
+   "sheet": "trim_4.png",
+   "category": "frame",
+   "panel": 8,
+   "height_m": 0.75,
+   "depth_m": 0.03
+  },
+  "crown_hall": {
+   "sheet": "trim_5.png",
+   "category": "moulding",
+   "strip": 1,
+   "profile": 2,
+   "kind": "crown",
+   "height_m": 0.14
+  },
+  "chair_rail_hall": {
+   "sheet": "trim_5.png",
+   "category": "moulding",
+   "strip": 4,
+   "profile": 5,
+   "kind": "chair_rail",
+   "height_m": 0.07
+  },
+  "stair_rail_cap": {
+   "sheet": "trim_5.png",
+   "category": "moulding",
+   "strip": 8,
+   "profile": 9,
+   "kind": "chair_rail",
+   "height_m": 0.05
+  },
+  "baseboard_hall": {
+   "sheet": "trim_5.png",
+   "category": "moulding",
+   "strip": 10,
+   "profile": 11,
+   "kind": "baseboard",
+   "height_m": 0.17
+  },
+  "door_casing_hall": {
+   "sheet": "trim_5.png",
+   "category": "frame",
+   "panel": 3,
+   "height_m": 2.2
+  },
+  "crown_ornate": {
+   "sheet": "trim_6.png",
+   "category": "moulding",
+   "strip": 0,
+   "profile": 1,
+   "kind": "crown",
+   "height_m": 0.28,
+   "strip_frac": [
+    0,
+    0,
+    0.88,
+    1
+   ]
+  },
+  "crown_walnut": {
+   "sheet": "trim_6.png",
+   "category": "moulding",
+   "strip": 3,
+   "profile": 4,
+   "kind": "crown",
+   "height_m": 0.15
+  },
+  "crown_cream": {
+   "sheet": "trim_6.png",
+   "category": "moulding",
+   "strip": 5,
+   "profile": 6,
+   "kind": "crown",
+   "height_m": 0.14
+  },
+  "picture_rail_walnut": {
+   "sheet": "trim_6.png",
+   "category": "moulding",
+   "strip": 7,
+   "profile": null,
+   "kind": "picture_rail",
+   "height_m": 0.05
+  },
+  "chair_rail_cream": {
+   "sheet": "trim_6.png",
+   "category": "moulding",
+   "strip": 10,
+   "profile": null,
+   "kind": "chair_rail",
+   "height_m": 0.06
+  },
+  "baseboard_cream_tall": {
+   "sheet": "trim_6.png",
+   "category": "moulding",
+   "strip": 13,
+   "profile": null,
+   "kind": "baseboard",
+   "height_m": 0.16
+  },
+  "baseboard_walnut": {
+   "sheet": "trim_6.png",
+   "category": "moulding",
+   "strip": 17,
+   "profile": null,
+   "kind": "baseboard",
+   "height_m": 0.16
+  },
+  "baseboard_util_cream": {
+   "sheet": "trim_9.png",
+   "category": "moulding",
+   "strip": 0,
+   "profile": 2,
+   "kind": "baseboard",
+   "height_m": 0.12
+  },
+  "baseboard_util_gray": {
+   "sheet": "trim_9.png",
+   "category": "moulding",
+   "strip": 4,
+   "profile": 2,
+   "kind": "baseboard",
+   "height_m": 0.12
+  },
+  "baseboard_util_tan": {
+   "sheet": "trim_9.png",
+   "category": "moulding",
+   "strip": 8,
+   "profile": 2,
+   "kind": "baseboard",
+   "height_m": 0.12
+  },
+  "crown_util_cream": {
+   "sheet": "trim_9.png",
+   "category": "moulding",
+   "strip": 1,
+   "profile": 7,
+   "kind": "crown",
+   "height_m": 0.09
+  },
+  "crown_util_gray": {
+   "sheet": "trim_9.png",
+   "category": "moulding",
+   "strip": 5,
+   "profile": 7,
+   "kind": "crown",
+   "height_m": 0.09
+  },
+  "crown_util_tan": {
+   "sheet": "trim_9.png",
+   "category": "moulding",
+   "strip": 6,
+   "profile": 7,
+   "kind": "crown",
+   "height_m": 0.09
+  },
+  "rail_util_cream": {
+   "sheet": "trim_9.png",
+   "category": "moulding",
+   "strip": 11,
+   "profile": 9,
+   "kind": "chair_rail",
+   "height_m": 0.06
+  },
+  "rail_util_gray": {
+   "sheet": "trim_9.png",
+   "category": "moulding",
+   "strip": 14,
+   "profile": 9,
+   "kind": "chair_rail",
+   "height_m": 0.06
+  },
+  "rail_util_tan": {
+   "sheet": "trim_9.png",
+   "category": "moulding",
+   "strip": 16,
+   "profile": 9,
+   "kind": "chair_rail",
+   "height_m": 0.06
+  },
+  "quarter_round_util": {
+   "sheet": "trim_9.png",
+   "category": "moulding",
+   "strip": 19,
+   "profile": 10,
+   "kind": "quarter_round",
+   "height_m": 0.025
+  },
+  "access_panel_util": {
+   "sheet": "trim_9.png",
+   "category": "frame",
+   "panel": 26,
+   "height_m": 0.45,
+   "depth_m": 0.015
+  },
+  "vent_grille_util": {
+   "sheet": "trim_9.png",
+   "category": "frame",
+   "panel": 27,
+   "height_m": 0.45,
+   "depth_m": 0.02
+  }
+ }
+}

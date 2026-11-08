@@ -1,0 +1,16 @@
+{
+ "sheet": "trim_1.png",
+ "category": "frame",
+ "panel": 10,
+ "height_m": 1.55,
+ "name": "window_trim_living",
+ "line": "extrude",
+ "source": "trim_1.png",
+ "class": null,
+ "views_folder": "window_trim_living",
+ "status": "pending",
+ "assumptions": [
+  "height 1.55 m from category 'frame'"
+ ],
+ "notes": ""
+}

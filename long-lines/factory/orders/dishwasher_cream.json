@@ -1,0 +1,30 @@
+{
+ "sheet": "appl_6.png",
+ "category": "dishwasher",
+ "front": [
+  [
+   5
+  ],
+  [
+   4
+  ]
+ ],
+ "side": 21,
+ "top": 0,
+ "kick": 37,
+ "controls": [
+  5
+ ],
+ "notes": "Cream built-in dishwasher",
+ "name": "dishwasher_cream",
+ "line": "atlas",
+ "source": "appl_6.png",
+ "class": "medium",
+ "views_folder": "dishwasher_cream",
+ "status": "pending",
+ "assumptions": [
+  "height 0.86 m from category 'dishwasher'"
+ ],
+ "height_m": 0.86,
+ "cat_depth_m": 0.6
+}

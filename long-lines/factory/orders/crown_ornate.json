@@ -1,0 +1,24 @@
+{
+ "sheet": "trim_6.png",
+ "category": "moulding",
+ "strip": 0,
+ "profile": 1,
+ "kind": "crown",
+ "height_m": 0.28,
+ "strip_frac": [
+  0,
+  0,
+  0.88,
+  1
+ ],
+ "name": "crown_ornate",
+ "line": "extrude",
+ "source": "trim_6.png",
+ "class": null,
+ "views_folder": "crown_ornate",
+ "status": "pending",
+ "assumptions": [
+  "height 0.28 m from category 'moulding'"
+ ],
+ "notes": ""
+}

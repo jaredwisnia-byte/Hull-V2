@@ -1,0 +1,166 @@
+{
+ "_note": "Facade atlas sheets from Jared's Exteriors folder (Nov 8 2026). One entry per whole elevation: sheet, crop box (px), storeys counted by eye (the one judgement the facade line needs; window rows are detected). Feed: factory.py intake_sheet THIS --source-dir DIR",
+ "category": "building",
+ "items": {
+  "bldg_tribeca_01": {
+   "sheet": "SoHo_Tribeca_Facade_Texture_Sheet-4.png",
+   "box": [
+    22,
+    30,
+    242,
+    523
+   ],
+   "storeys": 5
+  },
+  "bldg_tribeca_02": {
+   "sheet": "SoHo_Tribeca_Facade_Texture_Sheet-4.png",
+   "box": [
+    264,
+    30,
+    586,
+    523
+   ],
+   "storeys": 4
+  },
+  "bldg_tribeca_03": {
+   "sheet": "SoHo_Tribeca_Facade_Texture_Sheet-4.png",
+   "box": [
+    612,
+    15,
+    934,
+    523
+   ],
+   "storeys": 5
+  },
+  "bldg_tribeca_04": {
+   "sheet": "SoHo_Tribeca_Facade_Texture_Sheet-4.png",
+   "box": [
+    964,
+    30,
+    1207,
+    523
+   ],
+   "storeys": 4
+  },
+  "bldg_tribeca_05": {
+   "sheet": "SoHo_Tribeca_Facade_Texture_Sheet-4.png",
+   "box": [
+    1225,
+    30,
+    1520,
+    523
+   ],
+   "storeys": 4
+  },
+  "bldg_tribeca_06": {
+   "sheet": "SoHo_Tribeca_Facade_Texture_Sheet-4.png",
+   "box": [
+    16,
+    537,
+    323,
+    1005
+   ],
+   "storeys": 4
+  },
+  "bldg_tribeca_07": {
+   "sheet": "SoHo_Tribeca_Facade_Texture_Sheet-4.png",
+   "box": [
+    347,
+    576,
+    538,
+    1006
+   ],
+   "storeys": 4
+  },
+  "bldg_tribeca_08": {
+   "sheet": "SoHo_Tribeca_Facade_Texture_Sheet-4.png",
+   "box": [
+    562,
+    576,
+    814,
+    1006
+   ],
+   "storeys": 4
+  },
+  "bldg_tribeca_09": {
+   "sheet": "SoHo_Tribeca_Facade_Texture_Sheet-4.png",
+   "box": [
+    841,
+    582,
+    1037,
+    1006
+   ],
+   "storeys": 4
+  },
+  "bldg_tribeca_10": {
+   "sheet": "SoHo_Tribeca_Facade_Texture_Sheet-4.png",
+   "box": [
+    1063,
+    537,
+    1521,
+    1005
+   ],
+   "storeys": 4
+  },
+  "bldg_soho_corner": {
+   "sheet": "Weathered_SoHo_Facade_Texture_Atlas-1.png",
+   "box": [
+    9,
+    8,
+    863,
+    1010
+   ],
+   "storeys": 3
+  },
+  "bldg_soho_row_a": {
+   "sheet": "Weathered_SoHo_Facade_Texture_Atlas-2.png",
+   "box": [
+    9,
+    1,
+    512,
+    835
+   ],
+   "storeys": 4
+  },
+  "bldg_soho_row_b": {
+   "sheet": "Weathered_SoHo_Facade_Texture_Atlas-2.png",
+   "box": [
+    512,
+    1,
+    1021,
+    835
+   ],
+   "storeys": 4
+  },
+  "bldg_soho_row_c": {
+   "sheet": "Weathered_SoHo_Facade_Texture_Atlas-2.png",
+   "box": [
+    1021,
+    1,
+    1528,
+    835
+   ],
+   "storeys": 4
+  },
+  "bldg_soho_loft": {
+   "sheet": "Weathered_SoHo_Loft_Texture_Atlas-3.png",
+   "box": [
+    8,
+    1,
+    925,
+    871
+   ],
+   "storeys": 6
+  },
+  "bldg_soho_warehouse": {
+   "sheet": "Weathered_SoHo_Loft_Facade_Texture_Atlas-4.png",
+   "box": [
+    22,
+    141,
+    755,
+    1008
+   ],
+   "storeys": 7
+  }
+ }
+}

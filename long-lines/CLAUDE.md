@@ -17,7 +17,11 @@ Jared's directive: industrialize asset production. The factory is the product.
 **minimum acceptable standard** (one automatic correction, then flag, never polish),
 standards (`factory/standards.json`, `categories.json`), the input spec
 (`factory/REFERENCE_SPEC.md`), the ledger and KPIs (`factory/REPORT.md`).
-`blender -b --factory-startup -P long-lines/tools/factory.py -- intake|build|qa|report ...`
+`blender -b --factory-startup -P long-lines/tools/factory.py -- intake|intake_sheet|build|qa|report ...`
+Lines: hull (multiview sheets), atlas (appliance part atlases), extrude (trim sheets:
+mouldings and casings), facade (building elevations), car, can, surface, recipe. Sheets that
+hold many assets get a sheet spec (`factory/sheets_*.json`, label panels with
+`tools/label_panels.py`) and go through `intake_sheet`.
 
 ## Doctrine: interchangeable parts
 Build once, reuse everywhere. Do not hand-code one-off geometry in game code.
@@ -43,8 +47,8 @@ Build once, reuse everywhere. Do not hand-code one-off geometry in game code.
 - Surfaces: `tools/make_tiles.py tools/tile_specs/<batch>.json` turns painted images into
   seamless tiles in `assets/surfaces/` and registers them in `data/surfaces.json`. Rooms use
   them by name (`"floor"`/`"wall"` in `data/apartment.json`); props use them through
-  `mats.painted(name)` in recipes. 51 surfaces so far: floors, carpets, ~36 wallpapers,
-  furniture materials (`mat_*`).
+  `mats.painted(name)` in recipes. 75 surfaces so far: floors, carpets, ~36 wallpapers,
+  furniture materials (`mat_*`), exterior walls (`ext_*`: brick, stone, stucco, siding).
 - Visual hull: `tools/propkit/hull.py` builds a textured prop from orthographic painted views
   (front/right/left/back/top). Register one line in `HULLS` (`tools/props/hull_props.py`):
   views live in `assets/source_textures/<folder>/v_<view>.png`. Free (scipy/skimage via apt).

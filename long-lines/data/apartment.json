@@ -928,23 +928,23 @@
    "type": "fridge",
    "id": "fridge",
    "pos": [
-    0.33,
+    0.38,
     0,
     10.4
    ],
    "rot": 90,
-   "model": "fridge_50s"
+   "model": "fridge_avocado_atlas"
   },
   {
    "type": "stove",
    "id": "stove",
    "pos": [
-    3.09,
+    3.06,
     0,
     9.75
    ],
    "rot": -90,
-   "model": "gas_range"
+   "model": "range_harvest_gold"
   },
   {
    "type": "sink",
@@ -1099,7 +1099,7 @@
    "type": "fridge_note",
    "id": "fridge_note",
    "pos": [
-    0.665,
+    0.775,
     1.25,
     10.4
    ],
@@ -1515,23 +1515,26 @@
   }
  ],
  "street": {
-  "start_x": -16.0,
+  "start_x": -24.0,
   "buildings": [
    {
-    "bays": 4,
-    "storeys": 5
+    "prop": "bldg_soho_row_a"
    },
    {
-    "bays": 4,
-    "storeys": 4
+    "prop": "bldg_tribeca_03"
    },
    {
-    "bays": 4,
-    "storeys": 5
+    "prop": "bldg_soho_warehouse",
+    "snow": 0.3
    },
    {
-    "bays": 4,
-    "storeys": 6
+    "prop": "bldg_tribeca_08"
+   },
+   {
+    "prop": "bldg_soho_row_b"
+   },
+   {
+    "prop": "bldg_tribeca_04"
    },
    {
     "bays": 4,

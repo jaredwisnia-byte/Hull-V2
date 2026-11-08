@@ -1,0 +1,26 @@
+{
+ "sheet": "trim_2.png",
+ "category": "moulding",
+ "strip": 2,
+ "profile": null,
+ "kind": "baseboard",
+ "height_m": 0.12,
+ "name": "baseboard_bedroom_tall",
+ "line": "extrude",
+ "source": "trim_2.png",
+ "class": null,
+ "views_folder": "baseboard_bedroom_tall",
+ "status": "shipped",
+ "assumptions": [
+  "height 0.12 m from category 'moulding'"
+ ],
+ "notes": "",
+ "measured": {
+  "length_m": 1.2,
+  "height_m": 0.12,
+  "depth_m": 0.0108,
+  "section_points": 7,
+  "section_from": "default:baseboard"
+ },
+ "attempts": 1
+}

@@ -1,0 +1,17 @@
+{
+ "sheet": "trim_9.png",
+ "category": "frame",
+ "panel": 27,
+ "height_m": 0.45,
+ "depth_m": 0.02,
+ "name": "vent_grille_util",
+ "line": "extrude",
+ "source": "trim_9.png",
+ "class": null,
+ "views_folder": "vent_grille_util",
+ "status": "pending",
+ "assumptions": [
+  "height 0.45 m from category 'frame'"
+ ],
+ "notes": ""
+}

@@ -1,0 +1,18 @@
+{
+ "sheet": "trim_9.png",
+ "category": "moulding",
+ "strip": 1,
+ "profile": 7,
+ "kind": "crown",
+ "height_m": 0.09,
+ "name": "crown_util_cream",
+ "line": "extrude",
+ "source": "trim_9.png",
+ "class": null,
+ "views_folder": "crown_util_cream",
+ "status": "pending",
+ "assumptions": [
+  "height 0.09 m from category 'moulding'"
+ ],
+ "notes": ""
+}

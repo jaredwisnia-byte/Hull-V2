@@ -91,3 +91,25 @@ add to it whenever something goes wrong.
   gate's gauges (triangles, dimensions, outline scores) via `gauge_hash`.
 - When a correction fires for a category, move it into `categories.json` so the next asset
   of that kind passes first time (tv: back view paint-only).
+
+## Multi-asset sheets: facades, part atlases, trim (Nov 8 batch 2)
+- Splitting a facade atlas by connected blobs breaks buildings at their dark shopfronts.
+  Atlas sheets are laid out on background gutters: a recursive gutter cut (XY-cut) is right.
+- Trimming an elevation to the "longest run of bright rows" kept a sliver: dark windows look
+  like background. Strip margins from the edges only, until a row is mostly drawing.
+- Pixel-blob window detection fails on painted facades (light frames, curtains, fire escapes).
+  Windows repeat: get the period by autocorrelation, the opening by folding the profile over
+  one period, and only cut recesses when openings are clearly darker than the piers (else
+  leave the facade painted: a hole cut into brick is worse than a flat painting).
+- Big `median_filter` windows take minutes; a Gaussian blur gives "the wall around it" in ms.
+- `core.box` places the box with an object transform: mesh coordinates are local. Apply the
+  transform before classifying faces by position (the facade went onto nothing at first).
+- Painted part atlases are not drawn to scale between panels: take depth from the category,
+  and allow a real width in the order when the painting is stylised (side-by-side fridge).
+- Painted stove knobs include their dial ring (to ~90 mm): the knob rule accepts that size but
+  clamps the cylinder to a real knob (`max_real`).
+- Painted moulding strips have shaded end caps: crop 3% off each end or the repeat shows a band.
+- One sheet feeds many assets: keep one shared copy (`source_textures/_sheets/`), not one per
+  asset (the first intake duplicated ~80 MB).
+- Labelling a sheet (which numbered panel is which face) is the one person step: ~1 line per
+  asset. Automating it further costs more than it saves at this volume.

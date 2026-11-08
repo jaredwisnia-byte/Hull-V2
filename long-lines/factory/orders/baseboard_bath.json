@@ -1,0 +1,26 @@
+{
+ "sheet": "trim_4.png",
+ "category": "moulding",
+ "strip": 14,
+ "profile": 20,
+ "kind": "baseboard",
+ "height_m": 0.085,
+ "name": "baseboard_bath",
+ "line": "extrude",
+ "source": "trim_4.png",
+ "class": null,
+ "views_folder": "baseboard_bath",
+ "status": "shipped",
+ "assumptions": [
+  "height 0.09 m from category 'moulding'"
+ ],
+ "notes": "",
+ "measured": {
+  "length_m": 1.2,
+  "height_m": 0.085,
+  "depth_m": 0.1365,
+  "section_points": 7,
+  "section_from": "drawing"
+ },
+ "attempts": 1
+}

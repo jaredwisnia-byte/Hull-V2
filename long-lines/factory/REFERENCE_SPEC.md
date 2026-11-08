@@ -1,7 +1,7 @@
 # Reference sheet specification (factory input)
 
 Interchangeable parts need standard gauges; this is the gauge for input images. A sheet that
-follows it goes through the factory with no human work beyond a brand check.
+follows it goes through the factory with no human work (Jared generates sheets without brand names, Nov 8).
 
 ## Multiview object sheet (hull line: furniture, electronics, appliances, street objects)
 - One object per sheet. Plain flat background that contrasts with the object (light behind

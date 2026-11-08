@@ -19,6 +19,7 @@ every step ─► factory/ledger.jsonl ─► factory/REPORT.md (KPIs)
 ```bash
 F="blender -b --factory-startup -P long-lines/tools/factory.py --"
 $F intake sheet.png furniture_chair_kitchen --category chair     # writes the work order + views
+$F intake_sheet factory/sheets_appliances_2026_11_08.json --source-dir DIR   # many orders from one sheet spec
 $F build furniture_chair_kitchen                                 # or --pending, --all-orders
 $F qa --library                                                  # gate every asset in the library
 $F report                                                        # rewrite REPORT.md
@@ -42,7 +43,9 @@ blender -b --factory-startup -P long-lines/tools/critique.py -- NAME [VIEWS]   #
 | can | label sheet | `props/goods_painted.py` | cylindrical packaging |
 | surface | square texture | `tools/make_tiles.py` | floors, walls, carpets, materials |
 | recipe | none (code) | `props/*.py` hand recipes | open or thin shapes the hull can't see (bowls, frames, chairs with gaps) and one-off hero props |
-| facade (next) | facade sheet | modular bays, cornices, storefronts, assembler | buildings and streets |
+| facade | facade atlas sheet (whole elevations) | `propkit/facade.py`: elevation trimmed, storey period by autocorrelation, window lattice recessed only when confident, cornice extruded, sides/roof from the nearest `ext_*` surface | street buildings up to ~10 storeys |
+| atlas | parts atlas sheet (panels laid flat) | `propkit/atlas.py`: panels found automatically; the order names front rows / side / top / back / kick / backguard / burners; each front panel is its own bevelled slab; knobs on control panels get depth from `part_rules.py` | appliances, cabinets, any boxy object drawn as parts |
+| extrude | trim sheet | `propkit/extrude.py`: mouldings = drawn cross-section (or a default per kind) swept 1.2 m and wrapped with the painted strip; frames = painted front extruded with its opening cut | baseboards, crown, rails, casings, mirror surrounds, access panels |
 
 A new line is justified only when a category repeatedly fails another line's gate.
 
@@ -60,6 +63,15 @@ Pass rate at the minimum standard, builds passing with no correction, builds nee
 person, mean build time, triangle statistics, failure kinds by frequency, per-line totals.
 The ledger records input and output hashes, so the same inputs can be checked to give the
 same output.
+
+## Sheet specs (multi-asset sheets)
+Jared's newer sheets hold many assets each (facade atlases, appliance part atlases, trim
+sheets). A sheet spec (`factory/sheets_*.json`) lists one item per asset: the sheet, the
+panel numbers or crop box, and the one or two facts the line can't measure (storeys for a
+building, a real width when the painting is stylised). Panel numbers come from
+`propkit.atlas.panels()`, which is deterministic for a sheet; to label a new sheet, draw its
+panels numbered (see `tools/label_panels.py`) and read them off. That is the whole person
+step: about one line per asset.
 
 ## Scaling to buildings (plan)
 Buildings use the same standards with a facade line: establish real dimensions from

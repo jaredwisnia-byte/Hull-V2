@@ -1,4 +1,220 @@
 {
+ "ext_brick_brown": {
+  "file": "res://assets/surfaces/ext_brick_brown.jpg",
+  "kind": "wall",
+  "repeat_m": 1.2,
+  "wear": {
+   "grime": 0.45,
+   "floor_grime": 0.4,
+   "cracks": 0.35,
+   "peel": 0.45,
+   "stains": 0.45
+  }
+ },
+ "ext_brick_charcoal_peel": {
+  "file": "res://assets/surfaces/ext_brick_charcoal_peel.jpg",
+  "kind": "wall",
+  "repeat_m": 1.6,
+  "wear": {
+   "grime": 0.45,
+   "floor_grime": 0.4,
+   "cracks": 0.35,
+   "peel": 0.45,
+   "stains": 0.45
+  }
+ },
+ "ext_brick_painted": {
+  "file": "res://assets/surfaces/ext_brick_painted.jpg",
+  "kind": "wall",
+  "repeat_m": 1.2,
+  "wear": {
+   "grime": 0.45,
+   "floor_grime": 0.4,
+   "cracks": 0.35,
+   "peel": 0.45,
+   "stains": 0.45
+  }
+ },
+ "ext_brick_red": {
+  "file": "res://assets/surfaces/ext_brick_red.jpg",
+  "kind": "wall",
+  "repeat_m": 1.4,
+  "wear": {
+   "grime": 0.45,
+   "floor_grime": 0.4,
+   "cracks": 0.35,
+   "peel": 0.45,
+   "stains": 0.45
+  }
+ },
+ "ext_brick_red_b": {
+  "file": "res://assets/surfaces/ext_brick_red_b.jpg",
+  "kind": "wall",
+  "repeat_m": 1.2,
+  "wear": {
+   "grime": 0.45,
+   "floor_grime": 0.4,
+   "cracks": 0.35,
+   "peel": 0.45,
+   "stains": 0.45
+  }
+ },
+ "ext_brick_red_bright": {
+  "file": "res://assets/surfaces/ext_brick_red_bright.jpg",
+  "kind": "wall",
+  "repeat_m": 1.4,
+  "wear": {
+   "grime": 0.45,
+   "floor_grime": 0.4,
+   "cracks": 0.35,
+   "peel": 0.45,
+   "stains": 0.45
+  }
+ },
+ "ext_brick_yellow": {
+  "file": "res://assets/surfaces/ext_brick_yellow.jpg",
+  "kind": "wall",
+  "repeat_m": 1.2,
+  "wear": {
+   "grime": 0.45,
+   "floor_grime": 0.4,
+   "cracks": 0.35,
+   "peel": 0.45,
+   "stains": 0.45
+  }
+ },
+ "ext_clapboard_charcoal": {
+  "file": "res://assets/surfaces/ext_clapboard_charcoal.jpg",
+  "kind": "wall",
+  "repeat_m": 1.6,
+  "wear": {
+   "grime": 0.45,
+   "floor_grime": 0.4,
+   "cracks": 0.35,
+   "peel": 0.45,
+   "stains": 0.45
+  }
+ },
+ "ext_clapboard_cream": {
+  "file": "res://assets/surfaces/ext_clapboard_cream.jpg",
+  "kind": "wall",
+  "repeat_m": 1.6,
+  "wear": {
+   "grime": 0.45,
+   "floor_grime": 0.4,
+   "cracks": 0.35,
+   "peel": 0.45,
+   "stains": 0.45
+  }
+ },
+ "ext_concrete": {
+  "file": "res://assets/surfaces/ext_concrete.jpg",
+  "kind": "wall",
+  "repeat_m": 2.0,
+  "wear": {
+   "grime": 0.45,
+   "floor_grime": 0.4,
+   "cracks": 0.35,
+   "peel": 0.45,
+   "stains": 0.45
+  }
+ },
+ "ext_concrete_c": {
+  "file": "res://assets/surfaces/ext_concrete_c.jpg",
+  "kind": "wall",
+  "repeat_m": 2.0,
+  "wear": {
+   "grime": 0.45,
+   "floor_grime": 0.4,
+   "cracks": 0.35,
+   "peel": 0.45,
+   "stains": 0.45
+  }
+ },
+ "ext_concrete_dark": {
+  "file": "res://assets/surfaces/ext_concrete_dark.jpg",
+  "kind": "wall",
+  "repeat_m": 2.0,
+  "wear": {
+   "grime": 0.45,
+   "floor_grime": 0.4,
+   "cracks": 0.35,
+   "peel": 0.45,
+   "stains": 0.45
+  }
+ },
+ "ext_corrugated_rust": {
+  "file": "res://assets/surfaces/ext_corrugated_rust.jpg",
+  "kind": "wall",
+  "repeat_m": 1.4,
+  "wear": {
+   "grime": 0.45,
+   "floor_grime": 0.4,
+   "cracks": 0.35,
+   "peel": 0.45,
+   "stains": 0.45
+  }
+ },
+ "ext_limestone": {
+  "file": "res://assets/surfaces/ext_limestone.jpg",
+  "kind": "wall",
+  "repeat_m": 2.4,
+  "wear": {
+   "grime": 0.45,
+   "floor_grime": 0.4,
+   "cracks": 0.35,
+   "peel": 0.45,
+   "stains": 0.45
+  }
+ },
+ "ext_sandstone": {
+  "file": "res://assets/surfaces/ext_sandstone.jpg",
+  "kind": "wall",
+  "repeat_m": 2.4,
+  "wear": {
+   "grime": 0.45,
+   "floor_grime": 0.4,
+   "cracks": 0.35,
+   "peel": 0.45,
+   "stains": 0.45
+  }
+ },
+ "ext_siding_painted": {
+  "file": "res://assets/surfaces/ext_siding_painted.jpg",
+  "kind": "wall",
+  "repeat_m": 1.5,
+  "wear": {
+   "grime": 0.45,
+   "floor_grime": 0.4,
+   "cracks": 0.35,
+   "peel": 0.45,
+   "stains": 0.45
+  }
+ },
+ "ext_stucco_beige": {
+  "file": "res://assets/surfaces/ext_stucco_beige.jpg",
+  "kind": "wall",
+  "repeat_m": 2.0,
+  "wear": {
+   "grime": 0.45,
+   "floor_grime": 0.4,
+   "cracks": 0.35,
+   "peel": 0.45,
+   "stains": 0.45
+  }
+ },
+ "ext_stucco_cream": {
+  "file": "res://assets/surfaces/ext_stucco_cream.jpg",
+  "kind": "wall",
+  "repeat_m": 2.0,
+  "wear": {
+   "grime": 0.45,
+   "floor_grime": 0.4,
+   "cracks": 0.35,
+   "peel": 0.45,
+   "stains": 0.45
+  }
+ },
  "floor_boards_honey": {
   "file": "res://assets/surfaces/floor_boards_honey.jpg",
   "kind": "floor",

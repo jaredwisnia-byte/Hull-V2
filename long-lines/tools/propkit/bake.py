@@ -56,7 +56,10 @@ def fit_texture(me, tex):
         pts = [uv.data[li].uv for li in p.loop_indices]
         uv_area += 0.5 * abs(sum(pts[i].x * pts[(i + 1) % len(pts)].y - pts[(i + 1) % len(pts)].x * pts[i].y
                                  for i in range(len(pts))))
-    lo_density = STANDARDS["minimum_acceptable"]["texel_density_px_per_m"][0]
+    dims = me.vertices and [max(v.co[i] for v in me.vertices) - min(v.co[i] for v in me.vertices) for i in range(3)]
+    cls = next((k for k, v in STANDARDS["size_classes"].items() if max(dims or [0]) <= v["max_dim_m"]), "building")
+    lo_density = STANDARDS["size_classes"][cls].get("texel_density_px_per_m",
+                                                    STANDARDS["minimum_acceptable"]["texel_density_px_per_m"])[0]
     notes = []
     while area > 0 and uv_area > 0 and tex * (uv_area / area) ** 0.5 < lo_density * 1.1 and tex < 2048:
         tex *= 2

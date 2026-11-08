@@ -1,0 +1,174 @@
+{
+ "_note": "Appliance parts atlases from Jared's appliances folder (Nov 8 2026). Panel numbers are propkit.atlas.panels() order for each sheet. Feed: factory.py intake_sheet THIS --source-dir DIR",
+ "items": {
+  "fridge_cream_atlas": {
+   "sheet": "appl_1.png",
+   "category": "fridge_atlas",
+   "front": [
+    [
+     0
+    ]
+   ],
+   "side": 1,
+   "top": 3,
+   "back": 6,
+   "kick": 24,
+   "notes": "Cream top-freezer refrigerator"
+  },
+  "fridge_avocado_sxs": {
+   "sheet": "appl_2.png",
+   "category": "fridge_atlas",
+   "height_m": 1.7,
+   "front": [
+    [
+     0,
+     1
+    ]
+   ],
+   "side": 2,
+   "top": 4,
+   "back": 9,
+   "kick": 43,
+   "notes": "Avocado side-by-side refrigerator with water dispenser",
+   "width_m": 0.91
+  },
+  "range_white_atlas": {
+   "sheet": "appl_3.png",
+   "category": "range_atlas",
+   "front": [
+    [
+     15
+    ],
+    [
+     32
+    ]
+   ],
+   "side": 26,
+   "top": 0,
+   "backguard": 1,
+   "burners": 2,
+   "controls": [
+    1
+   ],
+   "notes": "White electric range, coil burners"
+  },
+  "range_harvest_gold": {
+   "sheet": "appl_4.png",
+   "category": "range_atlas",
+   "front": [
+    [
+     10
+    ],
+    [
+     20
+    ]
+   ],
+   "side": 0,
+   "top": 1,
+   "back": 19,
+   "backguard": 3,
+   "burners": 4,
+   "controls": [
+    3
+   ],
+   "notes": "Harvest gold gas range"
+  },
+  "oven_wall_brown": {
+   "sheet": "appl_5.png",
+   "category": "wall_oven",
+   "depth_m": 0.6,
+   "front": [
+    [
+     1
+    ],
+    [
+     0
+    ],
+    [
+     12
+    ]
+   ],
+   "side": 14,
+   "controls": [
+    1
+   ],
+   "notes": "Brown double wall oven with clock"
+  },
+  "dishwasher_cream": {
+   "sheet": "appl_6.png",
+   "category": "dishwasher",
+   "front": [
+    [
+     5
+    ],
+    [
+     4
+    ]
+   ],
+   "side": 21,
+   "top": 0,
+   "kick": 37,
+   "controls": [
+    5
+   ],
+   "notes": "Cream built-in dishwasher"
+  },
+  "freezer_chest_blue": {
+   "sheet": "appl_7.png",
+   "category": "chest_freezer",
+   "front": [
+    [
+     6
+    ]
+   ],
+   "side": 8,
+   "top": 0,
+   "back": 7,
+   "notes": "Pale blue chest freezer"
+  },
+  "fridge_avocado_atlas": {
+   "sheet": "appl_8.png",
+   "category": "fridge_atlas",
+   "front": [
+    [
+     0
+    ]
+   ],
+   "side": 1,
+   "top": 3,
+   "back": 12,
+   "kick": 11,
+   "notes": "Avocado single-door refrigerator"
+  },
+  "hood_harvest_gold": {
+   "sheet": "appl_9.png",
+   "category": "range_hood",
+   "depth_m": 0.5,
+   "mount": "wall",
+   "front": [
+    [
+     5
+    ]
+   ],
+   "side": 6,
+   "top": 0,
+   "notes": "Harvest gold range hood (under-cabinet)"
+  },
+  "compactor_brown": {
+   "sheet": "appl_10.png",
+   "category": "trash_compactor",
+   "front": [
+    [
+     0
+    ]
+   ],
+   "side": 4,
+   "top": 1,
+   "kick": 25,
+   "controls": [
+    0
+   ],
+   "notes": "Woodgrain trash compactor"
+  }
+ }
+}

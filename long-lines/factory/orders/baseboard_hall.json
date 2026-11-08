@@ -1,0 +1,18 @@
+{
+ "sheet": "trim_5.png",
+ "category": "moulding",
+ "strip": 10,
+ "profile": 11,
+ "kind": "baseboard",
+ "height_m": 0.17,
+ "name": "baseboard_hall",
+ "line": "extrude",
+ "source": "trim_5.png",
+ "class": null,
+ "views_folder": "baseboard_hall",
+ "status": "pending",
+ "assumptions": [
+  "height 0.17 m from category 'moulding'"
+ ],
+ "notes": ""
+}

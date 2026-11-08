@@ -1,0 +1,18 @@
+{
+ "sheet": "trim_2.png",
+ "category": "moulding",
+ "strip": 0,
+ "profile": null,
+ "kind": "crown",
+ "height_m": 0.08,
+ "name": "crown_bedroom",
+ "line": "extrude",
+ "source": "trim_2.png",
+ "class": null,
+ "views_folder": "crown_bedroom",
+ "status": "pending",
+ "assumptions": [
+  "height 0.08 m from category 'moulding'"
+ ],
+ "notes": ""
+}

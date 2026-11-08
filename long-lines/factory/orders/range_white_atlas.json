@@ -1,0 +1,31 @@
+{
+ "sheet": "appl_3.png",
+ "category": "range_atlas",
+ "front": [
+  [
+   15
+  ],
+  [
+   32
+  ]
+ ],
+ "side": 26,
+ "top": 0,
+ "backguard": 1,
+ "burners": 2,
+ "controls": [
+  1
+ ],
+ "notes": "White electric range, coil burners",
+ "name": "range_white_atlas",
+ "line": "atlas",
+ "source": "appl_3.png",
+ "class": "medium",
+ "views_folder": "range_white_atlas",
+ "status": "pending",
+ "assumptions": [
+  "height 0.91 m from category 'range_atlas'"
+ ],
+ "height_m": 0.91,
+ "cat_depth_m": 0.66
+}

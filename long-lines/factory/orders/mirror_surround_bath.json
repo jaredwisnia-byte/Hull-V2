@@ -1,0 +1,17 @@
+{
+ "sheet": "trim_4.png",
+ "category": "frame",
+ "panel": 8,
+ "height_m": 0.75,
+ "depth_m": 0.03,
+ "name": "mirror_surround_bath",
+ "line": "extrude",
+ "source": "trim_4.png",
+ "class": null,
+ "views_folder": "mirror_surround_bath",
+ "status": "pending",
+ "assumptions": [
+  "height 0.75 m from category 'frame'"
+ ],
+ "notes": ""
+}

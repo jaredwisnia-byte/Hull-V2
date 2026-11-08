@@ -1,0 +1,37 @@
+{
+ "name": "bldg_tribeca_03",
+ "category": "building",
+ "line": "facade",
+ "source": "SoHo_Tribeca_Facade_Texture_Sheet-4.png",
+ "box": [
+  612,
+  15,
+  934,
+  523
+ ],
+ "class": "building",
+ "views_folder": "bldg_tribeca_03",
+ "status": "shipped",
+ "storeys": 5,
+ "facade": {
+  "depth_m": 12.0
+ },
+ "assumptions": [
+  "storey height 3.4 m (lower Manhattan loft/tenement)"
+ ],
+ "notes": "",
+ "measured": {
+  "width_m": 11.41,
+  "height_m": 17.9,
+  "depth_m": 12.0,
+  "storeys": 5,
+  "windows": 19,
+  "side": "ext_brick_brown",
+  "wall_rgb": [
+   110,
+   76,
+   67
+  ]
+ },
+ "attempts": 1
+}

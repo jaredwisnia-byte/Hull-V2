@@ -1,0 +1,25 @@
+{
+ "sheet": "appl_9.png",
+ "category": "range_hood",
+ "depth_m": 0.5,
+ "mount": "wall",
+ "front": [
+  [
+   5
+  ]
+ ],
+ "side": 6,
+ "top": 0,
+ "notes": "Harvest gold range hood (under-cabinet)",
+ "name": "hood_harvest_gold",
+ "line": "atlas",
+ "source": "appl_9.png",
+ "class": "medium",
+ "views_folder": "hood_harvest_gold",
+ "status": "pending",
+ "assumptions": [
+  "height 0.18 m from category 'range_hood'"
+ ],
+ "height_m": 0.18,
+ "cat_depth_m": 0.5
+}

@@ -1,0 +1,16 @@
+{
+ "sheet": "trim_2.png",
+ "category": "frame",
+ "panel": 5,
+ "height_m": 2.1,
+ "name": "closet_trim_bedroom",
+ "line": "extrude",
+ "source": "trim_2.png",
+ "class": null,
+ "views_folder": "closet_trim_bedroom",
+ "status": "pending",
+ "assumptions": [
+  "height 2.10 m from category 'frame'"
+ ],
+ "notes": ""
+}

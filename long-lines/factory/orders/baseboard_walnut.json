@@ -1,0 +1,18 @@
+{
+ "sheet": "trim_6.png",
+ "category": "moulding",
+ "strip": 17,
+ "profile": null,
+ "kind": "baseboard",
+ "height_m": 0.16,
+ "name": "baseboard_walnut",
+ "line": "extrude",
+ "source": "trim_6.png",
+ "class": null,
+ "views_folder": "baseboard_walnut",
+ "status": "pending",
+ "assumptions": [
+  "height 0.16 m from category 'moulding'"
+ ],
+ "notes": ""
+}

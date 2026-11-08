@@ -6,8 +6,19 @@
   can, surface, recipe), export standardization, quality gate, ledger, report, condition
   variants. Library gate: 118/118 at the minimum standard. See factory/REPORT.md.
 
+- Drive batch 2 (Nov 8): Exteriors, appliances and interior trim sheets processed through
+  three new lines (facade, atlas, extrude) plus 18 exterior wall surfaces. Sheet specs in
+  `factory/sheets_*.json`; Sullivan Street now uses facade-line buildings.
+
 ## Next (factory)
 1. 100-object demonstration: needs ~100 reference sheets in REFERENCE_SPEC format from Jared
    (prompt template in factory/REFERENCE_SPEC.md); then `intake` + `build --pending`.
-2. Facade line for buildings (plan in factory/README.md), starting with the Edison Telecom tower.
-3. Brand check is the remaining manual step on every image; consider a text-detection check.
+2. Tall buildings: the facade line builds whole painted elevations (to ~10 storeys). The
+   Edison Telecom tower needs the modular version (base / repeated bay / setback / crown
+   from one elevation, plan in factory/README.md).
+3. Not processed yet: `objects1.png` (20 small objects in one sheet, too small per object for
+   the atlas line; ask for one sheet per object or per few objects); interior trim sheets
+   3, 7, 8 and 10 (same extrude line, need a sheet spec); the street concept boards (reference
+   only). Jared says new sheets carry no brand names, so the brand check is retired.
+4. Place trim pieces in the apartment (baseboards / crown along walls, casings on doorways)
+   and appliances in the kitchen in place of the recipe ones.

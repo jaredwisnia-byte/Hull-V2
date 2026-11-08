@@ -2,6 +2,7 @@
 
 Run under Blender (all stations share one process):
     blender -b --factory-startup -P tools/factory.py -- intake IMAGE NAME --category tv [--height 0.5]
+    blender -b --factory-startup -P tools/factory.py -- intake_sheet SHEET_SPEC.json --source-dir DIR
     blender -b --factory-startup -P tools/factory.py -- build NAME... | --pending | --all-orders
     blender -b --factory-startup -P tools/factory.py -- qa NAME... | --library
     blender -b --factory-startup -P tools/factory.py -- report
@@ -127,10 +128,50 @@ def intake(image, name, category, height=None, notes=""):
         if "front" not in found or ("right" not in found and "left" not in found):
             order["status"] = "needs_person"
             order["assumptions"].append("sheet does not follow REFERENCE_SPEC: need front and a side view")
-    order["assumptions"].append("BRAND CHECK REQUIRED: look at the views for real marks before shipping")
     save_order(order)
     print("ORDER", json.dumps(order))
     return order
+
+
+def intake_sheet(spec_path, source_dir):
+    """A multi-asset sheet spec: one work order per listed item. Facade items crop an
+    elevation; atlas items keep the whole parts sheet and name which numbered panel
+    (propkit.atlas.panels) is which face. Sources go to source_textures/<name>/."""
+    import shutil
+    from PIL import Image
+    spec = json.load(open(spec_path))
+    out = []
+    for name, it in spec["items"].items():
+        category = it.get("category", spec.get("category"))
+        cat = CATS[category]
+        line = it.get("line", cat["line"])
+        d = os.path.join(SRC, name)
+        os.makedirs(d, exist_ok=True)
+        if line == "facade":
+            Image.open(os.path.join(source_dir, it["sheet"])).convert("RGB").crop(tuple(it["box"])).save(os.path.join(d, "facade.png"))
+        else:  # one shared copy of the sheet; many assets come from it
+            shared = os.path.join(SRC, "_sheets")
+            os.makedirs(shared, exist_ok=True)
+            if not os.path.exists(os.path.join(shared, it["sheet"])):
+                shutil.copy(os.path.join(source_dir, it["sheet"]), os.path.join(shared, it["sheet"]))
+        with open(os.path.join(d, "SOURCE.md"), "w") as f:
+            f.write("From Jared's painted sheet %s (%s).\n" % (it["sheet"], os.path.basename(spec_path)))
+        order = dict(it)
+        order.update({"name": name, "category": category, "line": line, "source": it["sheet"],
+                      "class": it.get("class", cat.get("class")), "views_folder": name, "status": "pending",
+                      "assumptions": [], "notes": it.get("notes", "")})
+        if line == "facade":
+            order.setdefault("facade", dict(cat.get("facade", {})))
+            order["assumptions"].append("storey height 3.4 m (lower Manhattan loft/tenement)")
+        else:
+            order.setdefault("height_m", cat["height_m"])
+            if cat.get("depth_m"):
+                order.setdefault("cat_depth_m", cat["depth_m"])
+            order["assumptions"].append("height %.2f m from category '%s'" % (order["height_m"], category))
+        save_order(order)
+        out.append(name)
+    print("ORDERS", out)
+    return out
 
 
 # ------------------------------------------------------------------ lines
@@ -149,6 +190,25 @@ def run_line(order):
     elif line == "can":
         from props.goods_painted import painted_can
         painted_can(order["label"], order["radius_m"], order["height_m"])
+    elif line == "facade":
+        from propkit.facade import facade_prop
+        info = facade_prop(os.path.join(SRC, order["views_folder"], "facade.png"), order["name"],
+                           storeys=order.get("storeys"), **order.get("facade", {}))
+        order["measured"] = info
+    elif line == "atlas":
+        from propkit.atlas import appliance
+        d = os.path.join(SRC, order["views_folder"])
+        order["measured"] = appliance(os.path.join(SRC, "_sheets", order["sheet"]), order, d, order["height_m"])
+    elif line == "extrude":
+        from propkit import extrude
+        d = os.path.join(SRC, order["views_folder"])
+        sheet = os.path.join(SRC, "_sheets", order["sheet"])
+        if order["category"] == "moulding":
+            order["measured"] = extrude.moulding(sheet, order["strip"], order.get("profile"), order["kind"],
+                                                 order["height_m"], d, order.get("strip_frac"), order["name"])
+        else:
+            order["measured"] = extrude.frame(sheet, order["panel"], order["height_m"], d,
+                                              order.get("depth_m", 0.022), order["name"])
     elif line == "recipe":
         propkit.PROPS[order["name"]]["fn"]()
     else:
@@ -307,6 +367,8 @@ if __name__ == "__main__":
         if "--height" in rest:
             kw["height"] = float(rest[rest.index("--height") + 1])
         intake(rest[0], rest[1], rest[rest.index("--category") + 1], **kw)
+    elif cmd == "intake_sheet":
+        intake_sheet(rest[0], rest[rest.index("--source-dir") + 1])
     elif cmd == "build":
         if "--pending" in rest or "--all-orders" in rest:
             names = [os.path.basename(p)[:-5] for p in sorted(glob.glob(os.path.join(ORDERS, "*.json")))]

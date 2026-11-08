@@ -75,7 +75,7 @@ def check(name, views_dir=None, category_class=None, paint_only=(), solid=False,
               "texel_density": round(density), "lowest_z": round(lo.z, 4)})
     if tris > budget:
         fails.append("over triangle budget: %d > %d (%s)" % (tris, budget, cls))
-    lo_d, hi_d = MIN["texel_density_px_per_m"]
+    lo_d, hi_d = STANDARDS["size_classes"][cls].get("texel_density_px_per_m", MIN["texel_density_px_per_m"])
     if not lo_d <= density <= hi_d:
         fails.append("texel density %d px/m outside %d-%d" % (density, lo_d, hi_d))
     m["mount"] = mount

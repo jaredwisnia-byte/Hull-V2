@@ -10,11 +10,13 @@ RULES = {
     # Channel / volume knobs on TVs, radios, stoves: 2-4 cm across, stand out
     # 15-25 mm, ridged so fingers can grip them. A painted circle over ~45 mm is
     # usually a knob with its numbered dial ring around it, so depth is capped.
-    "knob": {"diameter": (0.015, 0.065), "protrude": 0.6, "min_depth": 0.008, "max_depth": 0.025,
-             "flutes": 18, "bevel": 0.25},
+    # Painted stove/appliance knobs are often drawn with their dial ring (up to ~90 mm);
+    # the knob itself is never wider than max_real (the cylinder is clamped to it).
+    "knob": {"diameter": (0.015, 0.09), "protrude": 0.6, "min_depth": 0.008, "max_depth": 0.025,
+             "flutes": 18, "bevel": 0.25, "max_real": 0.055},
     # Push buttons: small, shallow.
     "button": {"diameter": (0.006, 0.015), "protrude": 0.35, "min_depth": 0.003, "max_depth": 0.008,
-               "flutes": 0, "bevel": 0.3},
+               "flutes": 0, "bevel": 0.3, "max_real": 0.015},
 }
 
 

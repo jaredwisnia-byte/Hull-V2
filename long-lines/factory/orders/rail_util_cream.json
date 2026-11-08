@@ -1,0 +1,18 @@
+{
+ "sheet": "trim_9.png",
+ "category": "moulding",
+ "strip": 11,
+ "profile": 9,
+ "kind": "chair_rail",
+ "height_m": 0.06,
+ "name": "rail_util_cream",
+ "line": "extrude",
+ "source": "trim_9.png",
+ "class": null,
+ "views_folder": "rail_util_cream",
+ "status": "pending",
+ "assumptions": [
+  "height 0.06 m from category 'moulding'"
+ ],
+ "notes": ""
+}

@@ -1,0 +1,27 @@
+{
+ "sheet": "appl_10.png",
+ "category": "trash_compactor",
+ "front": [
+  [
+   0
+  ]
+ ],
+ "side": 4,
+ "top": 1,
+ "kick": 25,
+ "controls": [
+  0
+ ],
+ "notes": "Woodgrain trash compactor",
+ "name": "compactor_brown",
+ "line": "atlas",
+ "source": "appl_10.png",
+ "class": "medium",
+ "views_folder": "compactor_brown",
+ "status": "pending",
+ "assumptions": [
+  "height 0.86 m from category 'trash_compactor'"
+ ],
+ "height_m": 0.86,
+ "cat_depth_m": 0.6
+}

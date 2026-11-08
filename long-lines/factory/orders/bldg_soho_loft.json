@@ -1,0 +1,37 @@
+{
+ "name": "bldg_soho_loft",
+ "category": "building",
+ "line": "facade",
+ "source": "Weathered_SoHo_Loft_Texture_Atlas-3.png",
+ "box": [
+  8,
+  1,
+  925,
+  871
+ ],
+ "class": "building",
+ "views_folder": "bldg_soho_loft",
+ "status": "shipped",
+ "storeys": 6,
+ "facade": {
+  "depth_m": 12.0
+ },
+ "assumptions": [
+  "storey height 3.4 m (lower Manhattan loft/tenement)"
+ ],
+ "notes": "",
+ "measured": {
+  "width_m": 22.4,
+  "height_m": 21.3,
+  "depth_m": 12.0,
+  "storeys": 6,
+  "windows": 0,
+  "side": "ext_brick_brown",
+  "wall_rgb": [
+   81,
+   69,
+   63
+  ]
+ },
+ "attempts": 1
+}

@@ -32,7 +32,12 @@
   "building": {
    "max_dim_m": 300,
    "tex": 2048,
-   "tri_budget": 60000
+   "tri_budget": 60000,
+   "texel_density_px_per_m": [
+    20,
+    6000
+   ],
+   "_why": "Painted elevations come at 40-60 px/m; buildings are seen from the street, so the minimum is lower."
   }
  },
  "minimum_acceptable": {
@@ -69,7 +74,8 @@
   "hull",
   "car",
   "can",
-  "painted"
+  "painted",
+  "facade"
  ],
  "open_by_design": {
   "_note": "Objects with intended see-through gaps inside their outline (stands, frames, racks) even on solid lines.",

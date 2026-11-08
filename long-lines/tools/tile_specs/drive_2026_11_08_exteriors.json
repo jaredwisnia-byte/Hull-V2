@@ -1,0 +1,150 @@
+{
+ "_note": "Exterior wall finishes from Jared's Exteriors folder (Nov 8 2026): 12 full tiles plus the 10-cell urban wall showcase. Used by the facade line for building sides and by any exterior wall.",
+ "source_dir": "/tmp/claude-0/-home-user-claude/8fad63a4-1d51-5675-8629-973c02b37fcb/scratchpad/drive2",
+ "surfaces": {
+  "ext_brick_red_b": {
+   "src": "Urban_Wall_Texture_Showcase-2.png",
+   "box": [
+    18,
+    16,
+    298,
+    400
+   ],
+   "kind": "wall",
+   "repeat_m": 1.2
+  },
+  "ext_brick_yellow": {
+   "src": "Urban_Wall_Texture_Showcase-2.png",
+   "box": [
+    329,
+    16,
+    601,
+    400
+   ],
+   "kind": "wall",
+   "repeat_m": 1.2
+  },
+  "ext_brick_brown": {
+   "src": "Urban_Wall_Texture_Showcase-2.png",
+   "box": [
+    632,
+    16,
+    904,
+    400
+   ],
+   "kind": "wall",
+   "repeat_m": 1.2
+  },
+  "ext_brick_painted": {
+   "src": "Urban_Wall_Texture_Showcase-2.png",
+   "box": [
+    935,
+    16,
+    1208,
+    400
+   ],
+   "kind": "wall",
+   "repeat_m": 1.2
+  },
+  "ext_siding_painted": {
+   "src": "Urban_Wall_Texture_Showcase-2.png",
+   "box": [
+    632,
+    515,
+    904,
+    895
+   ],
+   "kind": "wall",
+   "repeat_m": 1.5
+  },
+  "ext_concrete_c": {
+   "src": "Urban_Wall_Texture_Showcase-2.png",
+   "box": [
+    1240,
+    515,
+    1519,
+    895
+   ],
+   "kind": "wall",
+   "repeat_m": 2.0
+  },
+  "ext_stucco_beige": {
+   "src": "Weathered_Beige_Stucco_Wall_Texture-10.png",
+   "box": null,
+   "kind": "wall",
+   "repeat_m": 2.0
+  },
+  "ext_stucco_cream": {
+   "src": "Weathered_Beige_Stucco_Wall_Texture-7.png",
+   "box": null,
+   "kind": "wall",
+   "repeat_m": 2.0
+  },
+  "ext_concrete": {
+   "src": "Weathered_Concrete_Wall_Texture-5.png",
+   "box": null,
+   "kind": "wall",
+   "repeat_m": 2.0
+  },
+  "ext_concrete_dark": {
+   "src": "Weathered_Urban_Concrete_Wall_Texture-8.png",
+   "box": null,
+   "kind": "wall",
+   "repeat_m": 2.0
+  },
+  "ext_brick_red": {
+   "src": "Weathered_Red_Brick_Wall_Texture-1.png",
+   "box": null,
+   "kind": "wall",
+   "repeat_m": 1.4
+  },
+  "ext_brick_red_bright": {
+   "src": "Weathered_Red_Brick_Wall_Texture-3.png",
+   "box": null,
+   "kind": "wall",
+   "repeat_m": 1.4
+  },
+  "ext_sandstone": {
+   "src": "Weathered_Sandstone_Block_Wall_Texture-13.png",
+   "box": null,
+   "kind": "wall",
+   "repeat_m": 2.4
+  },
+  "ext_limestone": {
+   "src": "Weathered_Limestone_Masonry_Texture-4.png",
+   "box": null,
+   "kind": "wall",
+   "repeat_m": 2.4
+  },
+  "ext_clapboard_charcoal": {
+   "src": "Weathered_Charcoal_Clapboard_Siding-9.png",
+   "box": null,
+   "kind": "wall",
+   "repeat_m": 1.6
+  },
+  "ext_clapboard_cream": {
+   "src": "Weathered_Cream_Clapboard_Siding_Texture-11.png",
+   "box": null,
+   "kind": "wall",
+   "repeat_m": 1.6
+  },
+  "ext_corrugated_rust": {
+   "src": "Weathered_Rusted_Corrugated_Metal-12.png",
+   "box": null,
+   "kind": "wall",
+   "repeat_m": 1.4
+  },
+  "ext_brick_charcoal_peel": {
+   "src": "Peeling_Charcoal_Paint_on_Weathered_Brick-6.png",
+   "box": null,
+   "kind": "wall",
+   "repeat_m": 1.6
+  }
+ },
+ "_rejected": {
+  "ext_brownstone": "architectural detail (corbels), not a tile",
+  "ext_castiron": "pilasters, not a tile",
+  "ext_limestone_b": "visible repeat",
+  "ext_stucco_c": "visible repeating patch"
+ }
+}

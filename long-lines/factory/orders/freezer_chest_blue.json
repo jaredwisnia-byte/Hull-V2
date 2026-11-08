@@ -1,0 +1,24 @@
+{
+ "sheet": "appl_7.png",
+ "category": "chest_freezer",
+ "front": [
+  [
+   6
+  ]
+ ],
+ "side": 8,
+ "top": 0,
+ "back": 7,
+ "notes": "Pale blue chest freezer",
+ "name": "freezer_chest_blue",
+ "line": "atlas",
+ "source": "appl_7.png",
+ "class": "medium",
+ "views_folder": "freezer_chest_blue",
+ "status": "pending",
+ "assumptions": [
+  "height 0.86 m from category 'chest_freezer'"
+ ],
+ "height_m": 0.86,
+ "cat_depth_m": 0.75
+}

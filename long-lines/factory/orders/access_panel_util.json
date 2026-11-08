@@ -1,0 +1,24 @@
+{
+ "sheet": "trim_9.png",
+ "category": "frame",
+ "panel": 26,
+ "height_m": 0.45,
+ "depth_m": 0.015,
+ "name": "access_panel_util",
+ "line": "extrude",
+ "source": "trim_9.png",
+ "class": null,
+ "views_folder": "access_panel_util",
+ "status": "shipped",
+ "assumptions": [
+  "height 0.45 m from category 'frame'"
+ ],
+ "notes": "",
+ "measured": {
+  "width_m": 0.496,
+  "height_m": 0.45,
+  "depth_m": 0.015,
+  "opening": false
+ },
+ "attempts": 1
+}

@@ -1,0 +1,18 @@
+{
+ "sheet": "trim_1.png",
+ "category": "moulding",
+ "strip": 6,
+ "profile": 7,
+ "kind": "chair_rail",
+ "height_m": 0.065,
+ "name": "chair_rail_living",
+ "line": "extrude",
+ "source": "trim_1.png",
+ "class": null,
+ "views_folder": "chair_rail_living",
+ "status": "pending",
+ "assumptions": [
+  "height 0.07 m from category 'moulding'"
+ ],
+ "notes": ""
+}

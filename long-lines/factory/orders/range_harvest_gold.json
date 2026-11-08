@@ -1,0 +1,32 @@
+{
+ "sheet": "appl_4.png",
+ "category": "range_atlas",
+ "front": [
+  [
+   10
+  ],
+  [
+   20
+  ]
+ ],
+ "side": 0,
+ "top": 1,
+ "back": 19,
+ "backguard": 3,
+ "burners": 4,
+ "controls": [
+  3
+ ],
+ "notes": "Harvest gold gas range",
+ "name": "range_harvest_gold",
+ "line": "atlas",
+ "source": "appl_4.png",
+ "class": "medium",
+ "views_folder": "range_harvest_gold",
+ "status": "pending",
+ "assumptions": [
+  "height 0.91 m from category 'range_atlas'"
+ ],
+ "height_m": 0.91,
+ "cat_depth_m": 0.66
+}
