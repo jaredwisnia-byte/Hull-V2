@@ -31,11 +31,11 @@
    "left vent": 1,
    "left pit": 1
   },
-  "depth_scale_mm_per_unit": 104.2,
+  "depth_scale_mm_per_unit": 105.1,
   "recess_cuts_undone": 0,
   "sources": {
-   "side view": 5,
-   "depth map": 27,
+   "side view": 2,
+   "depth map": 0,
    "catalogue": 0,
    "painted only (no depth evidence)": 8
   },
@@ -43,7 +43,29 @@
    "seam -> vent": 4
   },
   "size_warnings": [],
-  "shell_warnings": []
+  "shell_warnings": [
+   "width 87 mm off at 1.13 m",
+   "depth -9 mm off at 1.13 m"
+  ],
+  "texturing": {
+   "fridge_1_set": {
+    "views": [
+     "front",
+     "back",
+     "right",
+     "left",
+     "top"
+    ],
+    "dominant_share": {
+     "front": 0.172,
+     "back": 0.094,
+     "right": 0.177,
+     "left": 0.201,
+     "top": 0.339
+    },
+    "unseen_vertices": 85
+   }
+  }
  },
  "attempts": 1
 }

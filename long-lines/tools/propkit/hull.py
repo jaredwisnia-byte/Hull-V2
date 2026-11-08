@@ -96,7 +96,8 @@ def _sample(mask, u, v):
 
 
 def hull_prop(views, height, res=110, smooth_iters=4, decimate=0.35, rough=0.5, name="hull",
-              convex=False, paint_only=(), features=True, sil_override=None, depth_m=None, grime=0.25):
+              convex=False, paint_only=(), features=True, sil_override=None, depth_m=None, grime=0.25,
+              paint=True):
     """convex: fill each outline to its convex shape (boxy objects; dark areas can't
     punch holes). paint_only: views used for texture but not trusted to carve (e.g. a
     dark back panel on a dark sheet)."""
@@ -151,6 +152,10 @@ def hull_prop(views, height, res=110, smooth_iters=4, decimate=0.35, rough=0.5, 
     dec = obj.modifiers.new("dec", "DECIMATE")
     dec.ratio = decimate
     apply_mods(obj)
+    if not paint:   # texturing.project() colours it later (blended views, occlusion)
+        obj["hull_frame"] = [W, D, H]
+        smooth(obj, 50)
+        return obj
     # Paint each face from the view it faces.
     order = ["front", "back", "right", "left", "top"]
     mats_ = {}
@@ -257,3 +262,92 @@ def add_features(sil, keep, W, D, H, front_mat, name, raw_sides=None):
                      "at": [round(x, 3), round(z, 3)], "from": source})
     print("FEATURES", name, made)
     return made
+
+
+def polygon_hull(masks, W, D, H, name="phull", bevel_frac=0.015, tolerance=1.0):
+    """The visual hull built exactly: each view's outline (holes included) extruded into a prism,
+    the prisms intersected. Flat faces, straight slopes, sharp edges, no voxel staircase; then a
+    small bevel so nothing is razor sharp. masks: {view: bool array cropped to the object},
+    conventions as hull_prop (right view: front at the left; top view: front at the bottom)."""
+    from skimage.measure import approximate_polygon, find_contours
+    L = 4 * max(W, D, H)
+
+    def to2d(view, r, c, h, w):
+        if view == "front":
+            return (c / w - 0.5) * W, (1 - r / h) * H
+        if view == "back":
+            return (0.5 - c / w) * W, (1 - r / h) * H
+        if view == "right":
+            return (c / w - 0.5) * D, (1 - r / h) * H
+        if view == "left":
+            return (0.5 - c / w) * D, (1 - r / h) * H
+        return (c / w - 0.5) * W, (0.5 - r / h) * D            # top
+
+    def to3d(view, a, b, t):
+        if view in ("front", "back"):
+            return (a, t, b)
+        if view in ("right", "left"):
+            return (t, a, b)
+        return (a, b, t)
+
+    def prism(view, poly, nm):
+        bm = bmesh.new()
+        lo = [bm.verts.new(to3d(view, a, b, -L)) for a, b in poly]
+        hi = [bm.verts.new(to3d(view, a, b, L)) for a, b in poly]
+        n = len(poly)
+        for j in range(n):
+            bm.faces.new((lo[j], lo[(j + 1) % n], hi[(j + 1) % n], hi[j]))
+        bm.faces.new(list(reversed(lo)))
+        bm.faces.new(hi)
+        bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+        me = bpy.data.meshes.new(nm)
+        bm.to_mesh(me)
+        bm.free()
+        o = bpy.data.objects.new(nm, me)
+        bpy.context.collection.objects.link(o)
+        return o
+
+    def boolean(target, cutter, op):
+        md = target.modifiers.new("b", "BOOLEAN")
+        md.operation = op
+        md.solver = "EXACT"
+        md.object = cutter
+        bpy.ops.object.select_all(action="DESELECT")
+        target.select_set(True)
+        bpy.context.view_layer.objects.active = target
+        bpy.ops.object.modifier_apply(modifier=md.name)
+        bpy.data.objects.remove(cutter)
+
+    result = None
+    for view in ("front", "right", "top", "back", "left"):
+        if view not in masks:
+            continue
+        m = masks[view]
+        h, w = m.shape
+        cs = find_contours(np.pad(m, 1).astype(float), 0.5)
+        cs = [approximate_polygon(c, tolerance=tolerance)[:-1] for c in cs]
+        cs = [c for c in cs if len(c) >= 3]
+        if not cs:
+            continue
+        area = lambda c: 0.5 * abs(sum(c[i][0] * c[(i + 1) % len(c)][1] - c[(i + 1) % len(c)][0] * c[i][1] for i in range(len(c))))
+        cs.sort(key=area, reverse=True)
+        outer = prism(view, [to2d(view, r - 1, c - 1, h, w) for r, c in cs[0]], "%s_%s" % (name, view))
+        for hole in cs[1:]:                                   # see-through gaps (a handset arch)
+            if area(hole) > 0.002 * h * w:
+                boolean(outer, prism(view, [to2d(view, r - 1, c - 1, h, w) for r, c in hole], "hole"), "DIFFERENCE")
+        if result is None:
+            result = outer
+        else:
+            boolean(result, outer, "INTERSECT")
+    result.name = name
+    core_link = __import__("propkit.core", fromlist=["link"]) if False else None
+    from .core import PARTS
+    PARTS.append(result)
+    bv = result.modifiers.new("bevel", "BEVEL")
+    bv.width = bevel_frac * min(W, D, H)
+    bv.segments = 2
+    bv.limit_method = "ANGLE"
+    apply_mods(result)
+    result["hull_frame"] = [W, D, H]
+    smooth(result, 35)
+    return result

@@ -78,6 +78,15 @@ def check(name, views_dir=None, category_class=None, paint_only=(), solid=False,
     lo_d, hi_d = STANDARDS["size_classes"][cls].get("texel_density_px_per_m", MIN["texel_density_px_per_m"])
     if not lo_d <= density <= hi_d:
         fails.append("texel density %d px/m outside %d-%d" % (density, lo_d, hi_d))
+    from .texturing import uv_quality
+    uq = {}
+    for o in objs:
+        q = uv_quality(o)
+        if q:
+            uq = q if not uq or q["distorted_area_fraction"] > uq["distorted_area_fraction"] else uq
+    m.update(uq)
+    if uq and uq["distorted_area_fraction"] > MIN.get("max_uv_distorted_fraction", 1.0):
+        fails.append("UV stretch: %.0f%% of the surface is distorted more than 2x" % (uq["distorted_area_fraction"] * 100))
     m["mount"] = mount
     if mount == "floor" and abs(lo.z) > MIN["floor_tolerance_m"]:
         fails.append("not standing on z = 0 (lowest point %.3f m)" % lo.z)

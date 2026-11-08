@@ -52,7 +52,8 @@
   ],
   "painted_part_min_protrusion": 0.4,
   "max_retries": 1,
-  "_holes_note": "see-through holes are only checked for solid production lines: chairs and tables have gaps by design"
+  "_holes_note": "see-through holes are only checked for solid production lines: chairs and tables have gaps by design",
+  "max_uv_distorted_fraction": 0.15
  },
  "mounting": {
   "_note": "How an object attaches decides the floor check. floor: must stand on z=0. wall/ceiling: origin is the mounting point. Set by tag or by name.",

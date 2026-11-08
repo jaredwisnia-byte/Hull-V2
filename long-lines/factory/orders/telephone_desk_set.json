@@ -18,20 +18,19 @@
   "width_m": 0.166,
   "depth_m": 0.22,
   "height_m": 0.14,
-  "parts": 16,
+  "parts": 15,
   "by_kind": {
    "front key": 9,
    "front foot": 2,
    "front recess": 1,
-   "right trim": 1,
    "back recess": 2,
    "front+side cord": 1
   },
   "depth_scale_mm_per_unit": 48.1,
   "recess_cuts_undone": 0,
   "sources": {
-   "side view": 9,
-   "depth map": 4,
+   "side view": 0,
+   "depth map": 1,
    "catalogue": 0,
    "painted only (no depth evidence)": 0
   },
@@ -40,14 +39,50 @@
    "width 166 mm is outside 180-240 mm for a telephone"
   ],
   "shell_warnings": [
-   "width -9 mm off at 0.08 m",
-   "width -11 mm off at 0.09 m",
-   "width -12 mm off at 0.09 m",
-   "width -12 mm off at 0.09 m",
-   "width -12 mm off at 0.09 m",
-   "width -12 mm off at 0.10 m",
-   "width -14 mm off at 0.10 m",
-   "width -15 mm off at 0.10 m"
-  ]
+   "width -42 mm off at 0.02 m",
+   "width -42 mm off at 0.02 m",
+   "width -8 mm off at 0.09 m",
+   "width -9 mm off at 0.09 m",
+   "width -9 mm off at 0.09 m",
+   "width -9 mm off at 0.10 m",
+   "width -11 mm off at 0.10 m",
+   "width -12 mm off at 0.10 m"
+  ],
+  "texturing": {
+   "telephone_desk_set": {
+    "views": [
+     "front",
+     "back",
+     "right",
+     "left",
+     "top"
+    ],
+    "dominant_share": {
+     "front": 0.161,
+     "back": 0.161,
+     "right": 0.131,
+     "left": 0.183,
+     "top": 0.342
+    },
+    "unseen_vertices": 255
+   },
+   "telephone_desk_set_assy": {
+    "views": [
+     "front",
+     "back",
+     "right",
+     "left",
+     "top"
+    ],
+    "dominant_share": {
+     "front": 0.252,
+     "back": 0.227,
+     "right": 0.213,
+     "left": 0.208,
+     "top": 0.082
+    },
+    "unseen_vertices": 1178
+   }
+  }
  }
 }

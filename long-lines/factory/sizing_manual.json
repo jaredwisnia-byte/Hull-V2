@@ -180,10 +180,10 @@
    "key": {
     "depth": {
      "min": 4,
-     "default": 8,
-     "max": 12
+     "default": 7,
+     "max": 9
     },
-    "why": "typewriter and keyboard keys stand on stems above the deck"
+    "why": "push-button and keyboard keys stand 6-9 mm proud of their bezel: enough travel for a fingertip, low enough not to snag (typewriter keys on stems are taller: give them their own kind)"
    },
    "button": {
     "depth": {

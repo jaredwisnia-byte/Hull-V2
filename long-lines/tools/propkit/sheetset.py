@@ -368,8 +368,10 @@ def build_set(manifest_path, name, height_m=None, depth_m=None, object_type=None
         v["paint"].save(p)
         v["path"] = p
         sil[k] = (v["carve"], v["paint"])
-    body = hull_prop({k: v["path"] for k, v in V.items()}, H, res=140, name=name, features=False,
-                     sil_override=sil, depth_m=D, decimate=0.5, grime=0.0)
+    from .hull import polygon_hull
+    Wb = H * V["front"]["obj"].shape[1] / V["front"]["obj"].shape[0]
+    # Exact polygonal hull: flat faces and straight slopes (voxels left a staircase on slopes).
+    body = polygon_hull({k: v["carve"] for k, v in V.items()}, Wb, D, H, name=name)
     W = H * V["front"]["obj"].shape[1] / V["front"]["obj"].shape[0]
     assy_views = {k: v for k, v in V.items() if v["assy"].any()}
     if len(assy_views) >= 3 and "front" in assy_views:
@@ -377,8 +379,16 @@ def build_set(manifest_path, name, height_m=None, depth_m=None, object_type=None
         for k, v in V.items():
             m_ = v["assy"] if v["assy"].any() else v["obj"]
             asil[k] = (ndimage_fill(m_), v["paint"])
-        hull_prop({k: v["path"] for k, v in V.items()}, H, res=160, name=name + "_assy", features=False,
-                  sil_override=asil, depth_m=D, decimate=0.5, grime=0.0)
+        assy_obj = polygon_hull({k: a_[0] for k, a_ in asil.items()}, W, D, H, name=name + "_assy")
+    else:
+        assy_obj = None
+    # Texture manufacturing: each assembly coloured from blended views, the others occluding it.
+    from . import texturing
+    shells = [o for o in (body, assy_obj) if o is not None]
+    tex_report = {}
+    for o in shells:
+        tex_report[o.name] = texturing.project(o, {k: v["path"] for k, v in V.items()}, W, D, H,
+                                               others=[x for x in shells if x is not o], name=o.name)
 
     # Where each view's surface is, row by row (from the perpendicular view's body outline).
     def surface(k, frac_z):
@@ -420,6 +430,18 @@ def build_set(manifest_path, name, height_m=None, depth_m=None, object_type=None
         ys = np.nonzero(prt["mask"].any(1))[0]
         return ys.min() / prt["mask"].shape[0], (ys.max() + 1) / prt["mask"].shape[0]
     fb = [zband(p) for kk in ("front", "back") for p in found.get(kk, {}).get(+1, [])]
+    def sticks_out_sideways(kk, z0, z1):
+        """Cross-view check (protocol rule 4): does the front view show anything past that side
+        edge at this height? If not, a side-view part is a front part seen edge-on."""
+        f = V["front"]
+        r0, r1 = int(z0 * f["obj"].shape[0]), max(int(z0 * f["obj"].shape[0]) + 1, int(z1 * f["obj"].shape[0]))
+        best = 0
+        for r in range(r0, min(r1, f["obj"].shape[0])):
+            # only compact protruding parts count (a handset overhanging the base does not)
+            o_, c_ = np.nonzero(f["removable"][r])[0], np.nonzero(f["carve"][r])[0]
+            if len(o_) and len(c_):
+                best = max(best, (o_.max() - c_.max()) if kk == "right" else (c_.min() - o_.min()))
+        return best >= 2
     for kk in ("right", "left"):
         if kk in found:
             keep = []
@@ -427,6 +449,8 @@ def build_set(manifest_path, name, height_m=None, depth_m=None, object_type=None
                 z0, z1 = zband(p)
                 if any(min(z1, b1) - max(z0, b0) > 0.5 * (z1 - z0) for b0, b1 in fb):
                     continue   # the same physical part as one seen from the front or back
+                if "front" in V and not sticks_out_sideways(kk, z0, z1):
+                    continue
                 keep.append(p)
             found[kk][+1] = keep
     ks = []
@@ -484,6 +508,8 @@ def build_set(manifest_path, name, height_m=None, depth_m=None, object_type=None
                 else:
                     mm, src = rule["default"], "catalogue"
                 mm_c = float(np.clip(mm, lo, hi))
+                if src in ("depth map", "side view") and (mm <= lo or mm >= hi):
+                    src += " (clamped: low confidence)"   # the evidence hit the believable limit
                 ys_, xs_ = np.nonzero(prt["mask"])
                 box_fill = prt["mask"].sum() / ((ys_.ptp() + 1) * (xs_.ptp() + 1))
                 if sign < 0 or (sign == 0 and box_fill > 0.8):   # closed boxes: recesses, and panels that are rectangles
@@ -626,4 +652,5 @@ def build_set(manifest_path, name, height_m=None, depth_m=None, object_type=None
             "sources": {s: sum(1 for r in report if r["from"] == s) for s in ("side view", "depth map", "catalogue", "painted only (no depth evidence)")},
             "renamed": {"%s -> %s" % (r["was"], r["kind"]): sum(1 for q in report if q.get("was") == r["was"] and q["kind"] == r["kind"])
                         for r in report if "was" in r},
-            "size_warnings": sizing.envelope(otype, W, D, H), "shell_warnings": shell[:8]}
+            "size_warnings": sizing.envelope(otype, W, D, H), "shell_warnings": shell[:8],
+            "texturing": tex_report}
