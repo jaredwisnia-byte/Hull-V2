@@ -62,7 +62,7 @@ def statue_madonna():
     """A plaster Madonna, blue robe, paint rubbed off her nose."""
     blue, white, skin = M.plain((0.25, 0.4, 0.65), 0.6, edge=0.6), M.plain((0.88, 0.86, 0.8), 0.6, edge=0.4), M.plain((0.86, 0.72, 0.62), 0.6, edge=0.4)
     cyl(0.05, 0.03, (0, 0, 0.015), M.plain((0.5, 0.48, 0.42), 0.7), 20, bevel=0.005)
-    lathe([(0.045, 0.03), (0.05, 0.08), (0.035, 0.18), (0.03, 0.22), (0.0, 0.24)], mat=white, verts=20)
+    lathe([(0.03, 0.2), (0.032, 0.25), (0.026, 0.285), (0.0, 0.3)], mat=white, verts=20)  # veil
     lathe([(0.0, 0.03), (0.05, 0.03), (0.055, 0.12), (0.04, 0.2), (0.035, 0.24), (0.025, 0.27), (0.0, 0.28)], (0, 0.004, 0), blue, 20).scale = (1, 0.9, 1)
     cyl(0.017, 0.03, (0, -0.008, 0.26), skin, 12)
     for side in (-1, 1):
@@ -119,7 +119,7 @@ def souvenir_plate():
     """A souvenir plate from Coney Island on a wire hanger."""
     img = L.painting("art_coney", "landscape", 256, 256, seed=11)
     p = cyl(0.11, 0.015, (0, -0.0075, 0.11), M.image(img, 0.2), 32, R90)
-    planar_uv(p, 0, 2, 0.22, 0.22)
+    planar_uv(p, 0, 1, 0.22, 0.22)
     tube([(math.cos(a) * 0.112, -0.016, 0.11 + math.sin(a) * 0.112) for a in [i * math.pi / 16 for i in range(33)]], 0.004, M.plain((0.9, 0.85, 0.6), 0.3), 6)
 
 
