@@ -207,6 +207,62 @@
   "desc": "baseboard_cream_tall",
   "kind": "baseboard"
  },
+ "baseboard_hall": {
+  "size": [
+   1.2,
+   0.17,
+   0.0285
+  ],
+  "min": [
+   0.0,
+   0.0,
+   -0.0
+  ],
+  "max": [
+   1.2,
+   0.17,
+   0.0285
+  ],
+  "tris": 24,
+  "tex": 1024,
+  "standardized": [
+   "seated on floor (-0.001 m)"
+  ],
+  "tags": [
+   "moulding",
+   "factory"
+  ],
+  "desc": "baseboard_hall",
+  "kind": "baseboard"
+ },
+ "baseboard_living": {
+  "size": [
+   1.2,
+   0.14,
+   0.0304
+  ],
+  "min": [
+   0.0,
+   0.0,
+   -0.0
+  ],
+  "max": [
+   1.2,
+   0.14,
+   0.0304
+  ],
+  "tris": 12,
+  "tex": 1024,
+  "standardized": [
+   "seated on floor (-0.000 m)"
+  ],
+  "tags": [
+   "moulding",
+   "factory"
+  ],
+  "desc": "baseboard_living",
+  "kind": "baseboard"
+ },
  "bed_double": {
   "size": [
    1.4868,
