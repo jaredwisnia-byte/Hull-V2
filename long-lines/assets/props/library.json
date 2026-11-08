@@ -2586,6 +2586,31 @@
   "desc": "1975 19-inch 'Westbury' colour TV on a tapered-leg stand, with rabbit ears and a doily.",
   "kind": "fixture"
  },
+ "tv_painted": {
+  "size": [
+   0.74,
+   0.9067,
+   0.461
+  ],
+  "min": [
+   -0.37,
+   -0.0008,
+   -0.23
+  ],
+  "max": [
+   0.37,
+   0.9058,
+   0.231
+  ],
+  "tris": 5608,
+  "tex": 2048,
+  "tags": [
+   "electronics",
+   "living"
+  ],
+  "desc": "1975 'Westbury' colour TV textured from Jared's painted sheet, on the walnut stand.",
+  "kind": "fixture"
+ },
  "typewriter": {
   "size": [
    0.5133,
