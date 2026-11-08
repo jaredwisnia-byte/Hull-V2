@@ -198,3 +198,18 @@ add to it whenever something goes wrong.
   vertex slicing returned nonsense (-700 mm) on the new hull.
 - ChatGPT drew this phone narrower than real desk sets (154 mm vs 180-240): the factory reports it
   instead of stretching the mesh. Ask for corrected proportions in the reference if it matters.
+
+## Looking back over the fridge and telephone work (Nov 8)
+- The first object of each new family costs many rebuilds (fridge ~8, phone ~6) because it exposes
+  a general weakness; each fix is a rule, and the next object of that family is one command.
+- Most defects were found by eye (Jared, ChatGPT), not by the gate. Every check I then wrote was
+  wrong at first on some shape (shell check on a phone, vertex slicing on polygon meshes, hole check
+  without the reference, UV stretch that never fails, colour threshold too loose). Rule: test every
+  new check on a known-bad case AND on a differently shaped good asset before trusting it.
+- The reviews I do by eye (clay render, depth comparison, turnaround) should run inside every
+  sheet-set build and feed the gate, so problems are caught before anyone looks.
+- Measure before blaming: texture vs geometry (voxel staircase), lighting vs albedo, slicing method
+  vs mesh. Each wrong diagnosis cost a rebuild.
+- Repository weight: every rebuild commits new binaries (GLB + 3 PNG maps + previews). The repo grew
+  to ~570 MB this session. Generated assets are reproducible from sources + orders: commit them only
+  when an asset ships, use Git LFS for binaries, and keep previews out of git.
