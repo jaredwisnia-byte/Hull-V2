@@ -136,3 +136,13 @@ add to it whenever something goes wrong.
   seven front "feet" and the kick grille became door "seams". Placement rules in the sizing
   manual (feet at floor corners, handles at least a palm long, seams above the toe kick on
   appliances) rename them.
+- **Evidence first (Jared, Nov 8): match the reference, don't add to it.** The reference decides
+  whether a part exists (part map region AND depth relief or a side-view profile); the sizing
+  manual only decides how big. The first door slabs came from a catalogue default with zero
+  depth-map relief: a liberty. Parts without evidence stay painted and are listed as such.
+- Compare like with like: a door "stands proud" only relative to visible cabinet body next to it,
+  not to its own seam groove. Doors on one object are built alike (all or none).
+- A morphological opening doesn't remove a tall thin protrusion (a handle seen side-on is thin
+  but tall): judge the body outline row by row from neighbouring rows instead.
+- `tools/match_check.py` puts the model's ray-cast front depth beside the reference depth map:
+  run it on every sheet-set build; it shows liberties at a glance.

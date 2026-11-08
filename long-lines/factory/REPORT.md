@@ -10,7 +10,7 @@ Generated from `factory/ledger.jsonl` (latest result per asset).
 | Factory builds passing with no correction | 69 |
 | Factory builds needing a person | 0 |
 | Mean build time (s) | 56 |
-| Same inputs -> same gauges | 83 of 85 order/input pairs |
+| Same inputs -> same gauges | 85 of 88 order/input pairs |
 | Median triangles | 1128 |
 | Max triangles | 38000 |
 

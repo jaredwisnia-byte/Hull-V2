@@ -25,6 +25,7 @@ $F build furniture_chair_kitchen                                 # or --pending,
 $F qa --library                                                  # gate every asset in the library
 $F report                                                        # rewrite REPORT.md
 blender -b --factory-startup -P long-lines/tools/critique.py -- NAME [VIEWS]   # turnaround, for spot checks
+blender -b --factory-startup -P long-lines/tools/match_check.py -- MODEL.glb MANIFEST.json OUT.png   # model depth vs reference depth
 ```
 
 ## Standards (gauges)

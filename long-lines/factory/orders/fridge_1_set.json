@@ -17,28 +17,27 @@
   "width_m": 0.775,
   "depth_m": 0.75,
   "height_m": 1.65,
-  "parts": 46,
+  "parts": 40,
   "by_kind": {
    "front kick_plate": 1,
    "front handle": 2,
    "front hinge": 3,
-   "front foot": 2,
    "front seam": 1,
    "front vent": 4,
-   "front panel": 2,
    "right vent": 1,
-   "right pit": 2,
+   "right pit": 1,
    "back pit": 4,
    "back vent": 21,
    "left vent": 1,
-   "left pit": 2
+   "left pit": 1
   },
-  "depth_scale_mm_per_unit": 132.1,
+  "depth_scale_mm_per_unit": 104.2,
   "recess_cuts_undone": 0,
   "sources": {
-   "side view": 6,
-   "depth map": 29,
-   "catalogue": 11
+   "side view": 5,
+   "depth map": 27,
+   "catalogue": 0,
+   "painted only (no depth evidence)": 8
   },
   "renamed": {
    "seam -> vent": 4

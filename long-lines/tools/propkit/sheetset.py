@@ -28,6 +28,10 @@ CATALOG = sizing.catalogue()
 CLASSES = {"body": 1, "panel": 2, "out": 3, "in": 4, "glass": 5, "soft": 6}
 LEGEND = [((0, 0, 0), 0), ((255, 255, 255), 1), ((0, 255, 0), 2), ((0, 192, 0), 2), ((255, 0, 0), 3),
           ((0, 0, 255), 4), ((255, 255, 0), 5), ((255, 165, 0), 6), ((255, 128, 0), 6)]
+# Evidence first: the reference decides whether a part exists, the sizing manual only how big
+# it is. A region needs this much depth-map relief (0..1 units) to become geometry when the
+# side view can't measure it; below that it stays painted.
+EVIDENCE = 0.02
 # What a large recess on the front is, by object type (the rest default to "recess").
 LARGE_IN = {"fridge": "dispenser", "refrigerator": "dispenser", "building": "window"}
 
@@ -63,17 +67,25 @@ def view(m, imgs, name):
     bb = (xs.min(), ys.min(), xs.max() + 1, ys.max() + 1)
     sl = (slice(bb[1], bb[3]), slice(bb[0], bb[2]))
     obj, cls = obj[sl], np.where(obj, cls, 0)[sl]
-    # The shell is continuous: thin protrusions (handles side-on, hinges, feet) are taken off
-    # by an opening, never subtracted, or a hinge on the edge notches the whole object.
-    solid = ndimage.binary_fill_holes(obj)
-    r = max(2, int(0.025 * min(solid.shape)))
-    carve = ndimage.binary_opening(solid, structure=np.ones((2 * r + 1, 2 * r + 1)))
-    carve = ndimage.binary_fill_holes(carve) if carve.any() else solid
-    # ...and small notches at the outline (the gap where two doors meet, seen at the edge)
-    # are closed too, or they run round the whole shell as a groove. Pad first so the
-    # closing doesn't eat the edges of this tight crop.
-    pad = np.pad(carve, r + 1)
-    carve = ndimage.binary_closing(pad, structure=np.ones((2 * r + 1, 2 * r + 1)))[r + 1:-r - 1, r + 1:-r - 1] | carve
+    # The shell is continuous. A protruding part (handle, hinge) is taken off only where it
+    # lies outside the body's outline, and the outline at each row is judged from the rows
+    # around it: so a handle seen side-on goes, a hinge overlapping the edge leaves neither a
+    # notch nor a ridge, and nothing cuts through the whole object.
+    body = ndimage.binary_fill_holes(obj & (cls != CLASSES["out"]))
+    Hc = body.shape[0]
+    lft = np.full(Hc, body.shape[1]); rgt = np.full(Hc, -1)
+    for rr in range(Hc):
+        xs_ = np.nonzero(body[rr])[0]
+        if len(xs_):
+            lft[rr], rgt[rr] = xs_[0], xs_[-1]
+    win = max(3, int(0.06 * Hc))
+    exp = np.zeros_like(body)
+    for rr in range(Hc):
+        lo_, hi_ = max(0, rr - win), min(Hc, rr + win + 1)
+        l_, r_ = lft[lo_:hi_].min(), rgt[lo_:hi_].max()
+        if r_ >= l_:
+            exp[rr, l_:r_ + 1] = True
+    carve = ndimage.binary_fill_holes(obj & exp)
     paint = imgs["painted_sheet"].crop(box).crop(bb)
     # Pad the painting past the outline with the object's own colours, so rounded edges never
     # pick up the sheet background (the dark band along the top).
@@ -133,7 +145,15 @@ def parts(v, sign, object_type, view_name="front", size=None):
         for i in range(1, n + 1):
             comp = lab == i
             if comp.sum() > 0.02 * H_px * W_px:
-                out.append({"mask": comp, "kind": "panel", "relief": 0.0})
+                # Evidence: the door must stand out from the cabinet body (white) next to it.
+                # No visible cabinet face (a fridge front is all doors) = nothing to stand proud of.
+                ring = ndimage.binary_dilation(comp, iterations=8) & ~comp & (v["cls"] == CLASSES["body"])
+                if ring.sum() < 0.1 * comp.sum() ** 0.5 * 4:
+                    return []        # one door with no cabinet face to stand out from: doors are built alike
+                rel = float(np.median(v["depth"][comp]) - np.median(v["depth"][ring]))
+                if rel <= EVIDENCE:
+                    return []
+                out.append({"mask": comp, "kind": "panel", "relief": rel})
         return out
     sel = v["cls"] == (CLASSES["out"] if sign > 0 else CLASSES["in"])
     if sign > 0 and view_name == "front":
@@ -142,14 +162,17 @@ def parts(v, sign, object_type, view_name="front", size=None):
         if nb:
             b = lab_b == (np.argmax(np.bincount(lab_b.ravel())[1:]) + 1)
             if b.sum() > 0.01 * H_px * W_px:
-                out.append({"mask": b, "kind": "kick_plate", "relief": 0.0})
+                ring = ndimage.binary_dilation(b, iterations=6) & ~b & v["obj"]
+                rel = float(np.median(v["depth"][b]) - (np.median(v["depth"][ring]) if ring.any() else 0))
+                out.append({"mask": b, "kind": "kick_plate", "relief": rel})
                 sel = sel & ~ndimage.binary_dilation(b, iterations=2)
     lab, n = ndimage.label(sel)
     target = None
     for i in range(1, n + 1):
         comp = lab == i
-        if comp.sum() < 6:
-            continue
+        ys_c = np.nonzero(comp.any(1))[0]
+        if comp.sum() < 6 or ys_c.max() - ys_c.min() < 2:
+            continue                       # a sliver, not a part
         ring = ndimage.binary_dilation(comp, iterations=4) & ~comp & v["obj"]
         rel = float(np.median(v["depth"][comp]) - (np.median(v["depth"][ring]) if ring.any() else 0))
         area = comp.sum() / (H_px * W_px)
@@ -283,8 +306,12 @@ def build_set(manifest_path, name, height_m=None, depth_m=None, object_type=None
             for i, prt in enumerate(plist):
                 rule = CATALOG["out" if sign >= 0 else "in"][prt["kind"]]
                 lo, hi = rule["depth_mm"]
-                if sign == 0 or prt["kind"] == "kick_plate":
-                    mm, src = rule["default"], "catalogue"
+                measured_here = k == "front" and sign > 0 and i in measured
+                if sign != 0 and not measured_here and sign * prt["relief"] <= EVIDENCE:
+                    report.append({"view": k, "kind": prt["kind"], "mm": 0, "from": "painted only (no depth evidence)"})
+                    continue
+                if sign == 0:
+                    mm, src = (prt["relief"] * k_mm, "depth map") if k_mm else (rule["default"], "catalogue")
                 elif k == "front" and sign > 0 and i in measured:
                     mm, src = measured[i], "side view"
                 elif k_mm and abs(prt["relief"]) > 0.02 and np.sign(prt["relief"]) == sign:
@@ -391,7 +418,7 @@ def build_set(manifest_path, name, height_m=None, depth_m=None, object_type=None
     return {"width_m": round(W, 3), "depth_m": D, "height_m": H, "parts": len(report),
             "by_kind": {k: len(v) for k, v in summary.items()},
             "depth_scale_mm_per_unit": round(k_mm, 1) if k_mm else None, "recess_cuts_undone": rejected,
-            "sources": {s: sum(1 for r in report if r["from"] == s) for s in ("side view", "depth map", "catalogue")},
+            "sources": {s: sum(1 for r in report if r["from"] == s) for s in ("side view", "depth map", "catalogue", "painted only (no depth evidence)")},
             "renamed": {"%s -> %s" % (r["was"], r["kind"]): sum(1 for q in report if q.get("was") == r["was"] and q["kind"] == r["kind"])
                         for r in report if "was" in r},
             "size_warnings": sizing.envelope(otype, W, D, H)}
