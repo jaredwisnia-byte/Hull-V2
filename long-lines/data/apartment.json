@@ -47,7 +47,7 @@
     {"type": "coffee_table",  "id": "coffee_table",     "pos": [2.25, 0, 2.6],   "rot": 0},
     {"type": "newspaper",     "id": "newspaper",        "pos": [2.05, 0.42, 2.6], "rot": 20},
     {"type": "armchair",      "id": "armchair",         "pos": [3.0, 0, 1.5],    "rot": -90},
-    {"type": "tv",            "id": "tv",               "pos": [0.27, 0, 1.6],   "rot": 90},
+    {"type": "tv",            "id": "tv",               "pos": [0.26, 0, 1.6],   "rot": 90},
     {"type": "rug",           "id": "rug_parlor",       "pos": [2.0, 0, 2.2],    "rot": 0},
     {"type": "skeleton",      "id": "skeleton",         "pos": [2.45, 1.1, 0.03], "rot": 0},
     {"type": "candle",        "id": "candle_sill",      "pos": [0.6, 0.76, 0.1], "rot": 0},

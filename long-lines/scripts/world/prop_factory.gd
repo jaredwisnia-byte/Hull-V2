@@ -108,14 +108,36 @@ static func _tv() -> Node3D:
 		"You turn the knob. Nothing. Of course nothing.",
 		"You catch your reflection in the dead grey screen. You look like your father.",
 		"Last thing on it was the Thursday late movie, before the shaking.",
+		"Dad bought it at Korvettes in '71. Westbury, nineteen inches, color. He watched one season of baseball on it.",
 	]
-	Geo.box(f, Vector3(0.75, 0.32, 0.5), Vector3(0, 0.16, 0), "wood_dark")
-	Geo.box(f, Vector3(0.7, 0.5, 0.48), Vector3(0, 0.57, 0), "wood_mid")
-	Geo.box(f, Vector3(0.5, 0.38, 0.02), Vector3(-0.06, 0.58, 0.245), "tv_screen", false)
-	Geo.box(f, Vector3(0.1, 0.38, 0.02), Vector3(0.28, 0.58, 0.245), "grille", false)
-	Geo.box(f, Vector3(0.01, 0.25, 0.01), Vector3(-0.1, 0.95, 0), "chrome", false).rotation.z = 0.45
-	Geo.box(f, Vector3(0.01, 0.25, 0.01), Vector3(0.1, 0.95, 0), "chrome", false).rotation.z = -0.45
+	var model := baked_prop("tv")
+	if model:
+		f.add_child(model)
+		Geo.add_box_shape(f, Vector3(0.74, 0.94, 0.47), Vector3(0, 0.47, 0))
+	else:
+		# Fallback if the baked asset is missing: the old box TV.
+		Geo.box(f, Vector3(0.75, 0.32, 0.5), Vector3(0, 0.16, 0), "wood_dark")
+		Geo.box(f, Vector3(0.7, 0.5, 0.48), Vector3(0, 0.57, 0), "wood_mid")
+		Geo.box(f, Vector3(0.5, 0.38, 0.02), Vector3(-0.06, 0.58, 0.245), "tv_screen", false)
 	return f
+
+
+## Loads a prop modelled and baked in Blender (assets/props/<name>/) and gives
+## it the baked toon material. Returns null if the asset isn't there.
+static func baked_prop(name: String) -> Node3D:
+	var dir := "res://assets/props/%s/" % name
+	if not ResourceLoader.exists(dir + name + ".glb"):
+		return null
+	var scene: PackedScene = load(dir + name + ".glb")
+	var root := scene.instantiate() as Node3D
+	var m := ShaderMaterial.new()
+	m.shader = preload("res://shaders/baked_prop.gdshader")
+	m.set_shader_parameter("albedo_tex", load(dir + name + "_albedo.png"))
+	m.set_shader_parameter("normal_tex", load(dir + name + "_normal.png"))
+	m.set_shader_parameter("orm_tex", load(dir + name + "_orm.png"))
+	for mi in root.find_children("*", "MeshInstance3D", true, false):
+		(mi as MeshInstance3D).material_override = m
+	return root
 
 
 static func _radiator() -> Node3D:

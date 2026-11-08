@@ -33,6 +33,7 @@ func build(parent: Node3D) -> Node3D:
 	_partitions()
 	_wainscots()
 	_trim()
+	_reflection_probes()
 	Geo.bevel = true
 	_fire_escape()
 	Geo.bevel = false
@@ -40,6 +41,24 @@ func build(parent: Node3D) -> Node3D:
 	_street()
 	Geo.bevel = true
 	return root
+
+
+## One reflection probe per room, so chrome and glass reflect the room
+## instead of going black.
+func _reflection_probes() -> void:
+	for r in d.rooms:
+		var z0 := float(r.z0)
+		var z1 := float(r.z1)
+		var p := ReflectionProbe.new()
+		p.name = "Probe_" + String(r.id)
+		p.size = Vector3(W, H, z1 - z0)
+		p.position = Vector3(W * 0.5, H * 0.5, (z0 + z1) * 0.5)
+		p.box_projection = true
+		p.interior = true
+		p.ambient_mode = ReflectionProbe.AMBIENT_DISABLED
+		p.update_mode = ReflectionProbe.UPDATE_ONCE
+		p.intensity = 0.6
+		root.add_child(p)
 
 
 func _room_at(z: float) -> Dictionary:
