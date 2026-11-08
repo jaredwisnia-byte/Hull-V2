@@ -19,11 +19,12 @@
   "height_m": 1.65,
   "parts": 46,
   "by_kind": {
-   "front base": 1,
+   "front kick_plate": 1,
    "front handle": 2,
    "front hinge": 3,
    "front foot": 2,
-   "front seam": 5,
+   "front seam": 1,
+   "front vent": 4,
    "front panel": 2,
    "right vent": 1,
    "right pit": 2,
@@ -38,7 +39,11 @@
    "side view": 6,
    "depth map": 29,
    "catalogue": 11
-  }
+  },
+  "renamed": {
+   "seam -> vent": 4
+  },
+  "size_warnings": []
  },
  "attempts": 1
 }

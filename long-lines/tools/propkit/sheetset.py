@@ -10,8 +10,10 @@ giving view boxes and real dimensions.
    dispenser...) comes from its colour, shape and position; its geometry is the region's
    own outline, extruded out or cut in.
 4. How far: measured in the side view where the part shows in profile; else the depth
-   map's relief, scaled by the measured parts; always clamped to the parts catalogue
-   (factory/parts_catalog.json), which says what is believable for that kind of part.
+   map's relief, scaled by the measured parts; always clamped to the sizing manual
+   (factory/sizing_manual.json, via sizing.py), which says what is believable for that
+   kind of part. The manual also says where each kind can be (feet at the floor corners,
+   handles longer than a palm...): a part found somewhere it can't be is renamed.
 """
 import json
 import os
@@ -20,7 +22,9 @@ import numpy as np
 from PIL import Image
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-CATALOG = json.load(open(os.path.join(HERE, "..", "..", "factory", "parts_catalog.json")))
+from . import sizing  # noqa: E402
+
+CATALOG = sizing.catalogue()
 CLASSES = {"body": 1, "panel": 2, "out": 3, "in": 4, "glass": 5, "soft": 6}
 LEGEND = [((0, 0, 0), 0), ((255, 255, 255), 1), ((0, 255, 0), 2), ((0, 192, 0), 2), ((255, 0, 0), 3),
           ((0, 0, 255), 4), ((255, 255, 0), 5), ((255, 165, 0), 6), ((255, 128, 0), 6)]
@@ -110,13 +114,15 @@ def _kind(sign, comp, cls_view, W_px, H_px, object_type, area_frac):
     return "recess"
 
 
-def parts(v, sign, object_type, view_name="front"):
+def parts(v, sign, object_type, view_name="front", size=None):
     """Regions of one class sign in a view: [(mask, kind, relief)]. sign +1 out, -1 in,
-    0 panels that open. Assembly rules (parts_catalog.json): the base is one part; side
-    views don't rebuild what the front and back views already built (hinges, feet, the
-    door edges seen side-on)."""
+    0 panels that open. Assembly rules (sizing_manual.json): the kick plate is one part;
+    side views don't rebuild what the front and back views already built. size = (view
+    width m, height m): each part's first guess is then checked against the sizing manual's
+    placement rules and renamed when it can't be what it was taken for."""
     from scipy import ndimage
     H_px, W_px = v["cls"].shape
+    side = "out" if sign > 0 else "in"
     out = []
     bottom = np.zeros_like(v["obj"])
     bottom[int(0.9 * H_px):] = True
@@ -136,7 +142,7 @@ def parts(v, sign, object_type, view_name="front"):
         if nb:
             b = lab_b == (np.argmax(np.bincount(lab_b.ravel())[1:]) + 1)
             if b.sum() > 0.01 * H_px * W_px:
-                out.append({"mask": b, "kind": "base", "relief": 0.0})
+                out.append({"mask": b, "kind": "kick_plate", "relief": 0.0})
                 sel = sel & ~ndimage.binary_dilation(b, iterations=2)
     lab, n = ndimage.label(sel)
     target = None
@@ -146,15 +152,36 @@ def parts(v, sign, object_type, view_name="front"):
             continue
         ring = ndimage.binary_dilation(comp, iterations=4) & ~comp & v["obj"]
         rel = float(np.median(v["depth"][comp]) - (np.median(v["depth"][ring]) if ring.any() else 0))
-        kind = _kind(sign, comp, v["cls"], W_px, H_px, object_type, comp.sum() / (H_px * W_px))
-        if view_name != "front" and kind in ("foot", "base"):
+        area = comp.sum() / (H_px * W_px)
+        kind = _kind(sign, comp, v["cls"], W_px, H_px, object_type, area)
+        if view_name != "front" and kind in ("foot", "kick_plate"):
             continue                       # one base, built from the front
         if view_name in ("right", "left"):
-            xs = np.nonzero(comp.any(0))[0]
-            edge = xs.min() < 0.12 * W_px if view_name == "right" else xs.max() > 0.88 * W_px
+            xs_ = np.nonzero(comp.any(0))[0]
+            edge = xs_.min() < 0.12 * W_px if view_name == "right" else xs_.max() > 0.88 * W_px
             if edge and sign > 0:
                 continue                   # the front's hinges and handles seen side-on
-        out.append({"mask": comp, "kind": kind, "relief": rel})
+        prt = {"mask": comp, "kind": kind, "relief": rel, "area": area}
+        if size:
+            ys, xs = np.nonzero(comp)
+            span, Hm = size[0] * 1000, size[1] * 1000
+            prt["box"] = {"x0": xs.min() / W_px * span, "x1": (xs.max() + 1) / W_px * span,
+                          "z0": (1 - (ys.max() + 1) / H_px) * Hm, "z1": (1 - ys.min() / H_px) * Hm,
+                          "span": span, "height": Hm}
+            prt["kind"], why = sizing.place(side, kind, prt["box"], object_type, view_name)
+            if why:
+                prt["was"], prt["because"] = kind, why
+        out.append(prt)
+    if size:   # e.g. a view shows two feet: keep the biggest, rename the rest
+        for kind in {p["kind"] for p in out if "box" in p}:
+            cap = sizing.max_per_view(side, kind, object_type)
+            same = sorted((p for p in out if p["kind"] == kind and "box" in p), key=lambda p: -p["area"])
+            for p in same[cap or len(same):]:
+                nk, why = sizing.place(side, sizing.fallback(side, kind, object_type) or kind,
+                                       p["box"], object_type, view_name)
+                p.setdefault("was", kind)
+                p["because"] = p.get("because", []) + ["%s: more than %d in one view" % (kind, cap)] + why
+                p["kind"] = nk
     return out
 
 
@@ -199,7 +226,7 @@ def build_set(manifest_path, name, height_m=None, depth_m=None, object_type=None
         v["path"] = p
         sil[k] = (v["carve"], v["paint"])
     body = hull_prop({k: v["path"] for k, v in V.items()}, H, res=140, name=name, features=False,
-                     sil_override=sil, depth_m=D, decimate=0.5)
+                     sil_override=sil, depth_m=D, decimate=0.5, grime=0.0)
     W = H * V["front"]["obj"].shape[1] / V["front"]["obj"].shape[0]
 
     # Where each view's surface is, row by row (from the perpendicular view's body outline).
@@ -234,7 +261,9 @@ def build_set(manifest_path, name, height_m=None, depth_m=None, object_type=None
 
     # Calibrate the depth map: millimetres per unit of relief, from parts measured side-on.
     measured = {}
-    found = {k: {+1: parts(V[k], +1, otype, k), -1: parts(V[k], -1, otype, k), 0: parts(V[k], 0, otype, k)}
+    span = {"front": W, "back": W, "right": D, "left": D}
+    found = {k: {+1: parts(V[k], +1, otype, k, (span[k], H)), -1: parts(V[k], -1, otype, k, (span[k], H)),
+                 0: parts(V[k], 0, otype, k)}
              for k in names if k != "top"}
     ks = []
     for i, prt in enumerate(found.get("front", {}).get(+1, [])):
@@ -249,12 +278,12 @@ def build_set(manifest_path, name, height_m=None, depth_m=None, object_type=None
     for k, signs in found.items():
         v = V[k]
         Hp, Wp = v["cls"].shape
-        img_mat = mats.image(v["path"], rough=0.45, grime=0.25, name="set_%s_%s" % (name, k))
+        img_mat = mats.image(v["path"], rough=0.45, grime=0.0, name="set_%s_%s" % (name, k))  # the painting has its wear
         for sign, plist in signs.items():
             for i, prt in enumerate(plist):
                 rule = CATALOG["out" if sign >= 0 else "in"][prt["kind"]]
                 lo, hi = rule["depth_mm"]
-                if sign == 0 or prt["kind"] == "base":
+                if sign == 0 or prt["kind"] == "kick_plate":
                     mm, src = rule["default"], "catalogue"
                 elif k == "front" and sign > 0 and i in measured:
                     mm, src = measured[i], "side view"
@@ -279,6 +308,18 @@ def build_set(manifest_path, name, height_m=None, depth_m=None, object_type=None
                             c_ = (w0 + w1) / 2
                             w0, w1 = c_ - min_w / H / 2, c_ + min_w / H / 2
                     uv = [(u0, w0), (u1, w0), (u1, w1), (u0, w1)]
+                    if sign == 0:   # doors keep their painted corner radius
+                        m_ = prt["mask"][ys_.min():ys_.max() + 1, xs_.min():xs_.max() + 1]
+                        q = max(2, min(m_.shape) // 4)
+                        cut = np.mean([1 - c.mean() for c in (m_[:q, :q], m_[:q, -q:], m_[-q:, :q], m_[-q:, -q:])])
+                        rpx = float(np.sqrt(max(cut, 0) * q * q / (1 - np.pi / 4)))
+                        ru, rw = rpx / Wp, rpx / Hp
+                        if ru > 0.002:
+                            uv = []
+                            for (cu, cw, a0) in ((u1 - ru, w1 - rw, 0), (u0 + ru, w1 - rw, 90), (u0 + ru, w0 + rw, 180), (u1 - ru, w0 + rw, 270)):
+                                for t in range(5):
+                                    ang = np.radians(a0 + t * 22.5)
+                                    uv.append((cu + ru * np.cos(ang), cw + rw * np.sin(ang)))
                 else:
                     c = max(find_contours(np.pad(prt["mask"], 1).astype(float), 0.5), key=len)
                     c = approximate_polygon(c, tolerance=0.8)[:-1]
@@ -314,7 +355,10 @@ def build_set(manifest_path, name, height_m=None, depth_m=None, object_type=None
                 if sign < 0:
                     core.PARTS.remove(o)
                     cutters.append((o, prt["kind"], k))
-                report.append({"view": k, "kind": prt["kind"], "mm": round(mm_c, 1), "from": src})
+                entry = {"view": k, "kind": prt["kind"], "mm": round(mm_c, 1), "from": src, "why": rule["why"]}
+                if "was" in prt:
+                    entry["was"], entry["because"] = prt["was"], prt["because"]
+                report.append(entry)
     # Cut recesses one at a time; a cut that damages the body (changes its size) is undone.
     rejected = 0
     for cut, kind, k in cutters:
@@ -347,4 +391,7 @@ def build_set(manifest_path, name, height_m=None, depth_m=None, object_type=None
     return {"width_m": round(W, 3), "depth_m": D, "height_m": H, "parts": len(report),
             "by_kind": {k: len(v) for k, v in summary.items()},
             "depth_scale_mm_per_unit": round(k_mm, 1) if k_mm else None, "recess_cuts_undone": rejected,
-            "sources": {s: sum(1 for r in report if r["from"] == s) for s in ("side view", "depth map", "catalogue")}}
+            "sources": {s: sum(1 for r in report if r["from"] == s) for s in ("side view", "depth map", "catalogue")},
+            "renamed": {"%s -> %s" % (r["was"], r["kind"]): sum(1 for q in report if q.get("was") == r["was"] and q["kind"] == r["kind"])
+                        for r in report if "was" in r},
+            "size_warnings": sizing.envelope(otype, W, D, H)}

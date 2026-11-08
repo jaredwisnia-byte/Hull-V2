@@ -132,3 +132,7 @@ add to it whenever something goes wrong.
 - Check geometry with an untextured clay render: paint hides construction mistakes.
 - The reproducibility KPI compares gauges for the same inputs, but a code change also changes
   outputs: record the line's code version in the ledger (to do).
+- Shape alone misnames parts: on fridge_1 a full-width kick plate and grille slivers became
+  seven front "feet" and the kick grille became door "seams". Placement rules in the sizing
+  manual (feet at floor corners, handles at least a palm long, seams above the toe kick on
+  appliances) rename them.

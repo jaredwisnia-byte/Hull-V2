@@ -96,7 +96,7 @@ def _sample(mask, u, v):
 
 
 def hull_prop(views, height, res=110, smooth_iters=4, decimate=0.35, rough=0.5, name="hull",
-              convex=False, paint_only=(), features=True, sil_override=None, depth_m=None):
+              convex=False, paint_only=(), features=True, sil_override=None, depth_m=None, grime=0.25):
     """convex: fill each outline to its convex shape (boxy objects; dark areas can't
     punch holes). paint_only: views used for texture but not trusted to carve (e.g. a
     dark back panel on a dark sheet)."""
@@ -158,7 +158,7 @@ def hull_prop(views, height, res=110, smooth_iters=4, decimate=0.35, rough=0.5, 
         if k in sil:
             path = "/tmp/_hull_%s_%s.png" % (name, k)
             sil[k][1].save(path)
-            mats_[k] = M.image(path, rough, 0.25, 0.05, name="%s_%s" % (name, k))
+            mats_[k] = M.image(path, rough, grime, 0.05, name="%s_%s" % (name, k))
             obj.data.materials.append(mats_[k])
     slot = {k: i for i, k in enumerate([k for k in order if k in mats_])}
     attr = obj.data.color_attributes.new("label_uv", "FLOAT_COLOR", "CORNER")

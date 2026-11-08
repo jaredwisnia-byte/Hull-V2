@@ -31,6 +31,7 @@ blender -b --factory-startup -P long-lines/tools/critique.py -- NAME [VIEWS]   #
 - `standards.json`: units, axes, origin, naming, file set, size classes (texture size and
   triangle budget per class) and the **minimum acceptable standard** the gate enforces.
   The gate does not chase perfection: pass and ship, or one automatic correction, then flag.
+- `sizing_manual.json` (explained in `SIZING.md`): how big parts and objects should be and why: facts about hands, heights and everyday objects; part depths as formulas over them; where each kind of part can be; believable overall sizes per category. `parts_catalog.json` is generated from it.
 - `categories.json`: per category, the production line, the typical real size and line
   options. This is the judgment a person used to make per object.
 - `REFERENCE_SPEC.md`: the input gauge, plus a prompt template for the image generator.
@@ -46,7 +47,7 @@ blender -b --factory-startup -P long-lines/tools/critique.py -- NAME [VIEWS]   #
 | recipe | none (code) | `props/*.py` hand recipes | open or thin shapes the hull can't see (bowls, frames, chairs with gaps) and one-off hero props |
 | facade | facade atlas sheet (whole elevations) | `propkit/facade.py`: elevation trimmed, storey period by autocorrelation, window lattice recessed only when confident, cornice extruded, sides/roof from the nearest `ext_*` surface | street buildings up to ~10 storeys |
 | atlas | parts atlas sheet (panels laid flat) | `propkit/atlas.py`: panels found automatically; the order names front rows / side / top / back / kick / backguard / burners; each front panel is its own bevelled slab; knobs on control panels get depth from `part_rules.py` | appliances, cabinets, any boxy object drawn as parts |
-| sheetset | v2 sheet set: painted + depth + part map (+ section) + manifest | `propkit/sheetset.py`: outlines from the part map (protruding parts left out of the carve), body by the hull, every part-map region classified (handle, hinge, foot, seam, vent, pit, dispenser...) and built from its own outline; depth measured side-on, else depth map scaled by the measured parts, clamped by `factory/parts_catalog.json` | any object, best quality; the preferred input from Nov 2026 |
+| sheetset | v2 sheet set: painted + depth + part map (+ section) + manifest | `propkit/sheetset.py`: outlines from the part map (protruding parts left out of the carve), body by the hull, every part-map region classified (handle, hinge, foot, seam, vent, pit, dispenser...) and built from its own outline; depth measured side-on, else depth map scaled by the measured parts, clamped and placement-checked by `factory/sizing_manual.json` | any object, best quality; the preferred input from Nov 2026 |
 | extrude | trim sheet | `propkit/extrude.py`: mouldings = drawn cross-section (or a default per kind) swept 1.2 m and wrapped with the painted strip; frames = painted front extruded with its opening cut | baseboards, crown, rails, casings, mirror surrounds, access panels |
 
 A new line is justified only when a category repeatedly fails another line's gate.

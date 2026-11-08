@@ -1,13 +1,18 @@
 {
- "_note": "What real parts are like, by function. The sheetset line classifies every region of a part map into one of these and sizes it here: the painting says where, the depth map says relatively how much, this file says how much is believable. Millimetres. 'out' = stands proud of the surface, 'in' = recess depth. Add a class when a new kind of part shows up; every asset after that benefits.",
+ "_note": "GENERATED from factory/sizing_manual.json by tools/propkit/sizing.py --catalogue. Edit the manual, not this file. Millimetres; 'out' = stands proud, 'in' = recess depth.",
  "out": {
   "handle": {
    "depth_mm": [
-    18,
-    45
+    20.0,
+    60.0
    ],
-   "default": 30,
-   "why": "fingers must fit behind a pull handle: 15-25 mm gap plus the grip"
+   "default": 45.0,
+   "why": "a hand closes round it: a finger plus clearance behind the bar, plus the bar itself",
+   "formula": {
+    "min": "finger",
+    "default": "finger + clearance + handle_bar",
+    "max": "finger + clearance + handle_bar + 15"
+   }
   },
   "hinge": {
    "depth_mm": [
@@ -15,7 +20,8 @@
     15
    ],
    "default": 8,
-   "why": "exposed appliance and door hinges are a knuckle a few mm proud"
+   "why": "an exposed knuckle a few mm proud (period appliances and doors)",
+   "formula": {}
   },
   "foot": {
    "depth_mm": [
@@ -23,15 +29,28 @@
     40
    ],
    "default": 20,
-   "why": "levelling feet and kick bases lift the body off the floor"
+   "why": "levelling feet and casters lift the body off the floor",
+   "formula": {}
+  },
+  "kick_plate": {
+   "depth_mm": [
+    3,
+    15
+   ],
+   "default": 6,
+   "why": "the plinth or base strip along the bottom of an appliance or cabinet",
+   "formula": {}
   },
   "knob": {
    "depth_mm": [
-    8,
+    8.0,
     25
    ],
    "default": 18,
-   "why": "see part_rules.py: 2-6 cm knobs stand out 60% of their diameter"
+   "why": "you pinch its side: at least a pinch deep; 2-6 cm knobs stand out about 60% of their diameter (part_rules.py)",
+   "formula": {
+    "min": "pinch"
+   }
   },
   "key": {
    "depth_mm": [
@@ -39,7 +58,8 @@
     12
    ],
    "default": 8,
-   "why": "typewriter and keyboard keys stand on stems above the deck"
+   "why": "typewriter and keyboard keys stand on stems above the deck",
+   "formula": {}
   },
   "button": {
    "depth_mm": [
@@ -47,7 +67,8 @@
     8
    ],
    "default": 4,
-   "why": "push buttons are shallow"
+   "why": "push buttons are shallow",
+   "formula": {}
   },
   "trim": {
    "depth_mm": [
@@ -55,7 +76,8 @@
     20
    ],
    "default": 6,
-   "why": "rims, frames, mouldings, rails"
+   "why": "rims, frames, mouldings, rails",
+   "formula": {}
   },
   "cornice": {
    "depth_mm": [
@@ -63,15 +85,21 @@
     600
    ],
    "default": 350,
-   "why": "building cornices overhang the wall to shed rain"
+   "why": "building cornices overhang the wall to shed rain; bigger buildings, bigger cornices",
+   "formula": {}
   },
   "sill": {
    "depth_mm": [
-    40,
-    120
+    40.0,
+    120.0
    ],
-   "default": 70,
-   "why": "window sills project to drip water clear of the wall"
+   "default": 70.0,
+   "why": "the nose of a sill must throw water clear of the wall face",
+   "formula": {
+    "min": "rain_drip + 10",
+    "default": "rain_drip + 40",
+    "max": "rain_drip + 90"
+   }
   },
   "panel": {
    "depth_mm": [
@@ -79,15 +107,8 @@
     12
    ],
    "default": 6,
-   "why": "a door or drawer front stands a few mm proud of the cabinet face, with a gap all round so it can open"
-  },
-  "base": {
-   "depth_mm": [
-    3,
-    20
-   ],
-   "default": 8,
-   "why": "a kick plate or plinth is one piece across the bottom, slightly proud or recessed"
+   "why": "a door or drawer front stands a few mm proud of the cabinet face, with a gap all round so it can open",
+   "formula": {}
   }
  },
  "in": {
@@ -97,8 +118,9 @@
     8
    ],
    "default": 5,
-   "width_min_mm": 4,
-   "why": "the gap round a door or drawer: a fingernail, not a slot"
+   "why": "the gap round a door or drawer: a fingernail, not a slot",
+   "formula": {},
+   "width_min_mm": 4.0
   },
   "vent": {
    "depth_mm": [
@@ -106,23 +128,32 @@
     20
    ],
    "default": 12,
-   "why": "louvres and grilles: shadow, not a hole"
+   "why": "louvres and grilles: shadow, not a hole",
+   "formula": {}
   },
   "slot": {
    "depth_mm": [
     10,
-    60
+    60.0
    ],
    "default": 25,
-   "why": "coin, card and mail slots"
+   "why": "coin, card and mail slots; a mail slot goes through a door",
+   "formula": {
+    "max": "door_thickness + 15"
+   }
   },
   "dispenser": {
    "depth_mm": [
-    80,
-    140
+    95.0,
+    140.0
    ],
-   "default": 110,
-   "why": "a glass must fit under the spout: a tumbler is ~9 cm across"
+   "default": 105.0,
+   "why": "a glass must fit under the spout",
+   "formula": {
+    "min": "glass_diameter + clearance",
+    "default": "glass_diameter + 2 * clearance",
+    "max": "glass_diameter + 55"
+   }
   },
   "recess": {
    "depth_mm": [
@@ -130,37 +161,45 @@
     80
    ],
    "default": 30,
-   "why": "general pockets, handles cut into a panel, display niches"
+   "why": "general pockets, handles cut into a panel, display niches",
+   "formula": {}
   },
   "window": {
    "depth_mm": [
-    120,
-    300
+    92.0,
+    300.0
    ],
-   "default": 200,
-   "why": "window glass sits back in a masonry wall"
+   "default": 200.0,
+   "why": "window glass sits back in a masonry wall, usually about half its thickness",
+   "formula": {
+    "min": "brick_width",
+    "default": "masonry_wall / 2",
+    "max": "masonry_wall * 3 / 4"
+   }
   },
   "door_opening": {
    "depth_mm": [
-    100,
-    300
+    92.0,
+    300.0
    ],
-   "default": 150,
-   "why": "street doors sit back in their frames"
+   "default": 150.0,
+   "why": "street doors sit back in their frames, less deep than windows",
+   "formula": {
+    "min": "brick_width",
+    "default": "masonry_wall * 3 / 8",
+    "max": "masonry_wall * 3 / 4"
+   }
   },
   "pit": {
    "depth_mm": [
     1,
-    6
+    6.0
    ],
    "default": 3,
-   "why": "screw heads, rivets and small holes drawn as dots: shadow only"
+   "why": "screw heads, rivets and small holes drawn as dots: shadow only",
+   "formula": {
+    "max": "screw_head * 3 / 4"
+   }
   }
- },
- "_assembly_rules": [
-  "The outer shell (cabinet, body) is one continuous surface: a feature in one view never cuts through the whole object.",
-  "A part seen in several views is one part: build it once, from the view that faces it.",
-  "Panels that open (doors, drawers, lids) are separate pieces with a gap all round.",
-  "Feet and kick plates are one standard base, not one piece per view."
- ]
+ }
 }

@@ -205,6 +205,7 @@ w = bpy.data.worlds.new("w")
 sc.world = w
 w.use_nodes = True
 w.node_tree.nodes["Background"].inputs["Color"].default_value = (0.12, 0.13, 0.15, 1)
+w.node_tree.nodes["Background"].inputs["Strength"].default_value = 3.0   # fill: every side readable
 key = bpy.data.objects.new("key", bpy.data.lights.new("key", "SUN"))
 key.data.energy = 3.0
 key.rotation_euler = (math.radians(50), 0, math.radians(-35))
@@ -222,6 +223,9 @@ for k, (az, el, zoom) in enumerate(shots):
     target = centre + (Vector((0, -size.y * 0.3, size.z * 0.1)) if zoom < 1 else Vector())
     cam.location = target + Vector((math.sin(a) * math.cos(e), -math.cos(a) * math.cos(e), math.sin(e))) * dist
     cam.rotation_euler = (target - cam.location).to_track_quat("-Z", "Y").to_euler()
+    # The key light turns with the camera (over the viewer's shoulder), so the turnaround
+    # compares the object's sides, not how far each one is from a fixed light.
+    key.rotation_euler = (math.radians(50), 0, a - math.radians(35))
     p = os.path.join(out_dir, "_crit_%d.png" % k)
     sc.render.filepath = p
     bpy.ops.render.render(write_still=True)

@@ -195,6 +195,9 @@ def intake_set(manifest, category=None, name=None):
              "height_m": dims.get("height", 100) / 100, "depth_m": dims.get("depth", 60) / 100,
              "object_type": m.get("object_type"), "notes": m.get("display_name", ""),
              "assumptions": ["size from the manifest (%s)" % ("approximate" if dims.get("approximate") else "given")]}
+    from propkit import sizing   # factory/sizing_manual.json: is this a believable size?
+    for w in sizing.envelope(category, dims.get("width", 0) / 100 or None, order["depth_m"], order["height_m"]):
+        order["assumptions"].append("check size: " + w)
     save_order(order)
     print("ORDER", json.dumps(order))
     return order
