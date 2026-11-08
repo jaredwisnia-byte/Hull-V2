@@ -68,6 +68,16 @@ person, mean build time, triangle statistics, failure kinds by frequency, per-li
 The ledger records input and output hashes, so the same inputs can be checked to give the
 same output.
 
+## Texture manufacturing (all lines, Nov 2026)
+The reference sheet is never the texture. Every asset's mesh is unwrapped into its own UV atlas
+and the colours are baked into it (`propkit/bake.finish`, padding round islands). What gets baked
+is decided by `propkit/texturing.project` for shapes coloured from views (hull, sheet sets):
+each surface point blends the views by facing^4 x visibility x resolution, with normals smoothed
+so a carved mesh doesn't flip between views, and other assemblies occluding (a handset hides the
+base under it). The gate measures UV stretch (share of surface distorted beyond 2x) and texel
+density. Geometry comes first: a voxel staircase looks like a texture fault and isn't one, so
+sheet sets use the exact polygonal hull (`hull.polygon_hull`): outlines extruded and intersected.
+
 ## Sheet specs (multi-asset sheets)
 Jared's newer sheets hold many assets each (facade atlases, appliance part atlases, trim
 sheets). A sheet spec (`factory/sheets_*.json`) lists one item per asset: the sheet, the

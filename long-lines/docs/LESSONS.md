@@ -173,3 +173,15 @@ add to it whenever something goes wrong.
 - Cords are rebuilt as a coil round a smoothed centre line matched across two views (hanging part).
 - Square, full regions are keys; round ones (fill ~79%) are knobs.
 - See-through holes are judged against the reference's own holes (a handset arch is real).
+
+## Texture manufacturing (ChatGPT review of the telephone, Nov 8)
+- The pipeline already unwrapped the finished mesh and baked an atlas; the faults were in choosing
+  what to bake: one view per face by a noisy normal (patchwork), no visibility test, grazing views
+  smeared. Fixed by blending views (facing^4 x visible x resolution) on smoothed normals.
+- The worst "texture" fault was geometry: voxel staircase on slopes baked into shading lines.
+  Measure before assigning blame. Sheet sets now use an exact polygonal hull (outlines extruded and
+  intersected): flat faces, straight slopes, crisp bevels.
+- Evidence that lands on a sizing limit is suspect: the depth map pushed keys to the 12 mm cap.
+  Keys are 6-9 mm (manual fixed); clamped values are now reported as low confidence.
+- Cross-view check: a part seen in a side view is only built if the front view shows a compact part
+  sticking past that edge at the same height (a handset overhang doesn't count).

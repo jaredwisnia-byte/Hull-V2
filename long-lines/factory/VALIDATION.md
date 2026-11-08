@@ -32,5 +32,7 @@ Don't add polygons unless needed. No category exceptions without a demonstrated 
 | 5 measured vs estimated | report `sources`: side view / depth map / catalogue / painted only | partial: no confidence yet |
 | 7 manufacturing | | to build: per-category construction in the manual (sheet metal = uniform shell, rounded bends) |
 | 8 multi-angle | critic turnaround, clay render, `match_check.py`, shell continuity check | partly automated |
+| texture | blended view projection with occlusion, baked into the mesh's own UV atlas; UV stretch gauge in the gate | automated (Nov 8) |
+| 4 cross-view (partial) | a side-view part is built only if the front view shows something past that edge | automated (sheet sets) |
 | 10 per-feature ablation | | to build: keep a part only if it improves agreement with the reference depth |
 | correction priority | gate's codified corrections | to order by this hierarchy |
