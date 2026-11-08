@@ -72,6 +72,22 @@
    ],
    "default": 70,
    "why": "window sills project to drip water clear of the wall"
+  },
+  "panel": {
+   "depth_mm": [
+    3,
+    12
+   ],
+   "default": 6,
+   "why": "a door or drawer front stands a few mm proud of the cabinet face, with a gap all round so it can open"
+  },
+  "base": {
+   "depth_mm": [
+    3,
+    20
+   ],
+   "default": 8,
+   "why": "a kick plate or plinth is one piece across the bottom, slightly proud or recessed"
   }
  },
  "in": {
@@ -140,5 +156,11 @@
    "default": 3,
    "why": "screw heads, rivets and small holes drawn as dots: shadow only"
   }
- }
+ },
+ "_assembly_rules": [
+  "The outer shell (cabinet, body) is one continuous surface: a feature in one view never cuts through the whole object.",
+  "A part seen in several views is one part: build it once, from the view that faces it.",
+  "Panels that open (doors, drawers, lids) are separate pieces with a gap all round.",
+  "Feet and kick plates are one standard base, not one piece per view."
+ ]
 }

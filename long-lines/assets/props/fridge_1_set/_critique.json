@@ -1,9 +1,9 @@
 {
  "prop": "fridge_1_set",
  "size_m": [
-  0.815,
-  0.763,
-  1.649
+  0.775,
+  0.782,
+  1.65
  ],
  "silhouette_iou": {
   "front": null,
@@ -12,9 +12,9 @@
   "left": null,
   "top": null
  },
- "front_relief_mm": 724.4,
+ "front_relief_mm": 70.0,
  "painted_features": [],
- "lowest_z_m": 0.0,
+ "lowest_z_m": -0.0,
  "front_holes_px": 0,
  "complaints": []
 }

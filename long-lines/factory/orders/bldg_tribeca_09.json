@@ -26,11 +26,11 @@
   "depth_m": 12.0,
   "storeys": 4,
   "windows": 0,
-  "side": "ext_concrete",
+  "side": "ext_limestone",
   "wall_rgb": [
-   128,
-   110,
-   102
+   150,
+   129,
+   117
   ]
  },
  "attempts": 1

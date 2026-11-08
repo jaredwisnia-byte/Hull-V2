@@ -10,6 +10,11 @@
   three new lines (facade, atlas, extrude) plus 18 exterior wall surfaces. Sheet specs in
   `factory/sheets_*.json`; Sullivan Street now uses facade-line buildings.
 
+- Sheetset line (Nov 8): first v2 sheet set (fridge_1 from ChatGPT: painted + depth + part map +
+  section + manifest) builds through `intake_set`. Assembly rules from ChatGPT's review are in
+  the line and in `factory/parts_catalog.json` (continuous shell, one part per physical part,
+  doors as separate slabs, one base). Library gate: 186/186 at the minimum standard.
+
 ## Next (factory)
 1. 100-object demonstration: needs ~100 reference sheets in REFERENCE_SPEC format from Jared
    (prompt template in factory/REFERENCE_SPEC.md); then `intake` + `build --pending`.
@@ -20,5 +25,8 @@
    the atlas line; ask for one sheet per object or per few objects); interior trim sheets
    3, 7, 8 and 10 (same extrude line, need a sheet spec); the street concept boards (reference
    only). Jared says new sheets carry no brand names, so the brand check is retired.
-4. Place trim pieces in the apartment (baseboards / crown along walls, casings on doorways)
+4. Sheetset: openable doors need separate nodes in the GLB plus hinge markers (ties in with
+   orientation/snap markers); the section image is not used yet; make the catalogue's "why"
+   computable from human/object constants (finger, hand, glass, insulation).
+5. Place trim pieces in the apartment (baseboards / crown along walls, casings on doorways)
    and appliances in the kitchen in place of the recipe ones.

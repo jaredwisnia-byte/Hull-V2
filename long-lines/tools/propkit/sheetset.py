@@ -59,8 +59,25 @@ def view(m, imgs, name):
     bb = (xs.min(), ys.min(), xs.max() + 1, ys.max() + 1)
     sl = (slice(bb[1], bb[3]), slice(bb[0], bb[2]))
     obj, cls = obj[sl], np.where(obj, cls, 0)[sl]
-    carve = ndimage.binary_fill_holes(obj & (cls != CLASSES["out"]))
+    # The shell is continuous: thin protrusions (handles side-on, hinges, feet) are taken off
+    # by an opening, never subtracted, or a hinge on the edge notches the whole object.
+    solid = ndimage.binary_fill_holes(obj)
+    r = max(2, int(0.025 * min(solid.shape)))
+    carve = ndimage.binary_opening(solid, structure=np.ones((2 * r + 1, 2 * r + 1)))
+    carve = ndimage.binary_fill_holes(carve) if carve.any() else solid
+    # ...and small notches at the outline (the gap where two doors meet, seen at the edge)
+    # are closed too, or they run round the whole shell as a groove. Pad first so the
+    # closing doesn't eat the edges of this tight crop.
+    pad = np.pad(carve, r + 1)
+    carve = ndimage.binary_closing(pad, structure=np.ones((2 * r + 1, 2 * r + 1)))[r + 1:-r - 1, r + 1:-r - 1] | carve
     paint = imgs["painted_sheet"].crop(box).crop(bb)
+    # Pad the painting past the outline with the object's own colours, so rounded edges never
+    # pick up the sheet background (the dark band along the top).
+    pa = np.asarray(paint).copy()
+    idx = ndimage.distance_transform_edt(~ndimage.binary_erosion(obj, iterations=2), return_distances=False,
+                                         return_indices=True)
+    pa = pa[idx[0], idx[1]]
+    paint = Image.fromarray(pa)
     depth = np.asarray(imgs["depth_map"].crop(box).crop(bb).convert("L")).astype(np.float32) / 255.0
     return {"paint": paint, "depth": depth, "cls": cls, "obj": obj, "carve": carve}
 
@@ -93,13 +110,36 @@ def _kind(sign, comp, cls_view, W_px, H_px, object_type, area_frac):
     return "recess"
 
 
-def parts(v, sign, object_type):
-    """Regions of one class sign (+1 out, -1 in) in a view: [(mask, kind, relief)]."""
+def parts(v, sign, object_type, view_name="front"):
+    """Regions of one class sign in a view: [(mask, kind, relief)]. sign +1 out, -1 in,
+    0 panels that open. Assembly rules (parts_catalog.json): the base is one part; side
+    views don't rebuild what the front and back views already built (hinges, feet, the
+    door edges seen side-on)."""
     from scipy import ndimage
-    target = CLASSES["out"] if sign > 0 else CLASSES["in"]
-    lab, n = ndimage.label(v["cls"] == target)
     H_px, W_px = v["cls"].shape
     out = []
+    bottom = np.zeros_like(v["obj"])
+    bottom[int(0.9 * H_px):] = True
+    if sign == 0:
+        if view_name not in ("front", "back"):
+            return []
+        lab, n = ndimage.label(v["cls"] == CLASSES["panel"])
+        for i in range(1, n + 1):
+            comp = lab == i
+            if comp.sum() > 0.02 * H_px * W_px:
+                out.append({"mask": comp, "kind": "panel", "relief": 0.0})
+        return out
+    sel = v["cls"] == (CLASSES["out"] if sign > 0 else CLASSES["in"])
+    if sign > 0 and view_name == "front":
+        base = ndimage.binary_closing((v["cls"] == CLASSES["out"]) | (v["cls"] == CLASSES["in"]), iterations=3) & bottom
+        lab_b, nb = ndimage.label(base)
+        if nb:
+            b = lab_b == (np.argmax(np.bincount(lab_b.ravel())[1:]) + 1)
+            if b.sum() > 0.01 * H_px * W_px:
+                out.append({"mask": b, "kind": "base", "relief": 0.0})
+                sel = sel & ~ndimage.binary_dilation(b, iterations=2)
+    lab, n = ndimage.label(sel)
+    target = None
     for i in range(1, n + 1):
         comp = lab == i
         if comp.sum() < 6:
@@ -107,6 +147,13 @@ def parts(v, sign, object_type):
         ring = ndimage.binary_dilation(comp, iterations=4) & ~comp & v["obj"]
         rel = float(np.median(v["depth"][comp]) - (np.median(v["depth"][ring]) if ring.any() else 0))
         kind = _kind(sign, comp, v["cls"], W_px, H_px, object_type, comp.sum() / (H_px * W_px))
+        if view_name != "front" and kind in ("foot", "base"):
+            continue                       # one base, built from the front
+        if view_name in ("right", "left"):
+            xs = np.nonzero(comp.any(0))[0]
+            edge = xs.min() < 0.12 * W_px if view_name == "right" else xs.max() > 0.88 * W_px
+            if edge and sign > 0:
+                continue                   # the front's hinges and handles seen side-on
         out.append({"mask": comp, "kind": kind, "relief": rel})
     return out
 
@@ -120,9 +167,13 @@ def side_profile_mm(front_part, front, side, D_m):
     best = 0
     for r in range(r0, max(r0 + 1, r1)):
         row_obj = np.nonzero(side["obj"][r])[0]
-        row_body = np.nonzero(side["carve"][r])[0]
-        if len(row_obj) and len(row_body):
-            best = max(best, row_body[0] - row_obj[0])   # right view: the front is at the left
+        if not len(row_obj):
+            continue
+        c0 = row_obj[0]                                   # right view: the front is at the left
+        c = c0
+        while c < side["obj"].shape[1] and side["cls"][r, c] == CLASSES["out"]:
+            c += 1
+        best = max(best, c - c0)                          # the run of "sticks out" pixels
     return best / side["cls"].shape[1] * D_m * 1000 if best > 0 else None
 
 
@@ -183,7 +234,8 @@ def build_set(manifest_path, name, height_m=None, depth_m=None, object_type=None
 
     # Calibrate the depth map: millimetres per unit of relief, from parts measured side-on.
     measured = {}
-    found = {k: {+1: parts(V[k], +1, otype), -1: parts(V[k], -1, otype)} for k in names if k != "top"}
+    found = {k: {+1: parts(V[k], +1, otype, k), -1: parts(V[k], -1, otype, k), 0: parts(V[k], 0, otype, k)}
+             for k in names if k != "top"}
     ks = []
     for i, prt in enumerate(found.get("front", {}).get(+1, [])):
         mm = side_profile_mm(prt, V["front"], V["right"], D) if "right" in V else None
@@ -200,16 +252,20 @@ def build_set(manifest_path, name, height_m=None, depth_m=None, object_type=None
         img_mat = mats.image(v["path"], rough=0.45, grime=0.25, name="set_%s_%s" % (name, k))
         for sign, plist in signs.items():
             for i, prt in enumerate(plist):
-                rule = CATALOG["out" if sign > 0 else "in"][prt["kind"]]
+                rule = CATALOG["out" if sign >= 0 else "in"][prt["kind"]]
                 lo, hi = rule["depth_mm"]
-                if k == "front" and sign > 0 and i in measured:
+                if sign == 0 or prt["kind"] == "base":
+                    mm, src = rule["default"], "catalogue"
+                elif k == "front" and sign > 0 and i in measured:
                     mm, src = measured[i], "side view"
                 elif k_mm and abs(prt["relief"]) > 0.02 and np.sign(prt["relief"]) == sign:
                     mm, src = abs(prt["relief"]) * k_mm, "depth map"
                 else:
                     mm, src = rule["default"], "catalogue"
                 mm_c = float(np.clip(mm, lo, hi))
-                if sign < 0:   # recesses: a closed box over the region (seams, vents, slots are rectangles)
+                ys_, xs_ = np.nonzero(prt["mask"])
+                box_fill = prt["mask"].sum() / ((ys_.ptp() + 1) * (xs_.ptp() + 1))
+                if sign < 0 or (sign == 0 and box_fill > 0.8):   # closed boxes: recesses, and panels that are rectangles
                     ys_, xs_ = np.nonzero(prt["mask"])
                     u0, u1 = xs_.min() / Wp, (xs_.max() + 1) / Wp
                     w0, w1 = ys_.min() / Hp, (ys_.max() + 1) / Hp
@@ -230,7 +286,7 @@ def build_set(manifest_path, name, height_m=None, depth_m=None, object_type=None
                         continue
                     uv = [((cc - 1) / Wp, (rr - 1) / Hp) for rr, cc in c]
                 bm = bmesh.new()
-                if sign > 0:
+                if sign >= 0:
                     a = [bm.verts.new(place(k, u, w, -0.003)) for u, w in uv]
                     b = [bm.verts.new(place(k, u, w, mm_c / 1000)) for u, w in uv]
                 else:

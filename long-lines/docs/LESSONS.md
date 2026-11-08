@@ -125,3 +125,10 @@ add to it whenever something goes wrong.
   a time and undo any cut that changes the body's size.
 - Tiny "in" regions are screw heads, not 30 mm holes: the catalogue's `pit` class.
 - The critic's turnaround has one light: check albedo numerically before blaming the texture.
+- Never subtract protruding parts from an outline before carving: a hinge on the edge notches
+  the whole object (ChatGPT's review spotted the grooves round the fridge). Take thin
+  protrusions off with a morphological opening and close small notches; the shell stays whole.
+- A part seen in several views is one physical part: build it once, from the view facing it.
+- Check geometry with an untextured clay render: paint hides construction mistakes.
+- The reproducibility KPI compares gauges for the same inputs, but a code change also changes
+  outputs: record the line's code version in the ledger (to do).
