@@ -8,6 +8,7 @@
 Options: --samples N (default 24), --tex N (override texture size), --skip-built.
 """
 import importlib
+import json
 import os
 import pkgutil
 import sys
@@ -50,8 +51,13 @@ while i < len(args):
         names.append(a)
     i += 1
 
+RETIRED = set(json.load(open(os.path.join(os.path.dirname(OUT), "..", "factory", "retired.json")))["names"]) \
+    if os.path.exists(os.path.join(os.path.dirname(OUT), "..", "factory", "retired.json")) else set()
 failed = []
 for n in names:
+    if n in RETIRED:
+        print("RETIRED", n, "(factory/retired.json: not built from a painted reference)")
+        continue
     if n not in propkit.PROPS:
         print("UNKNOWN", n)
         failed.append(n)

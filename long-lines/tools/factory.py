@@ -385,8 +385,10 @@ def gate(names):
 def report():
     rows = [json.loads(l) for l in open(LEDGER)] if os.path.exists(LEDGER) else []
     latest = {}
+    current = set(json.load(open(os.path.join(LIB, "library.json"))))   # deleted assets stay in the ledger's history only
     for r in rows:
-        latest[(r["op"], r["name"])] = r
+        if r["name"] in current:
+            latest[(r["op"], r["name"])] = r
     builds = [r for (op, _), r in latest.items() if op == "build"]
     reps = {}
     for r in rows:

@@ -1537,8 +1537,7 @@
     "prop": "bldg_tribeca_04"
    },
    {
-    "bays": 4,
-    "storeys": 5
+    "prop": "bldg_tribeca_10"
    }
   ],
   "furniture": [
