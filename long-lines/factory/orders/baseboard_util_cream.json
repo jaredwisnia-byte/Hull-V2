@@ -10,9 +10,17 @@
  "source": "trim_9.png",
  "class": null,
  "views_folder": "baseboard_util_cream",
- "status": "pending",
+ "status": "shipped",
  "assumptions": [
   "height 0.12 m from category 'moulding'"
  ],
- "notes": ""
+ "notes": "",
+ "measured": {
+  "length_m": 1.2,
+  "height_m": 0.12,
+  "depth_m": 0.0478,
+  "section_points": 7,
+  "section_from": "drawing"
+ },
+ "attempts": 1
 }
