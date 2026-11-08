@@ -37,7 +37,7 @@ def _mask(png):
 def section_from_drawing(png, kind, simplify=1.0):
     """The section polygon from a drawn profile: largest drawn region, outline traced
     and simplified, oriented so the flat side (the wall) is at y = 0 and the face
-    points out. Falls back to the default for the kind if the drawing is unusable."""
+    points out. Returns None on unusable drawings (explicitly fail, never silently substitute)."""
     from scipy import ndimage
     from skimage.measure import approximate_polygon, find_contours
     m = _mask(png)
