@@ -64,7 +64,8 @@
      "left": 0.183,
      "top": 0.342
     },
-    "unseen_vertices": 255
+    "grazing_share": 0.037,
+    "single_view_vertices": 255
    },
    "telephone_desk_set_assy": {
     "views": [
@@ -81,7 +82,8 @@
      "left": 0.208,
      "top": 0.082
     },
-    "unseen_vertices": 1178
+    "grazing_share": 0.136,
+    "single_view_vertices": 1178
    }
   }
  }

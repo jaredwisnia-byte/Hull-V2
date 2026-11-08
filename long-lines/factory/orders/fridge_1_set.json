@@ -63,7 +63,8 @@
      "left": 0.201,
      "top": 0.339
     },
-    "unseen_vertices": 85
+    "grazing_share": 0.043,
+    "single_view_vertices": 85
    }
   }
  },

@@ -152,8 +152,12 @@ def project(obj, views, W, D, H, others=(), name="proj", power=4.0, rough=0.5):
         p.material_index = 0
     mats.register("proj_" + name, m, bsdf, out, acc, rough, 0.0)
     cover = {k: round(float((vw[:, j] > 0.5).mean()), 3) for j, k in enumerate(names)}
-    return {"views": names, "dominant_share": cover,
-            "unseen_vertices": int((np.sort(vw, 1)[:, -1] >= 0.999).sum())}
+    # The stretch that matters: points whose best view sees them at more than 60 degrees
+    # (facing < 0.5) get smeared colour whatever the UV layout. Area-weighted by vertex.
+    facing_best = np.array([max(Vector(sn[i]).dot(DIRS[k]) for k in names) for i in range(len(sn))])
+    grazing = float((facing_best < 0.5).mean())
+    return {"views": names, "dominant_share": cover, "grazing_share": round(grazing, 3),
+            "single_view_vertices": int((np.sort(vw, 1)[:, -1] >= 0.999).sum())}
 
 
 def uv_quality(obj):
