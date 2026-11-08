@@ -34,35 +34,35 @@ def _mask(png):
     return a.max(-1) > BG_MAX
 
 
-def section_from_drawing(png, kind):
+def section_from_drawing(png, kind, simplify=1.0):
     """The section polygon from a drawn profile: largest drawn region, outline traced
     and simplified, oriented so the flat side (the wall) is at y = 0 and the face
-    points out. Falls back to the default for the kind if the drawing is unusable."""
+    points out. Returns None on unusable drawings (explicitly fail, never silently substitute)."""
     from scipy import ndimage
     from skimage.measure import approximate_polygon, find_contours
     m = _mask(png)
     lab, n = ndimage.label(m)
     if n == 0:
-        return PROFILES[kind]
+        return None
     big = lab == (np.argmax(np.bincount(lab.ravel())[1:]) + 1)
     big = ndimage.binary_fill_holes(big)
     ys, xs = np.nonzero(big)
     big = big[ys.min():ys.max() + 1, xs.min():xs.max() + 1]
     h, w = big.shape
     if h < 10 or w < 4:
-        return PROFILES[kind]
+        return None
     edge = max(1, w // 10)
     wall_left = big[:, :edge].mean() >= big[:, -edge:].mean()
     c = max(find_contours(np.pad(big, 1).astype(float), 0.5), key=len)
-    c = approximate_polygon(c, tolerance=max(1.0, h / 60))
+    c = approximate_polygon(c, tolerance=max(0.5, h / 60 * simplify))
     pts = []
     for r, col in c[:-1]:
         y = (col - 1) / h if wall_left else (w - (col - 1)) / h  # depth from the wall, in heights
         pts.append((max(0.0, y), 1 - (r - 1) / h))
-    return pts if len(pts) >= 3 else PROFILES[kind]
+    return pts if len(pts) >= 3 else None
 
 
-def moulding(sheet, strip, profile, kind, height_m, src_dir, strip_frac=None, name="trim"):
+def moulding(sheet, strip, profile, kind, height_m, src_dir, strip_frac=None, name="trim", section_tolerance=1.0):
     """Builds the piece along +x from 0 to PIECE_M, wall at y = 0 (face toward -y), z up."""
     import bmesh
     from . import core, mats
@@ -75,8 +75,10 @@ def moulding(sheet, strip, profile, kind, height_m, src_dir, strip_frac=None, na
         sb = [int(x0 + strip_frac[0] * (x1 - x0)), int(y0 + strip_frac[1] * (y1 - y0)),
               int(x0 + strip_frac[2] * (x1 - x0)), int(y0 + strip_frac[3] * (y1 - y0))]
     spng = _crop(img, sb, src_dir, "strip")
-    sec = section_from_drawing(_crop(img, boxes[profile], src_dir, "section"), kind) if profile is not None \
+    sec = section_from_drawing(_crop(img, boxes[profile], src_dir, "section"), kind, section_tolerance) if profile is not None \
         else PROFILES[kind]
+    if sec is None:
+        raise ValueError("unusable drawn moulding cross-section: " + name)
     sec = [(-y * height_m, z * height_m) for y, z in sec]
     sw, sh = Image.open(spng).size
     repeat_m = height_m * sw / sh
@@ -102,10 +104,9 @@ def moulding(sheet, strip, profile, kind, height_m, src_dir, strip_frac=None, na
             "section_from": "drawing" if profile is not None else "default:" + kind}
 
 
-def frame(sheet, panel, height_m, src_dir, depth_m=0.022, name="frame"):
+def frame(sheet, panel, height_m, src_dir, depth_m=0.022, name="frame", opening_mode="strict"):
     """Extrudes the painted front; a dark opening inside it is cut through."""
-    from scipy import ndimage
-    from . import core, mats
+    from . import core, mats, trim_checks
     boxes = panels(sheet, min_area=900)
     img = Image.open(sheet).convert("RGB")
     png = _crop(img, boxes[panel], src_dir, "front")
@@ -116,15 +117,9 @@ def frame(sheet, panel, height_m, src_dir, depth_m=0.022, name="frame"):
     body = core.box((wid, depth_m, hgt), (0, -depth_m / 2, hgt / 2), front, bevel=0.003, name=name)
     body.data.transform(body.matrix_world)
     body.matrix_world.identity()
-    lab, n = ndimage.label(~m)
-    opening = None
-    if n:
-        sizes = np.bincount(lab.ravel())[1:]
-        k = int(np.argmax(sizes)) + 1
-        ys, xs = np.nonzero(lab == k)
-        touches_side = xs.min() == 0 or xs.max() == W - 1 or ys.min() == 0
-        if sizes[k - 1] > 0.08 * H * W and not touches_side:
-            opening = (xs.min() / W, ys.min() / H, (xs.max() + 1) / W, (ys.max() + 1) / H)
+    # Select a real painted void, not simply the largest dark region (often background).
+    # Retry mode handles open-bottom door casings where the void touches the background.
+    opening = trim_checks.opening_from_paint(png, opening_mode)
     if opening:
         u0, t0, u1, t1 = opening
         ow, oh = (u1 - u0) * wid, (t1 - t0) * hgt + (0.02 if t1 >= 0.995 else 0)

@@ -14,6 +14,7 @@ import numpy as np
 from mathutils import Vector
 from mathutils.bvhtree import BVHTree
 from PIL import Image
+from . import trim_checks
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.normpath(os.path.join(HERE, "..", ".."))
@@ -37,7 +38,7 @@ def _load(name):
     return [o for o in bpy.data.objects if o.type == "MESH"]
 
 
-def check(name, views_dir=None, category_class=None, paint_only=(), solid=False, mount="floor"):
+def check(name, views_dir=None, category_class=None, paint_only=(), solid=False, mount="floor", trim_order=None):
     m, fails = {}, []
     d = os.path.join(LIB, name)
     for suffix in (".glb", "_albedo.png", "_normal.png", "_orm.png"):
@@ -64,10 +65,14 @@ def check(name, views_dir=None, category_class=None, paint_only=(), solid=False,
                 uv_area += 0.5 * abs(sum(pts[i].x * pts[(i + 1) % len(pts)].y - pts[(i + 1) % len(pts)].x * pts[i].y
                                          for i in range(len(pts))))
     tris = sum(len(p) - 2 for p in polys)
+    # Reproducibility must include actual topology, not just size and triangle count.
+    m["geometry_signature"] = trim_checks.geometry_signature(verts, polys)
     lo = Vector([min(v[i] for v in verts) for i in range(3)])
     hi = Vector([max(v[i] for v in verts) for i in range(3)])
     size = hi - lo
-    tex = Image.open(os.path.join(d, name + "_albedo.png")).size[0]
+    albedo_path = os.path.join(d, name + "_albedo.png")
+    tex = Image.open(albedo_path).size[0]
+    m["texture_signature"] = trim_checks.colour_signature(albedo_path)
     cls = size_class(max(size), category_class)
     budget = STANDARDS["size_classes"][cls]["tri_budget"]
     density = tex * (uv_area / area) ** 0.5 if area > 0 and uv_area > 0 else 0
@@ -154,4 +159,69 @@ def check(name, views_dir=None, category_class=None, paint_only=(), solid=False,
             if ious[k] < MIN["silhouette_iou"]:
                 fails.append("%s outline matches the reference only %.0f%%" % (k, ious[k] * 100))
         m["silhouette_iou"] = ious
+    # The generic gate only checks v_front/v_side reference views. Trim orders
+    # are produced from p_section/p_strip/p_front and need their own checks.
+    if trim_order is None:
+        order_path = os.path.join(ROOT, "factory", "orders", name + ".json")
+        if os.path.exists(order_path):
+            with open(order_path) as fh:
+                trim_order = json.load(fh)
+    if trim_order and trim_order.get("line") == "extrude":
+        source = os.path.join(ROOT, "assets", "source_textures",
+                              trim_order.get("views_folder", name))
+        category = trim_order.get("category")
+        if category == "moulding" and trim_order.get("profile") is not None:
+            p = os.path.join(source, "p_section.png")
+            if not os.path.isfile(p):
+                fails.append("trim section reference is missing")
+            else:
+                match = trim_checks.section_match(p, verts, polys)
+                if match is None:
+                    fails.append("trim exported section cannot be compared to reference")
+                else:
+                    iou, ratio_error = match
+                    m["trim_section_iou"] = iou
+                    m["trim_section_ratio_error"] = ratio_error
+                    if iou < 0.68 or ratio_error > 0.30:
+                        fails.append("trim section differs from reference: IoU %.2f, ratio error %.2f" %
+                                     (iou, ratio_error))
+        elif category == "moulding":
+            m["trim_section_reference"] = "default profile; no drawn section supplied"
+
+        # Doors and window surrounds must have real negative space, not simply
+        # a dark rectangle painted on an opaque slab.
+        needs_opening = (name.startswith(("door_casing_", "window_casing_", "window_trim_",
+                                          "closet_trim_")))
+        if category == "frame" and needs_opening:
+            p = os.path.join(source, "p_front.png")
+            if not os.path.isfile(p):
+                fails.append("frame painted reference is missing")
+            else:
+                opening = trim_checks.opening_from_paint(p, trim_order.get("opening_mode", "strict"))
+                m["reference_opening"] = list(opening) if opening else None
+                if opening is None:
+                    fails.append("frame reference opening not found")
+                else:
+                    x0, y0, x1, y1 = opening
+                    fg = sil["front"]
+                    H, W = fg.shape
+                    left = max(0, min(W - 1, int((x0 + (x1 - x0) * .2) * W)))
+                    right = max(left + 1, min(W, int((x1 - (x1 - x0) * .2) * W)))
+                    top = max(0, min(H - 1, int((y0 + (y1 - y0) * .2) * H)))
+                    bottom = max(top + 1, min(H, int((y1 - (y1 - y0) * .2) * H)))
+                    occlusion = float(fg[top:bottom, left:right].mean())
+                    m["frame_opening_occlusion"] = round(occlusion, 3)
+                    if occlusion > 0.1:
+                        fails.append("frame opening is blocked by mesh: %.0f%% occupied" %
+                                     (occlusion * 100))
+
+        reference = os.path.join(source, "p_strip.png" if category == "moulding"
+                                 else "p_front.png")
+        if not os.path.isfile(reference):
+            fails.append("trim painted reference is missing")
+        else:
+            difference = trim_checks.texture_difference(reference, albedo_path)
+            m["trim_colour_difference"] = difference
+            if difference is None or difference > 0.40:
+                fails.append("trim baked colour differs from painted reference: %s" % difference)
     return {"pass": not fails, "fails": fails, "metrics": m}
