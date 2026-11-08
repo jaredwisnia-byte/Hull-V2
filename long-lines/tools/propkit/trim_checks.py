@@ -109,13 +109,42 @@ def opening_from_paint(path, method="strict"):
     return left / w, rows[0][0] / h, right / w, (rows[-1][0] + 1) / h
 
 
-def geometry_signature(vertices, decimals=3):
-    """Vertex-order-independent fingerprint, rounded to millimetres by default."""
-    points = sorted(tuple(round(float(c), decimals) for c in v) for v in vertices)
-    return hashlib.sha256(repr(points).encode("ascii")).hexdigest()[:20]
+def geometry_signature(vertices, faces=None, decimals=3):
+    """Stable fingerprint for mesh shape and topology, independent of vertex indexing.
+
+    Rounds positions to the nearest millimetre to avoid tiny float differences.
+    A change to face connectivity also changes the fingerprint.
+    """
+    points = [tuple(round(float(c), decimals) for c in v) for v in vertices]
+    key = sorted(points)
+    if faces is not None:
+        polygons = sorted(tuple(sorted(points[i] for i in face)) for face in faces)
+        key = (key, polygons)
+    return hashlib.sha256(repr(key).encode("ascii")).hexdigest()[:20]
+
+
+def texture_difference(source, baked):
+    """Coarse texture-colour validation, not a pixel-by-pixel visual match.
+
+    The atlas and its baked UV islands have different layouts. This compares the
+    median RGB of the painted source foreground against non-background baked pixels.
+    Returns a normalized 0..1 RGB difference, or None for unusable input.
+    """
+    src = np.asarray(Image.open(source).convert("RGB"), dtype=np.float32)
+    mask = src.max(axis=2) > BG_MAX
+    if not mask.any():
+        return None
+    tex = np.asarray(Image.open(baked).convert("RGB"), dtype=np.float32)
+    # The bake background is commonly black; exclude it when sufficiently distinct.
+    occupied = tex.max(axis=2) > 24
+    if occupied.mean() < .01:
+        return None
+    src_rgb = np.median(src[mask], axis=0)
+    dst_rgb = np.median(tex[occupied], axis=0)
+    return round(float(np.linalg.norm(src_rgb - dst_rgb) / (255 * np.sqrt(3))), 3)
 
 
 def colour_signature(path):
-    """Coarse baked-pixel statistics. UV packing can move islands, so not pixel hashes."""
+    """Coarse baked-pixel statistics. UV packing may move islands, so not pixel hashes."""
     a = np.asarray(Image.open(path).convert("RGB"), dtype=np.float32)
     return [int(round(float(v) / 8)) for v in np.r_[a.mean(axis=(0, 1)), a.std(axis=(0, 1))]]
