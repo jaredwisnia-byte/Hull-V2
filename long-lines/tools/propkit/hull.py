@@ -116,7 +116,7 @@ HULL_REPORT = {}     # what the last hull_prop call carved with blades
 
 def hull_prop(views, height, res=110, smooth_iters=4, decimate=0.35, rough=0.5, name="hull",
               convex=False, paint_only=(), features=True, sil_override=None, depth_m=None, grime=0.25,
-              paint=True, width_m=None, blades=False, voxel_hook=None, mesh_hook=None, revolve=True):
+              paint=True, width_m=None, blades=False, voxel_hook=None, mesh_hook=None, revolve=True, blur=0.7):
     """convex: fill each outline to its convex shape (boxy objects; dark areas can't
     punch holes). paint_only: views used for texture but not trusted to carve (e.g. a
     dark back panel on a dark sheet). width_m: the real width (views painted out of
@@ -124,6 +124,8 @@ def hull_prop(views, height, res=110, smooth_iters=4, decimate=0.35, rough=0.5, 
     arms) from where the views' painted edges meet (propkit/blades.py). voxel_hook(keep, views,
     W, D, H) -> keep: a last say over the voxels before meshing (propkit/hull_assembly.py).
     mesh_hook(obj): edits the dense mesh before smoothing/decimation (propkit/edge_guide.py).
+    blur: voxel smoothing before meshing (voxels); large gently sloped bodies (cars) need ~1.5 or their
+    hoods and sides come out as terraces that catch stripes of paint.
     revolve: a part whose top view is round (an ellipse once handles/spouts are set aside) is built
     as a lathe shape, every slice an ellipse sized by the front and side outlines (propkit/revolve.py)."""
     # sil_override: {view: (mask, image)} from a part map, when the sheet set provides exact outlines.
@@ -165,7 +167,7 @@ def hull_prop(views, height, res=110, smooth_iters=4, decimate=0.35, rough=0.5, 
     if voxel_hook is not None:
         keep = voxel_hook(keep, carve, W, D, H)
     vol = np.pad(keep.astype(np.float32), 1)
-    vol = ndimage.gaussian_filter(vol, 0.7)
+    vol = ndimage.gaussian_filter(vol, blur)
     verts, faces, _, _ = marching_cubes(vol, 0.5)
     verts -= 1.0
     sx, sy, sz = W / nx, D / ny, H / nz

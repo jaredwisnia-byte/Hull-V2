@@ -326,3 +326,26 @@ library, ledger and REPORT are restored afterwards (git checkout + delete the ex
   0.89, sofa parts 0.89-0.91, TVs 0.90. An opening alone shaves a box's corners and made the housing look
   round (0.95): put shallow wide slivers back before testing. Pad tight-cropped masks before a distance
   transform (the basket's mask touched the crop edge and the transform found no background).
+
+## Car from a views sheet in ~15 minutes (sedan, Nov 9): the fast path
+- Sheet: Drive "exteriors/vehicles/Classic Sedan Parts and Views Sheet.png" (four orthographic views,
+  a top view, perspectives, then loose panels/wheels/lights). Only the orthographic views are needed;
+  the loose parts are already painted on the body views.
+- Steps that worked first time:
+  1. Crop each band you need at FULL sheet width (a narrow crop cut the fourth view in half), then
+     `split_parts_sheet.py` with one row per band; keep only the v_*.png files, delete its order.
+  2. Side views: the hull's right view has the FRONT ON THE LEFT, its left view the front on the right.
+     Decide which end is the front from the drawing (hood longer than trunk; headlights), not from the
+     sheet order: this sheet's second side view was already a correct left view, and "fixing" it by
+     mirroring was wrong. Top view: turn it so the front is at the bottom.
+  3. Check proportions agree before building: front W/H, side L/H and top W/L must give the same
+     object (here 1.45, 3.45, 0.43: consistent). Then fix ONE real dimension (width 1.95 m for a 70s
+     mid-size) and let the views give the rest. Never stretch a view: wheels go oval.
+  4. Order: line `hull`, `"hull": {"width_m": ..., "res": 220, "paint": "project", "blur": 1.6,
+     "smooth_iters": 10}`, class `vehicle`.
+- `"paint": "project"` (blended views, as hull_parts) is the default to use for new hull orders: the
+  old per-face nearest-view paint streaks every slanted face (windscreens, hoods).
+- Big gently sloped bodies need `blur` ~1.6 and more smoothing: a 4.6 m object at 220 voxels has 2 cm
+  steps, and each riser faces a view and takes a stripe of its paint (grille colours across the hood).
+  The streaks were geometry, not paint.
+- Wheels need nothing special: the side view's circle times the front view's corner blocks is a cylinder.

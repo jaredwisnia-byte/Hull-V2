@@ -1021,6 +1021,35 @@
   "desc": "A 'Statesman' hardtop in sun-faded harvest gold, rust bubbling through, brown vinyl roof.",
   "kind": "static"
  },
+ "car_sedan_tan": {
+  "size": [
+   1.9441,
+   1.3098,
+   4.6735
+  ],
+  "min": [
+   -0.978,
+   -0.0,
+   -2.3366
+  ],
+  "max": [
+   0.9661,
+   1.3098,
+   2.3368
+  ],
+  "tris": 38000,
+  "tex": 2048,
+  "standardized": [
+   "seated on floor (-0.032 m)",
+   "decimated 288584 -> 38000 tris"
+  ],
+  "tags": [
+   "car",
+   "factory"
+  ],
+  "desc": "A tired mid-70s four-door sedan in faded tan, rust along the sills and arches.",
+  "kind": "static"
+ },
  "chair_cap_bath": {
   "size": [
    1.2,

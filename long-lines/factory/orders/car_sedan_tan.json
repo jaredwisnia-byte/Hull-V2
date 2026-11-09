@@ -1,0 +1,32 @@
+{
+ "name": "car_sedan_tan",
+ "category": "car",
+ "line": "hull",
+ "source": "Drive: exteriors/vehicles/Classic Sedan Parts and Views Sheet.png",
+ "class": "vehicle",
+ "tex": 2048,
+ "status": "shipped",
+ "views_folder": "car_sedan_tan",
+ "views": [
+  "front",
+  "right",
+  "back",
+  "left",
+  "top"
+ ],
+ "height_m": 1.35,
+ "hull": {
+  "width_m": 1.95,
+  "res": 220,
+  "paint": "project",
+  "rough": 0.55,
+  "blur": 1.6,
+  "smooth_iters": 10
+ },
+ "assumptions": [
+  "width 1.95 m (1970s mid-size sedan); height and length from the views' own proportions (1.35 x 4.65 m)",
+  "second side view on the sheet is the left side (front on the right); top view rotated front-down"
+ ],
+ "notes": "A tired mid-70s four-door sedan in faded tan, rust along the sills and arches.",
+ "attempts": 1
+}

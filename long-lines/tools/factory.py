@@ -216,7 +216,21 @@ def run_line(order):
         from propkit.hull import hull_prop
         d = os.path.join(SRC, order["views_folder"])
         views = {k: os.path.join(d, "v_%s.png" % k) for k in order.get("views", [])}
-        hull_prop(views, order["height_m"], name=order["name"], **order.get("hull", {}))
+        hp = dict(order.get("hull", {}))
+        # "paint": "project" blends every view by how squarely each face sees it (texturing.project, as
+        # hull_parts does). The default paints each face from one view only, which streaks slanted faces
+        # (glass, hoods, chamfers). Use "project" for new orders.
+        blended = hp.get("paint") == "project"
+        if blended:
+            hp["paint"] = False
+        obj = hull_prop(views, order["height_m"], name=order["name"], **hp)
+        if blended:
+            from propkit import texturing
+            from propkit.hull_assembly import paint_views
+            W, D, H = obj["hull_frame"]
+            tmp = os.path.join("/tmp", "_hull_" + order["name"])
+            texturing.project(obj, paint_views(views, tmp, "p"), W, D, H, others=[], name=obj.name,
+                              rough=hp.get("rough", 0.5))
     elif line == "car":
         from props.cars_painted import painted_car
         painted_car(order["name"], order.get("body", "car_coupe"))
