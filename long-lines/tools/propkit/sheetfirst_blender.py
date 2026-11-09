@@ -16,8 +16,10 @@ from . import sheetfirst_engine as engine
 def build_and_export(manifest_path, asset_name, library_dir):
     spec, paint_path, depth_path = engine.read_manifest(manifest_path)
     atlas = spec["atlas"]
-    with Image.open(depth_path) as im:
-        depth = im.convert("RGB").copy() if depth_path else None
+    depth = None
+    if depth_path:
+        with Image.open(depth_path) as im:
+            depth = im.convert("RGB").copy()
     meshes = engine.build_geometry(spec, depth)
     bad_seams = engine.validate_seams(spec, meshes)
     if bad_seams:
