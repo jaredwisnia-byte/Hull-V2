@@ -1,0 +1,199 @@
+{
+ "name": "coffee_maker_drip",
+ "category": "coffee_maker",
+ "line": "hull_parts",
+ "source": "Drive: Long Dark style game / coffee machine parts sheet (painted half)",
+ "class": "small",
+ "tex": 2048,
+ "status": "shipped",
+ "views_folder": "coffee_maker_drip",
+ "assembly": "assembly",
+ "width_m": 0.236,
+ "depth_m": 0.266,
+ "height_m": 0.33,
+ "rough": 0.6,
+ "res": 150,
+ "part_res": 100,
+ "edge_guide": false,
+ "assumptions": [
+  "size given on the command line"
+ ],
+ "notes": "A 1970s drip coffee maker, almond plastic with an orange filter basket and a glass carafe.",
+ "layout": "attached",
+ "body": "housing",
+ "attached": [
+  "basket",
+  "carafe"
+ ],
+ "skip": {
+  "holder": "hidden inside the basket (only its rim shows)",
+  "filter": "paper filter, hidden inside the basket",
+  "plate": "drawn in perspective, not an orthographic view (the warming plate stays painted on the base)",
+  "handle": "already in the carafe's own views",
+  "lid": "already in the carafe's own views",
+  "ring": "already in the carafe's own views"
+ },
+ "split_notes": "parts sheet split: {\"assembly\": [[\"front\", [38, 6, 199, 231]], [\"right\", [204, 8, 382, 229]], [\"back\", [400, 8, 533, 229]], [\"left\", [554, 8, 734, 229]], [\"top\", [739, 31, 893, 201]], [\"bottom\", [905, 37, 1057, 185]]], \"carafe\": [[\"front\", [1062, 71, 1209, 189]], [\"top\", [1193, 72, 1325, 175]], [\"right\", [1311, 71, 1431, 189]], [\"front2\", [144, 403, 299, 529]], [\"left\", [318, 404, 444, 529]], [\"top2\", [488, 406, 639, 524]]], \"housing\": [[\"left\", [33, 222, 189, 412]], [\"back\", [205, 219, 326, 409]], [\"front\", [344, 221, 438, 410]], [\"right\", [453, 222, 597, 412]], [\"top\", [1303, 244, 1416, 360]]], \"basket\": [[\"front\", [607, 255, 769, 348]], [\"right\", [775, 250, 870, 346]], [\"top\", [870, 264, 1014, 344]]], \"holder\": [[\"front\", [1011, 253, 1143, 345]]], \"plate\": [[\"persp\", [1144, 244, 1302, 363]]], \"lid\": [[\"top\", [666, 411, 769, 516]]], \"filter\": [[\"front\", [825, 412, 955, 511]]], \"handle\": [[\"front\", [1003, 399, 1057, 518]], [\"right\", [1084, 401, 1154, 513]]], \"ring\": [[\"front\", [1190, 437, 1298, 484]]]}",
+ "measured": {
+  "layout": "attached",
+  "parts": [
+   {
+    "part": "basket",
+    "box_m": [
+     [
+      -0.102,
+      0.091
+     ],
+     [
+      -0.098,
+      0.024
+     ],
+     [
+      0.233,
+      0.304
+     ]
+    ],
+    "located_top_m": 0.304,
+    "top_from": "views agree",
+    "revolve": {
+     "iou": 0.879,
+     "tilt": 0.2,
+     "share": 0.999,
+     "round": false
+    },
+    "snapped": {
+     "towards": "up",
+     "moved_mm": 3.0,
+     "gap_after_mm": 0.0,
+     "touching_share": 1.0,
+     "under_gap_mm": null
+    }
+   },
+   {
+    "part": "carafe",
+    "box_m": [
+     [
+      -0.093,
+      0.104
+     ],
+     [
+      -0.121,
+      0.029
+     ],
+     [
+      0.055,
+      0.204
+     ]
+    ],
+    "located_top_m": 0.229,
+    "top_from": "own proportions (views disagree by 13% of the height)",
+    "revolve": {
+     "iou": 0.994,
+     "tilt": 0.0,
+     "share": 0.903,
+     "round": true,
+     "slices": 75,
+     "voxels_before_after": [
+      294368,
+      240150
+     ]
+    },
+    "snapped": {
+     "towards": "down",
+     "moved_mm": 8.9,
+     "gap_after_mm": 0.0,
+     "touching_share": 0.6,
+     "under_gap_mm": 0.0
+    }
+   }
+  ],
+  "skipped": {
+   "holder": "hidden inside the basket (only its rim shows)",
+   "filter": "paper filter, hidden inside the basket",
+   "plate": "drawn in perspective, not an orthographic view (the warming plate stays painted on the base)",
+   "handle": "already in the carafe's own views",
+   "lid": "already in the carafe's own views",
+   "ring": "already in the carafe's own views"
+  },
+  "body_front": "front view 0.41 wide vs back 0.57: carved with the back's outline",
+  "located": {
+   "front": {
+    "basket": [
+     0.068,
+     0.887,
+     0.081,
+     0.294
+    ],
+    "carafe": [
+     0.105,
+     0.94,
+     0.294,
+     0.827
+    ],
+    "_body": [
+     0.015,
+     0.865,
+     0.34,
+     0.99
+    ]
+   },
+   "right": {
+    "basket": [
+     0.133,
+     0.593,
+     0.078,
+     0.29
+    ],
+    "carafe": [
+     0.047,
+     0.613,
+     0.425,
+     0.839
+    ],
+    "_body": [
+     0.16,
+     0.987,
+     0.093,
+     0.984
+    ]
+   },
+   "left": {
+    "basket": [
+     0.414,
+     0.868,
+     0.078,
+     0.295
+    ],
+    "carafe": [
+     0.395,
+     0.954,
+     0.306,
+     0.834
+    ],
+    "_body": [
+     0.013,
+     0.836,
+     0.093,
+     0.984
+    ]
+   }
+  },
+  "gaps_mm": [
+   {
+    "part": "coffee_maker_drip_basket",
+    "support": "up",
+    "seated_gap_mm": 0.0,
+    "under_gap_mm": null,
+    "touching": 1.0
+   },
+   {
+    "part": "coffee_maker_drip_carafe",
+    "support": "down",
+    "seated_gap_mm": 0.0,
+    "under_gap_mm": 0.0,
+    "touching": 0.6
+   }
+  ]
+ },
+ "attempts": 1
+}

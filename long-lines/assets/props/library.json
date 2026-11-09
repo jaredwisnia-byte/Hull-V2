@@ -1157,6 +1157,34 @@
   "desc": "closet_trim_bedroom",
   "kind": "static"
  },
+ "coffee_maker_drip": {
+  "size": [
+   0.2357,
+   0.3284,
+   0.2652
+  ],
+  "min": [
+   -0.1178,
+   -0.0,
+   -0.1329
+  ],
+  "max": [
+   0.1179,
+   0.3284,
+   0.1323
+  ],
+  "tris": 5700,
+  "tex": 2048,
+  "standardized": [
+   "decimated 175250 -> 5700 tris"
+  ],
+  "tags": [
+   "coffee_maker",
+   "factory"
+  ],
+  "desc": "A 1970s drip coffee maker, almond plastic with an orange filter basket and a glass carafe.",
+  "kind": "static"
+ },
  "coffee_table": {
   "size": [
    1.1,
