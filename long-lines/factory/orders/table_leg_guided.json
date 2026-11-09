@@ -1,0 +1,167 @@
+{
+ "name": "table_leg_guided",
+ "category": "table",
+ "line": "hull",
+ "source": "Drive: furniture/updatedleg.png",
+ "class": "medium",
+ "tex": 2048,
+ "status": "shipped",
+ "views_folder": "table_leg_guided/leg",
+ "views": [
+  "front",
+  "right",
+  "back",
+  "left",
+  "top"
+ ],
+ "handbook": "table_leg",
+ "hull": {
+  "res": 260,
+  "paint": "project",
+  "rough": 0.6,
+  "blur": 0.7,
+  "smooth_iters": 4,
+  "relief": true,
+  "guides": true
+ },
+ "assumptions": [
+  "no size given or looked up: height from human scale (a table top at a seated person's elbows)",
+  "views named by the sheet's own labels (second view is the LEFT side)",
+  "the sheet's cyan construction guides are read, then painted out of the views (propkit/guides.py); cross-section rings mark the round part",
+  "the two close-ups are detail references, not views; the bottom view checks roundness"
+ ],
+ "notes": "A carved table leg: acanthus capital with volutes, bead band, fluted tapered shaft, leafy bun foot.",
+ "attempts": 1,
+ "measured": {
+  "scale": {
+   "scale_range": [
+    0.5549999999999999,
+    0.8428
+   ],
+   "agreeing": 1,
+   "of": 1,
+   "nominal_spread": 1.0,
+   "contacts": [
+    {
+     "contact": "whole height ~ popliteal_height",
+     "measured": 1.0,
+     "size_mm": 690.7,
+     "human_range_mm": [
+      555.0,
+      842.8
+     ],
+     "agrees": true
+    }
+   ],
+   "size_from": "human scale (1 of 1 contacts agree): 0.154 x 0.107 x 0.691 m",
+   "assumption": "a dining or writing table's leg (the commonest carved leg); a coffee-table or console leg would be shorter or taller"
+  },
+  "guides": {
+   "views": {
+    "front": [
+     0.304,
+     0.965,
+     5
+    ],
+    "back": [
+     0.363,
+     0.965,
+     4
+    ],
+    "left": [
+     0.35,
+     0.774,
+     3
+    ],
+    "right": [
+     0.35,
+     0.774,
+     3
+    ]
+   },
+   "bottom_view_round": false,
+   "bottom_view_iou": 0.941,
+   "round_band": {
+    "v_top": 0.35,
+    "v_bottom": 0.965,
+    "slices": 716,
+    "voxels_removed": 1768324
+   }
+  },
+  "relief": {
+   "light_dir": [
+    0.01,
+    1.0
+   ],
+   "views": {
+    "front": {
+     "view": "front",
+     "regions": 95,
+     "raised": 40,
+     "sunk": 24,
+     "flat": 31,
+     "light_dir": [
+      0.01,
+      1.0
+     ],
+     "shading_match": 0.171,
+     "all_raised_match": -0.002,
+     "grooves_only_match": 0.003,
+     "carved_share": 0.43
+    },
+    "back": {
+     "view": "back",
+     "regions": 96,
+     "raised": 38,
+     "sunk": 24,
+     "flat": 34,
+     "light_dir": [
+      0.01,
+      1.0
+     ],
+     "shading_match": 0.152,
+     "all_raised_match": -0.01,
+     "grooves_only_match": 0.006,
+     "carved_share": 0.381
+    },
+    "right": {
+     "view": "right",
+     "regions": 61,
+     "raised": 31,
+     "sunk": 18,
+     "flat": 12,
+     "light_dir": [
+      0.01,
+      1.0
+     ],
+     "shading_match": 0.107,
+     "all_raised_match": 0.021,
+     "grooves_only_match": -0.008,
+     "carved_share": 0.411
+    },
+    "left": {
+     "view": "left",
+     "regions": 72,
+     "raised": 31,
+     "sunk": 25,
+     "flat": 16,
+     "light_dir": [
+      0.01,
+      1.0
+     ],
+     "shading_match": 0.122,
+     "all_raised_match": 0.002,
+     "grooves_only_match": -0.016,
+     "carved_share": 0.399
+    }
+   },
+   "high_tris": 800000,
+   "displaced_mm": {
+    "max_out": 3.48,
+    "max_in": 4.01,
+    "cap": 7.47,
+    "vertices": 794244
+   }
+  }
+ }
+}

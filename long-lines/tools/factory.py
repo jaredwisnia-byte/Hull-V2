@@ -254,6 +254,14 @@ def run_line(order):
         if not height and order.get("handbook"):
             # human scale: the views give proportions, the handbook's contacts give the size
             height, order["measured"] = human_scale_height(order, views)
+        if hp.pop("guides", False):
+            # removable construction guides (propkit/guides.py): cross-section rings make their band round
+            from propkit import guides
+            rb = guides.round_band(d)
+            if rb:
+                v_top, v_bottom, grep_ = rb
+                order.setdefault("measured", {})["guides"] = grep_
+                hp["voxel_hook"] = guides.round_hook(v_top, v_bottom, grep_)
         if hp.pop("relief", False):
             # carving inside the outline, read from the painting (propkit/relief.py)
             from propkit import relief

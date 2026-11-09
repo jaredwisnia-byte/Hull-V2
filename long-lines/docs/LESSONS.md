@@ -510,3 +510,16 @@ library, ledger and REPORT are restored afterwards (git checkout + delete the ex
   side creases are too weak on the lit side to bound them). Shading check: 0.16-0.18 correlation with the
   painting (all-raised: about 0; grooves only: about 0). A companion relief sheet (regions by colour) would
   replace the guessing in steps 1-3 and keep steps 4-5.
+
+## Removable construction guides (Nov 9)
+- Drive furniture/updatedleg.png: the leg with cyan guides and a legend (surface curvature, side profile,
+  cross-section rings = "maintain round/oval", centre line), plus a bottom view. propkit/guides.py reads
+  them and paints them out: `clean` moves guide pixels to g_<view>.png and fills them from the
+  surrounding paint. Guide colour = much bluer than red; warm paint never leans blue, so faint strokes and
+  the anti-aliased fringe go too (a strict colour test alone left pale traces).
+- Cross-section rings: horizontal guide strokes across at least 30% of the object's width. One drawn
+  ellipse shows as two arcs; arcs close together are one ring. The round band is the widest band at least
+  two views agree on (one stray stroke cannot widen it; a side view that draws no low ring cannot shorten
+  it). The hull's slices in that band become the ellipse inscribed in each slice's own extent.
+- Leg: square block and carved top as before; shaft and foot now round (cross-sections show it); no guide
+  on the model. The sheet's labels put the LEFT side second: read the labels, never assume an order.

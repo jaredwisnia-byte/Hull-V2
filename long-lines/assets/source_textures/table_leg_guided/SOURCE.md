@@ -1,0 +1,1 @@
+From Jared's painted sheet updatedleg.png (Drive: furniture): the carved leg with removable cyan construction guides and a legend. Views cropped with tools/sheet_blobs.py (factory/orders/table_leg_guided.sheet.json); guides moved to g_<view>.png and painted out of v_<view>.png by propkit/guides.py clean.
