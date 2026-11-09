@@ -141,6 +141,45 @@ second stage succeeds.
 8. Render all final GLBs consistently and reserve AI visual critique for
    exceptions or batch contact sheets.
 
+## Blender builder (interpreter)
+
+`tools/factory_v1.py <asset.json>` runs preflight, builds with `tools/propkit/v1_geometry.py`
+(pure Python) and `v1_blender.py`, exports `<asset_id>.glb`, then inspects **only the exported
+file** in a fresh Blender process and writes `factory/out/<asset_id>/qa.json`.
+
+Conventions the builder fixes where this spec was silent:
+- `u_axis x v_axis` is the panel's outward normal; `v = 0` is the bottom row of `rect_px`.
+- `anchor_m` is the minimum corner of the part's *base box* (face panel + declared thickness,
+  before painted relief). The face panel's own placement is authoritative; the anchor is a check.
+- Brief dimensions are a nominal envelope: per axis they must match the main body or the whole
+  assembly before painted relief (a TV's cabinet; a toaster's body plus feet).
+- `cavity.depth_m` is measured from the panel plane; the floor is flat.
+
+What each schema element becomes:
+
+| Element | Built as | Not built (reported in `unsupported`, build fails) |
+| --- | --- | --- |
+| panel | grid over its rect in metres (arc length on `cylinder`), UVs straight from `rect_px` (half-texel inset), never re-unwrapped | — |
+| signed depth | displacement along the local normal; zero on panel borders (seams cannot tear); off under separately built parts and in cavity openings; grid density chosen so the surface stays within 0.5 mm of the map | vector displacement |
+| `weld` / `fold` | shared, merged edge vertices (fold has no crease yet) | `hinge`, `fasten` (recorded), welds across parts |
+| `closed_box`, `panel_shell` | the welded panels; closed_box must come out closed | — |
+| `applique` | face panel sheet; with `closed_solid`, extruded back by its thickness | rotation |
+| `cylinder` | disc on its face panel extruded along the normal; 2nd panel = wrap texture (else cap rim, warned) | rotation |
+| cavity `rect` | opening removed, inward walls + floor (none if `closed_bottom` is false); walls/floor textured from the painted opening folded in | `ellipse` |
+| — | — | `sweep`, `lathe`, `cavity_liner` constructions |
+
+A painted dark or blue rectangle never becomes a hole: only declared cavities are cut.
+
+QA (`qa.json`, all must hold for `pass`): preflight; no manifest/builder errors; nothing
+unsupported; declared cavities and part footprints agree with the painted part-ID masks
+(IoU >= 0.85, centre within 6 px); every part built and present in the GLB with its semantic
+class; closed parts manifold after welding glTF's UV-seam splits; authored UV samples found
+unchanged in the GLB and the original atlas embedded; every cavity's depth measured by ray
+cast within 1.5 mm; every child part touching its parent; size matches the brief; exported
+size equals built size; triangles within the production size-class budget; renders made.
+Warnings (texel squeeze on walls without their own panels, relief beyond declared size)
+do not fail a build.
+
 ## Known limitations
 
 - Neither the deterministic preflight validator nor the current sheet-first
@@ -149,8 +188,9 @@ second stage succeeds.
   requirement**, not something every image generator reliably produces.
 - Signed depth is inherently a single-valued local heightfield. It cannot
   represent overhangs or interiors without semantic part/cavity rules.
-- Schema validation verifies the *declared* plan; real GLB tests are still
-  needed to verify implementation, manifold geometry, and UV fidelity.
+- Schema validation verifies the *declared* plan; the Blender builder's QA verifies the
+  exported GLB (see above). Both test packages so far use programmatic art; no package
+  painted by an image model has been built yet.
 - The minimal CRT demonstration below uses synthetic placeholder art
   solely to test validator logic and layout proportions. It is not a
   finished 1970s TV or substitute for commissioned painterly art.
