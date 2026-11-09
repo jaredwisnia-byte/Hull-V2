@@ -1,0 +1,57 @@
+{
+ "name": "table_leg_carved",
+ "category": "table",
+ "line": "hull",
+ "source": "Drive: furniture/leg.png",
+ "class": "medium",
+ "tex": 2048,
+ "status": "shipped",
+ "views_folder": "table_leg_carved/leg",
+ "views": [
+  "front",
+  "right",
+  "back",
+  "left",
+  "top"
+ ],
+ "handbook": "table_leg",
+ "hull": {
+  "res": 260,
+  "paint": "project",
+  "rough": 0.6,
+  "blur": 0.7,
+  "smooth_iters": 4
+ },
+ "assumptions": [
+  "no size given or looked up: height from human scale (a table top at a seated person's elbows)",
+  "the four elevations agree with each other (front/back 1.45x wider than the sides); the top view is drawn square and is stretched to them",
+  "the two close-ups on the sheet are detail references, not views"
+ ],
+ "notes": "A carved table leg: acanthus capital with volutes, bead band, fluted tapered shaft, leafy bun foot.",
+ "attempts": 1,
+ "measured": {
+  "scale": {
+   "scale_range": [
+    0.5549999999999999,
+    0.8428
+   ],
+   "agreeing": 1,
+   "of": 1,
+   "nominal_spread": 1.0,
+   "contacts": [
+    {
+     "contact": "whole height ~ popliteal_height",
+     "measured": 1.0,
+     "size_mm": 690.7,
+     "human_range_mm": [
+      555.0,
+      842.8
+     ],
+     "agrees": true
+    }
+   ],
+   "size_from": "human scale (1 of 1 contacts agree): 0.156 x 0.104 x 0.691 m",
+   "assumption": "a dining or writing table's leg (the commonest carved leg); a coffee-table or console leg would be shorter or taller"
+  }
+ }
+}

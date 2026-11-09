@@ -483,3 +483,14 @@ library, ledger and REPORT are restored afterwards (git checkout + delete the ex
   merged loops, not one cord: 12.5 mm coil, 4.1 mm wire.
 - tools/diag/scale_audit.py checks built props the same way: car x0.99, sofa x0.97 (both already
   people-sized; nothing changed).
+
+## Carved table leg: silhouettes get the form, not the carving (Nov 9)
+- Drive furniture/leg.png: four elevations, a top view, two close-ups (detail references, not views).
+  The elevations agree with each other (front/back 1.45x wider than the sides) but the top view is drawn
+  square: the elevations win (they share one scale), the top is stretched to them.
+- The hull line can now take its size from human scale too (factory.py human_scale_height): an order with
+  `"handbook"` and no `height_m`. Table leg: the top sits at a seated person's elbows (1.5-1.72 knee
+  heights) -> 690 mm. One contact only, so the report states the assumption (dining/writing table).
+- Result: outline exact (IoU 0.92-1.0: taper, bead band, bun foot, block), but the clay render shows no
+  fluting and no leaf relief: those lie inside the outline and are only painted. This is the relief problem:
+  it needs the 2.5D relief step (height over the surface from annotated regions), not more silhouettes.

@@ -205,6 +205,33 @@ def intake_set(manifest, category=None, name=None):
 
 # ------------------------------------------------------------------ lines
 
+def human_scale_height(order, views):
+    """The height a hull order's views imply under human scale (propkit/human_scale.py): each whole-object
+    contact measured in the views (front height = 1), solved and cross-checked. Returns (height_m, report)."""
+    from propkit import handbook as HB, human_scale as HS
+    from propkit.hull import silhouette
+    fm, _ = silhouette(views["front"])
+    side = views.get("right") or views.get("left")
+    W = fm.shape[1] / fm.shape[0]
+    D = None
+    if side:
+        sm, _ = silhouette(side)
+        D = sm.shape[1] / sm.shape[0]
+    e = HB.entry(order["handbook"])
+    anchors = []
+    for c in HB.contacts(e):
+        if c["part"] == "whole":
+            v = {"height": 1.0, "width": W, "depth": D}.get(c["measure"])
+            if v:
+                anchors.append(HS.anchor(c, v))
+    k, rep = HS.solve(anchors)
+    rep["size_from"] = "human scale (%d of %d contacts agree): %.3f x %.3f x %.3f m" % (
+        rep["agreeing"], rep["of"], W * k, (D or 0) * k, k)
+    if e.get("assumption"):
+        rep["assumption"] = e["assumption"]
+    return k, {"scale": rep}
+
+
 def run_line(order):
     """Builds the order's geometry in the current scene. One function per line."""
     line = order["line"]
@@ -223,7 +250,11 @@ def run_line(order):
         blended = hp.get("paint") == "project"
         if blended:
             hp["paint"] = False
-        obj = hull_prop(views, order["height_m"], name=order["name"], **hp)
+        height = order.get("height_m")
+        if not height and order.get("handbook"):
+            # human scale: the views give proportions, the handbook's contacts give the size
+            height, order["measured"] = human_scale_height(order, views)
+        obj = hull_prop(views, height, name=order["name"], **hp)
         if blended:
             from propkit import texturing
             from propkit.hull_assembly import paint_views

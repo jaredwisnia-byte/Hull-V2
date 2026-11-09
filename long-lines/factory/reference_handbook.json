@@ -262,6 +262,26 @@
      "why": "three adults abreast on a bench, plus doors and body sides"
     }
    ]
+  },
+  "table_leg": {
+   "aka": [
+    "table_leg",
+    "leg"
+   ],
+   "mount": "floor",
+   "assumption": "a dining or writing table's leg (the commonest carved leg); a coffee-table or console leg would be shorter or taller",
+   "contacts": [
+    {
+     "part": "whole",
+     "measure": "height",
+     "human": "popliteal_height",
+     "factor": [
+      1.5,
+      1.72
+     ],
+     "why": "the top sits at a seated person's elbows with their thighs under the apron: about 1.6-1.75 knee heights; the leg is that less the top's thickness"
+    }
+   ]
   }
  }
 }

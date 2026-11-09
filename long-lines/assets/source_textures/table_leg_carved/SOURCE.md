@@ -1,0 +1,1 @@
+From Jared's painted sheet leg.png (Drive: furniture). Views cropped with tools/sheet_blobs.py and factory/orders/table_leg_carved.sheet.json; the two close-ups on the sheet are detail references, not views.
