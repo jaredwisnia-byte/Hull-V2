@@ -1,5 +1,9 @@
 name: Sheet-first modelling regression and Blender smoke
 
+concurrency:
+  group: sheetfirst-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   push:
     paths:
