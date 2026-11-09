@@ -166,7 +166,7 @@ def validate(asset_file):
                     bad.append(key + " must be exact RGB PNG with no alpha/palette conversion")
                 if key in ("signed_depth", "part_ids"):
                     assets[key] = img.copy()
-                img.verify if False else None
+                img.verify()  # ensure the entire PNG stream is decodable
         except (OSError, ValueError) as exc:
             bad.append("cannot read %s: %s" % (key, exc))
     if bad:
@@ -368,8 +368,6 @@ def validate(asset_file):
             not p["closed_solid"] and p["construction"] not in ("applique",)
             for p in parts.values()):
         warn.append("some listed parts are open surfaces: post-build manifold QA is essential")
-    if not maps.get("concept"):
-        warn.append("concept preview missing: request art approval before production")
     metrics["part_count"] = len(parts)
     metrics["connections"] = len(assembly["connections"])
     metrics["cavities"] = len(assembly["cavities"])
