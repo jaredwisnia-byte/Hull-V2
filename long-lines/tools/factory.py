@@ -195,6 +195,10 @@ def intake_sheetfirst(manifest, name=None):
              (paint, os.path.join(dest, spec["atlas"]["albedo"]))]
     if depth:
         files.append((depth, os.path.join(dest, spec["atlas"]["depth"])))
+    if spec["atlas"].get("vector"):
+        vector_source = os.path.join(os.path.dirname(os.path.realpath(manifest)),
+                                     spec["atlas"]["vector"])
+        files.append((vector_source, os.path.join(dest, spec["atlas"]["vector"])))
     for origin, target in files:
         os.makedirs(os.path.dirname(target), exist_ok=True)
         if os.path.realpath(origin) != os.path.realpath(target):
