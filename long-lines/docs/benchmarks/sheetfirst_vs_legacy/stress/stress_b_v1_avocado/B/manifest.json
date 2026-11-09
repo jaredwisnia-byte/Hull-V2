@@ -1,0 +1,215 @@
+{
+ "schema": 1,
+ "asset_id": "stress_b_v1_avocado",
+ "description": "stress variant stress_b_v1_avocado",
+ "atlas": {
+  "albedo": "atlas.png",
+  "depth": "depth.png",
+  "size_px": [
+   1448,
+   1086
+  ],
+  "roughness": 0.6,
+  "metallic": 0.05
+ },
+ "depth_range_m": {
+  "inward": 0.02,
+  "outward": 0.025
+ },
+ "panels": [
+  {
+   "name": "front_door",
+   "size_m": [
+    0.76,
+    0.5914
+   ],
+   "rect_px": [
+    8,
+    367,
+    441,
+    689
+   ],
+   "origin_m": [
+    -0.38,
+    -0.33,
+    0.3186
+   ],
+   "u_axis": [
+    1,
+    0,
+    0
+   ],
+   "v_axis": [
+    0,
+    0,
+    1
+   ],
+   "grid": [
+    24,
+    22
+   ]
+  },
+  {
+   "name": "front_drawer",
+   "size_m": [
+    0.76,
+    0.3186
+   ],
+   "rect_px": [
+    767,
+    783,
+    1149,
+    936
+   ],
+   "origin_m": [
+    -0.38,
+    -0.33,
+    0
+   ],
+   "u_axis": [
+    1,
+    0,
+    0
+   ],
+   "v_axis": [
+    0,
+    0,
+    1
+   ],
+   "grid": [
+    24,
+    8
+   ]
+  },
+  {
+   "name": "right",
+   "size_m": [
+    0.66,
+    0.91
+   ],
+   "rect_px": [
+    11,
+    701,
+    197,
+    1013
+   ],
+   "origin_m": [
+    0.38,
+    -0.33,
+    0
+   ],
+   "u_axis": [
+    0,
+    1,
+    0
+   ],
+   "v_axis": [
+    0,
+    0,
+    1
+   ],
+   "grid": [
+    8,
+    12
+   ],
+   "allow_stretch": true
+  },
+  {
+   "name": "left",
+   "size_m": [
+    0.66,
+    0.91
+   ],
+   "rect_px": [
+    207,
+    701,
+    389,
+    1013
+   ],
+   "origin_m": [
+    -0.38,
+    0.33,
+    0
+   ],
+   "u_axis": [
+    0,
+    -1,
+    0
+   ],
+   "v_axis": [
+    0,
+    0,
+    1
+   ],
+   "grid": [
+    8,
+    12
+   ],
+   "allow_stretch": true
+  },
+  {
+   "name": "cooktop",
+   "size_m": [
+    0.76,
+    0.66
+   ],
+   "rect_px": [
+    6,
+    8,
+    419,
+    350
+   ],
+   "origin_m": [
+    -0.38,
+    -0.33,
+    0.91
+   ],
+   "u_axis": [
+    1,
+    0,
+    0
+   ],
+   "v_axis": [
+    0,
+    1,
+    0
+   ],
+   "grid": [
+    28,
+    24
+   ]
+  },
+  {
+   "name": "backguard",
+   "size_m": [
+    0.76,
+    0.2229
+   ],
+   "rect_px": [
+    428,
+    17,
+    977,
+    178
+   ],
+   "origin_m": [
+    -0.38,
+    0.28,
+    0.91
+   ],
+   "u_axis": [
+    1,
+    0,
+    0
+   ],
+   "v_axis": [
+    0,
+    0,
+    1
+   ],
+   "grid": [
+    32,
+    10
+   ]
+  }
+ ]
+}

@@ -1,0 +1,48 @@
+{
+ "name": "stress_a_v4_harvest_gold",
+ "category": "range_atlas",
+ "line": "atlas",
+ "sheet": "appl_4.png",
+ "views_folder": "stress_a_v4_harvest_gold",
+ "height_m": 0.91,
+ "cat_depth_m": 0.66,
+ "width_m": 0.76,
+ "front": [
+  [
+   10
+  ],
+  [
+   20
+  ]
+ ],
+ "side": 0,
+ "top": 1,
+ "backguard": 3,
+ "burners": 4,
+ "controls": [
+  3
+ ],
+ "status": "shipped",
+ "class": null,
+ "assumptions": [
+  "stress test variant"
+ ],
+ "notes": "stress stress_a_v4_harvest_gold",
+ "measured": {
+  "width_m": 0.76,
+  "depth_m": 0.66,
+  "height_m": 0.91,
+  "panels": [
+   10,
+   20
+  ],
+  "knobs": [
+   {
+    "part": "knob",
+    "diameter_mm": 55.0,
+    "depth_mm": 25.0
+   }
+  ]
+ },
+ "attempts": 1
+}

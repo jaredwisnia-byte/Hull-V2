@@ -92,7 +92,8 @@ VIEWS = {  # direction from centre to camera, up vector, orthographic extent (w,
     "rear": (Vector((0, 1, 0)), (size.x, size.z)),
     "top": (Vector((0, 0, 1)), (size.x, size.y)),
 }
-for view, (dirn, ext) in list(VIEWS.items()) + [("threequarter", (Vector((0.62, -0.75, 0.45)).normalized(), None))]:
+METRICS_ONLY = "--metrics-only" in sys.argv
+for view, (dirn, ext) in ([] if METRICS_ONLY else list(VIEWS.items()) + [("threequarter", (Vector((0.62, -0.75, 0.45)).normalized(), None))]):
     dist = 6 * max(size)
     cam.location = centre + dirn * dist
     up = Vector((0, 1, 0)) if view == "top" else Vector((0, 0, 1))
@@ -211,7 +212,10 @@ ious = {}
 for view, spec in refs.get(OBJ, {}).get("silhouettes", {}).items():
     im = np.asarray(Image.open(os.path.join(HERE, spec["file"])).convert("RGB")).astype(int)
     crop = im[spec["box"][1]:spec["box"][3], spec["box"][0]:spec["box"][2]]
-    ref_mask = np.abs(crop - crop[0, 0]).sum(-1) > 60
+    from scipy import ndimage
+    fg = crop.max(-1) > 48                      # drawn object against the dark sheet
+    lab, nl = ndimage.label(fg)
+    ref_mask = ndimage.binary_fill_holes(lab == (np.argmax(np.bincount(lab.ravel())[1:]) + 1)) if nl else fg
     sil = silhouette("side" if view == "profile" else view)
     if view == "profile":   # the drawn section may face either way: score the better orientation
         ious[view] = max(mask_iou(sil, ref_mask), mask_iou(sil[:, ::-1], ref_mask))

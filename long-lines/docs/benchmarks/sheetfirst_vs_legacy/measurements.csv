@@ -1,0 +1,11 @@
+object,version,pipeline,gate_pass,build_seconds,triangles,size_x_m,size_y_m,size_z_m,max_dimension_error_pct,silhouette_iou_front,silhouette_iou_side,silhouette_iou_top,profile_iou,front_texture_correlation,open_edges,nonmanifold_edges,uv_area_distorted_pct,uv_angle_distortion_mean,uv_angle_distorted_pct,authored_input_values,stretch_overrides,manual_repairs
+armchair,A,legacy factory,True,20.5,1504,0.806,0.875,0.851,2.9,,,,,,0,0,0.0,1.02,0.0,7,0,0
+armchair,B,sheet-first,True,3.3,3168,0.8,0.875,0.85,3.0,,,,,,424,0,0.0,1.4,0.0,155,2,0
+crown,A,legacy factory,True,12.5,76,1.2,0.165,0.28,0.0,,,,0.952,0.603,0,0,0.0,1.31,3.0,5,0,0
+crown,B,sheet-first,False,0.7,7680,1.2,0.146,0.28,11.8,,,,0.0,0.88,304,0,0.0,1.46,19.2,19,0,0
+fridge,A,legacy factory,True,8.1,1792,0.772,0.764,1.642,1.8,0.988,0.979,0.958,,0.85,4,1,2.9,1.89,12.8,2,0,0
+fridge,B,sheet-first,True,2.8,7584,0.83,0.82,1.685,9.3,0.988,0.962,0.962,,0.974,516,0,0.0,1.89,15.4,87,2,0
+oven,A,legacy factory,True,19.8,5028,0.766,0.682,1.131,3.3,,,,,0.937,0,2,0.0,1.01,0.0,9,0,0
+oven,B,sheet-first,True,2.8,3808,0.76,0.66,1.133,0.3,,,,,0.92,376,0,0.0,1.45,0.0,104,2,0
+tv,A,legacy factory,True,30.4,24766,0.662,0.308,0.48,0.1,0.908,0.886,0.938,,0.518,0,0,0.0,1.79,49.8,1,0,0
+tv,B,sheet-first,True,3.6,13216,0.662,0.328,0.48,6.5,0.89,0.952,0.94,,0.952,636,0,0.0,5.69,100.0,87,4,0

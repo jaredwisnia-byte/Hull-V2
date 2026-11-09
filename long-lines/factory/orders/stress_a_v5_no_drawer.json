@@ -1,0 +1,59 @@
+{
+ "name": "stress_a_v5_no_drawer",
+ "category": "range_atlas",
+ "line": "atlas",
+ "sheet": "appl_3.png",
+ "views_folder": "stress_a_v5_no_drawer",
+ "height_m": 0.91,
+ "cat_depth_m": 0.66,
+ "width_m": 0.76,
+ "front": [
+  [
+   15
+  ]
+ ],
+ "side": 26,
+ "top": 0,
+ "backguard": 1,
+ "burners": 2,
+ "controls": [
+  1
+ ],
+ "status": "shipped",
+ "class": null,
+ "assumptions": [
+  "stress test variant"
+ ],
+ "notes": "stress stress_a_v5_no_drawer",
+ "measured": {
+  "width_m": 0.76,
+  "depth_m": 0.66,
+  "height_m": 0.91,
+  "panels": [
+   15
+  ],
+  "knobs": [
+   {
+    "part": "knob",
+    "diameter_mm": 55.0,
+    "depth_mm": 25.0
+   },
+   {
+    "part": "knob",
+    "diameter_mm": 55.0,
+    "depth_mm": 25.0
+   },
+   {
+    "part": "knob",
+    "diameter_mm": 55.0,
+    "depth_mm": 25.0
+   },
+   {
+    "part": "knob",
+    "diameter_mm": 55.0,
+    "depth_mm": 25.0
+   }
+  ]
+ },
+ "attempts": 1
+}

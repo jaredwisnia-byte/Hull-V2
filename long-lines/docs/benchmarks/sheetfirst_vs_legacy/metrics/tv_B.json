@@ -1,0 +1,32 @@
+{
+ "object": "tv",
+ "version": "B",
+ "tris": 13216,
+ "size_m": [
+  0.662,
+  0.328,
+  0.48
+ ],
+ "target_m": [
+  0.6620000004768372,
+  0.30799999833106995,
+  0.47999998927116394
+ ],
+ "dimension_error_pct": [
+  0.0,
+  6.5,
+  0.0
+ ],
+ "open_edges": 636,
+ "nonmanifold_edges": 0,
+ "uv_area_distorted_pct": 0.0,
+ "uv_angle_distortion_mean": 5.69,
+ "uv_angle_distorted_pct": 100.0,
+ "silhouette_iou": {
+  "front": 0.89,
+  "side": 0.952,
+  "top": 0.94
+ },
+ "front_texture_correlation": 0.952,
+ "front_texture_coverage": 0.71
+}

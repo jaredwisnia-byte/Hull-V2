@@ -1,0 +1,26 @@
+{
+ "object": "armchair",
+ "version": "A",
+ "tris": 1504,
+ "size_m": [
+  0.806,
+  0.875,
+  0.851
+ ],
+ "target_m": [
+  0.800000011920929,
+  0.8500000238418579,
+  0.8500000238418579
+ ],
+ "dimension_error_pct": [
+  0.8,
+  2.9,
+  0.1
+ ],
+ "open_edges": 0,
+ "nonmanifold_edges": 0,
+ "uv_area_distorted_pct": 0.0,
+ "uv_angle_distortion_mean": 1.02,
+ "uv_angle_distorted_pct": 0.0,
+ "silhouette_iou": {}
+}
