@@ -188,6 +188,58 @@ Not yet:
   only if ChatGPT can produce valid packages cheaply. Run the test in E before using it in
   production.
 
+## 6. Third object: the 1970s sofa from ChatGPT's concept sheet
+
+ChatGPT's "1970s couch" sheet looks like a package but isn't one:
+- **Maps:** the albedo, depth and part-ID maps are ~380 px panels inside one 1536 × 1024
+  image, and they are not drawn to scale.
+- **Part palette:** it isn't the V1 palette.
+- **JSON:** there is only an excerpt, with sizes in centimetres.
+- **The numbers disagree with the drawings:**
+  - the excerpt gives 62 cm cushions, which on a 198 cm sofa leaves 6 cm arms; the painted
+    front view shows about 17 cm arms;
+  - the painted top view is about 30% short.
+
+New tool: `tools/v1_pack.py` turns a short kit into a full V1 package. The kit lists one
+line per part: a box by its corners or a cylinder by cap, radius and length, plus which
+sheet crop paints each face. The packer then:
+- works out every panel's placement;
+- packs the panels at one pixel scale, so V1's scale rule holds by construction;
+- resamples the crops and fills the sheet background out of them;
+- re-encodes signed depth;
+- paints the part IDs;
+- drafts the welds.
+
+Sofa input: `factory/examples/factory_v1_sofa/kit.json`, about 15 values per part.
+
+| | Sofa |
+| --- | --- |
+| QA | **pass** (preflight and reimport checks) |
+| Parts | 14: seat base, back frame, 2 arms (closed boxes), 3 seat + 3 back cushions (closed boxes, pillow relief from the sheet's depth), 4 legs (cylinders with the painted leg as wrap) |
+| Welds | 120, all drafted by the packer |
+| Size | 1.98 × 0.86 × 0.81 m, matching the brief |
+| Triangles | 10,694 (large budget 40,000) |
+
+![Sofa hero](sofa_hero.jpg)
+![Sofa views](sofa_views.jpg)
+
+Critically:
+- **Recognisable at game distance, not up close.**
+  - The paint is blurry because the sheet's albedo panel holds only about 136 px per metre.
+  - Cushions and arms are sharp boxes; V1 has no rounding. The concept's soft, rounded
+    cushions would need an "inflated box" construction.
+- **The back is vertical.** The side views show it raked, and V1 has no rotation yet.
+- **Not built:** the blanket (no cloth construction), separate tufting buttons (they stay
+  painted), the leg taper.
+- **Some textures are invented.** Faces the sheet never painted reuse fabric from the
+  nearest painted panel. That covers cushion sides and backs and the frame faces hidden
+  against other parts.
+- **What it shows:** with the packer, authoring drops from ~70 values per box to ~15 per
+  part. The rest of a ChatGPT sheet can be turned into a V1 package in about an hour of
+  agent time.
+- **What it doesn't show:** it is still not a hands-off `/factory` → model run. The
+  sheet's own numbers had to be overruled by its drawings.
+
 ## Reproduce
 
 ```bash
@@ -195,5 +247,7 @@ python3 long-lines/factory/examples/factory_v1_crt_tv/generate_demo_maps.py
 python3 long-lines/factory/examples/factory_v1_toaster/generate_maps.py
 python3 long-lines/tools/factory_v1.py long-lines/factory/examples/factory_v1_crt_tv/asset.json
 python3 long-lines/tools/factory_v1.py long-lines/factory/examples/factory_v1_toaster/asset.json
+python3 long-lines/tools/v1_pack.py long-lines/factory/examples/factory_v1_sofa/kit.json
+python3 long-lines/tools/factory_v1.py long-lines/factory/examples/factory_v1_sofa/asset.json
 cd long-lines && python3 -m unittest tests.test_factory_v1_package tests.test_factory_v1_assembly tests.test_factory_v1_blender
 ```

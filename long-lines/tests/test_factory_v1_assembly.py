@@ -236,6 +236,22 @@ class V1AssemblyTests(unittest.TestCase):
         sug = g.suggest_welds(a, s["parts"][0]["panels"])
         self.assertEqual(set(map(key, sug)), set(map(key, s["connections"])))
 
+    def test_kit_packer_builds_the_sofa(self):
+        pack = load_module("v1_pack", ROOT / "tools" / "v1_pack.py")
+        out = Path(self.work.name) / "sofa"
+        shutil.copytree(ROOT / "factory" / "examples" / "factory_v1_sofa", out)
+        asset = pack.pack(out / "kit.json", out)
+        validate = load_module("validate_package", ROOT / "tools" / "validate_package.py")
+        pre = validate.validate(asset)
+        self.assertTrue(pre["pass"], pre["errors"])
+        _, meshes, r = g.interpret(asset)
+        self.check_clean(r, 14)
+        self.assertEqual(r["operations_used"]["weld"], 120)
+        lo = [min(m.bbox()[0][i] for m in meshes.values()) for i in range(3)]
+        hi = [max(m.bbox()[1][i] for m in meshes.values()) for i in range(3)]
+        for a, b, want in zip(lo, hi, (1.98, 0.86, 0.81)):
+            self.assertAlmostEqual(b - a, want, delta=0.035)
+
     # --- curved panels: arc length and curved welds
     def test_curved_panels_weld_into_a_tube(self):
         folder = Path(self.work.name) / "tube"

@@ -9,6 +9,7 @@ on:
       - "long-lines/tools/validate_package.py"
       - "long-lines/tools/factory_v1.py"
       - "long-lines/tools/factory_v1_blender.py"
+      - "long-lines/tools/v1_pack.py"
       - "long-lines/tools/propkit/v1_*.py"
       - "long-lines/tests/test_factory_v1_*.py"
   pull_request:
@@ -19,6 +20,7 @@ on:
       - "long-lines/tools/validate_package.py"
       - "long-lines/tools/factory_v1.py"
       - "long-lines/tools/factory_v1_blender.py"
+      - "long-lines/tools/v1_pack.py"
       - "long-lines/tools/propkit/v1_*.py"
       - "long-lines/tests/test_factory_v1_*.py"
 
@@ -43,8 +45,9 @@ jobs:
         run: |
           python3 long-lines/factory/examples/factory_v1_crt_tv/generate_demo_maps.py
           python3 long-lines/factory/examples/factory_v1_toaster/generate_maps.py
+          python3 long-lines/tools/v1_pack.py long-lines/factory/examples/factory_v1_sofa/kit.json
           status=0
-          for pkg in factory_v1_crt_tv factory_v1_toaster; do
+          for pkg in factory_v1_crt_tv factory_v1_toaster factory_v1_sofa; do
             python3 long-lines/tools/factory_v1.py long-lines/factory/examples/$pkg/asset.json || status=1
           done
           exit $status

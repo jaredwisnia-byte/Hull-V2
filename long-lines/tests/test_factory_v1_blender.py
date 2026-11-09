@@ -23,6 +23,8 @@ def regenerate_maps():
     for script, arg in ((EXAMPLES / "factory_v1_crt_tv" / "generate_demo_maps.py", None),
                         (EXAMPLES / "factory_v1_toaster" / "generate_maps.py", None)):
         subprocess.run([sys.executable, str(script)], check=True, capture_output=True)
+    subprocess.run([sys.executable, str(ROOT / "tools" / "v1_pack.py"), str(EXAMPLES / "factory_v1_sofa" / "kit.json")],
+                   check=True, capture_output=True)
 
 
 @unittest.skipUnless(BLENDER, "Blender not installed")
@@ -56,6 +58,9 @@ class V1BlenderEndToEnd(unittest.TestCase):
 
     def test_toaster(self):
         self.run_package("factory_v1_toaster", 7, 2)
+
+    def test_sofa(self):
+        self.run_package("factory_v1_sofa", 14, 0)
 
 
 if __name__ == "__main__":
