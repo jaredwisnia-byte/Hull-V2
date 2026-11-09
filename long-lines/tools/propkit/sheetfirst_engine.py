@@ -103,6 +103,11 @@ def read_manifest(path):
         with Image.open(depth_path) as im:
             if im.size != tuple(int(x) for x in dimensions):
                 raise ValueError("depth atlas must match painted atlas dimensions")
+    if atlas.get("vector"):
+        vector_path = _safe_source(root, atlas["vector"])
+        with Image.open(vector_path) as im:
+            if im.size != tuple(int(x) for x in dimensions):
+                raise ValueError("vector atlas must match painted atlas dimensions")
     panels = spec.get("panels")
     if not isinstance(panels, list) or not panels:
         raise ValueError("provide at least one surface panel")
@@ -149,7 +154,7 @@ def read_manifest(path):
     return spec, paint_path, depth_path
 
 
-def _position(panel, fu, fv, offset):
+def _position(panel, fu, fv, offset, vector=(0.0, 0.0, 0.0)):
     width, height = panel["size_m"]
     origin = _vec(panel["origin_m"], 3, "origin")
     u_axis = _vec(panel["u_axis"], 3, "u_axis")
@@ -165,19 +170,25 @@ def _position(panel, fu, fv, offset):
                                     _add(_mul(normal, radius * (1 - math.cos(theta))),
                                          _mul(v_axis, fv * height))))
             direction = _sub(_mul(normal, math.cos(theta)), _mul(u_axis, math.sin(theta)))
+            tangent_u = _add(_mul(u_axis, math.cos(theta)), _mul(normal, math.sin(theta)))
+            tangent_v = v_axis
         else:
             theta = fv * height / radius
             pos = _add(origin, _add(_mul(v_axis, radius * math.sin(theta)),
                                     _add(_mul(normal, radius * (1 - math.cos(theta))),
                                          _mul(u_axis, fu * width))))
             direction = _sub(_mul(normal, math.cos(theta)), _mul(v_axis, math.sin(theta)))
+            tangent_v = _add(_mul(v_axis, math.cos(theta)), _mul(normal, math.sin(theta)))
+            tangent_u = u_axis
     else:
         pos = _add(origin, _add(_mul(u_axis, fu * width), _mul(v_axis, fv * height)))
         direction = normal
-    return _add(pos, _mul(direction, offset))
+        tangent_u, tangent_v = u_axis, v_axis
+    return _add(pos, _add(_mul(direction, offset + vector[2]),
+                          _add(_mul(tangent_u, vector[0]), _mul(tangent_v, vector[1]))))
 
 
-def build_geometry(spec, depth_image=None):
+def build_geometry(spec, depth_image=None, vector_image=None):
     """Return per-panel vertices, faces, and stable UVs; no Blender objects required."""
     atlas = spec["atlas"]
     aw, ah = atlas["size_px"]
@@ -188,6 +199,12 @@ def build_geometry(spec, depth_image=None):
         raise ValueError("depth_range_m must be between 0 and 0.5 metres")
     if depth_image is not None and depth_image.size != (aw, ah):
         raise ValueError("depth image dimensions mismatch")
+    if vector_image is not None and vector_image.size != (aw, ah):
+        raise ValueError("vector image dimensions mismatch")
+    vector_range = _vec(spec.get("vector_range_m", [0.0, 0.0, 0.0]), 3,
+                        "vector_range_m")
+    if any(x < 0 or x > .5 for x in vector_range):
+        raise ValueError("vector_range_m must be between 0 and 0.5 metres")
     results = {}
     for panel in spec["panels"]:
         nu, nv = map(int, panel.get("grid", [8, 8]))
@@ -199,10 +216,17 @@ def build_geometry(spec, depth_image=None):
                 fu = i / nu
                 px = x0 + fu * (x1 - x0)
                 py = y1 - fv * (y1 - y0)
-                offset = _depth_value(_sample(depth_image, min(max(px - .5, x0), x1 - 1),
-                                             min(max(py - .5, y0), y1 - 1)), inward, outward) if depth_image else 0.0
-                verts.append(_position(panel, fu, fv, offset))
-                uv.append((px / aw, 1.0 - py / ah))
+                sx = min(max(px - .5, x0), x1 - 1)
+                sy = min(max(py - .5, y0), y1 - 1)
+                offset = _depth_value(_sample(depth_image, sx, sy), inward, outward) if depth_image else 0.0
+                rgb = _sample(vector_image, sx, sy) if vector_image else (128, 128, 128)
+                vector = tuple(max(-1.0, min(1.0, (c - 128.0) / 127.0)) * scale
+                               for c, scale in zip(rgb, vector_range))
+                verts.append(_position(panel, fu, fv, offset, vector))
+                # Half-pixel insets keep bilinear filtering inside the assigned
+                # rectangular island instead of bleeding across atlas gutters.
+                uv.append(((x0 + .5 + fu * ((x1 - x0) - 1)) / aw,
+                           1.0 - (y1 - .5 - fv * ((y1 - y0) - 1)) / ah))
         for j in range(nv):
             for i in range(nu):
                 a = j * (nu + 1) + i
