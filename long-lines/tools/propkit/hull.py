@@ -111,12 +111,161 @@ def _sample(mask, u, v):
     return mask[iy, ix]
 
 
+OUTLINE_SCALE = 4       # the fitted outline is rasterised this much finer than the view
+OUTLINE_SIGMA_PX = 4.0  # smoothing along the outline: pixel staircases go, curves wider than ~this stay
+CORNER_DEG = 40         # turning more than this over +-CORNER_SPAN_PX is a real corner (kept sharp)
+CORNER_SPAN_PX = 4.0
+
+
+def _smooth_contour(c, sigma_px=OUTLINE_SIGMA_PX, corner_deg=CORNER_DEG, span_px=CORNER_SPAN_PX):
+    """A closed pixel contour (find_contours) as a smooth curve with its real corners kept.
+
+    A gentle slope drawn in pixels is a staircase of long treads and 1 px risers; in 3D each tread is
+    a terrace (lines across a car's hood). Gaussian smoothing of the coordinates along the contour
+    (sigma ~4 px attenuates a 12 px staircase about tenfold) removes it, and pinning the points where
+    the outline turns sharply over a few pixels keeps intended corners crisp."""
+    p = np.asarray(c, float)
+    if np.allclose(p[0], p[-1]):
+        p = p[:-1]
+    if len(p) < 8:
+        return p
+    seg = np.linalg.norm(np.diff(np.vstack([p, p[:1]]), axis=0), axis=1)
+    t = np.r_[0, np.cumsum(seg)]
+    L = t[-1]
+    step = 0.5
+    n = max(8, int(L / step))
+    ts = np.linspace(0, L, n, endpoint=False)
+    closed = np.vstack([p, p[:1]])
+    q = np.c_[np.interp(ts, t, closed[:, 0]), np.interp(ts, t, closed[:, 1])]
+    k = max(2, int(span_px / step))
+    v1 = q - np.roll(q, k, 0)
+    v2 = np.roll(q, -k, 0) - q
+    cosang = (v1 * v2).sum(1) / np.maximum(1e-9, np.linalg.norm(v1, axis=1) * np.linalg.norm(v2, axis=1))
+    ang = np.degrees(np.arccos(np.clip(cosang, -1, 1)))
+    corner = (ang > corner_deg) & (ang >= ndimage.maximum_filter1d(ang, 2 * k + 1, mode="wrap"))
+    sig = sigma_px / step
+    idx = np.nonzero(corner)[0]
+    if not len(idx):
+        return np.c_[ndimage.gaussian_filter1d(q[:, 0], sig, mode="wrap"),
+                     ndimage.gaussian_filter1d(q[:, 1], sig, mode="wrap")]
+    out = q.copy()
+    for a_, b_ in zip(idx, np.r_[idx[1:], idx[0] + n]):     # each run between corners, ends pinned
+        ii = np.arange(a_, b_ + 1) % n
+        run = q[ii]
+        if len(run) < 4:
+            continue
+        pad = int(3 * sig)
+        # reflect about the pinned ends (odd extension) so the run's ends stay put while smoothing
+        ext = np.vstack([2 * run[0] - run[1:pad + 1][::-1], run, 2 * run[-1] - run[-pad - 1:-1][::-1]]) \
+            if len(run) > pad + 1 else run
+        sm = np.c_[ndimage.gaussian_filter1d(ext[:, 0], sig, mode="nearest"),
+                   ndimage.gaussian_filter1d(ext[:, 1], sig, mode="nearest")]
+        if len(run) > pad + 1:
+            sm = sm[pad:pad + len(run)]
+        out[ii[1:-1]] = sm[1:-1]
+    return out
+
+
+def fit_outline(mask, scale=OUTLINE_SCALE, curves=False):
+    """The mask's outlines as smooth curves fitted through its pixel staircase (_smooth_contour),
+    rasterised `scale` times finer (even-odd, so holes stay holes). curves=True also returns the
+    curves ([(row, col) arrays] in the mask's pixel coordinates)."""
+    from skimage.measure import find_contours
+    from PIL import ImageDraw
+    h, w = mask.shape
+    out = np.zeros((h * scale, w * scale), bool)
+    kept = []
+    for c in find_contours(mask.astype(np.float32), 0.5):
+        c = _smooth_contour(c)
+        if len(c) < 3:
+            continue
+        kept.append(c)
+        pts = [((x + 0.5) * scale - 0.5, (y + 0.5) * scale - 0.5) for y, x in c]
+        im = Image.new("1", (w * scale, h * scale), 0)
+        ImageDraw.Draw(im).polygon(pts, fill=1)
+        out ^= np.asarray(im, dtype=bool)
+    return (out, kept) if curves else out
+
+
+def view_distance(mask, span_u, span_v, us, vs):
+    """Signed distance (m, negative inside) from the view's fitted outline at the sample grid
+    us x vs (normalised view coords, same mapping as _sample): [len(vs), len(us)].
+
+    Measured exactly to the fitted curves (a KD-tree over points every 0.2 px along them), so
+    there is no pixel or raster staircase left; the fine raster only says inside or outside."""
+    from scipy.spatial import cKDTree
+    h, w = mask.shape
+    P = 4
+    m = np.pad(mask.astype(bool), P)                     # tight crops: the object touches the edge
+    k = OUTLINE_SCALE
+    hr, curves = fit_outline(m, scale=k, curves=True)
+    su, sv = span_u / max(1, w - 1), span_v / max(1, h - 1)
+    pts, nrm = [], []
+    for c in curves:
+        cl = np.vstack([c, c[:1]])
+        seg = np.linalg.norm(np.diff(cl, axis=0), axis=1)
+        t = np.r_[0, np.cumsum(seg)]
+        ts = np.arange(0, t[-1], 0.2)
+        xy = np.c_[np.interp(ts, t, cl[:, 1]) * su, np.interp(ts, t, cl[:, 0]) * sv]     # (x, y) metres
+        tan = np.roll(xy, -1, 0) - np.roll(xy, 1, 0)
+        nn = np.c_[tan[:, 1], -tan[:, 0]]
+        nn /= np.maximum(1e-12, np.linalg.norm(nn, axis=1))[:, None]
+        # orient each curve's normals outward: a step along them must land outside (raster majority)
+        probe = xy + nn * 1.5 * max(su, sv)
+        jx = np.clip(np.round(probe[:, 0] / su * k + (k - 1) / 2).astype(int), 0, hr.shape[1] - 1)
+        jy = np.clip(np.round(probe[:, 1] / sv * k + (k - 1) / 2).astype(int), 0, hr.shape[0] - 1)
+        if hr[jy, jx].mean() > 0.5:
+            nn = -nn
+        pts.append(xy)
+        nrm.append(nn)
+    px = np.asarray(us) * (w - 1) + P
+    py = np.asarray(vs) * (h - 1) + P
+    PX, PY = np.meshgrid(px, py)
+    if not pts:
+        return np.full(PX.shape, 1.0)
+    pts, nrm = np.vstack(pts), np.vstack(nrm)
+    tree = cKDTree(pts)
+    q = np.c_[PX.ravel() * su, PY.ravel() * sv]
+    d, idx = tree.query(q)
+    # sign: within a pixel of the curve, which side of it (its outward normal); further out the fine
+    # raster (its quarter-pixel steps would put a staircase back into the zero crossing if used near)
+    # near the curve: the signed distance along the nearest point's normal (exact for the curve's
+    # local line; the distance to the nearest sample point is off by up to half the sample spacing)
+    along = ((q - pts[idx]) * nrm[idx]).sum(1)
+    ix = np.clip(np.round(PX * k + (k - 1) / 2).astype(int), 0, hr.shape[1] - 1).ravel()
+    iy = np.clip(np.round(PY * k + (k - 1) / 2).astype(int), 0, hr.shape[0] - 1).ravel()
+    far = np.where(hr[iy, ix], -1.0, 1.0) * d
+    return np.where(d < 1.0 * max(su, sv), along, far).reshape(PX.shape)
+
+
+def hull_field(carve, X, Yy, Z, W, D, H):
+    """Signed distance (m, negative inside) of the visual hull: the max over every carving view, each
+    view's distance computed once on its own 2D grid and broadcast along the axis it looks along."""
+    x, y, z = X[:, 0, 0], Yy[0, :, 0], Z[0, 0, :]
+    F = None
+    for k, (msk, _) in carve.items():
+        if k == "front":
+            f = view_distance(msk, W, H, x, 1 - z).T[:, None, :]          # [x, 1, z]
+        elif k == "back":
+            f = view_distance(msk, W, H, 1 - x, 1 - z).T[:, None, :]
+        elif k == "right":
+            f = view_distance(msk, D, H, y, 1 - z).T[None, :, :]          # [1, y, z]
+        elif k == "left":
+            f = view_distance(msk, D, H, 1 - y, 1 - z).T[None, :, :]
+        elif k == "top":
+            f = view_distance(msk, W, D, x, 1 - y).T[:, :, None]          # [x, y, 1]
+        else:
+            continue
+        F = np.broadcast_to(f, X.shape) if F is None else np.maximum(F, f)
+    return np.array(F)
+
 HULL_REPORT = {}     # what the last hull_prop call carved with blades
 
 
 def hull_prop(views, height, res=110, smooth_iters=4, decimate=0.35, rough=0.5, name="hull",
               convex=False, paint_only=(), features=True, sil_override=None, depth_m=None, grime=0.25,
-              paint=True, width_m=None, blades=False, voxel_hook=None, mesh_hook=None, revolve=True, blur=0.7):
+              paint=True, width_m=None, blades=False, voxel_hook=None, mesh_hook=None, revolve=True, blur=0.7,
+              field=None):
     """convex: fill each outline to its convex shape (boxy objects; dark areas can't
     punch holes). paint_only: views used for texture but not trusted to carve (e.g. a
     dark back panel on a dark sheet). width_m: the real width (views painted out of
@@ -126,6 +275,8 @@ def hull_prop(views, height, res=110, smooth_iters=4, decimate=0.35, rough=0.5, 
     mesh_hook(obj): edits the dense mesh before smoothing/decimation (propkit/edge_guide.py).
     blur: voxel smoothing before meshing (voxels); large gently sloped bodies (cars) need ~1.5 or their
     hoods and sides come out as terraces that catch stripes of paint.
+    field: "sdf" meshes a continuous signed distance (views sampled between pixels, carving applied
+    as a CSG difference): no pixel-step terraces. "binary" is the original voxel meshing (blur applies).
     revolve: a part whose top view is round (an ellipse once handles/spouts are set aside) is built
     as a lathe shape, every slice an ellipse sized by the front and side outlines (propkit/revolve.py)."""
     # sil_override: {view: (mask, image)} from a part map, when the sheet set provides exact outlines.
@@ -156,6 +307,9 @@ def hull_prop(views, height, res=110, smooth_iters=4, decimate=0.35, rough=0.5, 
         keep &= _sample(carve["left"][0], 1 - Yy, 1 - Z)
     if "top" in carve:
         keep &= _sample(carve["top"][0], X, 1 - Yy)
+    import os as _os
+    field = field or _os.environ.get("HULL_FIELD", "sdf")   # HULL_FIELD=binary: the original meshing (A/B tests)
+    keep0 = keep.copy()                                 # the plain hull, before any carving step
     if blades:
         from . import blades as _blades
         HULL_REPORT.clear()
@@ -166,10 +320,30 @@ def hull_prop(views, height, res=110, smooth_iters=4, decimate=0.35, rough=0.5, 
         keep = _revolve.voxel_hook(HULL_REPORT)(keep, carve, W, D, H)
     if voxel_hook is not None:
         keep = voxel_hook(keep, carve, W, D, H)
-    vol = np.pad(keep.astype(np.float32), 1)
-    vol = ndimage.gaussian_filter(vol, blur)
-    verts, faces, _, _ = marching_cubes(vol, 0.5)
+    import time as _time
+    _t = _time.time()
+    if field == "sdf":
+        vox = min(W / nx, D / ny, H / nz)
+        F = hull_field(carve, X, Yy, Z, W, D, H)
+        removed = keep0 & ~keep                         # carved by blades / lathe / hooks (always subtractive)
+        if removed.any():
+            # Carving steps work on voxels. Near what they removed, the surface is the carved solid's
+            # own smoothed signed distance (a removed sliver's distance is noise where it is a voxel
+            # thin, e.g. a lathe's shell near tangency, and crinkles the surface); elsewhere it stays
+            # the fitted hull field.
+            G = ndimage.distance_transform_edt(~keep) - ndimage.distance_transform_edt(keep)
+            G = ndimage.gaussian_filter((G - np.sign(G) * 0.5) * vox, 1.0)
+            zone = ndimage.binary_dilation(removed, iterations=3)
+            F = np.where(zone, np.maximum(F, G), F)
+        HULL_REPORT["field"] = {"removed_voxels": int(removed.sum()), "vox_m": round(float(vox), 4)}
+        vol = np.pad(F.astype(np.float32), 1, constant_values=float(np.abs(F).max()))
+        verts, faces, _, _ = marching_cubes(vol, 0.0)
+    else:
+        vol = np.pad(keep.astype(np.float32), 1)
+        vol = ndimage.gaussian_filter(vol, blur)
+        verts, faces, _, _ = marching_cubes(vol, 0.5)
     verts -= 1.0
+    HULL_REPORT.setdefault("timing", {})["field_and_mesh_s"] = round(_time.time() - _t, 2)
     sx, sy, sz = W / nx, D / ny, H / nz
     bm = bmesh.new()
     bv = [bm.verts.new(((vx + 0.5) * sx - W / 2, (vy + 0.5) * sy - D / 2, (vz + 0.5) * sz)) for vx, vy, vz in verts]

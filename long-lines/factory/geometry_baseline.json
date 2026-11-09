@@ -1,0 +1,20 @@
+{
+ "car": {
+  "iou_mean": 0.9714,
+  "ridge_deg": 5.187,
+  "folds_per_1k": 0.079,
+  "tris": 38000
+ },
+ "coffee": {
+  "iou_mean": 0.9147,
+  "ridge_deg": 3.05,
+  "folds_per_1k": 0.351,
+  "tris": 5700
+ },
+ "sofa": {
+  "iou_mean": 0.9235,
+  "ridge_deg": 4.614,
+  "folds_per_1k": 0.342,
+  "tris": 38000
+ }
+}

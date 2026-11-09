@@ -349,3 +349,23 @@ library, ledger and REPORT are restored afterwards (git checkout + delete the ex
   steps, and each riser faces a view and takes a stripe of its paint (grille colours across the hood).
   The streaks were geometry, not paint.
 - Wheels need nothing special: the side view's circle times the front view's corner blocks is a cylinder.
+
+## Geometry audit (Nov 9): ridges were pixel staircases; how to diagnose next time
+- Diagnose before fixing: `tools/diag/render_modes.py NAME OUT` (textured, clay, wire, albedo, normals,
+  facets, depth with identical cameras) and `tools/diag/metrics.py GLB VIEWS` (silhouette IoU, ridge
+  energy, folds/1k). A defect in clay/normals but not albedo is geometry; in albedo but not clay is paint.
+- Rule out stages by rendering the intermediate: the dense mesh before decimation had the hood ridges,
+  so decimation was not the cause (it was suspected first).
+- Measure the field, don't guess: reading the surface height from the reconstruction field along the hood
+  showed 1-pixel (12 mm) steps -> the side view's outline staircase.
+- What did NOT remove pixel staircases: blurring the distance 1 px (treads survive), Douglas-Peucker
+  (puts vertices on the stair corners), rasterising a fitted curve 4x finer (quarter-pixel stairs),
+  taking the sign from that raster (the zero crossing snaps to it). What did: smooth the contour along
+  its length between real corners, then measure the exact distance to the curve with its own sign.
+- Carving on voxels + continuous field: never use a removed sliver's distance (noise where it is a voxel
+  thin; 1,691 folds on the carafe). Use the carved solid's own distance near the carve.
+- Metrics can pass a broken mesh: the first fitted build passed silhouette and ridge checks while the
+  sofa and coffee machine were full of folds; only renders showed it. Folds/1k now catches it. Exported
+  GLBs split vertices at UV seams: weld before measuring adjacency.
+- Tests: `tools/test_hull_geometry.py` (9 s) and `tools/diag/regress_assets.py` (5 min, car + coffee +
+  sofa fixture against factory/geometry_baseline.json). Run both after touching propkit/hull.py.

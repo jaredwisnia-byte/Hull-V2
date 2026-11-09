@@ -1,0 +1,28 @@
+{
+ "name": "fixture_sofa_parts",
+ "category": "sofa",
+ "line": "hull_parts",
+ "source": "sheet.webp",
+ "class": "large",
+ "tex": 2048,
+ "status": "fixture",
+ "views_folder": "fixture_sofa_parts",
+ "assembly": "assembly",
+ "parts": {
+  "seat": "seat",
+  "back": "back",
+  "side": "side",
+  "foot": "foot"
+ },
+ "width_m": 1.98,
+ "depth_m": 0.86,
+ "height_m": 0.81,
+ "rough": 0.85,
+ "res": 150,
+ "part_res": 100,
+ "edge_guide": true,
+ "assumptions": [
+  "size given on the command line"
+ ],
+ "notes": "Regression fixture (sofa parts sheet v2 with edge guide): built only by tools/diag/regress_assets.py."
+}

@@ -329,14 +329,19 @@ def render_trim_preview(name):
 
 def build(order, samples=16):
     t0 = time.time()
-    attempt, result = 0, None
+    attempt, result, stages = 0, None, {}
     while True:
         attempt += 1
         try:
             core.reset()
             mats.reset()
+            ts = time.time()
             run_line(order)
+            stages = {"geometry_and_paint": round(time.time() - ts, 1)}
+            ts = time.time()
             info = bake.finish(order["name"], LIB, tex_for(order), samples, tags=[order["category"]])
+            stages["bake_and_export"] = round(time.time() - ts, 1)
+            ts = time.time()
             info.update({"tags": [order["category"], "factory"], "desc": order.get("notes") or order["name"],
                          "kind": order.get("kind", "static")})
             bake.update_manifest(os.path.join(LIB, "library.json"), order["name"], info)
@@ -344,6 +349,7 @@ def build(order, samples=16):
             result = qa.check(order["name"], vd, order.get("class"), tuple(order.get("hull", {}).get("paint_only", ())),
                               solid=order["line"] in STANDARDS["solid_lines"], mount=order.get("mount", "floor"),
                                trim_order=order)
+            stages["qa"] = round(time.time() - ts, 1)
         except Exception as e:
             traceback.print_exc()
             result = {"pass": False, "fails": ["build error: %s" % e], "metrics": {}}
@@ -362,6 +368,7 @@ def build(order, samples=16):
     srcs = glob.glob(os.path.join(SRC, order.get("views_folder", "-"), "*.png"))
     ledger({"op": "build", "name": order["name"], "line": order["line"], "pass": result["pass"],
             "attempts": attempt, "auto": result["pass"] and attempt == 1, "seconds": round(time.time() - t0, 1),
+            "stage_seconds": stages,
             "fails": result["fails"], "metrics": result["metrics"],
             "input_hash": file_hash(srcs + [os.path.join(ORDERS, order["name"] + ".json")]),
             "output_hash": file_hash([os.path.join(LIB, order["name"], order["name"] + ".glb")]),
