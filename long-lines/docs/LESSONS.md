@@ -246,3 +246,36 @@ add to it whenever something goes wrong.
   and removing the back panel leaves cushions floating.
 - Feet sunk 1.5 cm into the body above them are attached by construction.
 - Don't fill holes before removing a drawn ground line: the gap between legs closes into a "hole".
+
+### Recipe: a new parts sheet in two commands (read this first next time)
+```bash
+blender -b --factory-startup -P tools/split_parts_sheet.py -- SHEET.png NAME \
+  --rows "assembly:front,right,back,left,top" "seat:front,right,back,left,top" \
+         "back:front,right,back,left,top" "side:front,outer,back,top,bottom" "foot:front,right,top" \
+  --size W D H --category sofa [--guide EDGE_GUIDE.png --guide-rows "assembly:..." "seat:front,side,top" ...]
+blender -b --factory-startup -P tools/factory.py -- build NAME
+```
+Row names are the part kinds `hull_parts` understands (assembly, side, seat, back, foot). Check the printed
+`HULLASM boxes` line before looking at renders: 4 feet, 2 sides, N back + N seat boxes. If the counts are
+wrong the measurement is wrong; fix that, not the meshes. Experiments go under an `exp_` name and the
+library, ledger and REPORT are restored afterwards (git checkout + delete the exp_ folders).
+
+### What cost time on the sofa (Nov 9) and how to avoid it
+- Drive images: `download_file_content` output is too big for the context; it is saved to a tool-results
+  file: decode the base64 `content` from that JSON with python. Images pasted while a turn is running are
+  NOT saved to disk; ask for a Drive upload.
+- Never edit views in place inside assets/source_textures during experiments (a bad ground-line filter
+  destroyed the copies twice). Keep originals in the scratchpad; re-copy.
+- Painted feet on a part's own views must be trimmed where rows stop being ~full width (85%), not at a
+  loose 60%: a band of leg was left on the arm and the separate foot clipped beside it.
+- Feet: ignore scraps under the body (width < 40% of the biggest). One splitter run found 10 "feet".
+- Sheets draw a long part's top view turned sideways (the arm). Rotate it when it only fits the part's
+  footprint turned 90 degrees, and rotate its edge guide with it. Unrotated, it banded and distorted the arm.
+- Banding: per-face "nearest view" painting stretches paint on slanted faces. hull_parts paints every
+  part with texturing.project (facing^4 x visibility, padded crops) and the frame last with the parts
+  occluding it.
+- Edge guides (propkit/edge_guide.py): classify by hue on saturated bright pixels only (the painting is
+  never that saturated); register each guide view to its painted view by the filled cyan outline
+  (bridge gaps first) and refuse fits under 0.85; in hull_parts red lines are structural (they split the
+  parts) and are not carved again, only creases and rounding go onto the meshes. The hull's smoothing keeps
+  about a third of a pressed crease.

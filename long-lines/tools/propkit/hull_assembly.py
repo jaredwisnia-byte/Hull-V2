@@ -26,7 +26,7 @@ import numpy as np
 from PIL import Image
 from scipy import ndimage
 
-from . import blades
+from . import blades, edge_guide, texturing
 from .hull import HULL_REPORT, hull_prop, silhouette
 
 FOOT_SINK = 0.015
@@ -44,7 +44,8 @@ def strip_feet(path, out_path):
         sizes = ndimage.sum(big, lab, range(1, n + 1))
         full = lab == (int(np.argmax(sizes)) + 1)
     rows = full.sum(1)
-    body_rows = np.nonzero(rows > 0.6 * rows.max())[0]
+    # the body ends where rows stop being (nearly) full width: painted legs start there
+    body_rows = np.nonzero(rows > 0.85 * rows.max())[0]
     if len(body_rows):
         a[body_rows[-1] + 1:] = 0
     Image.fromarray(a).save(out_path)
@@ -85,6 +86,35 @@ def overlap(a, b):
     return max(0.0, inter) / max(1e-9, min(a[1] - a[0], b[1] - b[0]))
 
 
+def paint_views(views, out_dir, tag):
+    """Views cropped to the object (the frame texturing.project maps to), paint padded past the outline
+    with the object's own colours so rounded edges never pick up the sheet background."""
+    os.makedirs(out_dir, exist_ok=True)
+    out = {}
+    for k, p in views.items():
+        m, img = silhouette(p)
+        a = np.asarray(img).copy()
+        idx = ndimage.distance_transform_edt(~ndimage.binary_erosion(m, iterations=2), return_distances=False,
+                                             return_indices=True)
+        a = a[idx[0], idx[1]]
+        q = os.path.join(out_dir, "%s_%s.png" % (tag, k))
+        Image.fromarray(a).save(q)
+        out[k] = q
+    return out
+
+
+def orient_top(path, w, d, out_path):
+    """Sheets often draw a long part's top view turned sideways (an arm's top drawn wide). If the
+    view only fits the part's footprint (w across, d deep) when turned 90 degrees, turn it."""
+    m, _ = silhouette(path)
+    a = m.shape[0] / m.shape[1]                 # drawn depth/width
+    want = d / w
+    if abs(np.log(1 / a / want)) < abs(np.log(a / want)):
+        Image.open(path).transpose(Image.Transpose.ROTATE_90).save(out_path)
+        return out_path, True
+    return path, False
+
+
 def part_views(folder):
     return {f[2:-4]: os.path.join(folder, f) for f in sorted(os.listdir(folder)) if f.startswith("v_") and f.endswith(".png")}
 
@@ -107,7 +137,48 @@ def build(order, src_root):
     for fold in parts.values():
         for p in part_views(os.path.join(root, fold)).values():
             drop_ground_lines(p)
-    rep = {"parts": []}
+    rep = {"parts": [], "edge_guides": {}}
+    guides = {}                          # kind -> {view: registered guide}; filled per part below
+    use_guides = bool(order.get("edge_guide"))
+    guide_counts = {}
+
+    def load_guides(kind, folder, views, strip=False, mirror=False, rename=None):
+        """g_<view>.png beside each painted view -> registered labels + machine mask; a poor fit is not used."""
+        out = {}
+        if not use_guides:
+            return out
+        for gv in sorted(f[2:-4] for f in os.listdir(folder) if f.startswith("g_") and f.endswith(".png")):
+            target = (rename or {}).get(gv, gv)
+            if target not in views:
+                continue
+            r = edge_guide.prepare(os.path.join(folder, "g_%s.png" % gv), views[target], os.path.join(tmp, "edges"),
+                                   "%s_%s%s" % (kind, target, "_m" if mirror else ""), strip_feet=strip, mirror=mirror)
+            ok = r is not None and r["fit"] >= 0.85
+            rep["edge_guides"]["%s/%s%s" % (kind, target, " (mirrored)" if mirror else "")] = r["fit"] if r else None
+            if ok:
+                if mirror:
+                    target = {"left": "right", "right": "left"}.get(target, target)
+                out[target] = r
+        return out
+
+    def guide_hook(g, w_, d_, h_):
+        # red lines split the parts here (structural); creases and rounding go onto each part's mesh
+        return edge_guide.mesh_hook(g, w_, d_, h_, guide_counts, cuts="structural") if g else None
+
+    def guided_sil(views, g):
+        """The cyan outline (registered) replaces the painted-mask silhouette where a guide fits."""
+        if not g:
+            return None
+        sil = {}
+        for k, p_ in views.items():
+            m_, img_ = silhouette(p_)
+            if k in g and g[k]["object"].shape == m_.shape:
+                m_ = g[k]["object"]
+            sil[k] = (m_, img_)
+        return sil
+
+    guides["assembly"] = load_guides("assembly", os.path.join(root, order["assembly"]), asm_views)
+    asm_sil = guided_sil(asm_views, guides["assembly"])
 
     # 1. the whole object as a voxel hull, with blade carving; read the layout from it
     layout = {}
@@ -137,7 +208,7 @@ def build(order, src_root):
         return keep
 
     hull_prop(asm_views, H, res=order.get("res", 140), name=order["name"] + "_probe", width_m=W, depth_m=D,
-              blades=True, features=False, paint=False, voxel_hook=read_layout)
+              blades=True, features=False, paint=False, voxel_hook=read_layout, sil_override=asm_sil)
     import bpy
     probe = bpy.data.objects.get(order["name"] + "_probe")
     from . import core
@@ -162,9 +233,11 @@ def build(order, src_root):
         if below.size == 0 or not below.any():
             return [], 0.0
         lab, n = ndimage.label(below)
-        comps = []
-        for sl in ndimage.find_objects(lab):
-            comps.append(((sl[1].start) / mask.shape[1], (sl[1].stop) / mask.shape[1]))
+        slices = ndimage.find_objects(lab)
+        widths = [sl[1].stop - sl[1].start for sl in slices]
+        heights = [sl[0].stop - sl[0].start for sl in slices]
+        comps = [((sl[1].start) / mask.shape[1], (sl[1].stop) / mask.shape[1]) for sl, w_, h_ in zip(slices, widths, heights)
+                 if w_ >= 0.4 * max(widths) and h_ >= 0.5 * max(heights)]      # scraps are not feet
         return comps, 1 - bottom / mask.shape[0]
     feet_x, foot_top_f = under_body(fm)
     feet_y, foot_top_s = under_body(sm)
@@ -219,6 +292,36 @@ def build(order, src_root):
                 picked.append(i)
         cuts += sorted((a0 + i) / n for i in picked)
     cuts.append(inner1)
+    gfront = guides.get("assembly", {}).get("front")
+    guide_seat_bottom = None
+    if gfront is not None:
+        # The guide says where components separate: long vertical red/purple lines between the side
+        # parts are cushion joins (they replace the painted-seam guess); a long red horizontal line
+        # below the seat top is the seat cushions' bottom.
+        L = gfront["labels"]
+        hh, ww = L.shape
+        sep = (L == edge_guide.CLASSES["cut"]) | (L == edge_guide.CLASSES["crease"])
+        c0, c1 = int(inner0 * ww) + ww // 30, int(inner1 * ww) - ww // 30
+        colfrac = sep[:, c0:c1].sum(0) / hh
+        xs_ = np.nonzero(colfrac >= 0.12)[0]
+        gcuts, grp = [], []
+        for x_ in xs_:
+            if grp and x_ - grp[-1] > 3:
+                gcuts.append(np.mean(grp))
+                grp = []
+            grp.append(x_)
+        if grp:
+            gcuts.append(np.mean(grp))
+        if gcuts:
+            cuts = [inner0] + [(c0 + x_) / ww for x_ in gcuts] + [inner1]
+            rep["cushion_joins_from"] = "edge guide"
+        red = L == edge_guide.CLASSES["cut"]
+        rowfrac = red[:, c0:c1].sum(1) / max(1, c1 - c0)
+        seat_row_g = int((1 - (np.median(list(carves.values())) if carves else 0.5)) * hh)
+        cand = [y_ for y_ in range(seat_row_g, hh) if rowfrac[y_] >= 0.4]
+        if cand:
+            guide_seat_bottom = (1 - cand[0] / hh) * H
+            rep["seat_bottom_from"] = "edge guide"
     # a slice much narrower than the others is an edge, not a seam: merge it into its neighbour
     while len(cuts) > 3:
         widths = np.diff(cuts)
@@ -258,6 +361,8 @@ def build(order, src_root):
         if "seat" in parts and seat_top is not None:
             sv = part_views(os.path.join(root, parts["seat"]))
             thick = aspect(sv["front"]) * (x1 - x0)
+            if guide_seat_bottom is not None and seat_top - guide_seat_bottom > 0.03:
+                thick = seat_top - guide_seat_bottom
             yf = back_front if "back" in parts else by0 * D - D / 2
             boxes.append({"kind": "seat", "x": [x0, x1], "y": [-D / 2, yf], "z": [seat_top - thick, seat_top]})
     print("HULLASM boxes", [(b["kind"], [[round(v, 2) for v in b[a]] for a in "xyz"]) for b in boxes], "foot_top", round(foot_top, 3))
@@ -289,27 +394,61 @@ def build(order, src_root):
                 mx = (xs >= b["x"][0] - 0.03) & (xs <= b["x"][1] + 0.03)
                 k[mx] = False
         return k
-    hull_prop(asm_views, H, res=order.get("res", 140), name=order["name"] + "_frame", width_m=W, depth_m=D,
-              blades=True, features=False, rough=order.get("rough", 0.6), voxel_hook=minus_parts)
-
     # 5. every part as its own hull, sized to its box and moved into place
+    placed = []
     for n, b in enumerate(boxes):
         fold = os.path.join(root, parts[b["kind"]])
         views = part_views(fold)
+        rename = {"outer": "left", "side": "right"} if b["kind"] == "side" else {"side": "right"}
+        w_, d_ = b["x"][1] - b["x"][0], b["y"][1] - b["y"][0]
+        turned = False
+        if "top" in views:
+            views["top"], turned = orient_top(views["top"], w_, d_, os.path.join(tmp, "top_%d.png" % n))
+            gt = os.path.join(fold, "g_top.png")
+            if turned and os.path.exists(gt):        # the guide turns with its view
+                tfold = os.path.join(tmp, "guide_%d" % n)
+                os.makedirs(tfold, exist_ok=True)
+                for f in os.listdir(fold):
+                    if f.startswith("g_"):
+                        im_ = Image.open(os.path.join(fold, f))
+                        (im_.transpose(Image.Transpose.ROTATE_90) if f == "g_top.png" else im_).save(os.path.join(tfold, f))
+                fold_guides = tfold
+            else:
+                fold_guides = fold
+        else:
+            fold_guides = fold
+        rep.setdefault("turned_top_views", []).append(b["kind"]) if turned else None
         if b["kind"] == "side":
             views = {k: strip_feet(p, os.path.join(tmp, "side_%s.png" % k)) if "foot" in parts else p
                      for k, p in views.items()}
             views = {("left" if k == "outer" else k): p for k, p in views.items() if k != "bottom"}
             views.setdefault("right", views.get("left"))
+            g = load_guides(b["kind"], fold_guides, views, strip="foot" in parts, mirror=b["mirror"], rename=rename)
             if b["mirror"]:
                 views = mirror_views(views, os.path.join(tmp, "mirror_%d" % n))
                 views.pop("outer_m", None)
+        else:
+            g = load_guides(b["kind"], fold_guides, views, rename=rename)
         views = {k: p for k, p in views.items() if k in ("front", "back", "left", "right", "top")}
         w, d, h = b["x"][1] - b["x"][0], b["y"][1] - b["y"][0], b["z"][1] - b["z"][0]
         if min(w, d, h) <= 0.01:
             continue
         obj = hull_prop(views, h, res=order.get("part_res", 90), name="%s_%s_%d" % (order["name"], b["kind"], n),
-                        width_m=w, depth_m=d, features=False, rough=order.get("rough", 0.6))
+                        width_m=w, depth_m=d, features=False, rough=order.get("rough", 0.6), paint=False,
+                        sil_override=guided_sil(views, g), mesh_hook=guide_hook(g, w, d, h))
+        # blended projection (facing^4 x visibility): no stretched streaks where a face is seen at a slant
+        texturing.project(obj, paint_views(views, tmp, "p%d" % n), w, d, h, others=[], name=obj.name,
+                          rough=order.get("rough", 0.6))
         obj.location = ((b["x"][0] + b["x"][1]) / 2, (b["y"][0] + b["y"][1]) / 2, b["z"][0])
+        placed.append(obj)
         rep["parts"].append({"kind": b["kind"], "box_m": [[round(v, 3) for v in b[a]] for a in ("x", "y", "z")]})
+    # 6. the frame last, painted with the placed parts occluding it
+    frame = hull_prop(asm_views, H, res=order.get("res", 140), name=order["name"] + "_frame", width_m=W, depth_m=D,
+                      blades=True, features=False, rough=order.get("rough", 0.6), voxel_hook=minus_parts, paint=False,
+                      sil_override=asm_sil,
+                      mesh_hook=guide_hook(guides.get("assembly"), W, D, H))
+    texturing.project(frame, paint_views(asm_views, tmp, "frame"), W, D, H, others=placed, name=frame.name,
+                      rough=order.get("rough", 0.6))
+    rep["guide_edits"] = guide_counts
+
     return rep

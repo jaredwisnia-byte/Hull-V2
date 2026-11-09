@@ -116,13 +116,14 @@ HULL_REPORT = {}     # what the last hull_prop call carved with blades
 
 def hull_prop(views, height, res=110, smooth_iters=4, decimate=0.35, rough=0.5, name="hull",
               convex=False, paint_only=(), features=True, sil_override=None, depth_m=None, grime=0.25,
-              paint=True, width_m=None, blades=False, voxel_hook=None):
+              paint=True, width_m=None, blades=False, voxel_hook=None, mesh_hook=None):
     """convex: fill each outline to its convex shape (boxy objects; dark areas can't
     punch holes). paint_only: views used for texture but not trusted to carve (e.g. a
     dark back panel on a dark sheet). width_m: the real width (views painted out of
     proportion are stretched to it). blades: carve hollows no outline shows (a seat between
     arms) from where the views' painted edges meet (propkit/blades.py). voxel_hook(keep, views,
-    W, D, H) -> keep: a last say over the voxels before meshing (propkit/hull_assembly.py)."""
+    W, D, H) -> keep: a last say over the voxels before meshing (propkit/hull_assembly.py).
+    mesh_hook(obj): edits the dense mesh before smoothing/decimation (propkit/edge_guide.py)."""
     # sil_override: {view: (mask, image)} from a part map, when the sheet set provides exact outlines.
     sil = dict(sil_override) if sil_override else {k: silhouette(p, convex=convex) for k, p in views.items()}
     # Raw (non-convex) side outlines keep small bumps such as knobs seen side-on.
@@ -174,6 +175,8 @@ def hull_prop(views, height, res=110, smooth_iters=4, decimate=0.35, rough=0.5, 
     bm.to_mesh(me)
     bm.free()
     obj = link(bpy.data.objects.new(name, me))
+    if mesh_hook is not None:
+        mesh_hook(obj)
     sm_mod = obj.modifiers.new("smooth", "SMOOTH")
     sm_mod.iterations = smooth_iters
     sm_mod.factor = 0.5
