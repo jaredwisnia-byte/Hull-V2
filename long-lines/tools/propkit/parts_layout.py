@@ -43,6 +43,8 @@ from .hull_assembly import (MAX_GAP, MIN_TOUCH, NEAR_LAYER, SNAP_SINK, SUPPORT_R
                             orient_like, paint_views, part_views)
 from .locate import find_part
 
+PART_MIN_TRIS = 300   # no part decimated below this
+ELONGATED = 3.0     # a leftover whose centreline is this many widths long is swept as a tube
 INTO = {"front": (0, 1, 0), "back": (0, -1, 0), "top": (0, 0, -1), "bottom": (0, 0, 1),
         "left": (1, 0, 0), "right": (-1, 0, 0)}          # direction from a part on that face into its parent
 
@@ -59,7 +61,7 @@ def _holes(path, box):
     return h if h.any() else None
 
 
-def build_part(views, w, d, h, name, tmp, res=110, rough=0.5, cut_holes=True):
+def build_part(views, w, d, h, name, tmp, res=110, rough=0.5, cut_holes=True, defer=None):
     """A part from its own views at size w x d x h (m), painted from its own views. Background seen
     through its front view (split's h_ mask: a hook frame's opening, a dial's finger holes) is an opening
     along that view and is cut through; a part with only a front view is a plate of depth d."""
@@ -87,8 +89,11 @@ def build_part(views, w, d, h, name, tmp, res=110, rough=0.5, cut_holes=True):
     obj = hull_prop(views, h, res=res, name=name, width_m=w, depth_m=d, features=False, paint=False, rough=rough,
                     sil_override=sil)
     rev = HULL_REPORT.get("revolve")
-    texturing.project(obj, paint_views({k: v for k, v in views.items() if not v.endswith("_side.png")}, tmp, "p_" + name),
-                      w, d, h, others=[], name=obj.name, rough=rough)
+    paint = ({k: v for k, v in views.items() if not v.endswith("_side.png")}, w, d, h)
+    if defer is not None:
+        defer.append((obj, paint))           # painted once its final topology is known (paint_deferred)
+    else:
+        texturing.project(obj, paint_views(paint[0], tmp, "p_" + name), w, d, h, others=[], name=obj.name, rough=rough)
     return obj, notes, rev
 
 
@@ -210,6 +215,7 @@ def build_parts(order, src_root):
         return u0 * W - W / 2, u1 * W - W / 2, (1 - v1) * H, (1 - v0) * H
 
     built, boxes, placed_order = {}, {"body": body_box}, []
+    pending = []                                                 # (part, paint views) painted after decimation
 
     # the body: its own views, a top view only carves if it agrees with them (else paint only)
     if "top" in body_views and "top" in asm:
@@ -349,7 +355,7 @@ def build_parts(order, src_root):
         if box[0] == "side":
             # built facing front, then turned so its front faces out of the parent's side face
             _, face_, yc, zc, w, dd, h = box
-            obj, notes, rev = build_part(pv, w, dd, h, "%s_%s" % (order["name"], name), tmp, rough=order.get("rough", 0.5))
+            obj, notes, rev = build_part(pv, w, dd, h, "%s_%s" % (order["name"], name), tmp, rough=order.get("rough", 0.5), defer=pending)
             obj.rotation_euler = (0, 0, np.pi / 2 if face_ == "right" else -np.pi / 2)
             bpy.context.view_layer.update()
             xside = px1 + dd / 2 if face_ == "right" else px0 - dd / 2
@@ -365,7 +371,7 @@ def build_parts(order, src_root):
                 y0, y1 = py1 - dd, py1                         # flush with the parent's back (wall side)
             elif loc in ("protrusion", "match", "concentric") and face == "top":
                 y0, y1 = py0, py0 + dd                         # at the parent's front edge
-            obj, notes, rev = build_part(pv, w, dd, h, "%s_%s" % (order["name"], name), tmp, rough=order.get("rough", 0.5))
+            obj, notes, rev = build_part(pv, w, dd, h, "%s_%s" % (order["name"], name), tmp, rough=order.get("rough", 0.5), defer=pending)
             obj.location = ((x0 + x1) / 2, (y0 + y1) / 2, z0)
             boxes[name] = [x0, x1, y0, y1, z0, z1]
         bpy.context.view_layer.update()
@@ -439,17 +445,17 @@ def build_parts(order, src_root):
         width = 2 * float(np.median(ndimage.distance_transform_edt(fcrop)[skeletonize(fcrop)])) if sk_len else 1
         notes = []
         obj = None
-        if sk_len > 4 * width:
+        notes.append("leftover region %.1f widths long" % (sk_len / max(width, 1e-6)))
+        if sk_len > ELONGATED * width:
             # elongated (a cord): a tube swept along its centreline
             obj, rad = sweep_tube(fcrop, scrop, [x0, x1, y0, y1, z0, z1], "%s_%s" % (order["name"], name),
                                   side_is_left=(sk == "left"))
             if obj is not None:
                 notes.append("swept along its centreline (length %.1f widths), radius %.1f mm" % (sk_len / width, rad * 1000))
-                texturing.project(obj, paint_views(crops, tmp, "p_" + name), x1 - x0, y1 - y0, z1 - z0, others=[],
-                                  name=obj.name, rough=order.get("rough", 0.5))
+                pending.append((obj, (crops, x1 - x0, y1 - y0, z1 - z0)))
         if obj is None:
             obj, notes, rev = build_part(crops, x1 - x0, y1 - y0, z1 - z0, "%s_%s" % (order["name"], name), tmp,
-                                         rough=order.get("rough", 0.5))
+                                         rough=order.get("rough", 0.5), defer=pending)
         obj.location = ((x0 + x1) / 2, (y0 + y1) / 2, z0)
         bpy.context.view_layer.update()
         built[name] = obj
@@ -483,6 +489,36 @@ def build_parts(order, src_root):
         p10 = float(np.percentile(hits, 10))
         near = [x for x in hits if x <= p10 + NEAR_LAYER]
         return p10, sum(1 for x in near if x <= max(MAX_GAP, p10 + 1e-6)) / max(1, len(near))
+
+    # the triangle budget is shared out and each part decimated to its share BEFORE it is painted:
+    # decimating the painted assembly afterwards (1-2% of the dense meshes) collapses faces across the
+    # projected texture and stretches it into streaks
+    from .bake import STANDARDS
+    from .core import apply_mods
+    dims = max(W, D, H)
+    budget = next(v["tri_budget"] for k, v in STANDARDS["size_classes"].items() if dims <= v["max_dim_m"]) * 0.92
+    # shared by each part's dense triangle count (its detail: a finger wheel's holes, a handset's
+    # curves), as one uniform decimation of the whole would, never below PART_MIN_TRIS; by area alone a
+    # small detailed part got too few and shattered into slivers that shade as dark streaks
+    dense = {n: sum(len(p_.vertices) - 2 for p_ in o.data.polygons) for n, o in built.items()}
+    total = sum(dense.values())
+    rep["triangles"] = {}
+    for n, o in built.items():
+        tris = dense[n]
+        target = max(PART_MIN_TRIS, int(budget * tris / total))
+        if tris > target:
+            m_ = o.modifiers.new("share", "DECIMATE")
+            m_.ratio = target / tris
+            apply_mods(o)
+        rep["triangles"][n] = sum(len(p_.vertices) - 2 for p_ in o.data.polygons)
+    for o, (views_, w_, d_, h_) in pending:
+        loc, rot = o.location.copy(), o.rotation_euler.copy()
+        o.location, o.rotation_euler = (0, 0, 0), (0, 0, 0)
+        bpy.context.view_layer.update()
+        texturing.project(o, paint_views(views_, tmp, "p_" + o.name), w_, d_, h_, others=[], name=o.name,
+                          rough=order.get("rough", 0.5))
+        o.location, o.rotation_euler = loc, rot
+    bpy.context.view_layer.update()
 
     # the body is painted last, from the photo, with every part in front of it occluding: what shows
     # of it in the assembled object (a dial's centre card through the finger wheel) is what the photo

@@ -1,0 +1,9 @@
+{"_sheet": "Drive appliances/wallphone.png; ids from tools/sheet_blobs.py list",
+ "assembly": {"front": 3, "left": 4, "right": 5, "back": 6, "top": 8},
+ "body": {"front": 11, "left": 12, "right": 13, "back": 14, "top": 16},
+ "handset": {"right": 17, "front": 18, "left": 19, "back": 20},
+ "dial_face": {"front": 22},
+ "dial_wheel": {"front": 23, "right": 24, "back": 25},
+ "hooks": {"front": 26, "right": 28},
+ "cap": {"front": 30, "right": 31, "back": 33},
+ "plate": {"front": 36, "right": 37}}

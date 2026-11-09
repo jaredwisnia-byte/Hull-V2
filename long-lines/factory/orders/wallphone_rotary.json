@@ -1,0 +1,102 @@
+{
+ "name": "wallphone_rotary",
+ "category": "wall_telephone",
+ "line": "hull_parts",
+ "layout": "parts",
+ "source": "Drive: appliances/wallphone.png",
+ "class": "small",
+ "tex": 2048,
+ "status": "pending",
+ "views_folder": "wallphone_rotary",
+ "assembly": "assembly",
+ "body_width_m": 0.14,
+ "mount": "wall",
+ "width_m": 0.19,
+ "depth_m": 0.09,
+ "height_m": 0.33,
+ "rough": 0.45,
+ "res": 150,
+ "parts": [
+  {
+   "name": "body",
+   "views": "body",
+   "root": true
+  },
+  {
+   "name": "plate",
+   "views": "plate",
+   "attach": {
+    "to": "body",
+    "face": "back",
+    "fit": "inside"
+   }
+  },
+  {
+   "name": "dial_face",
+   "views": "dial_face",
+   "locate": "match",
+   "attach": {
+    "to": "body",
+    "face": "front"
+   }
+  },
+  {
+   "name": "dial_wheel",
+   "views": "dial_wheel",
+   "locate": "concentric",
+   "attach": {
+    "to": "dial_face",
+    "face": "front"
+   }
+  },
+  {
+   "name": "hooks",
+   "views": "hooks",
+   "locate": "protrusion",
+   "attach": {
+    "to": "body",
+    "face": "top"
+   }
+  },
+  {
+   "name": "handset",
+   "views": "handset",
+   "locate": "residual",
+   "attach": {
+    "to": "body",
+    "face": "left"
+   }
+  },
+  {
+   "name": "earpiece",
+   "views": "cap",
+   "attach": {
+    "to": "handset",
+    "face": "right",
+    "at": "top"
+   }
+  },
+  {
+   "name": "mouthpiece",
+   "views": "cap",
+   "attach": {
+    "to": "handset",
+    "face": "right",
+    "at": "bottom"
+   }
+  },
+  {
+   "name": "cord",
+   "locate": "leftover",
+   "attach": {
+    "to": "handset",
+    "face": "bottom"
+   }
+  }
+ ],
+ "assumptions": [
+  "body width 140 mm (5.5 in, Bell 554 type); everything else from the drawing",
+  "one handset; the cap part used twice (earpiece and mouthpiece)"
+ ],
+ "notes": "A 1970s harvest-gold rotary wall telephone with its handset hung on the side."
+}

@@ -86,12 +86,19 @@ def finish(name, out_root, tex=1024, samples=24, tags=()):
     bpy.context.view_layer.objects.active = parts[0]
     bpy.ops.object.convert(target="MESH")
     bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
+    # repair invalid meshes before joining: one invalid part (a thin plate with holes, decimated hard)
+    # makes the glTF exporter misalign its arrays, garbling the normals of every part written after it
+    repaired = [p_.name for p_ in parts if p_.data.validate(verbose=False, clean_customdata=False)]
     bpy.ops.object.join()
     obj = bpy.context.view_layer.objects.active
     obj.name = name
     bpy.context.scene.cursor.location = (0, 0, 0)
     bpy.ops.object.origin_set(type="ORIGIN_CURSOR")
     tex, std_notes = standardize(obj, name, tex, tags)
+    if repaired:
+        std_notes.append("repaired invalid mesh data: %s" % ", ".join(repaired))
+    if obj.data.validate(verbose=False, clean_customdata=False):
+        std_notes.append("repaired invalid mesh data after joining")
     me = obj.data
     for uv in list(me.uv_layers):
         me.uv_layers.remove(uv)

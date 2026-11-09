@@ -418,3 +418,22 @@ library, ledger and REPORT are restored afterwards (git checkout + delete the ex
   number card the photo shows, not the bare shell's drawn hole.
 - Thin plates (5-8 mm) decimated into a 6000-triangle budget fold at their rims (folds/1k 25-49 on the
   dial and hooks): a size-class budget is shared by all parts; the regression baseline records it.
+
+## Wall phone rebuilt from scratch with the parts process: 36 minutes, of which the build was ~2.5 (Nov 9)
+- Timed from the Drive file to a verified render: download + new blob tool + listing 0:44; part views
+  cropped and the plan written 1:22; first build shipped 2:23 (factory 61 s); renders 4:28 showed dark
+  streaks on the handset, caps and cord; diagnosis and fixes until 36:23. Final factory build 35 s.
+- tools/sheet_blobs.py: `list` numbers every drawing on a sheet (labels and rules left out) and writes an
+  overlay; `crop` takes a JSON spec {part: {view: number}} and writes v_/h_ files. No hand-measured
+  boxes. Keep the merge distance small (3 px): neighbouring views can sit 5 px apart.
+- The streaks: one invalid part mesh (the hook frame: a thin plate with holes, decimated hard) made the
+  glTF exporter misalign its arrays, so every part written AFTER it got garbled normals. Found by
+  bisecting: renders (albedo clean, clay streaked) -> geometry before bake clean -> raw GLB normals bad
+  -> per-part exports clean -> exporter warning "Mesh ... is not valid". bake.finish now runs
+  mesh.validate() on every part before joining, and qa checks the written GLB's normals against its
+  triangle winding (fails above 1%). Things that were NOT it (tried, reverted): decimating after paint,
+  colour attributes in the export, stale normal caches, normal recalculation on the joined mesh.
+- Parts layout: the triangle budget is shared by each part's dense triangle count (its detail), with a
+  floor of 300, and each part is decimated BEFORE it is painted. Sharing by area starved the finger wheel
+  (206 triangles for eleven holes) and it shattered.
+- Read the turnaround before reporting: a build that ships and passes the gap checks can still look wrong.

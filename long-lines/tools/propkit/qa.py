@@ -38,6 +38,42 @@ def _load(name):
     return [o for o in bpy.data.objects if o.type == "MESH"]
 
 
+def glb_normal_disagreement(path):
+    """Share of the GLB's triangles with a stored vertex normal more than 72 degrees off the triangle's
+    own facing (read from the file itself, not through an importer): stale or reversed normals render
+    as dark streaks however the geometry looks."""
+    import json as _json
+    import struct
+    b = open(path, "rb").read()
+    jl = struct.unpack("<I", b[12:16])[0]
+    js = _json.loads(b[20:20 + jl])
+    bl = struct.unpack("<I", b[20 + jl:24 + jl])[0]
+    bin_ = b[28 + jl:28 + jl + bl]
+
+    def acc(i):
+        a = js["accessors"][i]
+        bv = js["bufferViews"][a["bufferView"]]
+        n = {"SCALAR": 1, "VEC2": 2, "VEC3": 3, "VEC4": 4}[a["type"]]
+        dt = {5126: np.float32, 5125: np.uint32, 5123: np.uint16, 5121: np.uint8}[a["componentType"]]
+        arr = np.frombuffer(bin_, dtype=dt, count=a["count"] * n, offset=bv.get("byteOffset", 0) + a.get("byteOffset", 0))
+        return arr.reshape(-1, n) if n > 1 else arr
+    tot = bad = 0
+    for mesh in js.get("meshes", []):
+        for prim in mesh["primitives"]:
+            if "NORMAL" not in prim["attributes"] or "indices" not in prim:
+                continue
+            P, N = acc(prim["attributes"]["POSITION"]), acc(prim["attributes"]["NORMAL"])
+            I = acc(prim["indices"]).reshape(-1, 3)
+            a, b_, c = P[I[:, 0]], P[I[:, 1]], P[I[:, 2]]
+            fn = np.cross(b_ - a, c - a)
+            ok = np.linalg.norm(fn, axis=1) > 1e-12                       # degenerate slivers have no facing
+            fn = fn[ok] / np.linalg.norm(fn[ok], axis=1, keepdims=True)
+            worst = np.minimum.reduce([(N[I[ok, k]] * fn).sum(1) for k in range(3)])
+            tot += int(ok.sum())
+            bad += int((worst < 0.3).sum())
+    return bad / max(1, tot)
+
+
 def check(name, views_dir=None, category_class=None, paint_only=(), solid=False, mount="floor", trim_order=None):
     m, fails = {}, []
     d = os.path.join(LIB, name)
@@ -121,6 +157,10 @@ def check(name, views_dir=None, category_class=None, paint_only=(), solid=False,
         sil[k] = got
     back_frac = back_hits / max(hits, 1)
     m["backfacing_fraction"] = round(back_frac, 3)
+    nd = glb_normal_disagreement(os.path.join(d, name + ".glb"))
+    m["normal_disagreement"] = round(nd, 4)
+    if nd > 0.01:
+        fails.append("%.1f%% of triangles have normals that disagree with their facing (stale or reversed normals)" % (nd * 100))
     if solid and back_frac > MIN["max_backfacing_fraction"]:  # thin leaves and cloth have no inside
         fails.append("%.0f%% of visible faces point inward (flipped normals or open mesh)" % (back_frac * 100))
     from scipy import ndimage
