@@ -95,3 +95,6 @@ storeys (residential 3.0 m, 1960s office 3.7 m floor to floor; a 50-storey tower
 detect the repeating bay from the facade (period autocorrelation, as `make_tiles.py` does),
 model a handful of modules per building (bay, corner, base, setback, crown) at 2-3 levels
 of detail, and assemble them by rule. A tall building is many bays, not a stretched box.
+
+## The assembly line
+`python3 tools/line.py --drawn` (or order names): intake (views cut from the order's `sheet` with its `sheet_spec`; guide lines removed when `hull.guides`) -> build (geometry, paint, bake, export, quality gate; ships to the prop library or flags for a person) -> render (`tools/render_turnaround.py`: six textured views and a clay view, `docs/renders/NAME.png`) -> report (`factory/REPORT.md`, `docs/renders/LINE.md`, contact sheet `docs/renders/line.png`). Every station is a separate Blender worker, timed; PYTHONHASHSEED is pinned. `"locked"` orders are rendered from their shipped files and never rebuilt.

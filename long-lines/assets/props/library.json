@@ -1023,25 +1023,25 @@
  },
  "car_sedan_tan": {
   "size": [
-   1.9441,
-   1.3098,
-   4.6735
+   1.9388,
+   1.331,
+   4.674
   ],
   "min": [
-   -0.978,
-   -0.0,
-   -2.3366
+   -0.9704,
+   0.0,
+   -2.3371
   ],
   "max": [
-   0.9661,
-   1.3098,
-   2.3368
+   0.9683,
+   1.331,
+   2.3369
   ],
   "tris": 38000,
   "tex": 2048,
   "standardized": [
-   "seated on floor (-0.032 m)",
-   "decimated 288584 -> 38000 tris"
+   "seated on floor (-0.015 m)",
+   "decimated 291004 -> 38000 tris"
   ],
   "tags": [
    "car",
@@ -1188,24 +1188,25 @@
  },
  "coffee_maker_drip": {
   "size": [
-   0.2357,
+   0.2343,
    0.3284,
-   0.2652
+   0.2644
   ],
   "min": [
-   -0.1178,
-   -0.0,
-   -0.1329
+   -0.1171,
+   0.0,
+   -0.1322
   ],
   "max": [
-   0.1179,
+   0.1172,
    0.3284,
-   0.1323
+   0.1322
   ],
   "tris": 5700,
   "tex": 2048,
   "standardized": [
-   "decimated 175250 -> 5700 tris"
+   "seated on floor (-0.001 m)",
+   "decimated 170576 -> 5700 tris"
   ],
   "tags": [
    "coffee_maker",
@@ -2206,6 +2207,35 @@
   "desc": "A small walnut end table with a drawer.",
   "kind": "static"
  },
+ "sofa_olive_suede": {
+  "size": [
+   1.9782,
+   0.8064,
+   0.8583
+  ],
+  "min": [
+   -0.989,
+   0.0,
+   -0.4291
+  ],
+  "max": [
+   0.9891,
+   0.8064,
+   0.4292
+  ],
+  "tris": 38000,
+  "tex": 2048,
+  "standardized": [
+   "seated on floor (-0.001 m)",
+   "decimated 842182 -> 38000 tris"
+  ],
+  "tags": [
+   "sofa",
+   "factory"
+  ],
+  "desc": "An olive suede three-seat sofa from the sofa parts sheet: every part from its own views, assembled.",
+  "kind": "static"
+ },
  "sofa_plaid": {
   "size": [
    2.1077,
@@ -2258,6 +2288,66 @@
   ],
   "desc": "stair_rail_cap",
   "kind": "chair_rail"
+ },
+ "table_leg_carved": {
+  "size": [
+   0.1557,
+   0.6901,
+   0.1039
+  ],
+  "min": [
+   -0.0779,
+   0.0,
+   -0.0516
+  ],
+  "max": [
+   0.0779,
+   0.6901,
+   0.0524
+  ],
+  "tris": 23750,
+  "tex": 2048,
+  "standardized": [
+   "seated on floor (-0.000 m)",
+   "decimated 514416 -> 23750 tris",
+   "normal map baked from the dense relief"
+  ],
+  "tags": [
+   "table",
+   "factory"
+  ],
+  "desc": "A carved table leg: acanthus capital with volutes, bead band, fluted tapered shaft, leafy bun foot.",
+  "kind": "static"
+ },
+ "table_leg_guided": {
+  "size": [
+   0.1535,
+   0.6901,
+   0.1088
+  ],
+  "min": [
+   -0.0767,
+   0.0,
+   -0.0538
+  ],
+  "max": [
+   0.0768,
+   0.6901,
+   0.055
+  ],
+  "tris": 23750,
+  "tex": 2048,
+  "standardized": [
+   "seated on floor (-0.000 m)",
+   "decimated 549920 -> 23750 tris",
+   "normal map baked from the dense relief"
+  ],
+  "tags": [
+   "table",
+   "factory"
+  ],
+  "desc": "A carved table leg: acanthus capital with volutes, bead band, fluted tapered shaft, leafy bun foot.",
+  "kind": "static"
  },
  "telephone_desk": {
   "size": [
@@ -2393,6 +2483,35 @@
    "factory"
   ],
   "desc": "vent_grille_util",
+  "kind": "static"
+ },
+ "wallphone_rotary": {
+  "size": [
+   0.1852,
+   0.266,
+   0.0992
+  ],
+  "min": [
+   -0.095,
+   0.0475,
+   -0.0
+  ],
+  "max": [
+   0.0902,
+   0.3135,
+   0.0992
+  ],
+  "tris": 3885,
+  "tex": 2048,
+  "standardized": [
+   "back on the wall plane (-0.049 m)",
+   "repaired invalid mesh data: wallphone_rotary_hooks"
+  ],
+  "tags": [
+   "wall_telephone",
+   "factory"
+  ],
+  "desc": "A 1970s harvest-gold rotary wall telephone with its handset hung on the side.",
   "kind": "static"
  },
  "window_casing_bath": {

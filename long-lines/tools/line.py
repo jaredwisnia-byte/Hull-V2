@@ -14,6 +14,7 @@ and the line moves on to the next):
   3 render   the final renders (tools/render_turnaround.py) -> docs/renders/NAME.png
   4 report   factory KPIs (factory/REPORT.md), the line's own summary (docs/renders/LINE.md) and a
              contact sheet of everything that came off the line (docs/renders/line.png)
+An order marked "locked" (an approved asset) is not rebuilt: only its final renders are made.
 Python's string hashing is pinned (PYTHONHASHSEED=0) so the same orders give the same props.
 """
 import glob
@@ -69,11 +70,17 @@ def run(names):
         o = order_of(name)
         row = {"name": name, "line": o.get("line"), "stations": {}}
         print("== %s (%s)" % (name, o.get("line")), flush=True)
-        t = time.time()
-        ok, note = intake(o)
-        row["stations"]["intake"] = {"s": round(time.time() - t, 1), "ok": ok, "note": note}
-        print("   intake  %5.1fs  %s" % (time.time() - t, note), flush=True)
-        if ok:
+        if o.get("locked"):
+            # approved assets are not rebuilt by a line run: their final renders come from the shipped files
+            row["stations"]["build"] = {"s": 0.0, "ok": True, "note": "locked: " + o["locked"]}
+            print("   locked  %s" % o["locked"], flush=True)
+            ok = True
+        else:
+            t = time.time()
+            ok, note = intake(o)
+            row["stations"]["intake"] = {"s": round(time.time() - t, 1), "ok": ok, "note": note}
+            print("   intake  %5.1fs  %s" % (time.time() - t, note), flush=True)
+        if ok and not o.get("locked"):
             t = time.time()
             rc, log = blender("factory.py", "build", name, timeout=3600)
             o = order_of(name)

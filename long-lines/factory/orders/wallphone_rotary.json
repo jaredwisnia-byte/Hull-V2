@@ -224,7 +224,7 @@
    "body": 306,
    "plate": 304,
    "dial_face": 304,
-   "dial_wheel": 348,
+   "dial_wheel": 354,
    "hooks": 304,
    "handset": 306,
    "earpiece": 304,
@@ -236,14 +236,14 @@
    "ceiling": 5520,
    "tolerance_used_mm": 0.78,
    "error_mm": {
-    "body": 0.4,
-    "plate": 0.1,
-    "dial_face": 0.24,
-    "dial_wheel": 0.76,
-    "hooks": 0.6,
-    "handset": 0.39,
-    "earpiece": 0.33,
-    "mouthpiece": 0.32
+    "body": 0.46,
+    "plate": 0.09,
+    "dial_face": 0.25,
+    "dial_wheel": 0.77,
+    "hooks": 0.59,
+    "handset": 0.36,
+    "earpiece": 0.31,
+    "mouthpiece": 0.33
    }
   },
   "gaps_mm": [
@@ -260,7 +260,7 @@
     "on": "body",
     "towards": "front",
     "gap_mm": 0.0,
-    "touching": 0.97,
+    "touching": 0.99,
     "moved_mm": 3.8
    },
    {
@@ -292,7 +292,7 @@
     "on": "handset",
     "towards": "right",
     "gap_mm": 0.0,
-    "touching": 0.93,
+    "touching": 0.95,
     "moved_mm": 3.6
    },
    {
@@ -301,7 +301,7 @@
     "towards": "right",
     "gap_mm": 0.0,
     "touching": 0.97,
-    "moved_mm": 4.1
+    "moved_mm": 4.2
    },
    {
     "part": "cord",

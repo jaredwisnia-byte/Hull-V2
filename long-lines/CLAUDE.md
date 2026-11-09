@@ -18,6 +18,10 @@ Jared's directive: industrialize asset production. The factory is the product.
 standards (`factory/standards.json`, `categories.json`), the input spec
 (`factory/REFERENCE_SPEC.md`), the ledger and KPIs (`factory/REPORT.md`).
 `blender -b --factory-startup -P long-lines/tools/factory.py -- intake|intake_sheet|build|qa|report ...`
+**The assembly line:** `python3 long-lines/tools/line.py --drawn` (or order names) runs each order through
+intake (views cut from its sheet, guide lines removed) -> build + quality gate -> final renders
+(`docs/renders/NAME.png`, contact sheet `docs/renders/line.png`, run log `docs/renders/LINE.md`).
+Orders marked `"locked"` (approved assets, e.g. the TV) are rendered, never rebuilt.
 Lines: hull (multiview sheets), atlas (appliance part atlases), extrude (trim sheets:
 mouldings and casings), facade (building elevations), car, can, surface, recipe. Sheets that
 hold many assets get a sheet spec (`factory/sheets_*.json`, label panels with

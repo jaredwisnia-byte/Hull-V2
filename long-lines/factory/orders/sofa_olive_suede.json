@@ -5,7 +5,7 @@
  "source": "Drive: sofa parts sheet (sheet.webp, v2 with edge guide)",
  "class": "large",
  "tex": 2048,
- "status": "pending",
+ "status": "shipped",
  "views_folder": "fixture_sofa_parts",
  "assembly": "assembly",
  "parts": {
@@ -24,5 +24,586 @@
  "assumptions": [
   "width 1.98 m given with the sheet"
  ],
- "notes": "An olive suede three-seat sofa from the sofa parts sheet: every part from its own views, assembled."
+ "notes": "An olive suede three-seat sofa from the sofa parts sheet: every part from its own views, assembled.",
+ "measured": {
+  "parts": [
+   {
+    "kind": "foot",
+    "box_m": [
+     [
+      -0.95,
+      -0.779
+     ],
+     [
+      -0.403,
+      -0.243
+     ],
+     [
+      0.0,
+      0.078
+     ]
+    ]
+   },
+   {
+    "kind": "foot",
+    "box_m": [
+     [
+      -0.95,
+      -0.779
+     ],
+     [
+      0.237,
+      0.39
+     ],
+     [
+      0.0,
+      0.078
+     ]
+    ]
+   },
+   {
+    "kind": "foot",
+    "box_m": [
+     [
+      0.785,
+      0.956
+     ],
+     [
+      -0.403,
+      -0.243
+     ],
+     [
+      0.0,
+      0.078
+     ]
+    ]
+   },
+   {
+    "kind": "foot",
+    "box_m": [
+     [
+      0.785,
+      0.956
+     ],
+     [
+      0.237,
+      0.39
+     ],
+     [
+      0.0,
+      0.078
+     ]
+    ]
+   },
+   {
+    "kind": "side",
+    "box_m": [
+     [
+      -0.99,
+      -0.802
+     ],
+     [
+      -0.43,
+      0.43
+     ],
+     [
+      0.063,
+      0.624
+     ]
+    ]
+   },
+   {
+    "kind": "side",
+    "box_m": [
+     [
+      0.825,
+      0.99
+     ],
+     [
+      -0.43,
+      0.43
+     ],
+     [
+      0.063,
+      0.655
+     ]
+    ]
+   },
+   {
+    "kind": "back",
+    "box_m": [
+     [
+      -0.802,
+      -0.251
+     ],
+     [
+      0.187,
+      0.374
+     ],
+     [
+      0.298,
+      0.81
+     ]
+    ]
+   },
+   {
+    "kind": "seat",
+    "box_m": [
+     [
+      -0.802,
+      -0.251
+     ],
+     [
+      -0.43,
+      0.187
+     ],
+     [
+      0.256,
+      0.465
+     ]
+    ]
+   },
+   {
+    "kind": "back",
+    "box_m": [
+     [
+      -0.251,
+      0.273
+     ],
+     [
+      0.195,
+      0.374
+     ],
+     [
+      0.306,
+      0.81
+     ]
+    ]
+   },
+   {
+    "kind": "seat",
+    "box_m": [
+     [
+      -0.251,
+      0.273
+     ],
+     [
+      -0.43,
+      0.195
+     ],
+     [
+      0.256,
+      0.465
+     ]
+    ]
+   },
+   {
+    "kind": "back",
+    "box_m": [
+     [
+      0.273,
+      0.825
+     ],
+     [
+      0.186,
+      0.374
+     ],
+     [
+      0.298,
+      0.805
+     ]
+    ]
+   },
+   {
+    "kind": "seat",
+    "box_m": [
+     [
+      0.273,
+      0.825
+     ],
+     [
+      -0.43,
+      0.186
+     ],
+     [
+      0.256,
+      0.465
+     ]
+    ]
+   }
+  ],
+  "edge_guides": {
+   "assembly/back": 0.955,
+   "assembly/front": 0.959,
+   "assembly/left": 0.936,
+   "assembly/right": 0.942,
+   "assembly/top": 0.982,
+   "side/front": 0.956,
+   "side/left": 0.982,
+   "side/top": 0.973,
+   "side/front (mirrored)": 0.956,
+   "side/left (mirrored)": 0.982,
+   "side/top (mirrored)": 0.973,
+   "back/front": 0.971,
+   "back/right": 0.945,
+   "back/top": 0.939,
+   "seat/front": 0.977,
+   "seat/right": 0.96,
+   "seat/top": 0.986
+  },
+  "cushion_joins_from": "edge guide",
+  "seat_bottom_from": "edge guide",
+  "contacts": [
+   {
+    "a": "foot",
+    "b": "side",
+    "axis": "z",
+    "at_m": 0.07
+   },
+   {
+    "a": "foot",
+    "b": "side",
+    "axis": "z",
+    "at_m": 0.07
+   },
+   {
+    "a": "foot",
+    "b": "side",
+    "axis": "z",
+    "at_m": 0.07
+   },
+   {
+    "a": "foot",
+    "b": "side",
+    "axis": "z",
+    "at_m": 0.07
+   },
+   {
+    "a": "side",
+    "b": "back",
+    "axis": "x",
+    "at_m": -0.802
+   },
+   {
+    "a": "side",
+    "b": "seat",
+    "axis": "x",
+    "at_m": -0.802
+   },
+   {
+    "a": "back",
+    "b": "side",
+    "axis": "x",
+    "at_m": 0.825
+   },
+   {
+    "a": "seat",
+    "b": "side",
+    "axis": "x",
+    "at_m": 0.825
+   },
+   {
+    "a": "seat",
+    "b": "back",
+    "axis": "y",
+    "at_m": 0.187
+   },
+   {
+    "a": "back",
+    "b": "back",
+    "axis": "x",
+    "at_m": -0.251
+   },
+   {
+    "a": "seat",
+    "b": "seat",
+    "axis": "x",
+    "at_m": -0.251
+   },
+   {
+    "a": "seat",
+    "b": "back",
+    "axis": "y",
+    "at_m": 0.195
+   },
+   {
+    "a": "back",
+    "b": "back",
+    "axis": "x",
+    "at_m": 0.273
+   },
+   {
+    "a": "seat",
+    "b": "seat",
+    "axis": "x",
+    "at_m": 0.273
+   },
+   {
+    "a": "seat",
+    "b": "back",
+    "axis": "y",
+    "at_m": 0.186
+   }
+  ],
+  "turned_top_views": [
+   "side",
+   "side",
+   "seat",
+   "seat",
+   "seat"
+  ],
+  "guide_edits": {
+   "sofa_olive_suede_frame": {
+    "crease": 1497,
+    "cut": 0,
+    "rounded": 3046
+   },
+   "sofa_olive_suede_side_4": {
+    "crease": 10593,
+    "cut": 0,
+    "rounded": 27595
+   },
+   "sofa_olive_suede_side_5": {
+    "crease": 13868,
+    "cut": 0,
+    "rounded": 33810
+   },
+   "sofa_olive_suede_back_6": {
+    "crease": 1402,
+    "cut": 0,
+    "rounded": 7102
+   },
+   "sofa_olive_suede_seat_7": {
+    "crease": 1003,
+    "cut": 0,
+    "rounded": 6910
+   },
+   "sofa_olive_suede_back_8": {
+    "crease": 1341,
+    "cut": 0,
+    "rounded": 7268
+   },
+   "sofa_olive_suede_seat_9": {
+    "crease": 1155,
+    "cut": 0,
+    "rounded": 7610
+   },
+   "sofa_olive_suede_back_10": {
+    "crease": 1315,
+    "cut": 0,
+    "rounded": 6961
+   },
+   "sofa_olive_suede_seat_11": {
+    "crease": 1003,
+    "cut": 0,
+    "rounded": 6902
+   }
+  },
+  "gaps_mm": [
+   {
+    "a": "side",
+    "b": "back",
+    "axis": "x",
+    "samples": 3641,
+    "p90_mm": 0.0
+   },
+   {
+    "a": "back",
+    "b": "side",
+    "axis": "x",
+    "samples": 211,
+    "p90_mm": 0.0
+   },
+   {
+    "a": "side",
+    "b": "seat",
+    "axis": "x",
+    "samples": 8556,
+    "p90_mm": 0.0
+   },
+   {
+    "a": "seat",
+    "b": "side",
+    "axis": "x",
+    "samples": 1028,
+    "p90_mm": 0.0
+   },
+   {
+    "a": "back",
+    "b": "side",
+    "axis": "x",
+    "samples": 394,
+    "p90_mm": 0.0
+   },
+   {
+    "a": "side",
+    "b": "back",
+    "axis": "x",
+    "samples": 5635,
+    "p90_mm": 0.0
+   },
+   {
+    "a": "seat",
+    "b": "side",
+    "axis": "x",
+    "samples": 1331,
+    "p90_mm": 0.0
+   },
+   {
+    "a": "side",
+    "b": "seat",
+    "axis": "x",
+    "samples": 11624,
+    "p90_mm": 0.0
+   },
+   {
+    "a": "seat",
+    "b": "back",
+    "axis": "y",
+    "samples": 616,
+    "p90_mm": 0.0
+   },
+   {
+    "a": "back",
+    "b": "back",
+    "axis": "x",
+    "samples": 689,
+    "p90_mm": 0.0
+   },
+   {
+    "a": "back",
+    "b": "back",
+    "axis": "x",
+    "samples": 403,
+    "p90_mm": 0.0
+   },
+   {
+    "a": "seat",
+    "b": "seat",
+    "axis": "x",
+    "samples": 1321,
+    "p90_mm": 0.0
+   },
+   {
+    "a": "seat",
+    "b": "seat",
+    "axis": "x",
+    "samples": 1173,
+    "p90_mm": 0.0
+   },
+   {
+    "a": "seat",
+    "b": "back",
+    "axis": "y",
+    "samples": 612,
+    "p90_mm": 0.0
+   },
+   {
+    "a": "back",
+    "b": "back",
+    "axis": "x",
+    "samples": 730,
+    "p90_mm": 0.0
+   },
+   {
+    "a": "back",
+    "b": "back",
+    "axis": "x",
+    "samples": 351,
+    "p90_mm": 0.0
+   },
+   {
+    "a": "seat",
+    "b": "seat",
+    "axis": "x",
+    "samples": 1366,
+    "p90_mm": 0.0
+   },
+   {
+    "a": "seat",
+    "b": "seat",
+    "axis": "x",
+    "samples": 1030,
+    "p90_mm": 0.0
+   },
+   {
+    "a": "seat",
+    "b": "back",
+    "axis": "y",
+    "samples": 602,
+    "p90_mm": 0.0
+   },
+   {
+    "a": "back",
+    "b": "frame",
+    "axis": "z",
+    "samples": 451,
+    "p90_mm": 0.0
+   },
+   {
+    "a": "seat",
+    "b": "frame",
+    "axis": "z",
+    "samples": 1193,
+    "p90_mm": 0.0
+   },
+   {
+    "a": "back",
+    "b": "frame",
+    "axis": "z",
+    "samples": 452,
+    "p90_mm": 0.0
+   },
+   {
+    "a": "seat",
+    "b": "frame",
+    "axis": "z",
+    "samples": 1232,
+    "p90_mm": 0.0
+   },
+   {
+    "a": "back",
+    "b": "frame",
+    "axis": "z",
+    "samples": 444,
+    "p90_mm": 0.0
+   },
+   {
+    "a": "seat",
+    "b": "frame",
+    "axis": "z",
+    "samples": 1225,
+    "p90_mm": 0.0
+   },
+   {
+    "a": "foot",
+    "b": "body",
+    "axis": "z",
+    "samples": 2471,
+    "p90_mm": 2.4
+   },
+   {
+    "a": "foot",
+    "b": "body",
+    "axis": "z",
+    "samples": 2397,
+    "p90_mm": 2.4
+   },
+   {
+    "a": "foot",
+    "b": "body",
+    "axis": "z",
+    "samples": 2472,
+    "p90_mm": 0.5
+   },
+   {
+    "a": "foot",
+    "b": "body",
+    "axis": "z",
+    "samples": 2422,
+    "p90_mm": 0.0
+   }
+  ]
+ },
+ "attempts": 1
 }

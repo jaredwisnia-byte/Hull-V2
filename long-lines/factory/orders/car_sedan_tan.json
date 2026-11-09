@@ -28,5 +28,562 @@
   "second side view on the sheet is the left side (front on the right); top view rotated front-down"
  ],
  "notes": "A tired mid-70s four-door sedan in faded tan, rust along the sills and arches.",
- "attempts": 1
+ "attempts": 1,
+ "measured": {
+  "sections": {
+   "curved_runs": [],
+   "bands": [
+    {
+     "v": [
+      0.0,
+      0.017
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "touches the top: top view not round (IoU 0.88)",
+     "gain": 0.786
+    },
+    {
+     "v": [
+      0.017,
+      0.034
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "touches the top: top view not round (IoU 0.88)",
+     "gain": 0.586
+    },
+    {
+     "v": [
+      0.034,
+      0.059
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "touches the top: top view not round (IoU 0.88)",
+     "gain": 0.181
+    },
+    {
+     "v": [
+      0.059,
+      0.076
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "top view not round (IoU 0.88)",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.076,
+      0.093
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "top view not round (IoU 0.88)",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.093,
+      0.119
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "top view not round (IoU 0.88)",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.119,
+      0.136
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "top view not round (IoU 0.88)",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.136,
+      0.153
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "top view not round (IoU 0.88)",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.153,
+      0.178
+     ],
+     "best_n": 2.0,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "shading without a second witness (straight-sided outline)",
+     "gain": 0.321
+    },
+    {
+     "v": [
+      0.178,
+      0.195
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "top view not round (IoU 0.88)",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.195,
+      0.212
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "top view not round (IoU 0.88)",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.212,
+      0.237
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "top view not round (IoU 0.88)",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.237,
+      0.254
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "top view not round (IoU 0.88)",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.254,
+      0.28
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "top view not round (IoU 0.88)",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.28,
+      0.297
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "top view not round (IoU 0.88)",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.297,
+      0.314
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "top view not round (IoU 0.88)",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.314,
+      0.339
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "top view not round (IoU 0.88)",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.339,
+      0.356
+     ],
+     "best_n": 2.0,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "shading without a second witness (straight-sided outline)",
+     "gain": 0.664
+    },
+    {
+     "v": [
+      0.356,
+      0.373
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "top view draws it: not round (IoU 0.88)",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.373,
+      0.398
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "top view draws it: not round (IoU 0.88)",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.398,
+      0.415
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "top view draws it: not round (IoU 0.88)",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.415,
+      0.432
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "top view draws it: not round (IoU 0.88)",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.432,
+      0.458
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "top view draws it: not round (IoU 0.88)",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.458,
+      0.475
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "top view draws it: not round (IoU 0.88)",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.475,
+      0.5
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "top view draws it: not round (IoU 0.88)",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.5,
+      0.517
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "bottom view would draw it: missing, no claim",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.517,
+      0.534
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "bottom view would draw it: missing, no claim",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.534,
+      0.559
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "bottom view would draw it: missing, no claim",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.559,
+      0.576
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "bottom view would draw it: missing, no claim",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.576,
+      0.593
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "bottom view would draw it: missing, no claim",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.593,
+      0.619
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "bottom view would draw it: missing, no claim",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.619,
+      0.636
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "bottom view would draw it: missing, no claim",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.636,
+      0.653
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "bottom view would draw it: missing, no claim",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.653,
+      0.678
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "bottom view would draw it: missing, no claim",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.678,
+      0.695
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "bottom view would draw it: missing, no claim",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.695,
+      0.712
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "bottom view would draw it: missing, no claim",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.712,
+      0.737
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "bottom view would draw it: missing, no claim",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.737,
+      0.754
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "bottom view would draw it: missing, no claim",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.754,
+      0.78
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "bottom view missing",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.78,
+      0.797
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "no evidence",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.797,
+      0.814
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "bottom view missing",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.814,
+      0.839
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "bottom view missing",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.839,
+      0.856
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "bottom view missing",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.856,
+      0.873
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "bottom view missing",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.873,
+      0.898
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "bottom view missing",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.898,
+      0.915
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "bottom view missing",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.915,
+      0.932
+     ],
+     "best_n": 3.5,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "shading",
+     "gain": 0.001
+    },
+    {
+     "v": [
+      0.932,
+      0.958
+     ],
+     "best_n": 8.0,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "shading",
+     "gain": 0.001
+    },
+    {
+     "v": [
+      0.958,
+      0.975
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "no evidence",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.975,
+      1.0
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "no evidence",
+     "gain": 0.0
+    }
+   ]
+  }
+ }
 }

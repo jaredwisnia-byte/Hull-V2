@@ -25,5 +25,6 @@
    "back"
   ]
  },
- "attempts": 1
+ "attempts": 1,
+ "locked": "approved by Jared as the fidelity bar (docs/props): the line renders it but never rebuilds it; a rebuild with today's hull loses the bezel step"
 }

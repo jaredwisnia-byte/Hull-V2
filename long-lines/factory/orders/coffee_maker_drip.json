@@ -56,10 +56,11 @@
     "located_top_m": 0.304,
     "top_from": "views agree",
     "revolve": {
-     "iou": 0.879,
+     "iou": 0.845,
      "tilt": 0.2,
-     "share": 0.999,
-     "round": false
+     "share": 1.0,
+     "round": false,
+     "axis": "front-to-back"
     },
     "snapped": {
      "towards": "up",
@@ -92,6 +93,7 @@
      "tilt": 0.0,
      "share": 0.903,
      "round": true,
+     "axis": "vertical",
      "slices": 75,
      "voxels_before_after": [
       294368,
@@ -100,9 +102,9 @@
     },
     "snapped": {
      "towards": "down",
-     "moved_mm": 8.9,
+     "moved_mm": 8.8,
      "gap_after_mm": 0.0,
-     "touching_share": 0.6,
+     "touching_share": 0.99,
      "under_gap_mm": 0.0
     }
    }
@@ -116,6 +118,13 @@
    "ring": "already in the carafe's own views"
   },
   "body_front": "front view 0.41 wide vs back 0.57: carved with the back's outline",
+  "locate": {
+   "mode": "colour",
+   "colour_overlap_with_body": {
+    "basket": 0.205,
+    "carafe": 0.125
+   }
+  },
   "located": {
    "front": {
     "basket": [
@@ -191,7 +200,7 @@
     "support": "down",
     "seated_gap_mm": 0.0,
     "under_gap_mm": 0.0,
-    "touching": 0.6
+    "touching": 0.99
    }
   ]
  },
