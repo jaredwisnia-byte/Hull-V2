@@ -33,7 +33,8 @@
           "id",
           "construction",
           "panels",
-          "closed_solid"
+          "closed_solid",
+          "semantic_class"
         ],
         "properties": {
           "id": {
