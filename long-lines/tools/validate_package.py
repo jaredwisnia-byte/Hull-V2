@@ -156,6 +156,10 @@ def validate(asset_file):
             continue
         try:
             source = safe_path(folder, maps[key])
+            # Pillow requires PNG verify() before any pixel reads/copy().
+            # Verify the raw image stream, then open a fresh decoder.
+            with Image.open(source) as stream:
+                stream.verify()
             with Image.open(source) as img:
                 if img.format != "PNG":
                     bad.append(key + " is not a PNG")
@@ -166,8 +170,7 @@ def validate(asset_file):
                     bad.append(key + " must be exact RGB PNG with no alpha/palette conversion")
                 if key in ("signed_depth", "part_ids"):
                     assets[key] = img.copy()
-                img.verify()  # ensure the entire PNG stream is decodable
-        except (OSError, ValueError) as exc:
+        except (OSError, ValueError, RuntimeError, SyntaxError) as exc:
             bad.append("cannot read %s: %s" % (key, exc))
     if bad:
         return report
