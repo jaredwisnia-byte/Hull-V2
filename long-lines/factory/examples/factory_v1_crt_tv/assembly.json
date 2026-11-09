@@ -24,12 +24,12 @@
       "panels": [
         "screen_face"
       ],
-      "closed_solid": false,
+      "closed_solid": true,
       "parent": "body",
       "anchor_m": [
-        -0.255,
-        -0.226,
-        0.08
+        -0.253,
+        -0.203,
+        0.0644
       ],
       "dimensions_m": [
         0.39,
@@ -37,7 +37,7 @@
         0.3
       ],
       "semantic_class": "glass",
-      "notes": "Curved CRT glass should be a 3D shallow bulged insert in the Blender builder, not mere paint."
+      "notes": "Curved CRT glass should be a 3D shallow bulged insert in the Blender builder, not mere paint. Closed 10 mm insert seated on the recess floor; the bulge comes from the signed depth map."
     },
     {
       "id": "dial_1",
@@ -48,9 +48,9 @@
       "closed_solid": true,
       "parent": "body",
       "anchor_m": [
-        0.232,
-        -0.234,
-        0.3
+        0.2167,
+        -0.232,
+        0.2744
       ],
       "dimensions_m": [
         0.05,
@@ -68,9 +68,9 @@
       "closed_solid": true,
       "parent": "body",
       "anchor_m": [
-        0.232,
-        -0.234,
-        0.18
+        0.2167,
+        -0.232,
+        0.1561
       ],
       "dimensions_m": [
         0.05,
@@ -185,8 +185,8 @@
       "opening_panel": "front",
       "shape": "rect",
       "centre_uv": [
-        0.395,
-        0.515
+        0.4,
+        0.4765
       ],
       "size_m": [
         0.4,
@@ -198,7 +198,8 @@
     }
   ],
   "assembly_notes": [
-    "Synthetic sample only: validator checks the plan but does not build this object.",
-    "Concealed faces and joins are explicitly declared, avoiding the previous benchmark's floating/open panels."
+    "Concealed faces and joins are explicitly declared, avoiding the previous benchmark's floating/open panels.",
+    "anchor_m is the minimum corner of each part's base box (face panel + declared thickness, before painted relief).",
+    "Placement corrected in the manifest stage after the V1 assembly QA: screen recess moved to the painted cavity mask (was 17 mm high), screen glass seated on the recess floor (was 21 mm in front of the cabinet), dials seated on the front face (were 2 mm off it) and centred on their painted circles (were 9 mm left); screen glass declared closed_solid (an open sheet cannot touch the recess floor)."
   ]
 }

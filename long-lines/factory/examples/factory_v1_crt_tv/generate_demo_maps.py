@@ -81,11 +81,13 @@ def generate(folder):
     for j in range(12):
         line=(x0+25,y0+30+j*14,x1-30,y0+16+j*14)
         d.line(line,fill=(65+j//2,87+j//2,88+j//2),width=2)
-    # Small arc of glass bulge: blue edge-to-centre under the same UV face.
-    for j in range(0,50):
-        light=255-int(100*math.sin(math.pi*j/100))
-        q.ellipse((x0+14+j,y0+14+j,x1-14-j,y1-14-j),
-                  outline=(light,light,255),width=2)
+    # Glass bulge: a dome, blue rising from the rim to the centre of the same UV face.
+    # (Filled concentric ellipses, outside in; the earlier outline rings stopped halfway
+    # and left a flat white centre, which the V1 builder correctly built as a raised ring.)
+    steps=min(x1-x0,y1-y0)//2-16
+    for j in range(0,steps):
+        light=255-int(round(100*math.sin(math.pi/2*j/steps)))
+        q.ellipse((x0+14+j,y0+14+j,x1-14-j,y1-14-j),fill=(light,light,255))
     for label in ("dial_face_1","dial_face_2"):
         x0,y0,x1,y1=by[label]["rect_px"]
         d.ellipse((x0+2,y0+2,x1-3,y1-3),fill=(60,57,52),outline=(185,176,147),width=5)
