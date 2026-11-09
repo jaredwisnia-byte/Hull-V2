@@ -68,6 +68,18 @@ class PackageValidationTests(unittest.TestCase):
         self.assertGreater(r["metrics"]["raised_samples"], 0)
         self.assertGreater(r["metrics"]["recessed_samples"], 0)
 
+    def test_missing_concept_is_rejected_by_completed_package_schema(self):
+        j = self.load("asset.json")
+        del j["maps"]["concept"]
+        self.save("asset.json", j)
+        self.fail_with("concept")
+
+    def test_missing_semantic_role_is_rejected(self):
+        j = self.load("assembly.json")
+        del j["parts"][1]["semantic_class"]
+        self.save("assembly.json", j)
+        self.fail_with("semantic_class")
+
     def test_missing_map_fails(self):
         (self.folder / "part_ids.png").unlink()
         self.fail_with("cannot read part_ids")
