@@ -302,9 +302,13 @@
    "best_n": 2.0,
    "gain": 0.657,
    "views_voting": 4,
-   "curved": true,
-   "decided_by": "shading",
-   "confidence": "medium"
+   "curved": false,
+   "decided_by": "shading without a second witness (straight-sided outline)",
+   "witness": {
+    "outline_varies": 0.0,
+    "front_side_corr": 0.0
+   },
+   "confidence": "hull"
   },
   {
    "v": [
@@ -316,12 +320,12 @@
     "diagonal_share": 0.48,
     "carved": true
    },
-   "best_n": 2.0,
+   "best_n": null,
    "gain": 0.0,
    "views_voting": 0,
-   "curved": true,
+   "curved": false,
    "decided_by": "top view not round (IoU 0.88)",
-   "confidence": "medium"
+   "confidence": "hull"
   },
   {
    "v": [
@@ -338,6 +342,10 @@
    "views_voting": 2,
    "curved": true,
    "decided_by": "shading",
+   "witness": {
+    "outline_varies": 0.407,
+    "front_side_corr": 1.0
+   },
    "confidence": "medium"
   },
   {
@@ -355,6 +363,10 @@
    "views_voting": 2,
    "curved": true,
    "decided_by": "shading",
+   "witness": {
+    "outline_varies": 0.407,
+    "front_side_corr": 1.0
+   },
    "confidence": "medium"
   },
   {
@@ -372,6 +384,10 @@
    "views_voting": 2,
    "curved": true,
    "decided_by": "shading",
+   "witness": {
+    "outline_varies": 0.407,
+    "front_side_corr": 1.0
+   },
    "confidence": "medium"
   },
   {
@@ -389,6 +405,10 @@
    "views_voting": 3,
    "curved": true,
    "decided_by": "shading",
+   "witness": {
+    "outline_varies": 0.407,
+    "front_side_corr": 1.0
+   },
    "confidence": "medium"
   },
   {
@@ -406,6 +426,10 @@
    "views_voting": 4,
    "curved": true,
    "decided_by": "shading",
+   "witness": {
+    "outline_varies": 0.407,
+    "front_side_corr": 1.0
+   },
    "confidence": "medium"
   },
   {
@@ -423,6 +447,10 @@
    "views_voting": 3,
    "curved": true,
    "decided_by": "shading",
+   "witness": {
+    "outline_varies": 0.407,
+    "front_side_corr": 1.0
+   },
    "confidence": "medium"
   },
   {
@@ -440,6 +468,10 @@
    "views_voting": 2,
    "curved": true,
    "decided_by": "shading",
+   "witness": {
+    "outline_varies": 0.407,
+    "front_side_corr": 1.0
+   },
    "confidence": "medium"
   },
   {
@@ -457,6 +489,10 @@
    "views_voting": 3,
    "curved": true,
    "decided_by": "shading",
+   "witness": {
+    "outline_varies": 0.407,
+    "front_side_corr": 1.0
+   },
    "confidence": "medium"
   },
   {
@@ -474,6 +510,10 @@
    "views_voting": 3,
    "curved": true,
    "decided_by": "shading",
+   "witness": {
+    "outline_varies": 0.407,
+    "front_side_corr": 1.0
+   },
    "confidence": "medium"
   },
   {
@@ -491,6 +531,10 @@
    "views_voting": 3,
    "curved": true,
    "decided_by": "shading",
+   "witness": {
+    "outline_varies": 0.407,
+    "front_side_corr": 1.0
+   },
    "confidence": "medium"
   },
   {
@@ -508,6 +552,10 @@
    "views_voting": 4,
    "curved": true,
    "decided_by": "shading",
+   "witness": {
+    "outline_varies": 0.407,
+    "front_side_corr": 1.0
+   },
    "confidence": "medium"
   },
   {
@@ -525,6 +573,10 @@
    "views_voting": 4,
    "curved": true,
    "decided_by": "shading",
+   "witness": {
+    "outline_varies": 0.407,
+    "front_side_corr": 1.0
+   },
    "confidence": "medium"
   },
   {
@@ -542,6 +594,10 @@
    "views_voting": 4,
    "curved": true,
    "decided_by": "shading",
+   "witness": {
+    "outline_varies": 0.407,
+    "front_side_corr": 1.0
+   },
    "confidence": "medium"
   },
   {
@@ -559,6 +615,10 @@
    "views_voting": 4,
    "curved": true,
    "decided_by": "shading",
+   "witness": {
+    "outline_varies": 0.407,
+    "front_side_corr": 1.0
+   },
    "confidence": "medium"
   },
   {
@@ -576,6 +636,10 @@
    "views_voting": 3,
    "curved": true,
    "decided_by": "shading",
+   "witness": {
+    "outline_varies": 0.407,
+    "front_side_corr": 1.0
+   },
    "confidence": "medium"
   },
   {
@@ -593,6 +657,10 @@
    "views_voting": 4,
    "curved": true,
    "decided_by": "shading",
+   "witness": {
+    "outline_varies": 0.407,
+    "front_side_corr": 1.0
+   },
    "confidence": "medium"
   },
   {
@@ -610,6 +678,10 @@
    "views_voting": 4,
    "curved": true,
    "decided_by": "shading",
+   "witness": {
+    "outline_varies": 0.407,
+    "front_side_corr": 1.0
+   },
    "confidence": "medium"
   },
   {
@@ -627,6 +699,10 @@
    "views_voting": 3,
    "curved": true,
    "decided_by": "shading",
+   "witness": {
+    "outline_varies": 0.407,
+    "front_side_corr": 1.0
+   },
    "confidence": "medium"
   },
   {
@@ -644,6 +720,10 @@
    "views_voting": 4,
    "curved": true,
    "decided_by": "shading",
+   "witness": {
+    "outline_varies": 0.407,
+    "front_side_corr": 1.0
+   },
    "confidence": "medium"
   },
   {
@@ -656,12 +736,12 @@
     "diagonal_share": 0.48,
     "carved": true
    },
-   "best_n": 2.3,
+   "best_n": null,
    "gain": 0.0,
    "views_voting": 0,
-   "curved": true,
+   "curved": false,
    "decided_by": "bottom view missing",
-   "confidence": "medium"
+   "confidence": "hull"
   },
   {
    "v": [
@@ -676,9 +756,13 @@
    "best_n": 2.0,
    "gain": 0.667,
    "views_voting": 3,
-   "curved": true,
-   "decided_by": "shading",
-   "confidence": "medium"
+   "curved": false,
+   "decided_by": "shading without a second witness (straight-sided outline)",
+   "witness": {
+    "outline_varies": 0.0,
+    "front_side_corr": 0.0
+   },
+   "confidence": "hull"
   },
   {
    "v": [
@@ -813,7 +897,11 @@
    "gain": 0.694,
    "views_voting": 3,
    "curved": false,
-   "decided_by": "shading",
+   "decided_by": "shading without a second witness (straight-sided outline)",
+   "witness": {
+    "outline_varies": 0.0,
+    "front_side_corr": 0.0
+   },
    "confidence": "hull"
   },
   {
@@ -3355,10 +3443,10 @@
  },
  "curved_runs": [
   {
-   "v_top": 0.34,
-   "v_bottom": 0.799,
+   "v_top": 0.38,
+   "v_bottom": 0.759,
    "n": 2.0
   }
  ],
- "voxels_removed": 937549
+ "voxels_removed": 739752
 }

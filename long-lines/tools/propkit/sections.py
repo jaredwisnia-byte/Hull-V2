@@ -42,6 +42,8 @@ CARVED_DIAG = 0.35      # ... with creases running every way (flutes run along, 
 END_ROUND_IOU = 0.93     # an end view (top / bottom) this close to an ellipse calls its carved bands round
 END_WIDE = 0.92         # a band this close to the widest in its half (front and side) is what the end view draws
 SMOOTH_Z = 2.5          # slices: smoothing of section size and centre along the height
+WITNESS_VARY = 0.08     # second witness: front width and side depth each change this much over the run ...
+WITNESS_CORR = 0.6      # ... and together (correlation)
 RUN_MIN = 3             # bands: shorter curved runs are dropped
 
 
@@ -212,6 +214,41 @@ def infer(views):
         else:
             band.update(best_n=None, gain=0.0, views_voting=0, curved=False, decided_by="no evidence")
         bands.append(band)
+    # a second witness for shading: painterly gradients on a box shade like curvature, so a run decided by
+    # shading alone must also have the outline of a turned or moulded form: front width and side depth
+    # swelling or tapering together. Straight-sided runs keep the hull (a box stays a box)
+    if "front" in prof and "right" in prof:
+        fa = np.array([prof["front"][b]["half_px"] for b in range(nb)])
+        sa = np.array([prof["right"][b]["half_px"] for b in range(nb)])
+        cur = [b["curved"] and b.get("decided_by") == "shading" for b in bands]
+        lab, k = ndimage.label(np.array(cur))
+        for i in range(1, k + 1):
+            idx = np.nonzero(lab == i)[0]
+            a_, b_ = fa[idx], sa[idx]
+            vary = min(np.ptp(a_) / max(a_.mean(), 1e-6), np.ptp(b_) / max(b_.mean(), 1e-6))
+            corr = float(np.corrcoef(a_, b_)[0, 1]) if len(idx) > 2 and a_.std() > 0 and b_.std() > 0 else 0.0
+            ok = vary >= WITNESS_VARY and corr >= WITNESS_CORR
+            for j in idx:
+                bands[j]["witness"] = {"outline_varies": round(float(vary), 3), "front_side_corr": round(corr, 2)}
+                if not ok:
+                    bands[j]["curved"] = False
+                    bands[j]["decided_by"] = "shading without a second witness (straight-sided outline)"
+    # a run touching the object's top or bottom is what that end view draws: the end view decides it
+    cur = np.array([b["curved"] for b in bands])
+    lab, k = ndimage.label(cur)
+    for i in range(1, k + 1):
+        idx = np.nonzero(lab == i)[0]
+        for end, at in (("top", 0), ("bottom", nb - 1)):
+            if at in idx:
+                e = ends.get(end)
+                rnd = bool(e and e["round"])
+                for j in idx:
+                    if "view" in bands[j].get("decided_by", "") and end in bands[j]["decided_by"]:
+                        continue
+                    bands[j]["curved"] = rnd
+                    bands[j]["best_n"] = bands[j]["best_n"] if rnd else None
+                    bands[j]["decided_by"] = "touches the %s: %s view %s" % (
+                        end, end, ("round (IoU %.2f)" % e["iou"]) if rnd else ("not round (IoU %.2f)" % e["iou"]) if e else "missing, no claim")
     # runs: drop isolated curved bands; fill single-band gaps inside a curved run
     c = np.array([b["curved"] for b in bands])
     c = c | ndimage.binary_closing(c, structure=np.ones(3, bool))

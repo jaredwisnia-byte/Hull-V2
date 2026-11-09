@@ -320,9 +320,10 @@ def hull_prop(views, height, res=110, smooth_iters=4, decimate=0.35, rough=0.5, 
         from . import revolve as _revolve
         HULL_REPORT.pop("revolve", None)
         keep = _revolve.voxel_hook(HULL_REPORT)(keep, carve, W, D, H)
-    # sections: how round each height band is, inferred from the painting (propkit/sections.py); off by
-    # default, HULL_SECTIONS=1 turns it on everywhere (A/B tests). Not for parts already turned as lathes.
-    sections = sections if sections is not None else _os.environ.get("HULL_SECTIONS") == "1"
+    # sections: how round each height band is, inferred from the painting (propkit/sections.py). On by
+    # default (it rounds only with two witnesses, or an end view); "sections": false in an order or
+    # HULL_SECTIONS=0 turns it off. Not for parts already turned as lathes.
+    sections = sections if sections is not None else _os.environ.get("HULL_SECTIONS", "1") != "0"
     if sections and not (HULL_REPORT.get("revolve") or {}).get("round") and "front" in views and \
             ({"right", "left"} & set(views)) and all(isinstance(v, str) for v in views.values()):
         from . import sections as _sections
@@ -332,6 +333,7 @@ def hull_prop(views, height, res=110, smooth_iters=4, decimate=0.35, rough=0.5, 
             sv["bottom"] = bp
         HULL_REPORT["sections"] = srep = {}
         keep = _sections.hook(sv, srep)(keep, carve, W, D, H)
+        print("SECTIONS %s %s" % (name, srep.get("curved_runs")))
     if voxel_hook is not None:
         keep = voxel_hook(keep, carve, W, D, H)
     import time as _time

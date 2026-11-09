@@ -66,76 +66,76 @@
      "view": "front",
      "regions": 102,
      "raised": 48,
-     "sunk": 33,
-     "flat": 21,
+     "sunk": 5,
+     "flat": 49,
      "light_dir": [
       0.01,
       1.0
      ],
-     "shading_match": 0.171,
-     "all_raised_match": 0.001,
-     "grooves_only_match": -0.01,
-     "carved_share": 0.447
+     "shading_match": 0.14,
+     "all_raised_match": 0.021,
+     "grooves_only_match": -0.011,
+     "carved_share": 0.416
     },
     "back": {
      "view": "back",
      "regions": 112,
      "raised": 38,
-     "sunk": 36,
-     "flat": 38,
+     "sunk": 5,
+     "flat": 69,
      "light_dir": [
       0.01,
       1.0
      ],
-     "shading_match": 0.182,
-     "all_raised_match": -0.045,
-     "grooves_only_match": -0.017,
-     "carved_share": 0.401
+     "shading_match": 0.117,
+     "all_raised_match": -0.009,
+     "grooves_only_match": -0.019,
+     "carved_share": 0.359
     },
     "right": {
      "view": "right",
      "regions": 71,
      "raised": 35,
-     "sunk": 23,
-     "flat": 13,
+     "sunk": 5,
+     "flat": 31,
      "light_dir": [
       0.01,
       1.0
      ],
-     "shading_match": 0.161,
-     "all_raised_match": 0.008,
+     "shading_match": 0.124,
+     "all_raised_match": 0.039,
      "grooves_only_match": -0.009,
-     "carved_share": 0.413
+     "carved_share": 0.393
     },
     "left": {
      "view": "left",
      "regions": 80,
      "raised": 35,
-     "sunk": 24,
-     "flat": 21,
+     "sunk": 2,
+     "flat": 43,
      "light_dir": [
       0.01,
       1.0
      ],
-     "shading_match": 0.155,
-     "all_raised_match": 0.012,
-     "grooves_only_match": 0.006,
-     "carved_share": 0.386
+     "shading_match": 0.133,
+     "all_raised_match": 0.048,
+     "grooves_only_match": 0.012,
+     "carved_share": 0.358
     }
    },
    "high_tris": 800000,
    "displaced_mm": {
     "max_out": 3.6,
-    "max_in": 3.91,
+    "max_in": 3.78,
     "cap": 7.26,
-    "vertices": 734558
+    "vertices": 734882
    }
   },
   "sections": {
    "curved_runs": [
     {
-     "v_top": 0.34,
-     "v_bottom": 0.799,
+     "v_top": 0.38,
+     "v_bottom": 0.759,
      "n": 2.0
     }
    ],
@@ -333,9 +333,9 @@
       0.359
      ],
      "best_n": 2.0,
-     "curved": true,
-     "confidence": "medium",
-     "decided_by": "shading",
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "shading without a second witness (straight-sided outline)",
      "gain": 0.657
     },
     {
@@ -343,9 +343,9 @@
       0.359,
       0.38
      ],
-     "best_n": 2.0,
-     "curved": true,
-     "confidence": "medium",
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
      "decided_by": "top view not round (IoU 0.88)",
      "gain": 0.0
     },
@@ -563,9 +563,9 @@
       0.759,
       0.78
      ],
-     "best_n": 2.3,
-     "curved": true,
-     "confidence": "medium",
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
      "decided_by": "bottom view missing",
      "gain": 0.0
     },
@@ -575,9 +575,9 @@
       0.799
      ],
      "best_n": 2.0,
-     "curved": true,
-     "confidence": "medium",
-     "decided_by": "shading",
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "shading without a second witness (straight-sided outline)",
      "gain": 0.667
     },
     {
@@ -665,7 +665,7 @@
      "best_n": 2.0,
      "curved": false,
      "confidence": "hull",
-     "decided_by": "shading",
+     "decided_by": "shading without a second witness (straight-sided outline)",
      "gain": 0.694
     },
     {

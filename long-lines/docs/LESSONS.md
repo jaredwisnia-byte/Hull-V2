@@ -542,3 +542,14 @@ library, ledger and REPORT are restored afterwards (git checkout + delete the ex
 - On by default it is NOT safe yet (five-object test): coffee maker worse (its housing's painterly
   gradients pass as curvature), sofa and phone slightly ridgier, car unchanged. First run, cushions became
   ellipses and the gap check failed the sofa (13-39 mm gaps): touching faces must stay flat.
+- Follow-up (same day): flat things must stay flat. Two rules fixed every false rounding in the
+  five-object test: (a) a second witness for shading: a shading-decided run must also have front width
+  and side depth swelling or tapering together (a turned or moulded outline); a straight-sided box stays
+  a box; (b) a run touching the object's top or bottom is what that end view draws: the end view decides.
+  With them on for every object the asset regression passes (car, coffee, sofa, phone unchanged) and the
+  leg still matches the guided rings at 0.90: sections are now on by default.
+- The foot's dents were the relief step, not the sections: compact leaves judged "sunk". Carved recesses
+  are channels, so only regions at least 3x longer than wide may sink; compact ones rise or stay flat.
+- Builds were not reproducible run to run: Python's per-run string hashing changes set iteration order
+  (part joins, decimation), so metrics wobbled (coffee folds 0.35-1.05, IoU 0.912-0.915) with no code
+  change. regress_assets.py pins PYTHONHASHSEED=0. The factory itself still varies; worth fixing at source.

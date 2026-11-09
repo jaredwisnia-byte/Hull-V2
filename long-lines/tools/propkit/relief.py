@@ -37,6 +37,7 @@ BOUND = 0.3             # mean crease strength round a region for it to count as
 MERGE = 0.22            # neighbours split by a line weaker than this (mean crease strength) are one region
 FIT = 0.12              # share of its shading a dome or dish must explain
 MAX_R_PX = 8.0          # px: domes stop rising past this half width (no pillows on broad leaves)
+CHANNEL = 3.0           # a region may be sunk only if this many times longer than wide (a channel)
 CONFIDENT = 0.25        # |cos| between a region's shading vector and the light below which it stays flat
 CREASE_DEPTH = 0.5      # crease groove depth, in px at full cavity
 MAX_RELIEF = 0.07       # relief never exceeds this share of the object's thinner side
@@ -186,6 +187,15 @@ def view_relief(path, view=None, light=None):
             flat += 1
             continue
         s = 1.0 if vote > 0 else -1.0
+        if s < 0:
+            # carved recesses are channels (flutes, grooves); a compact sunk dish is rare and is what the
+            # shading gets wrong on leaves: compact regions may be raised or flat, never sunk
+            ys_, xs_ = np.nonzero(r)
+            cov = np.cov(np.vstack([xs_, ys_])) if len(xs_) > 2 else np.eye(2)
+            ev = np.sort(np.linalg.eigvalsh(cov))
+            if ev[1] < CHANNEL ** 2 * max(ev[0], 1e-9):
+                flat += 1
+                continue
         raised += s > 0
         sunk += s < 0
         h[sl][r] = s * dome[r]

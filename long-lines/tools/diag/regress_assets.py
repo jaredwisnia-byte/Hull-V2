@@ -28,7 +28,11 @@ RESTORE = ["assets/props/library.json", "factory/REPORT.md", "factory/ledger.jso
 
 
 def run(cmd):
-    return subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True)
+    # builds iterate sets of names in places: Python's per-run string hashing then changes the order parts
+    # are joined and decimated, and the metrics wobble from run to run (coffee folds 0.35-1.05 with no code
+    # change). A fixed hash seed makes each comparison like for like.
+    env = dict(os.environ, PYTHONHASHSEED=os.environ.get("PYTHONHASHSEED", "0"))
+    return subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True, env=env)
 
 
 def main():
@@ -79,7 +83,7 @@ def main():
             if "--keep" in sys.argv and os.path.isdir(os.path.join(ROOT, "assets/props/" + name)):
                 keep_dir = sys.argv[sys.argv.index("--keep") + 1]
                 shutil.copytree(os.path.join(ROOT, "assets/props/" + name), os.path.join(keep_dir, name), dirs_exist_ok=True)
-            for p in ("assets/props/" + name, "factory/orders/%s.json" % name):
+            for p in ("assets/props/" + name, "factory/orders/%s.json" % name, "docs/inference/" + name):
                 full = os.path.join(ROOT, p)
                 if os.path.isdir(full):
                     shutil.rmtree(full)
