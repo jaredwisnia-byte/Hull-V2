@@ -211,30 +211,44 @@ def build_geometry(spec, depth_image=None):
     return results
 
 
-def _edge_points(mesh, edge):
-    verts = mesh["vertices"]
-    # The corresponding panel's grid dimensions are recovered from the passed
-    # panel specification by validate_seams instead of assumed from the mesh.
-    return verts
+def _edge_samples(panel, mesh, edge, steps=(0.0, .25, .5, .75, 1.0)):
+    """Sample actual displaced boundary vertices, interpolating between grid points."""
+    nu, nv = map(int, panel.get("grid", [8, 8]))
+    vs = mesh["vertices"]
+    if edge == "u0":
+        indices = [j * (nu + 1) for j in range(nv + 1)]
+    elif edge == "u1":
+        indices = [j * (nu + 1) + nu for j in range(nv + 1)]
+    elif edge == "v0":
+        indices = list(range(nu + 1))
+    else:
+        indices = [nv * (nu + 1) + i for i in range(nu + 1)]
+    coords = [vs[i] for i in indices]
+    result = []
+    for t in steps:
+        f = t * (len(coords) - 1)
+        i = min(int(math.floor(f)), len(coords) - 2)
+        w = f - i
+        result.append(_add(_mul(coords[i], 1 - w), _mul(coords[i + 1], w)))
+    return result
 
 
 def validate_seams(spec, meshes):
-    """Raise if explicitly declared joins have visibly separated endpoints or mids."""
+    """Check *generated* panel boundaries including signed displacement at the joins."""
     errors = []
-    panels = {p["name"]: p for p in spec["panels"]}
-    def on_edge(p, edge, t):
-        u, v = ((0, t) if edge == "u0" else (1, t) if edge == "u1"
-                else (t, 0) if edge == "v0" else (t, 1))
-        return _position(p, u, v, 0.0)
     for item in spec.get("seams", []):
-        a, b = panels[item["a"]], panels[item["b"]]
-        samples = [0.0, .25, .5, .75, 1.0]
-        distances = [[_norm(_sub(on_edge(a, item["a_edge"], t),
-                                 on_edge(b, item["b_edge"], t if reverse == 0 else 1 - t)))
-                      for t in samples] for reverse in (0, 1)]
-        max_distance = min(max(distances[0]), max(distances[1]))
+        a_name, b_name = item["a"], item["b"]
+        p = next(p for p in spec["panels"] if p["name"] == a_name)
+        q = next(p for p in spec["panels"] if p["name"] == b_name)
+        a = _edge_samples(p, meshes[a_name], item["a_edge"])
+        b = _edge_samples(q, meshes[b_name], item["b_edge"])
+        direct = max(_norm(_sub(x, y)) for x, y in zip(a, b))
+        backward = max(_norm(_sub(x, y)) for x, y in zip(a, reversed(b)))
+        error = min(direct, backward)
         tolerance = float(item.get("tolerance_m", .003))
-        if max_distance > tolerance:
+        if not 0 < tolerance < .1:
+            raise ValueError("seam tolerance must be 0..0.1 metres")
+        if error > tolerance:
             errors.append("%s/%s seam gap %.4f m (max %.4f m)" %
-                          (item["a"], item["b"], max_distance, tolerance))
+                          (a_name, b_name, error, tolerance))
     return errors
