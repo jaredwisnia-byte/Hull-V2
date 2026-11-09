@@ -10,7 +10,8 @@
       1024
     ],
     "roughness": 0.72,
-    "metallic": 0.05
+    "metallic": 0.05,
+    "vector": "fridge_vector.png"
   },
   "depth_range_m": {
     "inward": 0.01,
@@ -54,5 +55,10 @@
         48
       ]
     }
+  ],
+  "vector_range_m": [
+    0.015,
+    0.01,
+    0.02
   ]
 }
