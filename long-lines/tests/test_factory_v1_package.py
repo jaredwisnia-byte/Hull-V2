@@ -117,6 +117,17 @@ class PackageValidationTests(unittest.TestCase):
         img.save(p)
         self.fail_with("unknown semantic colours")
 
+    def test_semantic_part_id_mismatch_fails_even_with_valid_rgb(self):
+        p = self.folder / "part_ids.png"
+        with Image.open(p) as im:
+            img = im.copy()
+        # Screen UV island must be GLASS yellow, not another valid palette ID.
+        rect = next(p for p in self.load("asset.json")["panels"]
+                    if p["id"] == "screen_face")["rect_px"]
+        ImageDraw.Draw(img).rectangle(tuple(rect), fill=(255, 255, 255))
+        img.save(p)
+        self.fail_with("does not represent expected class glass")
+
     def test_unencoded_depth_rgb_fails(self):
         p = self.folder / "signed_depth.png"
         with Image.open(p) as im:
