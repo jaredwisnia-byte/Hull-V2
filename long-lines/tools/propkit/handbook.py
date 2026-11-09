@@ -1,16 +1,16 @@
-"""The reference handbook (factory/reference_handbook.json): what an object type is made of and how big
-its parts really are, with sources and confidence, read at build time instead of searching.
+"""The reference handbook (factory/reference_handbook.json): what an object type is made of, what its
+parts are finished in, and how it meets the human body. It holds no product sizes: the drawing gives
+proportions and the body gives scale (propkit/human_scale.py).
 
     entry = handbook.entry("wall_telephone_rotary")          # or by an alias / category
-    handbook.size_m(entry, "dial_wheel", "width")          # -> (0.076, "low", source) or None
-    handbook.material(entry, "hooks")                       # -> (roughness, metallic, class)
+    handbook.contacts(entry)                                 # how it meets the body
+    handbook.material(entry, "hooks")                        # -> (roughness, metallic, class)
 """
 import json
 import os
 
 PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
                     "factory", "reference_handbook.json")
-CONFIDENCE = {"high": 3, "medium": 2, "low": 1, "estimate": 0}
 _DATA = None
 
 
@@ -38,27 +38,11 @@ def part(entry_, name, kind=None):
     return parts.get(name) or (parts.get(kind) if kind else None) or {}
 
 
-def value(entry_, name, key, kind=None):
-    """(value, confidence, source) of a part's field, or None."""
-    v = part(entry_, name, kind).get(key)
-    if v is None:
-        return None
-    if isinstance(v, dict):
-        return v["value"], v.get("confidence", "estimate"), v.get("source", "")
-    return v, "estimate", ""
-
-
-def size_m(entry_, name, axis, kind=None):
-    """A part's real size along width / height / depth in metres, with confidence and source."""
-    v = value(entry_, name, axis + "_mm", kind)
-    return None if v is None else (v[0] / 1000.0, v[1], v[2])
+def contacts(entry_):
+    return (entry_ or {}).get("contacts", [])
 
 
 def material(entry_, name, kind=None, default=0.5):
     cls = part(entry_, name, kind).get("material")
     m = data()["materials"].get(cls) if cls else None
     return (m["roughness"], m["metallic"], cls) if m else (default, 0.0, None)
-
-
-def trusted(conf, minimum="medium"):
-    return CONFIDENCE.get(conf, 0) >= CONFIDENCE[minimum]

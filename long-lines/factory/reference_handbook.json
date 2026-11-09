@@ -1,5 +1,5 @@
 {
- "_note": "Reference handbook (the factory's 'golden disc'): what an object type is made of and how big its parts really are, researched once with sources and read at build time instead of searching. Every value has a source and a confidence: high (a specification or measured drawing), medium (a measured listing or a component's datasheet), low (a related item, an unsourced standard), estimate (judgement from drawings and period photos; replace when a source turns up). The factory trusts the photo/drawing over low and estimate values where it has a measurement, and the handbook where it has none (concentric and attached parts, cords).",
+ "_note": "Reference handbook: what an object type is made of and how it meets the human body. Sizes are never looked up: the drawing gives every proportion, and 'contacts' (a handset spans ear to mouth, a finger hole fits a fingertip, a seat is at knee height) tie the drawing to human scale (factory/human_scale.json). Several contacts cross-check each other and the drawing.",
  "materials": {
   "_note": "Roughness / metalness per material class, written into the baked ORM map per part.",
   "plastic_gloss": {
@@ -43,34 +43,11 @@
    "aka": [
     "wall_telephone"
    ],
-   "period": "1960s-70s (Bell 554 type and licensed copies)",
+   "period": "any rotary wall telephone",
    "mount": "wall",
-   "overall_mm": {
-    "width": [
-     150,
-     230
-    ],
-    "height": [
-     220,
-     320
-    ],
-    "depth": [
-     70,
-     140
-    ]
-   },
    "parts": {
     "body": {
-     "material": "plastic_gloss",
-     "width_mm": {
-      "value": 140,
-      "range": [
-       130,
-       150
-      ],
-      "confidence": "medium",
-      "source": "ITT model 554 auction listing (EBTH): 5.5 in wide; https://www.ebth.com/items/6133977-itt-model-554-rotary-wall-telephone"
-     }
+     "material": "plastic_gloss"
     },
     "plate": {
      "material": "plastic_satin"
@@ -79,84 +56,31 @@
      "material": "paper"
     },
     "dial_wheel": {
-     "material": "plastic_gloss",
-     "width_mm": {
-      "value": 76,
-      "range": [
-       70,
-       80
-      ],
-      "confidence": "low",
-      "source": "American rotary dials standardised at 3 in c.1918-20 (European 80 mm); unsourced talk-page statement, https://en.wikipedia.org/wiki/Talk:Rotary_dial"
-     }
+     "material": "plastic_gloss"
     },
     "hooks": {
      "material": "chrome"
     },
     "handset": {
-     "material": "plastic_gloss",
-     "height_mm": {
-      "value": 216,
-      "range": [
-       200,
-       230
-      ],
-      "confidence": "low",
-      "source": "Western Electric handset c.1910, 8.5 in (The Henry Ford); the 1970s G-type handset length was not found"
-     }
+     "material": "plastic_gloss"
     },
     "cap": {
      "material": "plastic_gloss",
-     "count": 2,
-     "width_mm": {
-      "value": 55,
-      "range": [
-       50,
-       60
-      ],
-      "confidence": "medium",
-      "source": "the 440-201 earpiece element it covers is 2.044 in (52 mm) across (Electronics Surplus listing)"
-     }
+     "count": 2
     },
     "cord": {
      "make": "cord",
      "material": "plastic_satin",
-     "wire_mm": {
-      "value": 4.5,
-      "range": [
-       3.5,
-       5.5
-      ],
-      "confidence": "estimate",
-      "source": "period photos: cord jacket about as thick as a pencil lead's casing"
+     "coil_outer": {
+      "human": "fingertip_breadth",
+      "factor": [
+       0.6,
+       0.95
+      ]
      },
-     "coil_outer_mm": {
-      "value": 13,
-      "range": [
-       10,
-       16
-      ],
-      "confidence": "estimate",
-      "source": "period photos; coil about three wire widths across"
-     },
-     "pitch_mm": {
-      "value": 4.6,
-      "range": [
-       3.5,
-       6
-      ],
-      "confidence": "estimate",
-      "source": "a relaxed coil: turns touching, pitch about one wire width"
-     },
-     "coiled_per_stretched": {
-      "value": 0.12,
-      "range": [
-       0.1,
-       0.25
-      ],
-      "confidence": "medium",
-      "source": "10 ft stretched = 14 in coiled (Cablewholesale 8104-44210)"
-     }
+     "wire_share_of_coil": 0.33,
+     "pitch_share_of_wire": 1.0,
+     "why": "a coiled handset cord is about as thick as a finger; the wire about a third of that; turns touch"
     }
    },
    "assembly": [
@@ -238,6 +162,104 @@
       "to": "handset",
       "face": "bottom"
      }
+    }
+   ],
+   "contacts": [
+    {
+     "part": "handset",
+     "measure": "height",
+     "where": "photo",
+     "human": "ear_to_mouth",
+     "factor": [
+      1.4,
+      1.75
+     ],
+     "why": "a handset reaches from the ear to the mouth; its cups and the handle's curve add a little at each end"
+    },
+    {
+     "part": "dial_wheel",
+     "measure": "hole_diameter",
+     "where": "own_drawing",
+     "human": "fingertip_breadth",
+     "factor": [
+      0.95,
+      1.25
+     ],
+     "why": "a finger goes into each hole of a rotary dial"
+    },
+    {
+     "part": "cap",
+     "measure": "width",
+     "where": "own_drawing",
+     "human": "ear_length",
+     "factor": [
+      0.75,
+      1.0
+     ],
+     "why": "an earpiece cap covers most of the ear"
+    }
+   ]
+  },
+  "sofa": {
+   "aka": [
+    "sofa",
+    "couch",
+    "furniture_sofa"
+   ],
+   "mount": "floor",
+   "contacts": [
+    {
+     "part": "seat",
+     "measure": "top_height",
+     "where": "photo",
+     "human": "popliteal_height",
+     "factor": [
+      0.95,
+      1.12
+     ],
+     "why": "the seat top is at knee height (a little higher for cushions that sink)"
+    },
+    {
+     "part": "seat",
+     "measure": "depth",
+     "where": "photo",
+     "human": "buttock_popliteal_length",
+     "factor": [
+      0.95,
+      1.3
+     ],
+     "why": "the seat is about as deep as the thigh is long"
+    }
+   ]
+  },
+  "car_sedan": {
+   "aka": [
+    "car",
+    "sedan"
+   ],
+   "mount": "floor",
+   "contacts": [
+    {
+     "part": "whole",
+     "measure": "height",
+     "where": "photo",
+     "human": "sitting_height",
+     "factor": [
+      1.4,
+      1.7
+     ],
+     "why": "the roof clears a seated adult's head above a seat set a little above the sills"
+    },
+    {
+     "part": "whole",
+     "measure": "width",
+     "where": "photo",
+     "human": "shoulder_breadth",
+     "factor": [
+      4.0,
+      4.8
+     ],
+     "why": "three adults abreast on a bench, plus doors and body sides"
     }
    ]
   }

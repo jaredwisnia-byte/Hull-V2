@@ -66,7 +66,8 @@ cam.data.clip_end = size * 50
 
 # camera name -> (azimuth deg, elevation deg, distance in object sizes, target offset as a share of the box)
 CAMS = {"front34": (-40, 10, 1.9, (0, 0, 0)), "side": (-90, 6, 1.9, (0, 0, 0)), "top34": (-30, 45, 1.9, (0, 0, 0)),
-        "back34": (140, 15, 1.9, (0, 0, 0)), "front": (0, 6, 1.9, (0, 0, 0)),
+        "back34": (140, 15, 1.9, (0, 0, 0)), "front": (0, 6, 1.9, (0, 0, 0)), "full34": (-35, 8, 2.8, (0, 0, 0)),
+        "fullside": (-90, 6, 2.8, (0, 0, 0)),
         "hood": (-25, 25, 0.75, (0, -0.3, 0.2)), "rear_quarter": (-55, 15, 0.8, (-0.3, 0.2, 0.25))}
 
 

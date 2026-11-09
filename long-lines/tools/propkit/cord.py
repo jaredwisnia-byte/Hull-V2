@@ -2,12 +2,12 @@
 
 A coiled phone cord, a lamp flex, a hose or a spring is one construction with different numbers:
   1. straight: the cord laid along a straight line of its path's length - a plain tube, or for a
-     coiled cord a helix (coil diameter and pitch from the reference handbook), as it would lie on a
+     coiled cord a helix (coil diameter and pitch from the drawing, kept within human scale), as it would lie on a
      bench;
   2. curl: that straight piece bent along the path it takes in the object (traced from the photo:
      where it hangs from the handset and how it curls), every point carried by the path's local frame;
   3. the wire swept along the result as a tube of the wire's thickness, both ends capped.
-Sizes come from the reference handbook (wire, coil, pitch); the path from the photo.
+Sizes come from the drawing checked against the body (a coil about a finger thick); the path from the photo.
 """
 import numpy as np
 

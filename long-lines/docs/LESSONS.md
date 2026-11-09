@@ -439,12 +439,9 @@ library, ledger and REPORT are restored afterwards (git checkout + delete the ex
 - Read the turnaround before reporting: a build that ships and passes the gap checks can still look wrong.
 
 ## The reference handbook ("golden disc"), cords, and screen-error budgets (Nov 9)
-- factory/reference_handbook.json: per object type, the parts with real sizes (each with source and
-  confidence: high / medium / low / estimate), materials (roughness, metalness), mounting and the
-  assembly plan. An order says `"handbook": "<entry>"` and drops its parts list, body width and mounting.
-  Rule: concentric and attached parts take the handbook's size; measured parts (residual, match,
-  protrusion) keep the photo's measurement and the report compares it with the handbook. Research once,
-  with sources; values that are estimates say so and should be replaced when a source turns up.
+- (Superseded the same day; see "Human scale" below.) The first handbook held product sizes looked up on
+  the web, each with a source. Jared rejected it: a handset of any make is sized to a head, so nothing
+  needs looking up.
 - Cords (propkit/cord.py): built straight first (a tube, or for a coiled cord a helix with the handbook's
   coil diameter and pitch), then curled along the path the photo shows, then swept as a tube of the
   wire's thickness. The same three steps make lamp flex, hoses, springs and rope; only the numbers change.
@@ -460,3 +457,29 @@ library, ledger and REPORT are restored afterwards (git checkout + delete the ex
 - A part on its parent's back face is turned 180 degrees so its drawn front faces out (as side parts are
   turned 90), and it sits behind the parent's box (the box is the bare shell), not inside it.
 - Restore point: factory/RESTORE_POINTS.md.
+
+## Human scale: the golden record (Nov 9)
+- Sizes are never looked up. factory/human_scale.json is one table of the adult body (5th/50th/95th
+  percentile: ear to mouth, fingertip, grip, knee height, seat depth, shoulder breadth, sitting height ...).
+  The reference handbook says, per object type, how the object meets the body ("contacts": a handset spans
+  ear to mouth, a finger goes into a dial hole, an earpiece covers the ear, a seat is at knee height) and
+  what its parts are finished in. It holds no product sizes (tools/test_human_scale.py enforces it).
+- The drawing gives every proportion. propkit/human_scale.py turns each contact measured in the drawing into
+  the range of scales it allows (body range x fit range), picks the largest group of contacts whose ranges
+  overlap (ties: the group with the first-listed contact), and takes the geometric mean of their typical
+  scales inside that overlap. A contact outside the group means the drawing is out of proportion there; the
+  build report says which and by how much. Drawing units cancel out: pixels or "body widths" give the same
+  metres.
+- parts_layout now locates every part first (in drawing units, body width = 1), measures the contacts,
+  solves the scale, then builds. An order that gives body_width_m still builds at that size (fixtures do).
+- The phone: handset 195 mm and earpiece 57 mm agree (spread 1.08), body 150 mm. The finger holes
+  are drawn at about half fingertip size (off by 2.04) and are outvoted, not obeyed. A painted parts sheet
+  is not drawn to one scale: the cap is drawn wider than the handset. Size a part from where it sits in
+  the assembly (a cap = its handset's depth), never by transferring the sheet's drawing scale between parts.
+- Measure what a person touches. On a mesh the seat is the up-facing level open to the sky with the most
+  area; the biggest flat level of the sofa was the platform hidden under the cushions (320 mm vs 478 mm).
+- Cord thickness: the drawn width, if it falls in the body's range for a cord (a finger's thickness);
+  otherwise the typical value, not the edge of the range. The phone's drawn cord measured 34 mm, which is
+  merged loops, not one cord: 12.5 mm coil, 4.1 mm wire.
+- tools/diag/scale_audit.py checks built props the same way: car x0.99, sofa x0.97 (both already
+  people-sized; nothing changed).

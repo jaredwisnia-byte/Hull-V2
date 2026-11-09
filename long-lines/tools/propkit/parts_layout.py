@@ -17,13 +17,14 @@ The order is a declarative plan, one entry per part; nothing here knows what the
       {"name": "cord", "locate": "leftover", "attach": {"to": "handset", "face": "bottom"}}]
 
 How a part is located (where in the object, and how big):
-  root        the body's own outline fitted into the photo (hull_assembly.match_into); one real size
-              (body_width_m) scales the drawing
+  root        the body's own outline fitted into the photo (hull_assembly.match_into). Every part is
+              located in drawing units first; then the scale comes from human scale (the handbook's
+              contacts measured in the drawing, propkit/human_scale.py) or from a given body_width_m
   residual    the part sticks out of the body's outline: the region the body leaves over in the photo,
               each box edge from a view where it is visible (hull_assembly.locate_by_subtraction)
   match       the part lies on the body: its painting matched into the photo (propkit.locate)
   concentric  centred on its parent; size from the sheet's drawing scale relative to the parent's own
-              drawing (low confidence, reported)
+              drawing
   protrusion  drawn as part of the parent's own view, sticking out of its outline (cradle hooks on a
               shell's top edge): position and size from that protrusion
   attach      on the parent's face ("at": top / bottom / centre), sized to fit that face
@@ -60,6 +61,50 @@ def _holes(path, box):
         return None
     h = np.asarray(Image.open(hp).convert("L").crop(box)) > 127
     return h if h.any() else None
+
+
+def repeated_holes(front_path):
+    """The repeated openings drawn in a part's front view (a dial's finger holes): their median
+    diameter as a share of the part's drawn width, and how many. One big opening (a centre window) is
+    not a repeat. Returns (share, count) or None."""
+    m, _, box = silhouette(front_path, with_box=True)
+    h = _holes(front_path, box)
+    if h is None:
+        return None
+    lab, k = ndimage.label(h)
+    if k < 3:
+        return None
+    areas = ndimage.sum(h, lab, range(1, k + 1))
+    med = float(np.median(areas))
+    rep_ = areas[(areas > 0.6 * med) & (areas < 1.6 * med)]
+    if len(rep_) < 3:
+        return None
+    return float(np.median(2 * np.sqrt(rep_ / np.pi))) / m.shape[1], len(rep_)
+
+
+def contact_measure(c, boxes, photo, plan, root, todo=()):
+    """A handbook contact measured in the drawing (drawing units), or None. The part is found by its
+    name or by the views it is drawn from (both caps of a handset are drawn as one "cap"). Measures:
+    width / height / depth (the part as drawn, before it is turned onto a side face), top_height (above
+    the floor), and hole_diameter (the repeated openings drawn in its front view)."""
+    W, D, H = photo
+    part, m = c["part"], c["measure"]
+    if part == "whole":
+        return {"width": W, "depth": D, "height": H}.get(m)
+    spec = next((p for p in plan if p["name"] == part), None) or next((p for p in plan if p.get("views") == part), None)
+    if spec is None or spec["name"] not in boxes:
+        return None
+    b = boxes[spec["name"]]
+    side = any(t[0] == spec["name"] and t[3][0] == "side" for t in todo)
+    w, d, h = (b[3] - b[2], b[1] - b[0], b[5] - b[4]) if side else (b[1] - b[0], b[3] - b[2], b[5] - b[4])
+    if m in ("width", "depth", "height"):
+        return {"width": w, "depth": d, "height": h}[m]
+    if m == "top_height":
+        return b[5]
+    if m == "hole_diameter" and spec.get("views"):
+        got = repeated_holes(os.path.join(root, spec["views"], "v_front.png"))
+        return got[0] * w if got else None
+    return None
 
 
 def build_part(views, w, d, h, name, tmp, res=110, rough=0.5, cut_holes=True, defer=None):
@@ -236,16 +281,15 @@ def build_parts(order, src_root):
     os.makedirs(tmp, exist_ok=True)
     rep = {"layout": "parts", "parts": {}}
     asm = part_views(os.path.join(root, order["assembly"]))
-    # the reference handbook: real part sizes and materials for this kind of object (no searching)
+    # the reference handbook: the parts list, finishes, and how the object meets the human body
     hb = HB.entry(order["handbook"]) if order.get("handbook") else None
     plan = order.get("parts") or (hb or {}).get("assembly")
+    contacts = HB.contacts(hb)
+    given = order.get("body_width_m")
+    if not given and not contacts:
+        raise ValueError("%s: no body_width_m and no human-scale contacts in the handbook" % order["name"])
     if hb:
         rep["handbook"] = hb["name"]
-        if not order.get("body_width_m"):
-            bw = HB.size_m(hb, "body", "width")
-            if bw:
-                order["body_width_m"] = bw[0]
-                rep["body_width_from"] = "handbook: %.0f mm (%s)" % (bw[0] * 1000, bw[1])
         if hb.get("mount") and not order.get("mount"):
             order["mount"] = hb["mount"]
 
@@ -258,16 +302,16 @@ def build_parts(order, src_root):
     body_views = _views(os.path.join(root, body_spec["views"]))
     body_own = part_views(os.path.join(root, body_spec["views"]))
 
-    # 1. the body's place in the photo, and the photo's scale from one real size
+    # 1. the body's place in the photo. Until the scale is known every length is in drawing units
+    #    (the body's drawn width = 1), or in metres when the order gives the body's real width
     sub = {vw: locate_by_subtraction(asm[vw], body_own[vw]) for vw in ("front", "right", "left") if vw in asm and vw in body_own}
     fm_, _ = silhouette(asm["front"])
     sk = "right" if "right" in sub else "left"
     sm_, _ = silhouette(asm[sk])
     bu0, bu1, bv0, bv1 = sub["front"][0]
-    px = order["body_width_m"] / ((bu1 - bu0) * fm_.shape[1])
+    px = (given or 1.0) / ((bu1 - bu0) * fm_.shape[1])
     W, H = fm_.shape[1] * px, fm_.shape[0] * px
     D = sm_.shape[1] * H / sm_.shape[0]
-    rep["size_from"] = "body width %.3f m; photo %.3f x %.3f x %.3f m" % (order["body_width_m"], W, D, H)
     sides = []
     for vw in ("right", "left"):
         if vw in sub:
@@ -298,12 +342,7 @@ def build_parts(order, src_root):
         if abs(got / want - 1) > 0.15 or weak:
             paint_only = ("top",)
             rep["body_top_paint_only"] = "top view depth/width %.2f vs %.2f" % (got, want)
-    body = hull_prop(body_views, bz1 - bz0, res=order.get("res", 150), name=order["name"] + "_body",
-                     width_m=bx1 - bx0, depth_m=by1 - by0, features=False, paint=False, rough=order.get("rough", 0.5),
-                     paint_only=paint_only)
-    body.location = ((bx0 + bx1) / 2, (by0 + by1) / 2, bz0)
-    built["body"] = body
-    rep["parts"]["body"] = {"box_m": [round(v, 3) for v in body_box], "located": "body outline fitted into the photo"}
+    todo = []                                                    # (name, spec, views, placement, entry): built once scaled
 
     residual_n = 0
     for spec in plan:
@@ -375,14 +414,7 @@ def build_parts(order, src_root):
             cx, cz = (px0 + px1) / 2, (pz0 + pz1) / 2
             dd = h * da if da else 0.06 * max(w, h)
             box = [cx - w / 2, cx + w / 2, 0, dd, cz - h / 2, cz + h / 2]
-            entry["located"] = "centred on %s; %.2f of its width from the sheet's drawing scale (low confidence)" % (parent, ratio)
-            hw = HB.size_m(hb, name, "width", kind_of(spec))
-            if hw:
-                w, h = hw[0], hw[0] * fa
-                dd = h * da if da else 0.06 * max(w, h)
-                box = [cx - w / 2, cx + w / 2, 0, dd, cz - h / 2, cz + h / 2]
-                entry["located"] = "centred on %s; %.0f mm across from the handbook (%s; the drawing scale said %.0f mm)" % (
-                    parent, hw[0] * 1000, hw[1], (px1 - px0) * ratio * 1000)
+            entry["located"] = "centred on %s; %.2f of its width from the sheet's drawing scale" % (parent, ratio)
         elif loc == "protrusion":
             ppv = _views(os.path.join(root, next(p for p in plan if p["name"] == parent)["views"]))
             pm, _ = silhouette(ppv["front"])
@@ -415,12 +447,8 @@ def build_parts(order, src_root):
                 box = [cx - w / 2, cx + w / 2, 0, dd, cz - h / 2, cz + h / 2]
             elif face in ("left", "right"):
                 # a cap on the parent's side face at one end: diameter = the parent's depth there
-                dpar = py1 - py0
-                w = dpar
-                hw = HB.size_m(hb, name, "width", kind_of(spec))
-                if hw:
-                    w = hw[0]
-                    entry["size_from"] = "handbook %.0f mm (%s); the parent's depth there was %.0f mm" % (hw[0] * 1000, hw[1], dpar * 1000)
+                w = py1 - py0
+                entry["size_from"] = "the parent's depth"
                 h = w * fa
                 dd = h * da if da else 0.3 * w
                 zc = pz1 - h / 2 - 0.02 * (pz1 - pz0) if att.get("at") == "top" else pz0 + h / 2 + 0.02 * (pz1 - pz0)
@@ -429,26 +457,15 @@ def build_parts(order, src_root):
         if box is None:
             rep["parts"][name] = dict(entry, skipped="could not be located")
             continue
-        if hb and box[0] != "side" and loc in ("residual", "match", "protrusion"):
-            for ax_, i0 in (("width", 0), ("height", 4)):
-                hv = HB.size_m(hb, name, ax_, kind_of(spec))
-                if hv:
-                    got = box[i0 + 1] - box[i0]
-                    entry.setdefault("handbook_check", []).append("%s %.0f mm measured vs %.0f mm in the handbook (%s)" % (
-                        ax_, got * 1000, hv[0] * 1000, hv[1]))
         if box[0] == "side":
             # built facing front, then turned so its front faces out of the parent's side face
             _, face_, yc, zc, w, dd, h = box
-            obj, notes, rev = build_part(pv, w, dd, h, "%s_%s" % (order["name"], name), tmp, rough=order.get("rough", 0.5), defer=pending)
-            obj["finish"] = list(finish_of(name, spec)[:2])
-            obj.rotation_euler = (0, 0, np.pi / 2 if face_ == "right" else -np.pi / 2)
-            bpy.context.view_layer.update()
             xside = px1 + dd / 2 if face_ == "right" else px0 - dd / 2
-            obj.location = (xside, yc, zc - h / 2)
             boxes[name] = [xside - dd / 2, xside + dd / 2, yc - w / 2, yc + w / 2, zc - h / 2, zc + h / 2]
+            todo.append((name, spec, pv, ("side", face_), entry))
         else:
             x0, x1, y0, y1, z0, z1 = box
-            w, dd, h = x1 - x0, y1 - y0, z1 - z0
+            dd = y1 - y0
             # depth placement by face: in front of / behind the parent; others keep their measured depth
             if face == "front":
                 y0, y1 = py0 - dd, py0
@@ -456,15 +473,59 @@ def build_parts(order, src_root):
                 y0, y1 = py1, py1 + dd                         # behind the parent (the body box is the bare shell)
             elif loc in ("protrusion", "match", "concentric") and face == "top":
                 y0, y1 = py0, py0 + dd                         # at the parent's front edge
-            obj, notes, rev = build_part(pv, w, dd, h, "%s_%s" % (order["name"], name), tmp, rough=order.get("rough", 0.5), defer=pending)
-            obj["finish"] = list(finish_of(name, spec)[:2])
-            if face == "back":
+            boxes[name] = [x0, x1, y0, y1, z0, z1]
+            todo.append((name, spec, pv, ("box", face), entry))
+        placed_order.append((name, parent, face))
+
+    # the scale: from the human body (the handbook's contacts measured in the drawing), cross-checked
+    if not given:
+        from . import human_scale as HS
+        anchors, unmeasured = [], []
+        for c in contacts:
+            v = contact_measure(c, boxes, (W, D, H), plan, root, todo)
+            if v:
+                anchors.append(HS.anchor(c, v))
+            else:
+                unmeasured.append("%s %s" % (c["part"], c["measure"]))
+        k, srep = HS.solve(anchors)
+        srep["unmeasured"] = unmeasured
+        W, D, H, px = W * k, D * k, H * k, px * k
+        body_box = [v * k for v in body_box]
+        boxes = {n: [v * k for v in b] for n, b in boxes.items()}
+        # reported, never written back into the order: a rebuild solves the scale again
+        srep["body_width_mm"] = round((body_box[1] - body_box[0]) * 1000, 1)
+        rep["scale"] = srep
+        rep["size_from"] = "human scale (%d of %d contacts agree); photo %.3f x %.3f x %.3f m" % (
+            srep["agreeing"], srep["of"], W, D, H)
+    else:
+        rep["size_from"] = "body width %.3f m given; photo %.3f x %.3f x %.3f m" % (given, W, D, H)
+    rep["photo_m"] = [round(W, 4), round(D, 4), round(H, 4)]
+
+    # build: the body, then every part at its place
+    bx0, bx1, by0, by1, bz0, bz1 = body_box
+    body = hull_prop(body_views, bz1 - bz0, res=order.get("res", 150), name=order["name"] + "_body",
+                     width_m=bx1 - bx0, depth_m=by1 - by0, features=False, paint=False, rough=order.get("rough", 0.5),
+                     paint_only=paint_only)
+    body.location = ((bx0 + bx1) / 2, (by0 + by1) / 2, bz0)
+    built["body"] = body
+    rep["parts"]["body"] = {"box_m": [round(v, 3) for v in body_box], "located": "body outline fitted into the photo"}
+    for name, spec, pv, (how, face_), entry in todo:
+        x0, x1, y0, y1, z0, z1 = boxes[name]
+        if how == "side":
+            w, dd, h = y1 - y0, x1 - x0, z1 - z0
+        else:
+            w, dd, h = x1 - x0, y1 - y0, z1 - z0
+        obj, notes, rev = build_part(pv, w, dd, h, "%s_%s" % (order["name"], name), tmp, rough=order.get("rough", 0.5), defer=pending)
+        obj["finish"] = list(finish_of(name, spec)[:2])
+        if how == "side":
+            obj.rotation_euler = (0, 0, np.pi / 2 if face_ == "right" else -np.pi / 2)
+            obj.location = ((x0 + x1) / 2, (y0 + y1) / 2, z0)
+        else:
+            if face_ == "back":
                 obj.rotation_euler = (0, 0, np.pi)            # its drawn front faces out, away from the parent
             obj.location = ((x0 + x1) / 2, (y0 + y1) / 2, z0)
-            boxes[name] = [x0, x1, y0, y1, z0, z1]
         bpy.context.view_layer.update()
         built[name] = obj
-        placed_order.append((name, parent, face))
         entry.update(box_m=[round(v, 3) for v in boxes[name]], notes=notes,
                      lathe=(rev or {}).get("axis") if (rev or {}).get("round") else None)
         rep["parts"][name] = entry
@@ -540,11 +601,24 @@ def build_parts(order, src_root):
             from .cord import make_cord
             from . import mats
             P, _ = centreline(fcrop, scrop, [x0, x1, y0, y1, z0, z1], side_is_left=(sk == "left"))
-            wire = HB.value(hb, name, "wire_mm", kind_of(spec))
-            coil = HB.value(hb, name, "coil_outer_mm", kind_of(spec))
-            pitch = HB.value(hb, name, "pitch_mm", kind_of(spec))
-            if P is not None and wire and coil and pitch:
-                obj, crep = make_cord(P, wire[0] / 1000, coil[0] / 1000, pitch[0] / 1000, "%s_%s" % (order["name"], name))
+            # coil thickness: the drawn cord's width at the photo's scale, kept within what the body says
+            # a cord like this is (a finger's thickness); wire and pitch as shares of it
+            coil = width * (x1 - x0) / max(fcrop.shape[1], 1)
+            coil_from = "drawn %.1f mm" % (coil * 1000)
+            if hpart.get("coil_outer"):
+                from . import human_scale as HS
+                ok, (lo_, hi_) = HS.check(hpart["coil_outer"], coil)
+                if not ok:
+                    # the drawn width is not a cord's (loops of the coil merge in the drawing): the body's
+                    # typical size, not the edge of its range
+                    coil = HS.size_range(hpart["coil_outer"])[1]
+                    coil_from += ", outside the human range %s-%s mm: typical %.1f mm" % (lo_, hi_, coil * 1000)
+                else:
+                    coil_from += " (human range %s-%s mm)" % (lo_, hi_)
+            wire = coil * hpart.get("wire_share_of_coil", 0.33)
+            pitch = wire * hpart.get("pitch_share_of_wire", 1.0)
+            if P is not None:
+                obj, crep = make_cord(P, wire, coil, pitch, "%s_%s" % (order["name"], name))
                 fimg = np.asarray(regions["front"][1].convert("RGB"))[fmk].astype(float)
                 if len(fimg):
                     lum = fimg.sum(1)                                   # the coils, not the dark gaps between them
@@ -555,8 +629,7 @@ def build_parts(order, src_root):
                 obj.data.materials.append(mats.plain(col, rough=rough_, metal_v=metal_, grime=0.1, dust=0.03,
                                                      name="cord_%s" % order["name"]))
                 obj["procedural"] = True
-                notes.append("cord: built straight, curled along the photo's path; %s (handbook: wire %s, coil %s, pitch %s)" % (
-                    crep, wire[1], coil[1], pitch[1]))
+                notes.append("cord: built straight, curled along the photo's path; %s; coil %s" % (crep, coil_from))
                 obj.location = ((x0 + x1) / 2, (y0 + y1) / 2, z0)
                 bpy.context.view_layer.update()
                 built[name] = obj

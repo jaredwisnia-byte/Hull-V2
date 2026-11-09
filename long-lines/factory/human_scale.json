@@ -1,0 +1,93 @@
+{
+ "_note": "Human scale: the factory's golden record. One table of the adult human body; every object type says how it meets the body (factory/reference_handbook.json 'contacts'), and the drawing's own proportions give everything else. No product dimensions are looked up. Values are general adult anthropometry, sexes combined, approximate 5th / 50th / 95th percentiles in millimetres; ranges matter more than the middle.",
+ "measures": {
+  "stature": [
+   1520,
+   1700,
+   1880
+  ],
+  "sitting_height": [
+   790,
+   880,
+   970
+  ],
+  "eye_height_standing": [
+   1410,
+   1580,
+   1760
+  ],
+  "elbow_height_standing": [
+   940,
+   1060,
+   1180
+  ],
+  "popliteal_height": [
+   370,
+   430,
+   490
+  ],
+  "buttock_popliteal_length": [
+   420,
+   480,
+   540
+  ],
+  "shoulder_breadth": [
+   350,
+   420,
+   490
+  ],
+  "hip_breadth_seated": [
+   310,
+   370,
+   430
+  ],
+  "head_breadth": [
+   140,
+   152,
+   165
+  ],
+  "ear_to_mouth": [
+   115,
+   130,
+   145
+  ],
+  "ear_length": [
+   55,
+   63,
+   72
+  ],
+  "hand_length": [
+   165,
+   185,
+   205
+  ],
+  "palm_breadth": [
+   70,
+   82,
+   95
+  ],
+  "fingertip_breadth": [
+   14,
+   16.5,
+   19
+  ],
+  "grip_diameter": [
+   30,
+   38,
+   45
+  ],
+  "thumb_breadth": [
+   18,
+   21,
+   24
+  ]
+ },
+ "measures_why": {
+  "ear_to_mouth": "ear canal to the middle of the lips, straight line: what a handset must span",
+  "popliteal_height": "floor to the underside of the knee, seated: seat height",
+  "buttock_popliteal_length": "back of the buttock to the back of the knee: seat depth",
+  "fingertip_breadth": "index finger across the last joint: holes and buttons a finger goes into or presses",
+  "grip_diameter": "comfortable power grip: handles and rails",
+  "palm_breadth": "across the knuckles: openings a hand goes through"
+ }
+}
