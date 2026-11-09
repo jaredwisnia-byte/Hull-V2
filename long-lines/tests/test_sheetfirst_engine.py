@@ -118,11 +118,11 @@ class SheetFirstTests(unittest.TestCase):
         self.spec["seams"] = [{"a": "front", "a_edge": "u1", "b": "right", "b_edge": "u0"}]
         self.write_spec()
         s, _, _ = self.read()
-        self.assertEqual(engine.validate_seams(s, {}), [])
+        self.assertEqual(engine.validate_seams(s, engine.build_geometry(s)), [])
         self.spec["panels"][1]["origin_m"] = [.27, -.25, 0]
         self.write_spec()
         s, _, _ = self.read()
-        self.assertTrue(engine.validate_seams(s, {}))
+        self.assertTrue(engine.validate_seams(s, engine.build_geometry(s)))
 
     def test_depth_range_clamped(self):
         self.spec["depth_range_m"]["outward"] = .8
