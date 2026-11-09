@@ -692,5 +692,7 @@
     }
    ]
   }
- }
+ },
+ "sheet": "table_leg_carved/sheet.png",
+ "sheet_spec": "factory/orders/table_leg_carved.sheet.json"
 }

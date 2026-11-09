@@ -163,5 +163,7 @@
     "vertices": 794244
    }
   }
- }
+ },
+ "sheet": "table_leg_guided/sheet.png",
+ "sheet_spec": "factory/orders/table_leg_guided.sheet.json"
 }

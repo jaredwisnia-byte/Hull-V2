@@ -312,5 +312,7 @@
     "moved_mm": 26.1
    }
   ]
- }
+ },
+ "sheet": "wallphone_rotary/sheet.png",
+ "sheet_spec": "factory/orders/wallphone_rotary.sheet.json"
 }

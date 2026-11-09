@@ -1,0 +1,28 @@
+{
+ "name": "sofa_olive_suede",
+ "category": "sofa",
+ "line": "hull_parts",
+ "source": "Drive: sofa parts sheet (sheet.webp, v2 with edge guide)",
+ "class": "large",
+ "tex": 2048,
+ "status": "pending",
+ "views_folder": "fixture_sofa_parts",
+ "assembly": "assembly",
+ "parts": {
+  "seat": "seat",
+  "back": "back",
+  "side": "side",
+  "foot": "foot"
+ },
+ "width_m": 1.98,
+ "depth_m": 0.86,
+ "height_m": 0.81,
+ "rough": 0.85,
+ "res": 150,
+ "part_res": 100,
+ "edge_guide": true,
+ "assumptions": [
+  "width 1.98 m given with the sheet"
+ ],
+ "notes": "An olive suede three-seat sofa from the sofa parts sheet: every part from its own views, assembled."
+}
