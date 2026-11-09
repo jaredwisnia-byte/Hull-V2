@@ -1724,6 +1724,35 @@
   "desc": "A 1970s CRT television in a walnut veneer cabinet, speaker grille left, control panel right.",
   "kind": "static"
  },
+ "electronics_tv_crt2": {
+  "size": [
+   0.5175,
+   0.3575,
+   0.2775
+  ],
+  "min": [
+   -0.2587,
+   0.0,
+   -0.1387
+  ],
+  "max": [
+   0.2587,
+   0.3575,
+   0.1387
+  ],
+  "tris": 23750,
+  "tex": 2048,
+  "standardized": [
+   "seated on floor (-0.001 m)",
+   "decimated 93090 -> 23750 tris"
+  ],
+  "tags": [
+   "tv",
+   "factory"
+  ],
+  "desc": "A 1970s CRT television in a walnut veneer cabinet, speaker grille left, controls right, on four feet.",
+  "kind": "static"
+ },
  "electronics_tv_westbury": {
   "size": [
    0.6615,

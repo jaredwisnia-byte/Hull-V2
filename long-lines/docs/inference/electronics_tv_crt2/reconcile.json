@@ -1,0 +1,67 @@
+{
+ "views": {
+  "front": {
+   "proportion": 1.322,
+   "decided": 1.444,
+   "off_pct": -8.5,
+   "agrees": false,
+   "outline_vs_back": 0.987
+  },
+  "back": {
+   "proportion": 1.19,
+   "decided": 1.444,
+   "off_pct": -17.6,
+   "agrees": false
+  },
+  "left": {
+   "proportion": 0.594,
+   "decided": 0.778,
+   "off_pct": -23.6,
+   "agrees": false,
+   "orientation": {
+    "as_drawn": 0.79,
+    "flipped": 0.52
+   }
+  },
+  "right": {
+   "proportion": 0.573,
+   "decided": 0.778,
+   "off_pct": -26.3,
+   "agrees": false,
+   "orientation": {
+    "as_drawn": 0.15,
+    "flipped": 0.81
+   },
+   "outline_vs_left": 0.984
+  },
+  "top": {
+   "proportion": 1.195,
+   "decided": 1.857,
+   "off_pct": -35.6,
+   "agrees": false
+  },
+  "bottom": {
+   "proportion": 1.205,
+   "decided": 1.857,
+   "off_pct": -35.1,
+   "agrees": false
+  }
+ },
+ "decisions": [
+  "front view's proportion is -8% off: not trusted for size, stretched to the decided size",
+  "back view's proportion is -18% off: not trusted for size, stretched to the decided size",
+  "left view's proportion is -24% off: not trusted for size, stretched to the decided size",
+  "right view's proportion is -26% off: not trusted for size, stretched to the decided size",
+  "top view's proportion is -36% off: not trusted for size, stretched to the decided size",
+  "bottom view's proportion is -35% off: not trusted for size, stretched to the decided size",
+  "right view drawn mirrored (it matches the top view only when flipped: 0.81 vs 0.15): flipped",
+  "right view: its front sticks out past its core where the left view shows nothing: left out of the shape (painted only)",
+  "top view only paints (its proportion disagrees)",
+  "bottom view only paints (its proportion disagrees)"
+ ],
+ "decided_by": "printed dimensions 520x360x280 mm (trusted first)",
+ "paint_only": [
+  "bottom",
+  "top"
+ ]
+}

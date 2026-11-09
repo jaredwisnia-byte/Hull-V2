@@ -569,3 +569,18 @@ library, ledger and REPORT are restored afterwards (git checkout + delete the ex
   over drawn proportions (side views implied 190 mm deep; printed 280).
 - The wavy dark line inside the screen recess is the rim's shadow on the glass (light from upper left),
   not geometry: two "fixes" to the recess changed nothing before that was clear. Check the light first.
+
+## Reconcile: making a contradictory sheet agree (Nov 9)
+- propkit/reconcile.py, opt-in per hull order ("reconcile": true; report in docs/inference/<name>/).
+  Measures every view's proportions on the object's core (feet, knobs, cables left out), decides the size
+  (printed dimensions first, else the largest agreeing group), stretches disagreeing views to it, flips a
+  side view drawn mirrored (it matches the top view's depth profile only when flipped: 0.81 vs 0.15 on the
+  second TV sheet), makes top/bottom views paint-only when their proportions disagree, and crops one-sided
+  protrusions: knobs seen in one side view only were stretched by the hull into bars across the whole
+  front. Compare each view's band past its own core, not positions: cores differ in width.
+- On that sheet depth was three-way contradictory (sides 0.58 x height, print 0.78, top ~1.1): the print
+  is also the middle value.
+- False holes: the hole finder marks painted areas near the sheet's background colour (black bezel,
+  control panel plastic) as see-through, and paint_views repainted them from neighbours: that smeared the
+  first new TV's frame ("jagged"). A see-through hole must also show from the opposite view (mirrored);
+  with no opposite view the old behaviour stays (hull_assembly.confirmed_holes).

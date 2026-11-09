@@ -95,6 +95,28 @@ def overlap(a, b):
     return max(0.0, inter) / max(1e-9, min(a[1] - a[0], b[1] - b[0]))
 
 
+OPPOSITE = {"front": "back", "back": "front", "left": "right", "right": "left"}
+
+
+def confirmed_holes(holes, view, views):
+    """Holes that really are background seen through the object. Painted areas close to the sheet's
+    background colour (black plastic, a dark bezel) are flagged as holes too; a see-through hole must also
+    show from the opposite side, so where an opposite view exists, a hole counts only where that view (mirrored)
+    shows background or a hole as well. With no opposite view every flagged hole counts, as before."""
+    opp = OPPOSITE.get(view)
+    if not opp or opp not in views:
+        return holes
+    om, _, obox = silhouette(views[opp], with_box=True)
+    see = ~om
+    oh = os.path.join(os.path.dirname(views[opp]), "h_%s.png" % os.path.basename(views[opp])[2:-4])
+    if os.path.exists(oh):
+        h2 = np.asarray(Image.open(oh).convert("L").crop(obox)) > 127
+        if h2.shape == om.shape:
+            see |= h2
+    see = np.asarray(Image.fromarray(see.astype(np.uint8) * 255).resize((holes.shape[1], holes.shape[0]))) > 127
+    return holes & ndimage.binary_dilation(see[:, ::-1], iterations=3)
+
+
 def paint_views(views, out_dir, tag):
     """Views cropped to the object (the frame texturing.project maps to), paint padded past the outline
     with the object's own colours so rounded edges never pick up the sheet background."""
@@ -110,6 +132,7 @@ def paint_views(views, out_dir, tag):
             # fill it from the object's own colours around it
             holes = np.asarray(Image.open(hp).convert("L").crop(box)) > 127
             if holes.shape == m.shape:
+                holes = confirmed_holes(holes, k, views)
                 paintable &= ~ndimage.binary_dilation(holes, iterations=2)
         idx = ndimage.distance_transform_edt(~paintable, return_distances=False, return_indices=True)
         a = a[idx[0], idx[1]]

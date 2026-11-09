@@ -251,6 +251,24 @@ def run_line(order):
         if blended:
             hp["paint"] = False
         height = order.get("height_m")
+        if order.get("reconcile"):
+            # make the sheet's views agree before building (propkit/reconcile.py): sizes decided, mirrored
+            # views flipped, views that contradict the rest only paint
+            from propkit import reconcile
+            allv = dict(views)
+            bp = os.path.join(d, "v_bottom.png")
+            if os.path.exists(bp):
+                allv["bottom"] = bp
+            fixed, size, po, rrep = reconcile.run(allv, order.get("sheet_dims_mm"), tmp=os.path.join("/tmp", "_rec_" + order["name"]))
+            views = {k: fixed[k] for k in views}
+            if size:
+                height = size["height_m"]
+                hp["width_m"], hp["depth_m"] = size["width_m"], size["depth_m"]
+            hp["paint_only"] = sorted(set(hp.get("paint_only", [])) | {k for k in po if k in views})
+            order.setdefault("measured", {})["reconcile"] = rrep
+            od = os.path.join(ROOT, "docs", "inference", order["name"])
+            os.makedirs(od, exist_ok=True)
+            json.dump(rrep, open(os.path.join(od, "reconcile.json"), "w"), indent=1)
         if not height and order.get("handbook"):
             # human scale: the views give proportions, the handbook's contacts give the size
             height, order["measured"] = human_scale_height(order, views)

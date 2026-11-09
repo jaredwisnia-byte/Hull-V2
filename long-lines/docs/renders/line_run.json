@@ -1,31 +1,31 @@
 [
  {
-  "name": "electronics_tv_crt",
-  "line": "hull_parts",
+  "name": "electronics_tv_crt2",
+  "line": "hull",
   "stations": {
    "intake": {
-    "s": 1.1,
+    "s": 1.0,
     "ok": true,
-    "note": "14 views cut from electronics_tv_crt/sheet.png"
+    "note": "6 views cut from electronics_tv_crt2/sheet.png"
    },
    "build": {
-    "s": 23.3,
+    "s": 45.1,
     "ok": true,
     "note": "shipped",
     "stages": {
-     "geometry_and_paint": 8.5,
-     "bake_and_export": 13.5,
+     "geometry_and_paint": 29.5,
+     "bake_and_export": 14.2,
      "qa": 0.7
     },
-    "tris": 22998
+    "tris": 23750
    },
    "render": {
-    "s": 19.4,
+    "s": 19.2,
     "ok": true,
-    "note": "docs/renders/electronics_tv_crt.png"
+    "note": "docs/renders/electronics_tv_crt2.png"
    }
   },
   "ok": true,
-  "total_s": 43.8
+  "total_s": 65.3
  }
 ]
