@@ -49,10 +49,10 @@ class SheetFirstTests(unittest.TestCase):
         self.assertEqual(len(result["faces"]), 16)
         self.assertAlmostEqual(result["vertices"][0][0], -.25)
         self.assertAlmostEqual(result["vertices"][4][0], .25)
-        self.assertAlmostEqual(result["uv"][0][0], .1)
-        self.assertAlmostEqual(result["uv"][0][1], .4)
-        self.assertAlmostEqual(result["uv"][-1][0], .6)
-        self.assertAlmostEqual(result["uv"][-1][1], .9)
+        self.assertAlmostEqual(result["uv"][0][0], .105)
+        self.assertAlmostEqual(result["uv"][0][1], .405)
+        self.assertAlmostEqual(result["uv"][-1][0], .595)
+        self.assertAlmostEqual(result["uv"][-1][1], .895)
 
     def test_red_white_blue_signed_depth(self):
         a = Image.new("RGB", (100, 100), (255, 255, 255))
@@ -75,7 +75,24 @@ class SheetFirstTests(unittest.TestCase):
         m = engine.build_geometry(spec)["front"]
         self.assertAlmostEqual(m["vertices"][4][0], -.25 + .5 * math.sin(1), places=5)
         self.assertAlmostEqual(m["vertices"][4][1], -.25 - .5 * (1 - math.cos(1)), places=5)
-        self.assertAlmostEqual(m["uv"][-1][0], .6)
+        self.assertAlmostEqual(m["uv"][-1][0], .595)
+
+    def test_optional_vector_map_moves_vertices_in_local_tangent_coordinates(self):
+        s, _, _ = self.read()
+        vec = Image.new("RGB", (100, 100), (255, 128, 128))
+        s["vector_range_m"] = [.025, 0, 0]
+        mesh = engine.build_geometry(s, vector_image=vec)["front"]
+        self.assertAlmostEqual(mesh["vertices"][0][0], -.225, places=4)
+        self.assertAlmostEqual(mesh["vertices"][0][1], -.25, places=4)
+
+    def test_vector_displacement_on_curved_surface_uses_rotated_basis(self):
+        s, _, _ = self.read()
+        s["panels"][0]["curve"] = {"type": "cylinder", "axis": "u", "radius_m": .5}
+        s["vector_range_m"] = [.03, 0, 0]
+        baseline = engine.build_geometry(s)["front"]["vertices"][4]
+        shifted = engine.build_geometry(s, vector_image=Image.new("RGB", (100,100),(255,128,128)))["front"]["vertices"][4]
+        self.assertAlmostEqual(shifted[0] - baseline[0], .03 * math.cos(1), places=4)
+        self.assertAlmostEqual(shifted[1] - baseline[1], -.03 * math.sin(1), places=4)
 
     def test_wrong_uv_aspect_rejected(self):
         self.spec["panels"][0]["rect_px"] = [10, 10, 75, 60]
