@@ -494,3 +494,19 @@ library, ledger and REPORT are restored afterwards (git checkout + delete the ex
 - Result: outline exact (IoU 0.92-1.0: taper, bead band, bun foot, block), but the clay render shows no
   fluting and no leaf relief: those lie inside the outline and are only painted. This is the relief problem:
   it needs the 2.5D relief step (height over the surface from annotated regions), not more silhouettes.
+- Relief from the painting (propkit/relief.py, opt-in: an order's `"hull": {"relief": true}`). Darkness in a
+  painting is either occlusion (creases, grooves: depth) or a surface turned from the light (slope).
+  Cavity (darker than the neighbourhood) finds the creases; a watershed of the cavity splits the view into
+  regions (neighbours across a weak line merged); a region counts as carved only if creases surround it and
+  a dome or dish explains its shading; raised or sunk by two votes (its shading against the dome's slopes
+  under one light shared by all views, and which side of its edge the shadow falls); creases become
+  V-grooves. The dense relief is baked into the normal map (bake.finish bakes "<name>__high" onto the
+  simplified mesh): at 25k triangles a 0.7 m leg has ~5 mm triangles, too coarse for 3-5 mm carving.
+- Inverting a painting does not reveal depth: it gets grooves right (occlusion) and bumps wrong (the lit
+  side of a bead becomes "deep"). Integrating the shading along the light gave mush (painted light is not
+  consistent enough).
+- Table leg result: beads come out raised and real; leaf outlines read as carved lines; flute tops sink.
+  But the leaves are lumpy rather than cleanly modelled, and most of the flutes' length is lost (their
+  side creases are too weak on the lit side to bound them). Shading check: 0.16-0.18 correlation with the
+  painting (all-raised: about 0; grooves only: about 0). A companion relief sheet (regions by colour) would
+  replace the guessing in steps 1-3 and keep steps 4-5.

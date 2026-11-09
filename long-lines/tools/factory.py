@@ -254,6 +254,16 @@ def run_line(order):
         if not height and order.get("handbook"):
             # human scale: the views give proportions, the handbook's contacts give the size
             height, order["measured"] = human_scale_height(order, views)
+        if hp.pop("relief", False):
+            # carving inside the outline, read from the painting (propkit/relief.py)
+            from propkit import relief
+            from propkit.hull import silhouette as _sil
+            fm_, _ = _sil(views["front"])
+            sm_, _ = _sil(views.get("right") or views["left"])
+            W_ = hp.get("width_m") or height * fm_.shape[1] / fm_.shape[0]
+            D_ = hp.get("depth_m") or height * sm_.shape[1] / sm_.shape[0]
+            order.setdefault("measured", {})["relief"] = rrep = {}
+            hp["mesh_hook"] = relief.hook(views, W_, D_, height, rrep)
         obj = hull_prop(views, height, name=order["name"], **hp)
         if blended:
             from propkit import texturing

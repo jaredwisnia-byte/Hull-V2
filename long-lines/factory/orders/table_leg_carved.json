@@ -20,7 +20,8 @@
   "paint": "project",
   "rough": 0.6,
   "blur": 0.7,
-  "smooth_iters": 4
+  "smooth_iters": 4,
+  "relief": true
  },
  "assumptions": [
   "no size given or looked up: height from human scale (a table top at a seated person's elbows)",
@@ -52,6 +53,81 @@
    ],
    "size_from": "human scale (1 of 1 contacts agree): 0.156 x 0.104 x 0.691 m",
    "assumption": "a dining or writing table's leg (the commonest carved leg); a coffee-table or console leg would be shorter or taller"
+  },
+  "relief": {
+   "light_dir": [
+    0.01,
+    1.0
+   ],
+   "views": {
+    "front": {
+     "view": "front",
+     "regions": 102,
+     "raised": 48,
+     "sunk": 33,
+     "flat": 21,
+     "light_dir": [
+      0.01,
+      1.0
+     ],
+     "shading_match": 0.171,
+     "all_raised_match": 0.001,
+     "grooves_only_match": -0.01,
+     "carved_share": 0.447
+    },
+    "back": {
+     "view": "back",
+     "regions": 112,
+     "raised": 38,
+     "sunk": 36,
+     "flat": 38,
+     "light_dir": [
+      0.01,
+      1.0
+     ],
+     "shading_match": 0.182,
+     "all_raised_match": -0.045,
+     "grooves_only_match": -0.017,
+     "carved_share": 0.401
+    },
+    "right": {
+     "view": "right",
+     "regions": 71,
+     "raised": 35,
+     "sunk": 23,
+     "flat": 13,
+     "light_dir": [
+      0.01,
+      1.0
+     ],
+     "shading_match": 0.161,
+     "all_raised_match": 0.008,
+     "grooves_only_match": -0.009,
+     "carved_share": 0.413
+    },
+    "left": {
+     "view": "left",
+     "regions": 80,
+     "raised": 35,
+     "sunk": 24,
+     "flat": 21,
+     "light_dir": [
+      0.01,
+      1.0
+     ],
+     "shading_match": 0.155,
+     "all_raised_match": 0.012,
+     "grooves_only_match": 0.006,
+     "carved_share": 0.386
+    }
+   },
+   "high_tris": 800000,
+   "displaced_mm": {
+    "max_out": 3.6,
+    "max_in": 3.91,
+    "cap": 7.26,
+    "vertices": 733004
+   }
   }
  }
 }

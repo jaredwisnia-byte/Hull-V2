@@ -94,7 +94,13 @@ def finish(name, out_root, tex=1024, samples=24, tags=()):
     obj.name = name
     bpy.context.scene.cursor.location = (0, 0, 0)
     bpy.ops.object.origin_set(type="ORIGIN_CURSOR")
+    high = bpy.data.objects.get(name + "__high") or next((o for o in bpy.data.objects if o.name.endswith("__high")), None)
+    lo0 = [min(v.co[i] for v in obj.data.vertices) for i in range(3)] if high else None
     tex, std_notes = standardize(obj, name, tex, tags)
+    if high:
+        # the dense relief moves with the mesh it was made from (standardize seats it on the floor/wall)
+        lo1 = [min(v.co[i] for v in obj.data.vertices) for i in range(3)]
+        high.location = tuple(high.location[i] + lo1[i] - lo0[i] for i in range(3))
     if repaired:
         std_notes.append("repaired invalid mesh data: %s" % ", ".join(repaired))
     if obj.data.validate(verbose=False, clean_customdata=False):
@@ -171,7 +177,19 @@ def finish(name, out_root, tex=1024, samples=24, tags=()):
     for i in infos:
         i["mat"].node_tree.links.new(i["bsdf"].outputs["BSDF"], i["out"].inputs["Surface"])
     scene.cycles.samples = 4
-    bpy.ops.object.bake(type="NORMAL", normal_space="TANGENT")
+    if high:
+        # high to low: the dense relief's detail into the simplified mesh's normal map
+        dims_ = max(obj.dimensions)
+        high.select_set(True)
+        obj.select_set(True)
+        bpy.context.view_layer.objects.active = obj
+        bpy.ops.object.bake(type="NORMAL", normal_space="TANGENT", use_selected_to_active=True,
+                            cage_extrusion=0.01 * dims_, max_ray_distance=0.03 * dims_)
+        bpy.data.objects.remove(high, do_unlink=True)
+        core.select_only(obj)
+        std_notes.append("normal map baked from the dense relief")
+    else:
+        bpy.ops.object.bake(type="NORMAL", normal_space="TANGENT")
     save(nrm, name + "_normal.png")
     orm = new_img(name + "_orm", "Non-Color")
     a = np.ones(tex * tex * 4, dtype=np.float32)
