@@ -101,3 +101,41 @@ def build_and_export(manifest_path, asset_name, library_dir):
         "panels": list(meshes), "atlas_file": os.path.basename(albedo_file),
         "standardized": ["source-authored UV mapping retained (no automatic unwrap)"],
     }
+
+
+def verify_imported_uvs(asset_name, spec):
+    """Inspect meshes currently imported by qa.check, after GLB round-trip.
+
+    Authoring rectangles must survive GLB export/import to within 1 texture pixel.
+    This is intentionally stricter than the general texture-density QA gate.
+    """
+    aw, ah = spec["atlas"]["size_px"]
+    errors = []
+    metrics = {}
+    imported = [o for o in bpy.data.objects if o.type == "MESH"]
+    for panel in spec["panels"]:
+        name = asset_name + "_" + panel["name"]
+        candidates = [obj for obj in imported if obj.name == name or
+                      obj.name.startswith(name + ".")]
+        if len(candidates) != 1:
+            errors.append("expected exactly one exported mesh for " + name)
+            continue
+        mesh = candidates[0].data
+        layer = mesh.uv_layers.active
+        if not layer or not layer.data:
+            errors.append(name + " has no imported UV coordinates")
+            continue
+        uv = [d.uv for d in layer.data]
+        u0, v0 = min(t.x for t in uv), min(t.y for t in uv)
+        u1, v1 = max(t.x for t in uv), max(t.y for t in uv)
+        x0, y0, x1, y1 = panel["rect_px"]
+        wanted = ((x0 + .5) / aw, 1 - (y1 - .5) / ah,
+                  (x1 - .5) / aw, 1 - (y0 + .5) / ah)
+        difference = max(abs((got - exp) * scale)
+                         for got, exp, scale in zip((u0, v0, u1, v1), wanted,
+                                                    (aw, ah, aw, ah)))
+        metrics[panel["name"]] = round(difference, 4)
+        if difference > 1.0:
+            errors.append("%s UV bounds shifted %.2f pixels on GLB round-trip" %
+                          (name, difference))
+    return errors, metrics
