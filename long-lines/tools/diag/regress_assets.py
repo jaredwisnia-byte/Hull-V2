@@ -1,7 +1,7 @@
 """Asset-level geometry regression: rebuild reference assets from their own orders under exp_ names,
 measure them (tools/diag/metrics.py) and compare with factory/geometry_baseline.json.
 
-    python3 tools/diag/regress_assets.py [--update-baseline] [--only car,coffee,sofa]
+    python3 tools/diag/regress_assets.py [--update-baseline] [--only car,coffee,sofa] [--keep DIR]
 
 Each case must keep its silhouette (IoU no more than 0.005 below the baseline), stay free of folds
 (per 1000 faces no more than the baseline + 0.5) and not get ridgier (ridge_deg no more than the
@@ -76,6 +76,9 @@ def main():
             open(os.path.join(ROOT, p), "wb").write(data)
         for case in only:
             name = "exp_regress_" + case
+            if "--keep" in sys.argv and os.path.isdir(os.path.join(ROOT, "assets/props/" + name)):
+                keep_dir = sys.argv[sys.argv.index("--keep") + 1]
+                shutil.copytree(os.path.join(ROOT, "assets/props/" + name), os.path.join(keep_dir, name), dirs_exist_ok=True)
             for p in ("assets/props/" + name, "factory/orders/%s.json" % name):
                 full = os.path.join(ROOT, p)
                 if os.path.isdir(full):

@@ -267,7 +267,7 @@ HULL_REPORT = {}     # what the last hull_prop call carved with blades
 def hull_prop(views, height, res=110, smooth_iters=4, decimate=0.35, rough=0.5, name="hull",
               convex=False, paint_only=(), features=True, sil_override=None, depth_m=None, grime=0.25,
               paint=True, width_m=None, blades=False, voxel_hook=None, mesh_hook=None, revolve=True, blur=0.7,
-              field=None):
+              field=None, sections=None):
     """convex: fill each outline to its convex shape (boxy objects; dark areas can't
     punch holes). paint_only: views used for texture but not trusted to carve (e.g. a
     dark back panel on a dark sheet). width_m: the real width (views painted out of
@@ -320,6 +320,18 @@ def hull_prop(views, height, res=110, smooth_iters=4, decimate=0.35, rough=0.5, 
         from . import revolve as _revolve
         HULL_REPORT.pop("revolve", None)
         keep = _revolve.voxel_hook(HULL_REPORT)(keep, carve, W, D, H)
+    # sections: how round each height band is, inferred from the painting (propkit/sections.py); off by
+    # default, HULL_SECTIONS=1 turns it on everywhere (A/B tests). Not for parts already turned as lathes.
+    sections = sections if sections is not None else _os.environ.get("HULL_SECTIONS") == "1"
+    if sections and not (HULL_REPORT.get("revolve") or {}).get("round") and "front" in views and \
+            ({"right", "left"} & set(views)) and all(isinstance(v, str) for v in views.values()):
+        from . import sections as _sections
+        sv = dict(views)
+        bp = _os.path.join(_os.path.dirname(views["front"]), "v_bottom.png")
+        if _os.path.exists(bp):
+            sv["bottom"] = bp
+        HULL_REPORT["sections"] = srep = {}
+        keep = _sections.hook(sv, srep)(keep, carve, W, D, H)
     if voxel_hook is not None:
         keep = voxel_hook(keep, carve, W, D, H)
     import time as _time

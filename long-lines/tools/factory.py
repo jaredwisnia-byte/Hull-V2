@@ -272,7 +272,24 @@ def run_line(order):
             D_ = hp.get("depth_m") or height * sm_.shape[1] / sm_.shape[0]
             order.setdefault("measured", {})["relief"] = rrep = {}
             hp["mesh_hook"] = relief.hook(views, W_, D_, height, rrep)
+        from propkit.hull import HULL_REPORT
+        HULL_REPORT.pop("sections", None)
         obj = hull_prop(views, height, name=order["name"], **hp)
+        if HULL_REPORT.get("sections"):
+            # inferred cross-sections: summary in the order, overlays (the fitted sections drawn in each view's
+            # pixels, transparent) in docs/inference/<name>/ for switching on over the painting
+            from propkit import sections as _sec
+            srep = HULL_REPORT["sections"]
+            order.setdefault("measured", {})["sections"] = {
+                "curved_runs": srep["curved_runs"],
+                "bands": [{k: b.get(k) for k in ("v", "best_n", "curved", "confidence", "decided_by", "gain")}
+                          for b in srep["bands"]]}
+            od = os.path.join(ROOT, "docs", "inference", order["name"])
+            os.makedirs(od, exist_ok=True)
+            for k, vp in views.items():
+                if k in ("front", "back", "left", "right"):
+                    _sec.overlay(vp, srep["bands"], os.path.join(od, "sections_%s.png" % k))
+            json.dump(srep, open(os.path.join(od, "sections.json"), "w"), indent=1, default=str)
         if blended:
             from propkit import texturing
             from propkit.hull_assembly import paint_views

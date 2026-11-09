@@ -21,12 +21,14 @@
   "rough": 0.6,
   "blur": 0.7,
   "smooth_iters": 4,
-  "relief": true
+  "relief": true,
+  "sections": true
  },
  "assumptions": [
   "no size given or looked up: height from human scale (a table top at a seated person's elbows)",
   "the four elevations agree with each other (front/back 1.45x wider than the sides); the top view is drawn square and is stretched to them",
-  "the two close-ups on the sheet are detail references, not views"
+  "the two close-ups on the sheet are detail references, not views",
+  "cross-sections inferred from the painting (propkit/sections.py): shading, carving and end views decide how round each height band is"
  ],
  "notes": "A carved table leg: acanthus capital with volutes, bead band, fluted tapered shaft, leafy bun foot.",
  "attempts": 1,
@@ -126,8 +128,569 @@
     "max_out": 3.6,
     "max_in": 3.91,
     "cap": 7.26,
-    "vertices": 733004
+    "vertices": 734558
    }
+  },
+  "sections": {
+   "curved_runs": [
+    {
+     "v_top": 0.34,
+     "v_bottom": 0.799,
+     "n": 2.0
+    }
+   ],
+   "bands": [
+    {
+     "v": [
+      0.0,
+      0.02
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "top view draws it: not round (IoU 0.88)",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.02,
+      0.039
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "top view draws it: not round (IoU 0.88)",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.039,
+      0.06
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "top view draws it: not round (IoU 0.88)",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.06,
+      0.079
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "top view draws it: not round (IoU 0.88)",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.079,
+      0.1
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "top view draws it: not round (IoU 0.88)",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.1,
+      0.119
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "top view draws it: not round (IoU 0.88)",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.119,
+      0.14
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "top view not round (IoU 0.88)",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.14,
+      0.159
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "top view not round (IoU 0.88)",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.159,
+      0.179
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "top view draws it: not round (IoU 0.88)",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.179,
+      0.2
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "top view not round (IoU 0.88)",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.2,
+      0.219
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "top view not round (IoU 0.88)",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.219,
+      0.24
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "top view not round (IoU 0.88)",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.24,
+      0.259
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "top view not round (IoU 0.88)",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.259,
+      0.28
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "top view not round (IoU 0.88)",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.28,
+      0.299
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "top view not round (IoU 0.88)",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.299,
+      0.32
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "top view not round (IoU 0.88)",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.32,
+      0.34
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "top view not round (IoU 0.88)",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.34,
+      0.359
+     ],
+     "best_n": 2.0,
+     "curved": true,
+     "confidence": "medium",
+     "decided_by": "shading",
+     "gain": 0.657
+    },
+    {
+     "v": [
+      0.359,
+      0.38
+     ],
+     "best_n": 2.0,
+     "curved": true,
+     "confidence": "medium",
+     "decided_by": "top view not round (IoU 0.88)",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.38,
+      0.399
+     ],
+     "best_n": 2.0,
+     "curved": true,
+     "confidence": "medium",
+     "decided_by": "shading",
+     "gain": 0.456
+    },
+    {
+     "v": [
+      0.399,
+      0.42
+     ],
+     "best_n": 2.0,
+     "curved": true,
+     "confidence": "medium",
+     "decided_by": "shading",
+     "gain": 0.556
+    },
+    {
+     "v": [
+      0.42,
+      0.439
+     ],
+     "best_n": 2.0,
+     "curved": true,
+     "confidence": "medium",
+     "decided_by": "shading",
+     "gain": 0.584
+    },
+    {
+     "v": [
+      0.439,
+      0.46
+     ],
+     "best_n": 2.0,
+     "curved": true,
+     "confidence": "medium",
+     "decided_by": "shading",
+     "gain": 0.436
+    },
+    {
+     "v": [
+      0.46,
+      0.479
+     ],
+     "best_n": 2.0,
+     "curved": true,
+     "confidence": "medium",
+     "decided_by": "shading",
+     "gain": 0.465
+    },
+    {
+     "v": [
+      0.479,
+      0.5
+     ],
+     "best_n": 2.0,
+     "curved": true,
+     "confidence": "medium",
+     "decided_by": "shading",
+     "gain": 0.478
+    },
+    {
+     "v": [
+      0.5,
+      0.52
+     ],
+     "best_n": 2.0,
+     "curved": true,
+     "confidence": "medium",
+     "decided_by": "shading",
+     "gain": 0.32
+    },
+    {
+     "v": [
+      0.52,
+      0.539
+     ],
+     "best_n": 2.0,
+     "curved": true,
+     "confidence": "medium",
+     "decided_by": "shading",
+     "gain": 0.455
+    },
+    {
+     "v": [
+      0.539,
+      0.56
+     ],
+     "best_n": 2.0,
+     "curved": true,
+     "confidence": "medium",
+     "decided_by": "shading",
+     "gain": 0.489
+    },
+    {
+     "v": [
+      0.56,
+      0.579
+     ],
+     "best_n": 2.0,
+     "curved": true,
+     "confidence": "medium",
+     "decided_by": "shading",
+     "gain": 0.477
+    },
+    {
+     "v": [
+      0.579,
+      0.6
+     ],
+     "best_n": 2.0,
+     "curved": true,
+     "confidence": "medium",
+     "decided_by": "shading",
+     "gain": 0.45
+    },
+    {
+     "v": [
+      0.6,
+      0.619
+     ],
+     "best_n": 2.0,
+     "curved": true,
+     "confidence": "medium",
+     "decided_by": "shading",
+     "gain": 0.495
+    },
+    {
+     "v": [
+      0.619,
+      0.64
+     ],
+     "best_n": 2.0,
+     "curved": true,
+     "confidence": "medium",
+     "decided_by": "shading",
+     "gain": 0.399
+    },
+    {
+     "v": [
+      0.64,
+      0.659
+     ],
+     "best_n": 2.0,
+     "curved": true,
+     "confidence": "medium",
+     "decided_by": "shading",
+     "gain": 0.32
+    },
+    {
+     "v": [
+      0.659,
+      0.679
+     ],
+     "best_n": 2.0,
+     "curved": true,
+     "confidence": "medium",
+     "decided_by": "shading",
+     "gain": 0.468
+    },
+    {
+     "v": [
+      0.679,
+      0.7
+     ],
+     "best_n": 2.0,
+     "curved": true,
+     "confidence": "medium",
+     "decided_by": "shading",
+     "gain": 0.413
+    },
+    {
+     "v": [
+      0.7,
+      0.719
+     ],
+     "best_n": 2.0,
+     "curved": true,
+     "confidence": "medium",
+     "decided_by": "shading",
+     "gain": 0.344
+    },
+    {
+     "v": [
+      0.719,
+      0.74
+     ],
+     "best_n": 2.0,
+     "curved": true,
+     "confidence": "medium",
+     "decided_by": "shading",
+     "gain": 0.25
+    },
+    {
+     "v": [
+      0.74,
+      0.759
+     ],
+     "best_n": 2.6,
+     "curved": true,
+     "confidence": "medium",
+     "decided_by": "shading",
+     "gain": 0.241
+    },
+    {
+     "v": [
+      0.759,
+      0.78
+     ],
+     "best_n": 2.3,
+     "curved": true,
+     "confidence": "medium",
+     "decided_by": "bottom view missing",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.78,
+      0.799
+     ],
+     "best_n": 2.0,
+     "curved": true,
+     "confidence": "medium",
+     "decided_by": "shading",
+     "gain": 0.667
+    },
+    {
+     "v": [
+      0.799,
+      0.82
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "bottom view missing",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.82,
+      0.84
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "bottom view missing",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.84,
+      0.859
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "bottom view missing",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.859,
+      0.88
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "bottom view missing",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.88,
+      0.899
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "bottom view would draw it: missing, no claim",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.899,
+      0.92
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "bottom view would draw it: missing, no claim",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.92,
+      0.939
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "bottom view would draw it: missing, no claim",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.939,
+      0.96
+     ],
+     "best_n": 2.0,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "shading",
+     "gain": 0.694
+    },
+    {
+     "v": [
+      0.96,
+      0.979
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "bottom view missing",
+     "gain": 0.0
+    },
+    {
+     "v": [
+      0.979,
+      1.0
+     ],
+     "best_n": null,
+     "curved": false,
+     "confidence": "hull",
+     "decided_by": "bottom view missing",
+     "gain": 0.0
+    }
+   ]
   }
  }
 }

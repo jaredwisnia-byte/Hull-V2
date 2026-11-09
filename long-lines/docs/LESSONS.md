@@ -523,3 +523,22 @@ library, ledger and REPORT are restored afterwards (git checkout + delete the ex
   it). The hull's slices in that band become the ellipse inscribed in each slice's own extent.
 - Leg: square block and carved top as before; shaft and foot now round (cross-sections show it); no guide
   on the model. The sheet's labels put the LEFT side second: read the labels, never assume an order.
+
+## Cross-sections inferred from the painting, no guide lines (Nov 9)
+- propkit/sections.py: at every height the silhouettes give the half width and half depth; the section is
+  a superellipse |x/a|^n + |y/b|^n = 1 (n 2 ellipse, 4-6 rounded box, large: box), so one number per height
+  band is unknown. Analysis by synthesis: each candidate n predicts the brightness across the width under
+  some light; the best n that beats the box by a margin, in several views, wins. Opt-in: hull
+  `"sections": true`; HULL_SECTIONS=1 turns it on everywhere for A/B tests. Overlays and JSON go to
+  docs/inference/<name>/.
+- What decides, in order: (1) the widest part near an end is what that end view draws: its section is the
+  end view's shape, and with no end view there is no claim; (2) carved bands (creases running every way,
+  not just along or around the axis) shade like curvature, so only the end view counts; (3) otherwise the
+  shading test.
+- Graded against the guided sheet's rings (the answer key): 0.91 overlap on the guided sheet's own views
+  with the guides painted out and unused; 0.71 on the first sheet (no bottom view, so the foot stays
+  square: no evidence). The front-lit painting made the carved capital shade exactly like a cylinder:
+  without the carving and end-view rules it came out round.
+- On by default it is NOT safe yet (five-object test): coffee maker worse (its housing's painterly
+  gradients pass as curvature), sofa and phone slightly ridgier, car unchanged. First run, cushions became
+  ellipses and the gap check failed the sofa (13-39 mm gaps): touching faces must stay flat.
