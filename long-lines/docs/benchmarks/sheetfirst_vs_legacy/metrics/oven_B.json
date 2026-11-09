@@ -1,0 +1,28 @@
+{
+ "object": "oven",
+ "version": "B",
+ "tris": 3808,
+ "size_m": [
+  0.76,
+  0.66,
+  1.133
+ ],
+ "target_m": [
+  0.7599999904632568,
+  0.6600000262260437,
+  1.1299999952316284
+ ],
+ "dimension_error_pct": [
+  0.0,
+  0.0,
+  0.3
+ ],
+ "open_edges": 376,
+ "nonmanifold_edges": 0,
+ "uv_area_distorted_pct": 0.0,
+ "uv_angle_distortion_mean": 1.45,
+ "uv_angle_distorted_pct": 0.0,
+ "silhouette_iou": {},
+ "front_texture_correlation": 0.92,
+ "front_texture_coverage": 0.983
+}

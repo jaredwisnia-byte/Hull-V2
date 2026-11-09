@@ -173,5 +173,11 @@
   "line": "kit",
   "height_m": 0.12,
   "class": null
+ },
+ "armchair_atlas": {
+  "line": "atlas",
+  "height_m": 0.85,
+  "class": null,
+  "depth_m": 0.85
  }
 }

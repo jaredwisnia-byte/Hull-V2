@@ -1,0 +1,311 @@
+{
+ "schema": 1,
+ "asset_id": "bench_b_armchair",
+ "description": "benchmark version B: armchair",
+ "atlas": {
+  "albedo": "atlas.png",
+  "depth": "depth.png",
+  "size_px": [
+   1448,
+   1086
+  ],
+  "roughness": 0.6,
+  "metallic": 0.05
+ },
+ "depth_range_m": {
+  "inward": 0.01,
+  "outward": 0.05
+ },
+ "panels": [
+  {
+   "name": "back_front",
+   "size_m": [
+    0.62,
+    0.43
+   ],
+   "rect_px": [
+    17,
+    8,
+    403,
+    275
+   ],
+   "origin_m": [
+    -0.31,
+    0.25,
+    0.42
+   ],
+   "u_axis": [
+    1,
+    0,
+    0
+   ],
+   "v_axis": [
+    0,
+    0,
+    1
+   ],
+   "grid": [
+    24,
+    18
+   ]
+  },
+  {
+   "name": "back_rear",
+   "size_m": [
+    0.8,
+    0.64
+   ],
+   "rect_px": [
+    410,
+    7,
+    742,
+    273
+   ],
+   "origin_m": [
+    0.4,
+    0.42,
+    0.0
+   ],
+   "u_axis": [
+    -1,
+    0,
+    0
+   ],
+   "v_axis": [
+    0,
+    0,
+    1
+   ],
+   "grid": [
+    8,
+    8
+   ]
+  },
+  {
+   "name": "seat_front",
+   "size_m": [
+    0.62,
+    0.25
+   ],
+   "rect_px": [
+    14,
+    441,
+    435,
+    611
+   ],
+   "origin_m": [
+    -0.31,
+    -0.3,
+    0.2
+   ],
+   "u_axis": [
+    1,
+    0,
+    0
+   ],
+   "v_axis": [
+    0,
+    0,
+    1
+   ],
+   "grid": [
+    20,
+    10
+   ]
+  },
+  {
+   "name": "seat_top",
+   "size_m": [
+    0.62,
+    0.55
+   ],
+   "rect_px": [
+    440,
+    451,
+    844,
+    612
+   ],
+   "origin_m": [
+    -0.31,
+    -0.3,
+    0.45
+   ],
+   "u_axis": [
+    1,
+    0,
+    0
+   ],
+   "v_axis": [
+    0,
+    1,
+    0
+   ],
+   "grid": [
+    20,
+    16
+   ],
+   "allow_stretch": true
+  },
+  {
+   "name": "side_right",
+   "size_m": [
+    0.85,
+    0.65
+   ],
+   "rect_px": [
+    760,
+    10,
+    1099,
+    270
+   ],
+   "origin_m": [
+    0.4,
+    -0.42,
+    0.0
+   ],
+   "u_axis": [
+    0,
+    1,
+    0
+   ],
+   "v_axis": [
+    0,
+    0,
+    1
+   ],
+   "grid": [
+    16,
+    12
+   ]
+  },
+  {
+   "name": "side_left",
+   "size_m": [
+    0.85,
+    0.65
+   ],
+   "rect_px": [
+    1122,
+    10,
+    1437,
+    270
+   ],
+   "origin_m": [
+    -0.4,
+    0.43,
+    0.0
+   ],
+   "u_axis": [
+    0,
+    -1,
+    0
+   ],
+   "v_axis": [
+    0,
+    0,
+    1
+   ],
+   "grid": [
+    16,
+    12
+   ],
+   "allow_stretch": true
+  },
+  {
+   "name": "arm_front_right",
+   "size_m": [
+    0.18,
+    0.35
+   ],
+   "rect_px": [
+    833,
+    278,
+    946,
+    501
+   ],
+   "origin_m": [
+    0.22,
+    -0.42,
+    0.3
+   ],
+   "u_axis": [
+    1,
+    0,
+    0
+   ],
+   "v_axis": [
+    0,
+    0,
+    1
+   ],
+   "grid": [
+    6,
+    10
+   ]
+  },
+  {
+   "name": "arm_front_left",
+   "size_m": [
+    0.18,
+    0.35
+   ],
+   "rect_px": [
+    964,
+    278,
+    1074,
+    496
+   ],
+   "origin_m": [
+    -0.4,
+    -0.42,
+    0.3
+   ],
+   "u_axis": [
+    1,
+    0,
+    0
+   ],
+   "v_axis": [
+    0,
+    0,
+    1
+   ],
+   "grid": [
+    6,
+    10
+   ]
+  },
+  {
+   "name": "skirt_front",
+   "size_m": [
+    0.8,
+    0.13
+   ],
+   "rect_px": [
+    877,
+    509,
+    1433,
+    598
+   ],
+   "origin_m": [
+    -0.4,
+    -0.42,
+    0.07
+   ],
+   "u_axis": [
+    1,
+    0,
+    0
+   ],
+   "v_axis": [
+    0,
+    0,
+    1
+   ],
+   "grid": [
+    16,
+    4
+   ]
+  }
+ ]
+}

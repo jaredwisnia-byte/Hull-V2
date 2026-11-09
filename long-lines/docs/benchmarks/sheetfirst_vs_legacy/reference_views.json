@@ -1,0 +1,116 @@
+{
+ "fridge": {
+  "silhouettes": {
+   "front": {
+    "file": "inputs/fridge/fridge_1_parts.png",
+    "box": [
+     37,
+     121,
+     345,
+     778
+    ]
+   },
+   "side": {
+    "file": "inputs/fridge/fridge_1_parts.png",
+    "box": [
+     377,
+     121,
+     661,
+     778
+    ]
+   },
+   "top": {
+    "file": "inputs/fridge/fridge_1_parts.png",
+    "box": [
+     1364,
+     341,
+     1650,
+     644
+    ]
+   }
+  },
+  "front_texture": {
+   "file": "inputs/fridge/fridge_1_painted.png",
+   "box": [
+    37,
+    121,
+    345,
+    778
+   ]
+  }
+ },
+ "tv": {
+  "silhouettes": {
+   "front": {
+    "file": "inputs/tv/v_front.png",
+    "box": [
+     0,
+     0,
+     298,
+     232
+    ]
+   },
+   "side": {
+    "file": "inputs/tv/v_right.png",
+    "box": [
+     0,
+     0,
+     155,
+     232
+    ]
+   },
+   "top": {
+    "file": "inputs/tv/v_top.png",
+    "box": [
+     0,
+     0,
+     260,
+     215
+    ]
+   }
+  },
+  "front_texture": {
+   "file": "inputs/tv/v_front.png",
+   "box": [
+    0,
+    0,
+    298,
+    232
+   ]
+  }
+ },
+ "crown": {
+  "silhouettes": {
+   "profile": {
+    "file": "inputs/crown/reference.png",
+    "box": [
+     1101,
+     10,
+     1241,
+     244
+    ]
+   }
+  },
+  "front_texture": {
+   "file": "inputs/crown/reference.png",
+   "box": [
+    23,
+    10,
+    981,
+    245
+   ]
+  }
+ },
+ "oven": {
+  "front_texture": {
+   "file": "inputs/oven/front_composite.png",
+   "box": [
+    0,
+    0,
+    600,
+    861
+   ]
+  }
+ },
+ "armchair": {}
+}

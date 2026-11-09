@@ -1,0 +1,183 @@
+{
+ "schema": 1,
+ "asset_id": "bench_b_fridge",
+ "description": "benchmark version B: fridge",
+ "atlas": {
+  "albedo": "atlas.png",
+  "depth": "depth.png",
+  "size_px": [
+   1672,
+   941
+  ],
+  "roughness": 0.6,
+  "metallic": 0.05
+ },
+ "depth_range_m": {
+  "inward": 0.02,
+  "outward": 0.035
+ },
+ "panels": [
+  {
+   "name": "front",
+   "size_m": [
+    0.775,
+    1.65
+   ],
+   "rect_px": [
+    37,
+    121,
+    345,
+    778
+   ],
+   "origin_m": [
+    -0.3875,
+    -0.375,
+    0
+   ],
+   "u_axis": [
+    1,
+    0,
+    0
+   ],
+   "v_axis": [
+    0,
+    0,
+    1
+   ],
+   "grid": [
+    30,
+    64
+   ]
+  },
+  {
+   "name": "right",
+   "size_m": [
+    0.75,
+    1.65
+   ],
+   "rect_px": [
+    377,
+    121,
+    661,
+    778
+   ],
+   "origin_m": [
+    0.3875,
+    -0.375,
+    0
+   ],
+   "u_axis": [
+    0,
+    1,
+    0
+   ],
+   "v_axis": [
+    0,
+    0,
+    1
+   ],
+   "grid": [
+    12,
+    24
+   ]
+  },
+  {
+   "name": "back",
+   "size_m": [
+    0.775,
+    1.65
+   ],
+   "rect_px": [
+    700,
+    121,
+    1009,
+    778
+   ],
+   "origin_m": [
+    0.3875,
+    0.375,
+    0
+   ],
+   "u_axis": [
+    -1,
+    0,
+    0
+   ],
+   "v_axis": [
+    0,
+    0,
+    1
+   ],
+   "grid": [
+    24,
+    48
+   ]
+  },
+  {
+   "name": "left",
+   "size_m": [
+    0.75,
+    1.65
+   ],
+   "rect_px": [
+    1046,
+    121,
+    1319,
+    778
+   ],
+   "origin_m": [
+    -0.3875,
+    0.375,
+    0
+   ],
+   "u_axis": [
+    0,
+    -1,
+    0
+   ],
+   "v_axis": [
+    0,
+    0,
+    1
+   ],
+   "grid": [
+    12,
+    24
+   ],
+   "allow_stretch": true
+  },
+  {
+   "name": "top",
+   "size_m": [
+    0.775,
+    0.75
+   ],
+   "rect_px": [
+    1364,
+    341,
+    1650,
+    644
+   ],
+   "origin_m": [
+    -0.3875,
+    -0.375,
+    1.65
+   ],
+   "u_axis": [
+    1,
+    0,
+    0
+   ],
+   "v_axis": [
+    0,
+    1,
+    0
+   ],
+   "grid": [
+    12,
+    12
+   ],
+   "allow_stretch": true
+  }
+ ]
+}

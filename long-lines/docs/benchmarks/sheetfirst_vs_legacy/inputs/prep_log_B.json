@@ -1,0 +1,48 @@
+{
+ "stretch": [
+  "right: painted 0.60 vs real 0.73 (-18%)",
+  "left: painted 0.58 vs real 0.73 (-20%)",
+  "left: painted 0.42 vs real 0.45 (-9%)",
+  "top: painted 0.94 vs real 1.03 (-9%)",
+  "front: painted 1.28 vs real 1.38 (-7%)",
+  "back: painted 1.21 vs real 1.38 (-12%)",
+  "left: painted 0.68 vs real 0.64 (+6%)",
+  "top: painted 1.21 vs real 2.15 (-44%)",
+  "seat_top: painted 2.51 vs real 1.13 (+123%)",
+  "side_left: painted 1.21 vs real 1.31 (-7%)"
+ ],
+ "notes": [
+  "oven: front panels scaled x1.05 to fill the 0.91 m body; no back panel exists on the sheet (left open); sides use panels 24/25 (A's order used 26)",
+  "fridge: depth converted from the supplied grayscale map, relative to each view's median; no corner panels exist, so the rounded cabinet edges cannot be represented",
+  "crown: profile authored as a row-by-row relief (a heightfield cannot undercut, so the cove is approximated); the painted strip is one rectangle: it is stretched over 1.2 m rather than repeated; no ends, top or underside",
+  "tv: the five split views laid out side by side as one atlas (paint unchanged); screen recess and knobs authored by rules; the curved screen bulge is not represented",
+  "armchair: nine panels positioned by hand from typical armchair proportions; cushion relief authored as soft bulges; no legs, arm tops or inner arm faces (no panels painted for them)"
+ ],
+ "objects": {
+  "oven": {
+   "panels": 6,
+   "planned_tris": 3808,
+   "stretched_panels": 2
+  },
+  "fridge": {
+   "panels": 5,
+   "planned_tris": 7584,
+   "stretched_panels": 2
+  },
+  "crown": {
+   "panels": 1,
+   "planned_tris": 7680,
+   "stretched_panels": 0
+  },
+  "tv": {
+   "panels": 5,
+   "planned_tris": 13216,
+   "stretched_panels": 4
+  },
+  "armchair": {
+   "panels": 9,
+   "planned_tris": 3168,
+   "stretched_panels": 2
+  }
+ }
+}

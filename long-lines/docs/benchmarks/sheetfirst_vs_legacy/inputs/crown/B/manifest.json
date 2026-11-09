@@ -1,0 +1,53 @@
+{
+ "schema": 1,
+ "asset_id": "bench_b_crown",
+ "description": "benchmark version B: crown",
+ "atlas": {
+  "albedo": "atlas.png",
+  "depth": "depth.png",
+  "size_px": [
+   1254,
+   1254
+  ],
+  "roughness": 0.6,
+  "metallic": 0.05
+ },
+ "depth_range_m": {
+  "inward": 0.001,
+  "outward": 0.165
+ },
+ "panels": [
+  {
+   "name": "face",
+   "size_m": [
+    1.2,
+    0.28
+   ],
+   "rect_px": [
+    23,
+    10,
+    981,
+    245
+   ],
+   "origin_m": [
+    0,
+    0,
+    0
+   ],
+   "u_axis": [
+    1,
+    0,
+    0
+   ],
+   "v_axis": [
+    0,
+    0,
+    1
+   ],
+   "grid": [
+    32,
+    120
+   ]
+  }
+ ]
+}

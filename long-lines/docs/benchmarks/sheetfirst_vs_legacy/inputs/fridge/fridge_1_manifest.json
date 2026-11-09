@@ -1,0 +1,187 @@
+{
+  "schema_version": "1.0",
+  "asset_id": "fridge_1",
+  "object_type": "fridge",
+  "variant_index": 1,
+  "display_name": "1970s top-freezer refrigerator",
+  "style": "1970s New York, moderately worn, painterly stylized game-art textures in the style of a hand-painted survival game",
+  "dimensions_cm": {
+    "width": 76,
+    "depth": 75,
+    "height": 165,
+    "approximate": true,
+    "note": "Approximate real-world dimensions for pipeline use; refine later if a measured source is preferred."
+  },
+  "naming_convention": "appliance_number_view.png",
+  "views": [
+    "front",
+    "right",
+    "back",
+    "left",
+    "top"
+  ],
+  "painted_sheet": {
+    "filename": "fridge_1_painted.png",
+    "canvas_px": {
+      "width": 1672,
+      "height": 941
+    },
+    "background": "dark charcoal",
+    "ground_line_y": 781,
+    "view_order": [
+      "front",
+      "right",
+      "back",
+      "left",
+      "top"
+    ],
+    "view_bboxes_px": {
+      "front": [
+        37,
+        120,
+        345,
+        781
+      ],
+      "right": [
+        377,
+        121,
+        661,
+        781
+      ],
+      "back": [
+        698,
+        119,
+        1010,
+        781
+      ],
+      "left": [
+        1046,
+        121,
+        1319,
+        781
+      ],
+      "top": [
+        1360,
+        340,
+        1650,
+        781
+      ]
+    }
+  },
+  "depth_map": {
+    "filename": "fridge_1_depth.png",
+    "canvas_px": {
+      "width": 1672,
+      "height": 941
+    },
+    "aligned_to": "fridge_1_painted.png",
+    "encoding": {
+      "white": "closest to viewer",
+      "black": "farthest / background",
+      "background": "pure black"
+    },
+    "view_bboxes_px": {
+      "front": [
+        37,
+        120,
+        345,
+        781
+      ],
+      "right": [
+        377,
+        121,
+        661,
+        781
+      ],
+      "back": [
+        698,
+        119,
+        1010,
+        781
+      ],
+      "left": [
+        1046,
+        121,
+        1319,
+        781
+      ],
+      "top": [
+        1360,
+        340,
+        1650,
+        781
+      ]
+    }
+  },
+  "part_map": {
+    "filename": "fridge_1_parts.png",
+    "canvas_px": {
+      "width": 1672,
+      "height": 941
+    },
+    "aligned_to": "fridge_1_painted.png",
+    "background": "black",
+    "color_legend": {
+      "#FFFFFF": "main body or shell",
+      "#00FF00": "panel that opens or moves",
+      "#FF0000": "part that sticks out",
+      "#0000FF": "part that goes in / recess / vent / grille / slot",
+      "#FFFF00": "glass",
+      "#FFA500": "soft part / gasket / cable / fabric",
+      "#000000": "background"
+    },
+    "view_bboxes_px": {
+      "front": [
+        37,
+        120,
+        345,
+        781
+      ],
+      "right": [
+        377,
+        121,
+        661,
+        781
+      ],
+      "back": [
+        698,
+        119,
+        1010,
+        781
+      ],
+      "left": [
+        1046,
+        121,
+        1319,
+        781
+      ],
+      "top": [
+        1360,
+        340,
+        1650,
+        781
+      ]
+    }
+  },
+  "section": {
+    "filename": "fridge_1_section.png",
+    "canvas_px": {
+      "width": 1448,
+      "height": 1086
+    },
+    "orientation": "side-on cross-section cut straight down through the middle, front on the left",
+    "foreground": "flat light-grey silhouette",
+    "background": "pure black",
+    "bbox_px": [
+      479,
+      71,
+      954,
+      991
+    ]
+  },
+  "notes": [
+    "The painted, depth, and parts sheets are intended to line up pixel-for-pixel.",
+    "The section image is a separate canvas and should be scaled against the side view as needed.",
+    "Bounding boxes are provided in pixel coordinates as [x_min, y_min, x_max, y_max]."
+  ]
+}

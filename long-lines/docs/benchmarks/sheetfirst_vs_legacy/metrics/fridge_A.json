@@ -1,0 +1,32 @@
+{
+ "object": "fridge",
+ "version": "A",
+ "tris": 1792,
+ "size_m": [
+  0.772,
+  0.764,
+  1.642
+ ],
+ "target_m": [
+  0.7749999761581421,
+  0.75,
+  1.649999976158142
+ ],
+ "dimension_error_pct": [
+  0.4,
+  1.8,
+  0.5
+ ],
+ "open_edges": 4,
+ "nonmanifold_edges": 1,
+ "uv_area_distorted_pct": 2.9,
+ "uv_angle_distortion_mean": 1.89,
+ "uv_angle_distorted_pct": 12.8,
+ "silhouette_iou": {
+  "front": 0.988,
+  "side": 0.979,
+  "top": 0.958
+ },
+ "front_texture_correlation": 0.85,
+ "front_texture_coverage": 0.995
+}

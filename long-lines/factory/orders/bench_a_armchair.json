@@ -1,0 +1,42 @@
+{
+ "name": "bench_a_armchair",
+ "category": "armchair_atlas",
+ "line": "atlas",
+ "sheet": "furniture_2.png",
+ "views_folder": "bench_a_armchair",
+ "height_m": 0.85,
+ "cat_depth_m": 0.85,
+ "width_m": 0.8,
+ "front": [
+  [
+   0
+  ],
+  [
+   11
+  ],
+  [
+   13
+  ]
+ ],
+ "side": 2,
+ "top": 5,
+ "back": 1,
+ "status": "shipped",
+ "class": null,
+ "assumptions": [
+  "benchmark: atlas line on the armchair parts sheet (front rows backrest/seat/skirt)"
+ ],
+ "notes": "Benchmark armchair, version A",
+ "measured": {
+  "width_m": 0.8,
+  "depth_m": 0.85,
+  "height_m": 0.85,
+  "panels": [
+   0,
+   11,
+   13
+  ],
+  "knobs": []
+ },
+ "attempts": 1
+}

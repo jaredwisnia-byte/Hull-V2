@@ -1,0 +1,185 @@
+{
+ "schema": 1,
+ "asset_id": "bench_b_tv",
+ "description": "benchmark version B: tv",
+ "atlas": {
+  "albedo": "atlas.png",
+  "depth": "depth.png",
+  "size_px": [
+   1199,
+   248
+  ],
+  "roughness": 0.6,
+  "metallic": 0.05
+ },
+ "depth_range_m": {
+  "inward": 0.03,
+  "outward": 0.025
+ },
+ "panels": [
+  {
+   "name": "front",
+   "size_m": [
+    0.662,
+    0.48
+   ],
+   "rect_px": [
+    8,
+    8,
+    306,
+    240
+   ],
+   "origin_m": [
+    -0.331,
+    -0.154,
+    0
+   ],
+   "u_axis": [
+    1,
+    0,
+    0
+   ],
+   "v_axis": [
+    0,
+    0,
+    1
+   ],
+   "grid": [
+    60,
+    48
+   ],
+   "allow_stretch": true
+  },
+  {
+   "name": "right",
+   "size_m": [
+    0.308,
+    0.48
+   ],
+   "rect_px": [
+    314,
+    8,
+    469,
+    240
+   ],
+   "origin_m": [
+    0.331,
+    -0.154,
+    0
+   ],
+   "u_axis": [
+    0,
+    1,
+    0
+   ],
+   "v_axis": [
+    0,
+    0,
+    1
+   ],
+   "grid": [
+    24,
+    36
+   ]
+  },
+  {
+   "name": "back",
+   "size_m": [
+    0.662,
+    0.48
+   ],
+   "rect_px": [
+    477,
+    8,
+    757,
+    240
+   ],
+   "origin_m": [
+    0.331,
+    0.154,
+    0
+   ],
+   "u_axis": [
+    -1,
+    0,
+    0
+   ],
+   "v_axis": [
+    0,
+    0,
+    1
+   ],
+   "grid": [
+    40,
+    30
+   ],
+   "allow_stretch": true
+  },
+  {
+   "name": "left",
+   "size_m": [
+    0.308,
+    0.48
+   ],
+   "rect_px": [
+    765,
+    8,
+    923,
+    240
+   ],
+   "origin_m": [
+    -0.331,
+    0.154,
+    0
+   ],
+   "u_axis": [
+    0,
+    -1,
+    0
+   ],
+   "v_axis": [
+    0,
+    0,
+    1
+   ],
+   "grid": [
+    24,
+    36
+   ],
+   "allow_stretch": true
+  },
+  {
+   "name": "top",
+   "size_m": [
+    0.662,
+    0.308
+   ],
+   "rect_px": [
+    931,
+    8,
+    1191,
+    223
+   ],
+   "origin_m": [
+    -0.331,
+    -0.154,
+    0.48
+   ],
+   "u_axis": [
+    1,
+    0,
+    0
+   ],
+   "v_axis": [
+    0,
+    1,
+    0
+   ],
+   "grid": [
+    40,
+    20
+   ],
+   "allow_stretch": true
+  }
+ ]
+}
