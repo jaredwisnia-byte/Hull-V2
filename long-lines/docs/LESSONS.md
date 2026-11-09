@@ -437,3 +437,26 @@ library, ledger and REPORT are restored afterwards (git checkout + delete the ex
   floor of 300, and each part is decimated BEFORE it is painted. Sharing by area starved the finger wheel
   (206 triangles for eleven holes) and it shattered.
 - Read the turnaround before reporting: a build that ships and passes the gap checks can still look wrong.
+
+## The reference handbook ("golden disc"), cords, and screen-error budgets (Nov 9)
+- factory/reference_handbook.json: per object type, the parts with real sizes (each with source and
+  confidence: high / medium / low / estimate), materials (roughness, metalness), mounting and the
+  assembly plan. An order says `"handbook": "<entry>"` and drops its parts list, body width and mounting.
+  Rule: concentric and attached parts take the handbook's size; measured parts (residual, match,
+  protrusion) keep the photo's measurement and the report compares it with the handbook. Research once,
+  with sources; values that are estimates say so and should be replaced when a source turns up.
+- Cords (propkit/cord.py): built straight first (a tube, or for a coiled cord a helix with the handbook's
+  coil diameter and pitch), then curled along the path the photo shows, then swept as a tube of the
+  wire's thickness. The same three steps make lamp flex, hoses, springs and rope; only the numbers change.
+  Coloured from the photo's coil pixels (not the dark gaps between them).
+- Triangle budgets the way studios set them (factory/standards.json "screen_error_budget"): a part may be
+  simplified until its surface moves 1 px at the kind's near viewing distance (fixture 0.6 m: 0.78 mm),
+  measured both ways at the 99th percentile; the size class's budget stays a ceiling. The phone went from
+  5700 to 3650 triangles with every part within tolerance. Godot 4 makes LODs on import.
+- Low-poly meshes broke projection painting: view weights were per vertex from the smoothed normal, so a
+  big back face spanned by box-corner vertices took the front photo (a mirrored dial on the back).
+  texturing.project now weighs corners by their own face where the face turns >30 degrees from the vertex
+  normal; dense smooth meshes are unchanged (the coffee machine's paint is identical).
+- A part on its parent's back face is turned 180 degrees so its drawn front faces out (as side parts are
+  turned 90), and it sits behind the parent's box (the box is the bare shell), not inside it.
+- Restore point: factory/RESTORE_POINTS.md.

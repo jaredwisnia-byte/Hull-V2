@@ -91,5 +91,24 @@
   "names": [
    "tv_painted"
   ]
+ },
+ "screen_error_budget": {
+  "_note": "How game studios size meshes: by how they look on screen, not one count per size class. A mesh may be simplified until its surface moves more than error_px pixels at the closest distance the player normally sees it from; curved and detailed parts keep triangles, flat ones lose them. The size class's tri_budget stays a hard ceiling. LODs: Godot 4 generates them on import, so one well-sized mesh is enough.",
+  "screen_px": [
+   1920,
+   1080
+  ],
+  "vertical_fov_deg": 70,
+  "error_px": 1.0,
+  "near_m": {
+   "carry": 0.35,
+   "readable": 0.35,
+   "fixture": 0.6,
+   "static": 1.0,
+   "container": 1.0,
+   "vehicle": 3.0,
+   "building": 10.0
+  },
+  "near_m_why": "carried and read items are held at arm's length; fixtures (switches, wall phones) are used from standing close; furniture and appliances seen from across a room; cars from the street"
  }
 }

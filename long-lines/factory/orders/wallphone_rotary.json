@@ -6,97 +6,266 @@
  "source": "Drive: appliances/wallphone.png",
  "class": "small",
  "tex": 2048,
- "status": "pending",
+ "status": "shipped",
  "views_folder": "wallphone_rotary",
  "assembly": "assembly",
- "body_width_m": 0.14,
- "mount": "wall",
  "width_m": 0.19,
  "depth_m": 0.09,
  "height_m": 0.33,
  "rough": 0.45,
  "res": 150,
- "parts": [
-  {
-   "name": "body",
-   "views": "body",
-   "root": true
-  },
-  {
-   "name": "plate",
-   "views": "plate",
-   "attach": {
-    "to": "body",
-    "face": "back",
-    "fit": "inside"
-   }
-  },
-  {
-   "name": "dial_face",
-   "views": "dial_face",
-   "locate": "match",
-   "attach": {
-    "to": "body",
-    "face": "front"
-   }
-  },
-  {
-   "name": "dial_wheel",
-   "views": "dial_wheel",
-   "locate": "concentric",
-   "attach": {
-    "to": "dial_face",
-    "face": "front"
-   }
-  },
-  {
-   "name": "hooks",
-   "views": "hooks",
-   "locate": "protrusion",
-   "attach": {
-    "to": "body",
-    "face": "top"
-   }
-  },
-  {
-   "name": "handset",
-   "views": "handset",
-   "locate": "residual",
-   "attach": {
-    "to": "body",
-    "face": "left"
-   }
-  },
-  {
-   "name": "earpiece",
-   "views": "cap",
-   "attach": {
-    "to": "handset",
-    "face": "right",
-    "at": "top"
-   }
-  },
-  {
-   "name": "mouthpiece",
-   "views": "cap",
-   "attach": {
-    "to": "handset",
-    "face": "right",
-    "at": "bottom"
-   }
-  },
-  {
-   "name": "cord",
-   "locate": "leftover",
-   "attach": {
-    "to": "handset",
-    "face": "bottom"
-   }
-  }
- ],
  "assumptions": [
-  "body width 140 mm (5.5 in, Bell 554 type); everything else from the drawing",
-  "one handset; the cap part used twice (earpiece and mouthpiece)"
+  "everything the drawing cannot say comes from the reference handbook entry wall_telephone_rotary (sizes with sources and confidence, materials, the parts list)"
  ],
- "notes": "A 1970s harvest-gold rotary wall telephone with its handset hung on the side."
+ "notes": "A 1970s harvest-gold rotary wall telephone with its handset hung on the side.",
+ "handbook": "wall_telephone_rotary",
+ "body_width_m": 0.14,
+ "mount": "wall",
+ "attempts": 1,
+ "measured": {
+  "layout": "parts",
+  "parts": {
+   "body": {
+    "box_m": [
+     -0.056,
+     0.084,
+     -0.02,
+     0.045,
+     0.044,
+     0.292
+    ],
+    "located": "body outline fitted into the photo"
+   },
+   "plate": {
+    "locate": "attach",
+    "attach": "back of body",
+    "located": "on body's back face",
+    "box_m": [
+     -0.053,
+     0.082,
+     0.045,
+     0.05,
+     0.063,
+     0.273
+    ],
+    "notes": [],
+    "lathe": null
+   },
+   "dial_face": {
+    "locate": "match",
+    "attach": "front of body",
+    "located": "painting matched into the photo (score 0.68, scale 0.57)",
+    "box_m": [
+     -0.028,
+     0.07,
+     -0.027,
+     -0.02,
+     0.123,
+     0.226
+    ],
+    "notes": [
+     "4110 px of background seen through its front view cut through"
+    ],
+    "lathe": null
+   },
+   "dial_wheel": {
+    "locate": "concentric",
+    "attach": "front of dial_face",
+    "located": "centred on dial_face; 76 mm across from the handbook (low; the drawing scale said 80 mm)",
+    "box_m": [
+     -0.017,
+     0.059,
+     -0.033,
+     -0.027,
+     0.138,
+     0.21
+    ],
+    "notes": [
+     "7142 px of background seen through its front view cut through"
+    ],
+    "lathe": null
+   },
+   "hooks": {
+    "locate": "protrusion",
+    "attach": "top of body",
+    "located": "the protrusion on body's own top outline",
+    "box_m": [
+     -0.027,
+     0.056,
+     -0.02,
+     0.008,
+     0.245,
+     0.292
+    ],
+    "notes": [
+     "900 px of background seen through its front view cut through"
+    ],
+    "lathe": null
+   },
+   "handset": {
+    "locate": "residual",
+    "attach": "left of body",
+    "located": "region the body leaves over in the photo; hidden edges from its own proportions",
+    "handbook_check": [
+     "height 182 mm measured vs 216 mm in the handbook (low)"
+    ],
+    "box_m": [
+     -0.091,
+     -0.041,
+     -0.047,
+     0.006,
+     0.094,
+     0.276
+    ],
+    "notes": [],
+    "lathe": null
+   },
+   "earpiece": {
+    "locate": "attach",
+    "attach": "right of handset",
+    "size_from": "handbook 55 mm (medium); the parent's depth there was 53 mm",
+    "located": "on handset's right face at the top",
+    "box_m": [
+     -0.041,
+     -0.018,
+     -0.048,
+     0.007,
+     0.218,
+     0.272
+    ],
+    "notes": [],
+    "lathe": "front-to-back"
+   },
+   "mouthpiece": {
+    "locate": "attach",
+    "attach": "right of handset",
+    "size_from": "handbook 55 mm (medium); the parent's depth there was 53 mm",
+    "located": "on handset's right face at the bottom",
+    "box_m": [
+     -0.041,
+     -0.018,
+     -0.048,
+     0.007,
+     0.098,
+     0.152
+    ],
+    "notes": [],
+    "lathe": "front-to-back"
+   },
+   "cord": {
+    "locate": "leftover",
+    "make": "cord",
+    "box_m": [
+     -0.093,
+     -0.038,
+     -0.028,
+     0.047,
+     0.0,
+     0.095
+    ],
+    "located": "what the photo shows that no part explains",
+    "notes": [
+     "leftover region 2.8 widths long",
+     "cord: built straight, curled along the photo's path; {'path_length_mm': 75.2, 'turns': 16.4, 'wire_mm': 4.5, 'coil_mm': 13.0, 'pitch_mm': 4.6, 'triangles': 1172} (handbook: wire estimate, coil estimate, pitch estimate)"
+    ]
+   }
+  },
+  "handbook": "wall_telephone_rotary",
+  "size_from": "body width 0.140 m; photo 0.186 x 0.093 x 0.292 m",
+  "body_top": "turned 180 (outline IoU 0.80 with the whole-object view)",
+  "body_top_paint_only": "top view depth/width 0.56 vs 0.47",
+  "triangles": {
+   "cord": 1172,
+   "body": 306,
+   "plate": 304,
+   "dial_face": 304,
+   "dial_wheel": 324,
+   "hooks": 304,
+   "handset": 306,
+   "earpiece": 304,
+   "mouthpiece": 304
+  },
+  "budget": {
+   "mode": "screen error",
+   "tolerance_mm": 0.78,
+   "ceiling": 5520,
+   "tolerance_used_mm": 0.78,
+   "error_mm": {
+    "body": 0.43,
+    "plate": 0.1,
+    "dial_face": 0.23,
+    "dial_wheel": 0.77,
+    "hooks": 0.53,
+    "handset": 0.34,
+    "earpiece": 0.28,
+    "mouthpiece": 0.29
+   }
+  },
+  "gaps_mm": [
+   {
+    "part": "plate",
+    "on": "body",
+    "towards": "back",
+    "gap_mm": 0.0,
+    "touching": 1.0,
+    "moved_mm": 3.5
+   },
+   {
+    "part": "dial_face",
+    "on": "body",
+    "towards": "front",
+    "gap_mm": 0.0,
+    "touching": 1.0,
+    "moved_mm": 3.8
+   },
+   {
+    "part": "dial_wheel",
+    "on": "dial_face",
+    "towards": "front",
+    "gap_mm": 0.0,
+    "touching": 1.0,
+    "moved_mm": 3.7
+   },
+   {
+    "part": "hooks",
+    "on": "body",
+    "towards": "top",
+    "gap_mm": 0.0,
+    "touching": 1.0,
+    "moved_mm": 3.0
+   },
+   {
+    "part": "handset",
+    "on": "body",
+    "towards": "left",
+    "gap_mm": 0.0,
+    "touching": 0.95,
+    "moved_mm": 3.0
+   },
+   {
+    "part": "earpiece",
+    "on": "handset",
+    "towards": "right",
+    "gap_mm": 0.0,
+    "touching": 0.94,
+    "moved_mm": 3.6
+   },
+   {
+    "part": "mouthpiece",
+    "on": "handset",
+    "towards": "right",
+    "gap_mm": 0.0,
+    "touching": 0.94,
+    "moved_mm": 3.9
+   },
+   {
+    "part": "cord",
+    "on": "handset",
+    "towards": "bottom",
+    "gap_mm": 0.0,
+    "touching": 0.58,
+    "moved_mm": 23.9
+   }
+  ]
+ }
 }

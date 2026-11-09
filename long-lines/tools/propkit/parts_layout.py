@@ -42,6 +42,7 @@ from .hull import HULL_REPORT, hull_prop, silhouette
 from .hull_assembly import (MAX_GAP, MIN_TOUCH, NEAR_LAYER, SNAP_SINK, SUPPORT_REACH, aspect, locate_by_subtraction,
                             orient_like, paint_views, part_views)
 from .locate import find_part
+from . import handbook as HB
 
 PART_MIN_TRIS = 300   # no part decimated below this
 ELONGATED = 3.0     # a leftover whose centreline is this many widths long is swept as a tube
@@ -126,20 +127,15 @@ def _longest_path(sk):
     return path
 
 
-def sweep_tube(front, side, box, name, side_is_left=False, segments=10):
-    """A tube swept along an elongated region's centreline (a coiled cord): the front view's skeleton
-    gives x and z, the side view's region gives y at each height, the radius is the region's half width.
-    Built in the part's own frame (x, y centred, z from 0) like hull_prop's parts."""
-    import bmesh
-    import bpy
+def centreline(front, side, box, side_is_left=False):
+    """The 3D centreline of an elongated region seen in the front and side views, in the part's own
+    frame (x, y centred, z from 0): the front view's skeleton gives x and z, the side view's region y."""
     from skimage.morphology import skeletonize
-    from .core import link
     x0, x1, y0, y1, z0, z1 = box
     w, d, h = x1 - x0, y1 - y0, z1 - z0
     hh, ww = front.shape
     path = _longest_path(skeletonize(front))
     r_px = float(np.median(ndimage.distance_transform_edt(front)[tuple(np.array(path).T)])) if path else 1.0
-    r = r_px / ww * w
     sh, sw = side.shape
     pts = []
     for (py, px_) in path[::max(1, int(r_px / 2))]:
@@ -152,30 +148,83 @@ def sweep_tube(front, side, box, name, side_is_left=False, segments=10):
             u = 1 - u
         pts.append(np.array([x, u * d - d / 2, z]))
     if len(pts) < 3:
-        return None, r
+        return None, r_px / ww * w
     P = np.array(pts)
     P = np.vstack([ndimage.gaussian_filter1d(P[:, i], 1.5, mode="nearest") for i in range(3)]).T
-    bm = bmesh.new()
-    rings = []
-    for i, p_ in enumerate(P):
-        t = P[min(i + 1, len(P) - 1)] - P[max(i - 1, 0)]
-        t /= max(np.linalg.norm(t), 1e-9)
-        a = np.cross(t, [0, 1, 0]) if abs(t[1]) < 0.9 else np.cross(t, [1, 0, 0])
-        a /= np.linalg.norm(a)
-        b = np.cross(t, a)
-        rings.append([bm.verts.new(tuple(p_ + r * (np.cos(k * 2 * np.pi / segments) * a + np.sin(k * 2 * np.pi / segments) * b)))
-                      for k in range(segments)])
-    for ra, rb in zip(rings[:-1], rings[1:]):
-        for k in range(segments):
-            bm.faces.new((ra[k], ra[(k + 1) % segments], rb[(k + 1) % segments], rb[k]))
-    for ring, flip in ((rings[0], True), (rings[-1], False)):
-        f = bm.faces.new(ring[::-1] if flip else ring)
-    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
-    me = bpy.data.meshes.new(name)
-    bm.to_mesh(me)
-    bm.free()
-    obj = link(bpy.data.objects.new(name, me))
-    return obj, r
+    return P, r_px / ww * w
+
+
+def sweep_tube(front, side, box, name, side_is_left=False, segments=10):
+    """A tube swept along an elongated region's centreline, radius its half width (no handbook entry)."""
+    from .cord import tube
+    P, r = centreline(front, side, box, side_is_left)
+    if P is None:
+        return None, r
+    return tube(P, r, name, segments), r
+
+def screen_tolerance(standards, kind):
+    """The surface error (m) a mesh may have: error_px pixels at the kind's near viewing distance."""
+    import math
+    sb = standards.get("screen_error_budget")
+    if not sb:
+        return None
+    d = sb["near_m"].get(kind, sb["near_m"]["static"])
+    px_per_m = sb["screen_px"][1] / (2 * d * math.tan(math.radians(sb["vertical_fov_deg"]) / 2))
+    return sb["error_px"] / px_per_m
+
+
+def decimate_to_error(obj, tol, min_tris=120, samples=2500):
+    """Simplify a mesh as far as it can go while its surface stays within tol (metres) of the dense
+    mesh (99th percentile, both ways: detail lost and corners cut). Binary search on
+    the decimation ratio; returns (triangles, error)."""
+    import bpy
+    from mathutils.bvhtree import BVHTree
+    from .core import apply_mods
+    me = obj.data
+    dense = np.array([v.co for v in me.vertices])
+    if len(dense) > samples:
+        dense = dense[np.random.default_rng(0).choice(len(dense), samples, replace=False)]
+    tris0 = sum(len(p_.vertices) - 2 for p_ in me.polygons)
+    if tris0 <= min_tris:
+        return tris0, 0.0
+    dense_tree = BVHTree.FromPolygons([v.co for v in me.vertices], [p_.vertices for p_ in me.polygons])
+
+    def trial(ratio):
+        o2 = obj.copy()
+        o2.data = me.copy()
+        bpy.context.scene.collection.objects.link(o2)
+        m_ = o2.modifiers.new("d", "DECIMATE")
+        m_.ratio = ratio
+        apply_mods(o2)
+        t = BVHTree.FromPolygons([v.co for v in o2.data.vertices], [p_.vertices for p_ in o2.data.polygons])
+        simple = np.array([v.co for v in o2.data.vertices])
+        if len(simple) > samples:
+            simple = simple[np.random.default_rng(1).choice(len(simple), samples, replace=False)]
+        # both ways: detail the simplified mesh lost, and corners it cut through
+        e1 = np.percentile([(t.find_nearest(tuple(c))[3] or 0.0) for c in dense], 99)
+        e2 = np.percentile([(dense_tree.find_nearest(tuple(c))[3] or 0.0) for c in simple], 99)
+        err = float(max(e1, e2))
+        n = sum(len(p_.vertices) - 2 for p_ in o2.data.polygons)
+        mesh2 = o2.data
+        bpy.data.objects.remove(o2)
+        bpy.data.meshes.remove(mesh2)
+        return err, n
+
+    lo, hi = max(min_tris / tris0, 0.002), 1.0
+    best = 1.0
+    for _ in range(8):
+        mid = (lo * hi) ** 0.5
+        err, n = trial(mid)
+        if err <= tol:
+            best, hi = mid, mid
+        else:
+            lo = mid
+    if best < 1.0:
+        m_ = obj.modifiers.new("to_error", "DECIMATE")
+        m_.ratio = best
+        apply_mods(obj)
+    err, _ = trial(1.0) if best < 1.0 else (0.0, 0)
+    return sum(len(p_.vertices) - 2 for p_ in obj.data.polygons), err
 
 
 def build_parts(order, src_root):
@@ -187,7 +236,24 @@ def build_parts(order, src_root):
     os.makedirs(tmp, exist_ok=True)
     rep = {"layout": "parts", "parts": {}}
     asm = part_views(os.path.join(root, order["assembly"]))
-    plan = order["parts"]
+    # the reference handbook: real part sizes and materials for this kind of object (no searching)
+    hb = HB.entry(order["handbook"]) if order.get("handbook") else None
+    plan = order.get("parts") or (hb or {}).get("assembly")
+    if hb:
+        rep["handbook"] = hb["name"]
+        if not order.get("body_width_m"):
+            bw = HB.size_m(hb, "body", "width")
+            if bw:
+                order["body_width_m"] = bw[0]
+                rep["body_width_from"] = "handbook: %.0f mm (%s)" % (bw[0] * 1000, bw[1])
+        if hb.get("mount") and not order.get("mount"):
+            order["mount"] = hb["mount"]
+
+    def kind_of(spec_):
+        return spec_.get("is") or spec_["name"]
+
+    def finish_of(name_, spec_=None):
+        return HB.material(hb, name_, kind_of(spec_) if spec_ else None, order.get("rough", 0.5))
     body_spec = next(p for p in plan if p.get("root"))
     body_views = _views(os.path.join(root, body_spec["views"]))
     body_own = part_views(os.path.join(root, body_spec["views"]))
@@ -310,6 +376,13 @@ def build_parts(order, src_root):
             dd = h * da if da else 0.06 * max(w, h)
             box = [cx - w / 2, cx + w / 2, 0, dd, cz - h / 2, cz + h / 2]
             entry["located"] = "centred on %s; %.2f of its width from the sheet's drawing scale (low confidence)" % (parent, ratio)
+            hw = HB.size_m(hb, name, "width", kind_of(spec))
+            if hw:
+                w, h = hw[0], hw[0] * fa
+                dd = h * da if da else 0.06 * max(w, h)
+                box = [cx - w / 2, cx + w / 2, 0, dd, cz - h / 2, cz + h / 2]
+                entry["located"] = "centred on %s; %.0f mm across from the handbook (%s; the drawing scale said %.0f mm)" % (
+                    parent, hw[0] * 1000, hw[1], (px1 - px0) * ratio * 1000)
         elif loc == "protrusion":
             ppv = _views(os.path.join(root, next(p for p in plan if p["name"] == parent)["views"]))
             pm, _ = silhouette(ppv["front"])
@@ -344,6 +417,10 @@ def build_parts(order, src_root):
                 # a cap on the parent's side face at one end: diameter = the parent's depth there
                 dpar = py1 - py0
                 w = dpar
+                hw = HB.size_m(hb, name, "width", kind_of(spec))
+                if hw:
+                    w = hw[0]
+                    entry["size_from"] = "handbook %.0f mm (%s); the parent's depth there was %.0f mm" % (hw[0] * 1000, hw[1], dpar * 1000)
                 h = w * fa
                 dd = h * da if da else 0.3 * w
                 zc = pz1 - h / 2 - 0.02 * (pz1 - pz0) if att.get("at") == "top" else pz0 + h / 2 + 0.02 * (pz1 - pz0)
@@ -352,10 +429,18 @@ def build_parts(order, src_root):
         if box is None:
             rep["parts"][name] = dict(entry, skipped="could not be located")
             continue
+        if hb and box[0] != "side" and loc in ("residual", "match", "protrusion"):
+            for ax_, i0 in (("width", 0), ("height", 4)):
+                hv = HB.size_m(hb, name, ax_, kind_of(spec))
+                if hv:
+                    got = box[i0 + 1] - box[i0]
+                    entry.setdefault("handbook_check", []).append("%s %.0f mm measured vs %.0f mm in the handbook (%s)" % (
+                        ax_, got * 1000, hv[0] * 1000, hv[1]))
         if box[0] == "side":
             # built facing front, then turned so its front faces out of the parent's side face
             _, face_, yc, zc, w, dd, h = box
             obj, notes, rev = build_part(pv, w, dd, h, "%s_%s" % (order["name"], name), tmp, rough=order.get("rough", 0.5), defer=pending)
+            obj["finish"] = list(finish_of(name, spec)[:2])
             obj.rotation_euler = (0, 0, np.pi / 2 if face_ == "right" else -np.pi / 2)
             bpy.context.view_layer.update()
             xside = px1 + dd / 2 if face_ == "right" else px0 - dd / 2
@@ -368,10 +453,13 @@ def build_parts(order, src_root):
             if face == "front":
                 y0, y1 = py0 - dd, py0
             elif face == "back":
-                y0, y1 = py1 - dd, py1                         # flush with the parent's back (wall side)
+                y0, y1 = py1, py1 + dd                         # behind the parent (the body box is the bare shell)
             elif loc in ("protrusion", "match", "concentric") and face == "top":
                 y0, y1 = py0, py0 + dd                         # at the parent's front edge
             obj, notes, rev = build_part(pv, w, dd, h, "%s_%s" % (order["name"], name), tmp, rough=order.get("rough", 0.5), defer=pending)
+            obj["finish"] = list(finish_of(name, spec)[:2])
+            if face == "back":
+                obj.rotation_euler = (0, 0, np.pi)            # its drawn front faces out, away from the parent
             obj.location = ((x0 + x1) / 2, (y0 + y1) / 2, z0)
             boxes[name] = [x0, x1, y0, y1, z0, z1]
         bpy.context.view_layer.update()
@@ -446,6 +534,37 @@ def build_parts(order, src_root):
         notes = []
         obj = None
         notes.append("leftover region %.1f widths long" % (sk_len / max(width, 1e-6)))
+        hpart = HB.part(hb, name, kind_of(spec))
+        if hpart.get("make") == "cord":
+            # a cord: straight first, then curled along the path the photo shows (propkit/cord.py)
+            from .cord import make_cord
+            from . import mats
+            P, _ = centreline(fcrop, scrop, [x0, x1, y0, y1, z0, z1], side_is_left=(sk == "left"))
+            wire = HB.value(hb, name, "wire_mm", kind_of(spec))
+            coil = HB.value(hb, name, "coil_outer_mm", kind_of(spec))
+            pitch = HB.value(hb, name, "pitch_mm", kind_of(spec))
+            if P is not None and wire and coil and pitch:
+                obj, crep = make_cord(P, wire[0] / 1000, coil[0] / 1000, pitch[0] / 1000, "%s_%s" % (order["name"], name))
+                fimg = np.asarray(regions["front"][1].convert("RGB"))[fmk].astype(float)
+                if len(fimg):
+                    lum = fimg.sum(1)                                   # the coils, not the dark gaps between them
+                    fimg = fimg[lum >= np.percentile(lum, 50)]
+                col = tuple(float(c) / 255 for c in np.median(fimg, axis=0)) if len(fimg) else (0.6, 0.5, 0.3)
+                col = tuple(c ** 2.2 for c in col)                      # sRGB painting -> linear material
+                rough_, metal_, _ = finish_of(name, spec)
+                obj.data.materials.append(mats.plain(col, rough=rough_, metal_v=metal_, grime=0.1, dust=0.03,
+                                                     name="cord_%s" % order["name"]))
+                obj["procedural"] = True
+                notes.append("cord: built straight, curled along the photo's path; %s (handbook: wire %s, coil %s, pitch %s)" % (
+                    crep, wire[1], coil[1], pitch[1]))
+                obj.location = ((x0 + x1) / 2, (y0 + y1) / 2, z0)
+                bpy.context.view_layer.update()
+                built[name] = obj
+                boxes[name] = [x0, x1, y0, y1, z0, z1]
+                placed_order.append((name, parent, spec.get("attach", {}).get("face", "bottom")))
+                rep["parts"][name] = {"locate": "leftover", "make": "cord", "box_m": [round(v, 3) for v in boxes[name]],
+                                      "located": "what the photo shows that no part explains", "notes": notes}
+                continue
         if sk_len > ELONGATED * width:
             # elongated (a cord): a tube swept along its centreline
             obj, rad = sweep_tube(fcrop, scrop, [x0, x1, y0, y1, z0, z1], "%s_%s" % (order["name"], name),
@@ -500,10 +619,33 @@ def build_parts(order, src_root):
     # shared by each part's dense triangle count (its detail: a finger wheel's holes, a handset's
     # curves), as one uniform decimation of the whole would, never below PART_MIN_TRIS; by area alone a
     # small detailed part got too few and shattered into slivers that shade as dark streaks
-    dense = {n: sum(len(p_.vertices) - 2 for p_ in o.data.polygons) for n, o in built.items()}
+    fixed = {n: sum(len(p_.vertices) - 2 for p_ in o.data.polygons) for n, o in built.items() if o.get("procedural")}
+    budget -= sum(fixed.values())
+    mode = order.get("budget", "screen" if hb else "share")
+    tol = screen_tolerance(STANDARDS, order.get("kind", "fixture" if order.get("mount") == "wall" else "static")) if mode == "screen" else None
+    dense = {n: sum(len(p_.vertices) - 2 for p_ in o.data.polygons) for n, o in built.items() if not o.get("procedural")}
     total = sum(dense.values())
-    rep["triangles"] = {}
+    rep["triangles"] = dict(fixed)
+    if tol:
+        # simplify every part to the screen error; if the total still exceeds the size class ceiling,
+        # loosen the tolerance until it fits
+        rep["budget"] = {"mode": "screen error", "tolerance_mm": round(tol * 1000, 2), "ceiling": int(budget + sum(fixed.values()))}
+        copies = {n: o.data.copy() for n, o in built.items() if not o.get("procedural")}
+        for attempt in range(4):
+            got = {}
+            for n, o in built.items():
+                if o.get("procedural"):
+                    continue
+                o.data = copies[n].copy()
+                got[n] = decimate_to_error(o, tol * (1.6 ** attempt), PART_MIN_TRIS)
+            if sum(t for t, _ in got.values()) <= budget:
+                break
+        rep["budget"]["tolerance_used_mm"] = round(tol * (1.6 ** attempt) * 1000, 2)
+        rep["budget"]["error_mm"] = {n: round(e * 1000, 2) for n, (t, e) in got.items()}
+        rep["triangles"].update({n: t for n, (t, e) in got.items()})
     for n, o in built.items():
+        if o.get("procedural") or tol:
+            continue
         tris = dense[n]
         target = max(PART_MIN_TRIS, int(budget * tris / total))
         if tris > target:
@@ -515,8 +657,9 @@ def build_parts(order, src_root):
         loc, rot = o.location.copy(), o.rotation_euler.copy()
         o.location, o.rotation_euler = (0, 0, 0), (0, 0, 0)
         bpy.context.view_layer.update()
+        rough_, metal_ = o.get("finish", [order.get("rough", 0.5), 0.0])
         texturing.project(o, paint_views(views_, tmp, "p_" + o.name), w_, d_, h_, others=[], name=o.name,
-                          rough=order.get("rough", 0.5))
+                          rough=float(rough_), metal=float(metal_))
         o.location, o.rotation_euler = loc, rot
     bpy.context.view_layer.update()
 
@@ -524,9 +667,10 @@ def build_parts(order, src_root):
     # of it in the assembled object (a dial's centre card through the finger wheel) is what the photo
     # shows there; its own drawings show the bare shell
     bpy.context.view_layer.update()
+    b_rough, b_metal, _ = finish_of("body")
     texturing.project(body, paint_views({k: v for k, v in asm.items() if k in ("front", "back", "left", "right", "top")},
                                         tmp, "p_body_photo"), W, D, H,
-                      others=[o for n, o in built.items() if n != "body"], name=body.name, rough=order.get("rough", 0.5))
+                      others=[o for n, o in built.items() if n != "body"], name=body.name, rough=b_rough, metal=b_metal)
     children = {}
     for name, parent, face in placed_order:
         children.setdefault(parent, []).append(name)

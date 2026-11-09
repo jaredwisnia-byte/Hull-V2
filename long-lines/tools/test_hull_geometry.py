@@ -9,6 +9,7 @@ Each case draws its views, builds with hull_prop (no paint) and checks one prope
   vase      a round top view is built round (slice circularity) and the lathe carve has no folds
   housing   a C-shaped outline keeps its cavity (front silhouette IoU) and has no folds
   disc      a round front view is built as a lathe about the front-to-back axis
+  cord      a cord built straight then curled keeps its turns and coil diameter
 Exit code 1 on any failure. Asset-level checks: tools/diag/regress_assets.py.
 """
 import os
@@ -155,6 +156,18 @@ rim = rim[rim > 0.8 * rim.max()]
 fo = folds_per_1k(disc)
 check("disc", bool(rev.get("round")) and rev.get("axis") == "front-to-back" and rim.std() / rim.mean() < 0.05 and fo < 0.5,
       "round %s about %s, rim radius spread %.3f (< 0.05), folds/1k %.2f" % (rev.get("round"), rev.get("axis"), rim.std() / rim.mean(), fo))
+
+# cord: built straight, then curled along an L-shaped path; turns and coil envelope must follow the numbers
+from propkit.cord import make_cord  # noqa: E402
+bpy.ops.wm.read_factory_settings(use_empty=True)
+path = np.array([[0, 0, 0.1], [0, 0, 0.04], [0.06, 0, 0.0]])
+L = 0.06 + np.hypot(0.06, 0.04)
+co_obj, crep = make_cord(path, 0.0045, 0.013, 0.0046, "cord_test")
+co = np.array([v.co for v in co_obj.data.vertices])
+seg_top = co[co[:, 2] > 0.05]                                   # the straight top run: a helix around x = y = 0
+env = np.hypot(seg_top[:, 0], seg_top[:, 1]).max()
+check("cord", abs(crep["turns"] - L / 0.0046) < 0.6 and abs(env - 0.0065) < 0.0012,
+      "turns %.1f (expected %.1f), coil envelope radius %.1f mm (expected 6.5)" % (crep["turns"], L / 0.0046, env * 1000))
 
 print("HULL GEOMETRY TESTS: %d failed" % len(FAILS))
 sys.exit(1 if FAILS else 0)

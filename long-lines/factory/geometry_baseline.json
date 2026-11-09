@@ -18,9 +18,9 @@
   "tris": 38000
  },
  "wallphone": {
-  "iou_mean": 0.8614,
-  "ridge_deg": 3.652,
-  "folds_per_1k": 12.461,
-  "tris": 5698
+  "iou_mean": 0.8593,
+  "ridge_deg": 3.874,
+  "folds_per_1k": 9.075,
+  "tris": 5840
  }
 }

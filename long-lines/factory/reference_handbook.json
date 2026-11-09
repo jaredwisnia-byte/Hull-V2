@@ -1,0 +1,245 @@
+{
+ "_note": "Reference handbook (the factory's 'golden disc'): what an object type is made of and how big its parts really are, researched once with sources and read at build time instead of searching. Every value has a source and a confidence: high (a specification or measured drawing), medium (a measured listing or a component's datasheet), low (a related item, an unsourced standard), estimate (judgement from drawings and period photos; replace when a source turns up). The factory trusts the photo/drawing over low and estimate values where it has a measurement, and the handbook where it has none (concentric and attached parts, cords).",
+ "materials": {
+  "_note": "Roughness / metalness per material class, written into the baked ORM map per part.",
+  "plastic_gloss": {
+   "roughness": 0.32,
+   "metallic": 0.0,
+   "why": "moulded ABS/styrene housings and handsets"
+  },
+  "plastic_satin": {
+   "roughness": 0.55,
+   "metallic": 0.0,
+   "why": "back plates, cord jackets"
+  },
+  "chrome": {
+   "roughness": 0.18,
+   "metallic": 1.0,
+   "why": "plated steel hooks and trim"
+  },
+  "paper": {
+   "roughness": 0.85,
+   "metallic": 0.0,
+   "why": "number cards, labels"
+  },
+  "rubber": {
+   "roughness": 0.9,
+   "metallic": 0.0,
+   "why": "feet, tyres, gaskets"
+  },
+  "glass": {
+   "roughness": 0.08,
+   "metallic": 0.0,
+   "why": "carafes, windscreens"
+  },
+  "painted_metal": {
+   "roughness": 0.45,
+   "metallic": 0.0,
+   "why": "enamelled appliance and car bodies"
+  }
+ },
+ "objects": {
+  "wall_telephone_rotary": {
+   "aka": [
+    "wall_telephone"
+   ],
+   "period": "1960s-70s (Bell 554 type and licensed copies)",
+   "mount": "wall",
+   "overall_mm": {
+    "width": [
+     150,
+     230
+    ],
+    "height": [
+     220,
+     320
+    ],
+    "depth": [
+     70,
+     140
+    ]
+   },
+   "parts": {
+    "body": {
+     "material": "plastic_gloss",
+     "width_mm": {
+      "value": 140,
+      "range": [
+       130,
+       150
+      ],
+      "confidence": "medium",
+      "source": "ITT model 554 auction listing (EBTH): 5.5 in wide; https://www.ebth.com/items/6133977-itt-model-554-rotary-wall-telephone"
+     }
+    },
+    "plate": {
+     "material": "plastic_satin"
+    },
+    "dial_face": {
+     "material": "paper"
+    },
+    "dial_wheel": {
+     "material": "plastic_gloss",
+     "width_mm": {
+      "value": 76,
+      "range": [
+       70,
+       80
+      ],
+      "confidence": "low",
+      "source": "American rotary dials standardised at 3 in c.1918-20 (European 80 mm); unsourced talk-page statement, https://en.wikipedia.org/wiki/Talk:Rotary_dial"
+     }
+    },
+    "hooks": {
+     "material": "chrome"
+    },
+    "handset": {
+     "material": "plastic_gloss",
+     "height_mm": {
+      "value": 216,
+      "range": [
+       200,
+       230
+      ],
+      "confidence": "low",
+      "source": "Western Electric handset c.1910, 8.5 in (The Henry Ford); the 1970s G-type handset length was not found"
+     }
+    },
+    "cap": {
+     "material": "plastic_gloss",
+     "count": 2,
+     "width_mm": {
+      "value": 55,
+      "range": [
+       50,
+       60
+      ],
+      "confidence": "medium",
+      "source": "the 440-201 earpiece element it covers is 2.044 in (52 mm) across (Electronics Surplus listing)"
+     }
+    },
+    "cord": {
+     "make": "cord",
+     "material": "plastic_satin",
+     "wire_mm": {
+      "value": 4.5,
+      "range": [
+       3.5,
+       5.5
+      ],
+      "confidence": "estimate",
+      "source": "period photos: cord jacket about as thick as a pencil lead's casing"
+     },
+     "coil_outer_mm": {
+      "value": 13,
+      "range": [
+       10,
+       16
+      ],
+      "confidence": "estimate",
+      "source": "period photos; coil about three wire widths across"
+     },
+     "pitch_mm": {
+      "value": 4.6,
+      "range": [
+       3.5,
+       6
+      ],
+      "confidence": "estimate",
+      "source": "a relaxed coil: turns touching, pitch about one wire width"
+     },
+     "coiled_per_stretched": {
+      "value": 0.12,
+      "range": [
+       0.1,
+       0.25
+      ],
+      "confidence": "medium",
+      "source": "10 ft stretched = 14 in coiled (Cablewholesale 8104-44210)"
+     }
+    }
+   },
+   "assembly": [
+    {
+     "name": "body",
+     "views": "body",
+     "root": true
+    },
+    {
+     "name": "plate",
+     "views": "plate",
+     "attach": {
+      "to": "body",
+      "face": "back",
+      "fit": "inside"
+     }
+    },
+    {
+     "name": "dial_face",
+     "views": "dial_face",
+     "locate": "match",
+     "attach": {
+      "to": "body",
+      "face": "front"
+     }
+    },
+    {
+     "name": "dial_wheel",
+     "views": "dial_wheel",
+     "locate": "concentric",
+     "attach": {
+      "to": "dial_face",
+      "face": "front"
+     }
+    },
+    {
+     "name": "hooks",
+     "views": "hooks",
+     "locate": "protrusion",
+     "attach": {
+      "to": "body",
+      "face": "top"
+     }
+    },
+    {
+     "name": "handset",
+     "views": "handset",
+     "locate": "residual",
+     "attach": {
+      "to": "body",
+      "face": "left"
+     }
+    },
+    {
+     "name": "earpiece",
+     "views": "cap",
+     "is": "cap",
+     "attach": {
+      "to": "handset",
+      "face": "right",
+      "at": "top"
+     }
+    },
+    {
+     "name": "mouthpiece",
+     "views": "cap",
+     "is": "cap",
+     "attach": {
+      "to": "handset",
+      "face": "right",
+      "at": "bottom"
+     }
+    },
+    {
+     "name": "cord",
+     "is": "cord",
+     "locate": "leftover",
+     "attach": {
+      "to": "handset",
+      "face": "bottom"
+     }
+    }
+   ]
+  }
+ }
+}

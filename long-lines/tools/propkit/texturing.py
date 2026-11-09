@@ -57,7 +57,7 @@ def smoothed_normals(obj, iters=6):
     return n
 
 
-def project(obj, views, W, D, H, others=(), name="proj", power=4.0, rough=0.5):
+def project(obj, views, W, D, H, others=(), name="proj", power=4.0, rough=0.5, metal=0.0):
     from . import mats
     me = obj.data
     mw = obj.matrix_world
@@ -78,10 +78,8 @@ def project(obj, views, W, D, H, others=(), name="proj", power=4.0, rough=0.5):
     tree = BVHTree.FromPolygons(verts, polys)
     sn = smoothed_normals(obj)
     span = max(W, D, H)
-    vw = np.zeros((len(me.vertices), len(names)))
-    for i, v in enumerate(me.vertices):
-        p = mw @ v.co
-        nrm = Vector(sn[i])
+    def weights(p, nrm):
+        w = np.zeros(len(names))
         for j, k in enumerate(names):
             f = nrm.dot(DIRS[k])
             if f <= 0.05:
@@ -90,12 +88,24 @@ def project(obj, views, W, D, H, others=(), name="proj", power=4.0, rough=0.5):
             hit = tree.ray_cast(start, DIRS[k], 3 * span)
             if hit[0] is not None and hit[3] > 0.01 * span:
                 continue                                       # something is in front of it
-            vw[i, j] = f ** power * (sizes[k] / best)
-    for i in np.nonzero(vw.sum(1) == 0)[0]:                    # seen by no view: best facing one
-        nrm = Vector(sn[i])
-        j = int(np.argmax([nrm.dot(DIRS[k]) for k in names]))
-        vw[i, j] = 1.0
-    vw /= vw.sum(1, keepdims=True)
+            w[j] = f ** power * (sizes[k] / best)
+        if w.sum() == 0:                                       # seen by no view: best facing one
+            w[int(np.argmax([nrm.dot(DIRS[k]) for k in names]))] = 1.0
+        return w / w.sum()
+
+    vw = np.array([weights(mw @ v.co, Vector(sn[i])) for i, v in enumerate(me.vertices)]).reshape(-1, len(names))
+    # At a hard edge (and everywhere on a coarse mesh) a vertex's smoothed normal belongs to no face:
+    # a box's corner vertex averages front, side and back, and a big back face spanned by corners would
+    # take the front's paint. Corners whose face turns more than 30 degrees from the vertex normal are
+    # weighted by that face's own normal; smooth surfaces keep per-vertex weights (no seams).
+    m3 = mw.to_3x3()
+    loop_w = vw[[l.vertex_index for l in me.loops]].copy()
+    for poly in me.polygons:
+        pn = (m3 @ poly.normal).normalized()
+        for li in poly.loop_indices:
+            vi = me.loops[li].vertex_index
+            if pn.dot(Vector(sn[vi])) < 0.866:
+                loop_w[li] = weights(mw @ me.vertices[vi].co, pn)
     # Per-corner UVs for every view, and per-corner weights (packed 4 per colour attribute).
     for k in names:
         # A colour attribute, not a UV map: bake.finish makes the only UV map from the mesh.
@@ -107,7 +117,7 @@ def project(obj, views, W, D, H, others=(), name="proj", power=4.0, rough=0.5):
     for pi, pack in enumerate(packs):
         a = me.color_attributes.get("vw%d" % pi) or me.color_attributes.new("vw%d" % pi, "FLOAT_COLOR", "CORNER")
         for li, loop in enumerate(me.loops):
-            ws = [vw[loop.vertex_index, names.index(k)] for k in pack] + [0.0] * (4 - len(pack))
+            ws = [loop_w[li, names.index(k)] for k in pack] + [0.0] * (4 - len(pack))
             a.data[li].color = ws
     # One material: sum over views of image(uv_view) x weight_view.
     m, nt, bsdf, out = mats._new("proj_" + name)
@@ -150,7 +160,7 @@ def project(obj, views, W, D, H, others=(), name="proj", power=4.0, rough=0.5):
     me.materials.append(m)
     for p in me.polygons:
         p.material_index = 0
-    mats.register("proj_" + name, m, bsdf, out, acc, rough, 0.0)
+    mats.register("proj_" + name, m, bsdf, out, acc, rough, metal)
     cover = {k: round(float((vw[:, j] > 0.5).mean()), 3) for j, k in enumerate(names)}
     # The stretch that matters: points whose best view sees them at more than 60 degrees
     # (facing < 0.5) get smeared colour whatever the UV layout. Area-weighted by vertex.
