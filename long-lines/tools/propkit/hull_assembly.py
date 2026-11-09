@@ -265,6 +265,9 @@ def build(order, src_root):
     """Builds the assembly into the scene; returns a report dict."""
     if order.get("layout") == "attached":
         return build_attached(order, src_root)
+    if order.get("layout") == "parts":
+        from .parts_layout import build_parts
+        return build_parts(order, src_root)
     root = os.path.join(src_root, order["views_folder"])
     W, D, H = order["width_m"], order["depth_m"], order["height_m"]
     parts = order["parts"]                  # {"side": folder, "seat": folder, "back": folder, "foot": folder}

@@ -8,6 +8,7 @@ Each case draws its views, builds with hull_prop (no paint) and checks one prope
             than binary voxels)
   vase      a round top view is built round (slice circularity) and the lathe carve has no folds
   housing   a C-shaped outline keeps its cavity (front silhouette IoU) and has no folds
+  disc      a round front view is built as a lathe about the front-to-back axis
 Exit code 1 on any failure. Asset-level checks: tools/diag/regress_assets.py.
 """
 import os
@@ -140,6 +141,20 @@ inside = ((co[:, 1] < lo[1] + 0.45 * e[1]) & (co[:, 2] > lo[2] + 0.35 * e[2]) & 
 fo = folds_per_1k(hs)
 vr = volume_ratio(hs)
 check("housing", 0.68 < vr < 0.82 and fo < 0.5, "volume/bbox %.3f (C shape: 0.68-0.82), folds/1k %.2f" % (vr, fo))
+
+# disc: round FRONT view, thin side and top -> a lathe about the front-to-back axis
+dv = {"front": view("df", (120, 120), lambda d, s: d.ellipse([2, 2, s[0] - 3, s[1] - 3], fill=TAN)),
+      "right": view("dr", (16, 120), lambda d, s: d.rectangle([0, 0, s[0] - 1, s[1] - 1], fill=TAN))}
+disc = build(dv, 0.2, "sdf", res=80)
+rev = HULL_REPORT.get("revolve") or {}
+co = np.array([v.co for v in disc.data.vertices])
+c = (co.max(0) + co.min(0)) / 2
+mid = co[np.abs(co[:, 1] - c[1]) < 0.25 * (co[:, 1].max() - co[:, 1].min())]      # the rim at mid-thickness
+rim = np.hypot(mid[:, 0] - c[0], mid[:, 2] - c[2])
+rim = rim[rim > 0.8 * rim.max()]
+fo = folds_per_1k(disc)
+check("disc", bool(rev.get("round")) and rev.get("axis") == "front-to-back" and rim.std() / rim.mean() < 0.05 and fo < 0.5,
+      "round %s about %s, rim radius spread %.3f (< 0.05), folds/1k %.2f" % (rev.get("round"), rev.get("axis"), rim.std() / rim.mean(), fo))
 
 print("HULL GEOMETRY TESTS: %d failed" % len(FAILS))
 sys.exit(1 if FAILS else 0)

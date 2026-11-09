@@ -395,3 +395,26 @@ library, ledger and REPORT are restored afterwards (git checkout + delete the ex
   the extension (a g_*.png.import broke the sofa build; the asset regression caught it).
 - Wall props: `"mount": "wall"` puts the back on the wall plane y = 0 (fronts face -Y) like the hand-built
   wall props.
+
+## Parts sheets are manufactured, not moulded (wall phone v2, Nov 9)
+- Jared: "you aren't manufacturing the parts separately and then assembling them like the photo shows;
+  that's why each part has a view. You're doing a full mould." Layout `parts` (propkit/parts_layout.py):
+  every part on the sheet is built from its own views and painted from them, then placed and seated.
+  The order is the construction plan, one entry per part, each with how it is located and what it
+  attaches to (face, and "at" for an end). One part can be used twice (the cap: earpiece + mouthpiece).
+- How to locate, from most to least reliable on these sheets: residual (sticks out of the body's outline),
+  protrusion (drawn as part of the parent's own outline, like cradle hooks on the shell), attach by rule
+  (back plate on the back, caps at the handset's two ends), match (a big distinctive part lying on the
+  body: masked NCC, holes excluded, blur scaled with size; found the dial face), concentric (centred on
+  the parent; size from the sheet's drawing scale: low confidence), leftover (what no part explains:
+  the cord, swept as a tube along its centreline when it is long and thin).
+- What did NOT work for locating: plain NCC (tiny scales win by chance), edges NCC, radial edge profiles
+  (locked onto the dial's centre label), dark-spot rings (numbers count as spots). Check a locator by
+  drawing its result on the photo before trusting a score.
+- Round FRONT views make a lathe about the front-to-back axis (dial, caps); round TOP views about the
+  vertical (carafe). Background seen through a part's own view (h_ mask) is an opening along that view:
+  cut through (hook frame, finger holes).
+- The body is painted from the photo with the parts occluding it: through the finger wheel you see the
+  number card the photo shows, not the bare shell's drawn hole.
+- Thin plates (5-8 mm) decimated into a 6000-triangle budget fold at their rims (folds/1k 25-49 on the
+  dial and hooks): a size-class budget is shared by all parts; the regression baseline records it.

@@ -6,7 +6,7 @@ measure them (tools/diag/metrics.py) and compare with factory/geometry_baseline.
 Each case must keep its silhouette (IoU no more than 0.005 below the baseline), stay free of folds
 (per 1000 faces no more than the baseline + 0.5) and not get ridgier (ridge_deg no more than the
 baseline + 0.3). The library, ledger and REPORT are restored and the exp_ outputs deleted afterwards.
-About 5 minutes. The fast synthetic suite is tools/test_hull_geometry.py.
+About 6 minutes. The fast synthetic suite is tools/test_hull_geometry.py.
 """
 import json
 import os
@@ -21,6 +21,7 @@ CASES = {   # name -> (order file, reference views for the silhouette)
     "car": ("factory/orders/car_sedan_tan.json", "assets/source_textures/car_sedan_tan"),
     "coffee": ("factory/orders/coffee_maker_drip.json", "assets/source_textures/coffee_maker_drip/assembly"),
     "sofa": ("factory/fixtures/fixture_sofa_parts.json", "assets/source_textures/fixture_sofa_parts/assembly"),
+    "wallphone": ("factory/fixtures/fixture_wallphone_parts.json", "assets/source_textures/fixture_wallphone_parts/assembly"),
 }
 BASE = os.path.join(ROOT, "factory", "geometry_baseline.json")
 RESTORE = ["assets/props/library.json", "factory/REPORT.md", "factory/ledger.jsonl"]

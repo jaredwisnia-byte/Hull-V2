@@ -16,5 +16,11 @@
   "ridge_deg": 4.614,
   "folds_per_1k": 0.342,
   "tris": 38000
+ },
+ "wallphone": {
+  "iou_mean": 0.8614,
+  "ridge_deg": 3.652,
+  "folds_per_1k": 12.461,
+  "tris": 5698
  }
 }
