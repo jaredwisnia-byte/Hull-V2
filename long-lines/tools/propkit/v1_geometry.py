@@ -43,6 +43,7 @@ SETTINGS = {
     "coarse_step_m": 0.05,       # flat panels: the builder dissolves these later anyway
     "min_cell_texels": 3,
     "relief_zero_m": 0.0005,     # below this a sampled displacement counts as flat
+    "relief_tolerance_m": 0.0005,  # max deviation of the grid from the painted relief
     "footprint_margin_texels": 2,
     "cavity_band_texels": 4,
     "contact_distance_m": 0.005,
@@ -173,8 +174,7 @@ class Panel:
                 if fu <= 0 or fu >= 1 or fv <= 0 or fv >= 1:
                     return 0.0
                 break
-        s = self.sample(fu, fv)
-        return 0.0 if abs(s) < SETTINGS["relief_zero_m"] else s
+        return self.sample(fu, fv)
 
     def has_relief(self):
         if getattr(self, "_relief", None) is None:
@@ -186,7 +186,7 @@ class Panel:
         nx, ny = max(2, (x1 - x0) // 3), max(2, (y1 - y0) // 3)
         for i in range(1, nx):
             for j in range(1, ny):
-                if self.relief(i / nx, j / ny) != 0.0:
+                if abs(self.relief(i / nx, j / ny)) >= SETTINGS["relief_zero_m"]:
                     return True
         return False
 
@@ -234,6 +234,16 @@ class AxisClasses:
 
 def uniform(n):
     return [i / n for i in range(n + 1)]
+
+
+def clean(values):
+    """Sorted fractions in [0, 1] with near-duplicates removed and exact end points."""
+    out = []
+    for x in sorted(min(max(round(v, 9), 0.0), 1.0) for v in set(values) | {0.0, 1.0}):
+        if not out or x - out[-1] > 1e-6:
+            out.append(x)
+    out[0], out[-1] = 0.0, 1.0
+    return out
 
 
 # ---------- mesh accumulation ----------
@@ -410,34 +420,81 @@ class Interpreter:
         mesh.compact(alias)
         return mesh
 
+    def cells_for(self, p, ax):
+        """Cells along one panel axis: as few as keep painted relief within tolerance.
+
+        The relief is sampled every 1.5 texels on 24 lines; a candidate count is accepted when
+        piecewise-linear interpolation between its grid lines stays within relief_tolerance_m
+        everywhere visible (cavity openings and surfaces under separate parts are ignored).
+        Flat panels get coarse cells (the Blender stage dissolves them); curved axes keep at
+        most 7.5 degrees per cell."""
+        S = self.S
+        L = p.length(ax)
+        ppm = p.ppm_u if ax == "u" else p.ppm_v
+        n_curve = 1
+        if not p.flat and p.curve.get("axis", "u") == ax:
+            n_curve = math.ceil(L / abs(float(p.curve["radius_m"])) / math.radians(7.5))
+        if not p.has_relief():
+            return max(n_curve, math.ceil(L / S["coarse_step_m"]))
+        nmax = max(1, min(S["max_cells"], int(L * ppm / S["min_cell_texels"])))
+        M = max(8, int(L * ppm / 1.5))
+        lines = [(t + 0.5) / 24 for t in range(24)]
+        hidden = [(a, b, c, d) for a, b, c, d in p.cavities + p.suppress]
+
+        def uv(x, o):
+            return (x, o) if ax == "u" else (o, x)
+
+        def visible(x, o):
+            q = uv(x, o)
+            return not any(a <= q[0] <= b and c <= q[1] <= d for a, b, c, d in hidden)
+        f = lambda x, o: p.relief(*uv(x, o))
+        prof = [[(j / M, f(j / M, o), visible(j / M, o)) for j in range(M + 1)] for o in lines]
+        n, self._last_fit = nmax, None
+        for cand in (2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128):
+            if cand >= nmax:
+                break
+            errs = []
+            for o, row in zip(lines, prof):
+                nodes = [f(k / cand, o) for k in range(cand + 1)]
+                for x, val, vis in row:
+                    if not vis:
+                        continue
+                    k = min(int(x * cand), cand - 1)
+                    t = x * cand - k
+                    errs.append(abs(val - (nodes[k] * (1 - t) + nodes[k + 1] * t)))
+            if (max(errs) if errs else 0.0) <= S["relief_tolerance_m"]:
+                n = cand
+                break
+        return max(n, n_curve)
+
     def welded_grid(self, part):
         """Grid every panel of the part, weld the declared edges, cut the cavities.
 
+        Each panel keeps its own interior grid; only the vertices along a welded edge are
+        shared (the union of both sides' breaks), so a finely relieved panel does not force
+        its neighbours' interiors to the same density. Border cells become n-gons that
+        include the extra edge vertices; the exporter triangulates them.
         Returns (mesh, alias, grids); the mesh is not compacted yet so callers can add to it."""
-        S = self.S
         ids = part["panels"]
         P = {i: self.panels[i] for i in ids}
-        classes = AxisClasses()
-        for i, p in P.items():
-            relief = p.has_relief()
-            for ax in ("u", "v"):
-                L = p.length(ax)
-                ppm = p.ppm_u if ax == "u" else p.ppm_v
-                if relief:
-                    n = max(1, min(S["max_cells"], int(L * ppm / S["min_cell_texels"])))
-                else:
-                    n = max(1, math.ceil(L / S["coarse_step_m"]))
-                curved_ax = (not p.flat) and p.curve.get("axis", "u") == ax
-                if curved_ax:                           # <= 7.5 degrees per segment
-                    n = max(n, math.ceil(L / abs(float(p.curve["radius_m"])) / math.radians(7.5)))
-                classes.add((i, ax), uniform(n))
         cavs = [c for c in self.pkg["assembly"]["cavities"] if c["opening_panel"] in P]
-        for c in cavs:
-            p = P[c["opening_panel"]]
-            cu, cv = c["centre_uv"]
-            cw, ch = c["size_m"]
-            classes.add((p.id, "u"), [cu - cw / 2 / p.w, cu + cw / 2 / p.w])
-            classes.add((p.id, "v"), [cv - ch / 2 / p.h, cv + ch / 2 / p.h])
+        own = {}
+        for i, p in P.items():
+            fu, fv = set(uniform(self.cells_for(p, "u"))), set(uniform(self.cells_for(p, "v")))
+            for c in cavs:
+                if c["opening_panel"] == i:
+                    cu, cv = c["centre_uv"]
+                    cw, ch = c["size_m"]
+                    fu.update((cu - cw / 2 / p.w, cu + cw / 2 / p.w))
+                    fv.update((cv - ch / 2 / p.h, cv + ch / 2 / p.h))
+            own[i] = (clean(fu), clean(fv))
+        edges = AxisClasses()
+        for i in P:
+            fu, fv = own[i]
+            for e in ("u0", "u1"):
+                edges.add((i, e), fv)
+            for e in ("v0", "v1"):
+                edges.add((i, e), fu)
         conns = []
         for j in self.pkg["assembly"]["connections"]:
             if j["a"] not in P and j["b"] not in P:
@@ -458,19 +515,25 @@ class Interpreter:
                 self.report["errors"].append("connection %s.%s/%s.%s joins edges of different length (%.4f vs %.4f m)" % (
                     j["a"], j["a_edge"], j["b"], j["b_edge"], pa.length(axa), pb.length(axb)))
                 continue
-            if not classes.union((pa.id, axa), (pb.id, axb), flip):
+            if not edges.union((pa.id, j["a_edge"]), (pb.id, j["b_edge"]), flip):
                 self.report["errors"].append("connections give %s/%s contradictory edge directions" % (j["a"], j["b"]))
             conns.append((j, flip))
             self.report["operations_used"][j["operation"]] += 1
         mesh = Mesh(part["id"])
-        grid, fr = {}, {}
+        vat = {i: {} for i in P}
+
+        def V(i, a, b):
+            key = (round(a, 9), round(b, 9))
+            d = vat[i]
+            if key not in d:
+                p = P[i]
+                d[key] = mesh.vert(p.point(a, b, p.relief(a, b)))
+            return d[key]
+        E = {(i, e): edges.fractions((i, e)) for i in P for e in ("u0", "u1", "v0", "v1")}
         for i, p in P.items():
-            fu, fv = classes.fractions((i, "u")), classes.fractions((i, "v"))
-            fr[i] = (fu, fv)
-            grid[i] = [[mesh.vert(p.point(a, b, p.relief(a, b))) for b in fv] for a in fu]
             if p.has_relief():
                 self.report["operations_used"]["signed_depth_relief"] += 1
-        # weld
+        # weld: vertices along each declared edge pair are merged
         alias = {}
 
         def root(x):
@@ -479,8 +542,8 @@ class Interpreter:
             return x
         worst = 0.0
         for j, flip in conns:
-            ea = self.edge_vertices(grid[j["a"]], j["a_edge"])
-            eb = self.edge_vertices(grid[j["b"]], j["b_edge"])
+            ea = [V(j["a"], *xy) for xy in self.edge_params(j["a_edge"], E[(j["a"], j["a_edge"])])]
+            eb = [V(j["b"], *xy) for xy in self.edge_params(j["b_edge"], E[(j["b"], j["b_edge"])])]
             if flip:
                 eb = eb[::-1]
             if len(ea) != len(eb):
@@ -497,9 +560,13 @@ class Interpreter:
                 if rx != ry:
                     alias[ry] = rx
         # faces
+        grids = {}
+        eps = 1e-7
         for i, p in P.items():
-            fu, fv = fr[i]
-            G = grid[i]
+            fu, fv = own[i]
+            nu, nv = len(fu) - 1, len(fv) - 1
+            G = [[V(i, a, b) for b in fv] for a in fu]
+            grids[i] = (G, (fu, fv))
             holes = []
             for c in cavs:
                 if c["opening_panel"] != i:
@@ -507,25 +574,41 @@ class Interpreter:
                 if c["shape"] != "rect":
                     self.unsupported("cavity", c["id"], "shape %s is not built yet (rect only)" % c["shape"])
                     continue
-                holes.append(c)
-            hole_cells = []
-            for c in holes:
                 cu, cv = c["centre_uv"]
                 cw, ch = c["size_m"]
-                ua, ub = cu - cw / 2 / p.w, cu + cw / 2 / p.w
-                va, vb = cv - ch / 2 / p.h, cv + ch / 2 / p.h
-                hole_cells.append((ua, ub, va, vb))
-            for a in range(len(fu) - 1):
-                for b in range(len(fv) - 1):
+                holes.append((c, (cu - cw / 2 / p.w, cu + cw / 2 / p.w, cv - ch / 2 / p.h, cv + ch / 2 / p.h)))
+            for a in range(nu):
+                for b in range(nv):
                     mu, mv = (fu[a] + fu[a + 1]) / 2, (fv[b] + fv[b + 1]) / 2
-                    if any(r[0] < mu < r[1] and r[2] < mv < r[3] for r in hole_cells):
+                    if any(r[0] < mu < r[1] and r[2] < mv < r[3] for _, r in holes):
                         continue
-                    corners = [(a, b), (a + 1, b), (a + 1, b + 1), (a, b + 1)]
-                    mesh.face([G[x][y] for x, y in corners], [p.uv(fu[x], fv[y]) for x, y in corners])
-            for c, r in zip(holes, hole_cells):
+                    pts = [(fu[a], fv[b])]
+                    if b == 0:
+                        pts += [(x, 0.0) for x in E[(i, "v0")] if fu[a] + eps < x < fu[a + 1] - eps]
+                    pts.append((fu[a + 1], fv[b]))
+                    if a + 1 == nu:
+                        pts += [(1.0, y) for y in E[(i, "u1")] if fv[b] + eps < y < fv[b + 1] - eps]
+                    pts.append((fu[a + 1], fv[b + 1]))
+                    if b + 1 == nv:
+                        pts += [(x, 1.0) for x in reversed(E[(i, "v1")]) if fu[a] + eps < x < fu[a + 1] - eps]
+                    pts.append((fu[a], fv[b + 1]))
+                    if a == 0:
+                        pts += [(0.0, y) for y in reversed(E[(i, "u0")]) if fv[b] + eps < y < fv[b + 1] - eps]
+                    mesh.face([V(i, x, y) for x, y in pts], [p.uv(x, y) for x, y in pts])
+            for c, r in holes:
                 self.build_cavity(mesh, p, G, fu, fv, c, r)
         self.report["notes"].append("part %s: worst weld gap %.5f m" % (part["id"], worst))
-        return mesh, alias, {i: (grid[i], fr[i]) for i in P}
+        return mesh, alias, grids
+
+    @staticmethod
+    def edge_params(edge, fr):
+        if edge == "u0":
+            return [(0.0, y) for y in fr]
+        if edge == "u1":
+            return [(1.0, y) for y in fr]
+        if edge == "v0":
+            return [(x, 0.0) for x in fr]
+        return [(x, 1.0) for x in fr]
 
     @staticmethod
     def edge_ends(p, edge):
@@ -536,16 +619,6 @@ class Interpreter:
         if edge == "v0":
             return p.point(0, 0), p.point(1, 0)
         return p.point(0, 1), p.point(1, 1)
-
-    @staticmethod
-    def edge_vertices(G, edge):
-        if edge == "u0":
-            return list(G[0])
-        if edge == "u1":
-            return list(G[-1])
-        if edge == "v0":
-            return [col[0] for col in G]
-        return [col[-1] for col in G]
 
     def build_cavity(self, mesh, p, G, fu, fv, cav, rect):
         ua, ub, va, vb = rect

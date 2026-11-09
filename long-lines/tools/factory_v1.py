@@ -171,6 +171,14 @@ def run(asset_path, out=None, binary="blender", render=True):
                 fail("[manifest/builder] part %s is smaller than declared by %s mm" % (pid, over))
             if max(over) > 3:
                 qa["warnings"].append("part %s exceeds its declared base size by %s mm (painted relief on its face)" % (pid, over))
+    # triangle budget from the production size classes (factory/standards.json)
+    std = read_json(os.path.join(ROOT, "factory", "standards.json"))["size_classes"]
+    biggest = max(ver["overall_bbox_m"])
+    cls = next((k for k, v in sorted(std.items(), key=lambda kv: kv[1]["max_dim_m"]) if biggest <= v["max_dim_m"]), None)
+    budget = std[cls]["tri_budget"] if cls else None
+    qa["triangle_budget"] = {"size_class": cls, "budget": budget, "triangles": ver["triangles"]}
+    if budget and ver["triangles"] > budget:
+        fail("[builder] %d triangles over the %s budget of %d" % (ver["triangles"], cls, budget))
     # 5 previews
     if render:
         qa["previews"] = ver.get("previews", {})
