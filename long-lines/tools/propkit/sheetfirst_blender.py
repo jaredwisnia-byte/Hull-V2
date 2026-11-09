@@ -20,7 +20,13 @@ def build_and_export(manifest_path, asset_name, library_dir):
     if depth_path:
         with Image.open(depth_path) as im:
             depth = im.convert("RGB").copy()
-    meshes = engine.build_geometry(spec, depth)
+    vector = None
+    if atlas.get("vector"):
+        vector_path = engine._safe_source(os.path.dirname(os.path.realpath(manifest_path)),
+                                          atlas["vector"])
+        with Image.open(vector_path) as im:
+            vector = im.convert("RGB").copy()
+    meshes = engine.build_geometry(spec, depth, vector)
     bad_seams = engine.validate_seams(spec, meshes)
     if bad_seams:
         raise ValueError("assembly seams failed: " + "; ".join(bad_seams))
