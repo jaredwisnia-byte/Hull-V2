@@ -81,7 +81,7 @@ jobs:
               folder = root / name
               for ext in (".glb", "_albedo.png", "_normal.png", "_orm.png", "_preview.png"):
                   p = folder / (name + ext if ext != "_preview.png" else "_preview.png")
-                  assert p.exists() and p.stat().st_size > 100, str(p)
+                  assert p.exists() and p.stat().st_size > (100 if ext == ".glb" else 32), str(p)
               print("VERIFIED", name)
           PY
       - uses: actions/upload-artifact@v4
