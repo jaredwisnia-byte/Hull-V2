@@ -199,7 +199,8 @@ def build_geometry(spec, depth_image=None):
                 fu = i / nu
                 px = x0 + fu * (x1 - x0)
                 py = y1 - fv * (y1 - y0)
-                offset = _depth_value(_sample(depth_image, px - .5, py - .5), inward, outward) if depth_image else 0.0
+                offset = _depth_value(_sample(depth_image, min(max(px - .5, x0), x1 - 1),
+                                             min(max(py - .5, y0), y1 - 1)), inward, outward) if depth_image else 0.0
                 verts.append(_position(panel, fu, fv, offset))
                 uv.append((px / aw, 1.0 - py / ah))
         for j in range(nv):
