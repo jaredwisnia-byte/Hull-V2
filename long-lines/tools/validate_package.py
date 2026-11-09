@@ -196,7 +196,10 @@ def validate(asset_file):
             (max(1, w // step), max(1, h // step)), Image.Resampling.NEAREST)
         invalid = 0
         red = blue = white = 0
-        for r, g, b in sampled.getdata():
+        # Pillow 13+ renamed getdata(); retain compatibility with Pillow 10.
+        samples = (sampled.get_flattened_data() if hasattr(sampled, "get_flattened_data")
+                   else sampled.getdata())
+        for r, g, b in samples:
             if (abs(g - b) > 3 and abs(r - g) > 3) or (r != 255 and b != 255):
                 invalid += 1
             if r == 255 and b < 255:
