@@ -553,3 +553,19 @@ library, ledger and REPORT are restored afterwards (git checkout + delete the ex
 - Builds were not reproducible run to run: Python's per-run string hashing changes set iteration order
   (part joins, decimation), so metrics wobbled (coffee folds 0.35-1.05, IoU 0.912-0.915) with no code
   change. regress_assets.py pins PYTHONHASHSEED=0. The factory itself still varies; worth fixing at source.
+
+## Second TV from a rich reference sheet (Nov 9)
+- The sheet had views, a "main assembly (no screen)", the CRT drawn alone, dimensions and section drawings.
+  A plain hull from the views came out right in size and paint but flat-fronted: no screen recess, no
+  glass. Built from parts instead: the cabinet from its no-screen views, the CRT set into the opening.
+- New, general, in the parts layout: (1) a body spec's "recess": openings drawn in the body's own front
+  view (background through it) are recessed RECESS_SHARE (12%) of its depth from one plane per opening;
+  only openings of 2%+ of the front (knob holes stay painted); nearly convex openings take their convex
+  outline. (2) locate "inset": the part goes into its parent's largest opening, 4% oversize so its rim
+  hides, face 3% of the depth behind the front; held by the opening, not gravity-seated. Matching the CRT's
+  painting into the photo had locked onto the wrong spot at 1/6 scale: the opening is the evidence.
+  (3) a body filling 90%+ of the front both ways is the object's envelope: as deep as the object (the
+  no-screen side views were drawn thin, 133 mm vs 280). (4) "sheet_dims_mm": the sheet's printed size wins
+  over drawn proportions (side views implied 190 mm deep; printed 280).
+- The wavy dark line inside the screen recess is the rim's shadow on the glass (light from upper left),
+  not geometry: two "fixes" to the recess changed nothing before that was clear. Check the light first.

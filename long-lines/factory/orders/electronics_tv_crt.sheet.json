@@ -1,0 +1,48 @@
+{
+ "_sheet": "Vintage CRT television asset reference sheet (Jared, Nov 9); boxes in sheet pixels where tools/sheet_blobs.py list misses a dark view",
+ "assembly": {
+  "front": [
+   18,
+   96,
+   333,
+   304
+  ],
+  "left": 5,
+  "right": 6,
+  "back": 7,
+  "top": 8,
+  "bottom": [
+   886,
+   211,
+   1060,
+   304
+  ]
+ },
+ "body": {
+  "front": 21,
+  "left": 22,
+  "right": 23,
+  "back": 24,
+  "top": 25,
+  "bottom": [
+   617,
+   470,
+   760,
+   543
+  ]
+ },
+ "crt": {
+  "front": [
+   984,
+   385,
+   1160,
+   542
+  ],
+  "right": [
+   800,
+   385,
+   965,
+   542
+  ]
+ }
+}

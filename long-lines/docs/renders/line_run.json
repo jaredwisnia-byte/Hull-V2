@@ -1,205 +1,31 @@
 [
  {
-  "name": "car_sedan_tan",
-  "line": "hull",
-  "stations": {
-   "intake": {
-    "s": 0.0,
-    "ok": true,
-    "note": "5 views on file"
-   },
-   "build": {
-    "s": 51.2,
-    "ok": true,
-    "note": "shipped",
-    "stages": {
-     "geometry_and_paint": 32.6,
-     "bake_and_export": 17.1,
-     "qa": 0.9
-    },
-    "tris": 38000
-   },
-   "render": {
-    "s": 12.4,
-    "ok": true,
-    "note": "docs/renders/car_sedan_tan.png"
-   }
-  },
-  "ok": true,
-  "total_s": 63.6
- },
- {
-  "name": "coffee_maker_drip",
+  "name": "electronics_tv_crt",
   "line": "hull_parts",
   "stations": {
    "intake": {
-    "s": 0.0,
+    "s": 1.1,
     "ok": true,
-    "note": "27 views on file"
+    "note": "14 views cut from electronics_tv_crt/sheet.png"
    },
    "build": {
-    "s": 36.4,
+    "s": 23.3,
     "ok": true,
     "note": "shipped",
     "stages": {
-     "geometry_and_paint": 19.2,
-     "bake_and_export": 16.1,
-     "qa": 0.5
+     "geometry_and_paint": 8.5,
+     "bake_and_export": 13.5,
+     "qa": 0.7
     },
-    "tris": 5700
+    "tris": 22998
    },
    "render": {
-    "s": 21.4,
+    "s": 19.4,
     "ok": true,
-    "note": "docs/renders/coffee_maker_drip.png"
+    "note": "docs/renders/electronics_tv_crt.png"
    }
   },
   "ok": true,
-  "total_s": 57.8
- },
- {
-  "name": "electronics_tv_westbury",
-  "line": "hull",
-  "stations": {
-   "intake": {
-    "s": 0.0,
-    "ok": true,
-    "note": "5 views on file"
-   },
-   "build": {
-    "s": 32.3,
-    "ok": true,
-    "note": "shipped",
-    "stages": {
-     "geometry_and_paint": 12.3,
-     "bake_and_export": 18.9,
-     "qa": 0.5
-    },
-    "tris": 23750
-   },
-   "render": {
-    "s": 17.5,
-    "ok": true,
-    "note": "docs/renders/electronics_tv_westbury.png"
-   }
-  },
-  "ok": true,
-  "total_s": 49.8
- },
- {
-  "name": "sofa_olive_suede",
-  "line": "hull_parts",
-  "stations": {
-   "intake": {
-    "s": 0.0,
-    "ok": true,
-    "note": "23 views on file"
-   },
-   "build": {
-    "s": 151.7,
-    "ok": true,
-    "note": "shipped",
-    "stages": {
-     "geometry_and_paint": 121.6,
-     "bake_and_export": 28.5,
-     "qa": 0.9
-    },
-    "tris": 38000
-   },
-   "render": {
-    "s": 17.0,
-    "ok": true,
-    "note": "docs/renders/sofa_olive_suede.png"
-   }
-  },
-  "ok": true,
-  "total_s": 168.7
- },
- {
-  "name": "table_leg_carved",
-  "line": "hull",
-  "stations": {
-   "intake": {
-    "s": 1.3,
-    "ok": true,
-    "note": "5 views cut from table_leg_carved/sheet.png"
-   },
-   "build": {
-    "s": 133.9,
-    "ok": true,
-    "note": "shipped",
-    "stages": {
-     "geometry_and_paint": 108.8,
-     "bake_and_export": 23.6,
-     "qa": 0.8
-    },
-    "tris": 23750
-   },
-   "render": {
-    "s": 9.0,
-    "ok": true,
-    "note": "docs/renders/table_leg_carved.png"
-   }
-  },
-  "ok": true,
-  "total_s": 144.2
- },
- {
-  "name": "table_leg_guided",
-  "line": "hull",
-  "stations": {
-   "intake": {
-    "s": 2.0,
-    "ok": true,
-    "note": "6 views cut from table_leg_guided/sheet.png; guide lines read and painted out"
-   },
-   "build": {
-    "s": 148.1,
-    "ok": true,
-    "note": "shipped",
-    "stages": {
-     "geometry_and_paint": 120.9,
-     "bake_and_export": 25.5,
-     "qa": 0.9
-    },
-    "tris": 23750
-   },
-   "render": {
-    "s": 9.5,
-    "ok": true,
-    "note": "docs/renders/table_leg_guided.png"
-   }
-  },
-  "ok": true,
-  "total_s": 159.6
- },
- {
-  "name": "wallphone_rotary",
-  "line": "hull_parts",
-  "stations": {
-   "intake": {
-    "s": 1.2,
-    "ok": true,
-    "note": "25 views cut from wallphone_rotary/sheet.png"
-   },
-   "build": {
-    "s": 49.9,
-    "ok": true,
-    "note": "shipped",
-    "stages": {
-     "geometry_and_paint": 34.2,
-     "bake_and_export": 14.6,
-     "qa": 0.4
-    },
-    "tris": 3885
-   },
-   "render": {
-    "s": 15.6,
-    "ok": true,
-    "note": "docs/renders/wallphone_rotary.png"
-   }
-  },
-  "ok": true,
-  "total_s": 66.7
+  "total_s": 43.8
  }
 ]

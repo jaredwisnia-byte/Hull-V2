@@ -114,14 +114,16 @@ def run(names):
     for r in rows:
         lines += ["", "## %s" % r["name"]] + ["- %s: %s" % (k, v["note"]) for k, v in r["stations"].items()]
     open(os.path.join(OUT, "LINE.md"), "w").write("\n".join(lines) + "\n")
+    with open(os.path.join(OUT, "LINE_HISTORY.md"), "a") as f:          # every run, newest last
+        f.write("\n## Run %s\n" % time.strftime("%Y-%m-%d %H:%M") + "\n".join(lines[2:4 + len(rows)]) + "\n")
     json.dump(rows, open(os.path.join(OUT, "line_run.json"), "w"), indent=1)
-    contact([r["name"] for r in rows if r["ok"]])
+    contact(sorted(os.path.basename(p)[:-4] for p in glob.glob(os.path.join(OUT, "*.png")) if not p.endswith("line.png")))
     print("\n".join(lines[:4 + len(rows)]))
     return rows
 
 
 def contact(names):
-    """One picture of everything that came off the line: each prop's three-quarter and front views."""
+    """One picture of every prop the line has rendered: each one's front and three-quarter views."""
     from PIL import Image, ImageDraw
     tiles = []
     for n in names:

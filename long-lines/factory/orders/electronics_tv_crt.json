@@ -1,0 +1,104 @@
+{
+ "name": "electronics_tv_crt",
+ "category": "tv",
+ "line": "hull_parts",
+ "source": "Jared: vintage CRT television asset reference sheet",
+ "class": "medium",
+ "tex": 2048,
+ "status": "shipped",
+ "views_folder": "electronics_tv_crt",
+ "sheet": "electronics_tv_crt/sheet.png",
+ "sheet_spec": "factory/orders/electronics_tv_crt.sheet.json",
+ "assumptions": [
+  "size from the sheet's own dimension drawing: 520 mm wide, 280 mm deep (the side views are drawn too narrow, ~186 mm)",
+  "built from parts as the sheet breaks it down: the cabinet from its no-screen views with its openings recessed, the CRT made separately and set into the screen opening",
+  "three-quarter views, knob/speaker/grille breakdowns and section drawings are references; knobs and grilles are painted"
+ ],
+ "notes": "A 1970s CRT television in a walnut veneer cabinet, speaker grille left, control panel right.",
+ "attempts": 1,
+ "layout": "parts",
+ "assembly": "assembly",
+ "body_width_m": 0.52,
+ "sheet_dims_mm": [
+  520,
+  360,
+  280
+ ],
+ "mount": "floor",
+ "res": 170,
+ "rough": 0.5,
+ "parts": [
+  {
+   "name": "body",
+   "views": "body",
+   "root": true,
+   "recess": true
+  },
+  {
+   "name": "crt",
+   "views": "crt",
+   "locate": "inset",
+   "attach": {
+    "to": "body",
+    "face": "front"
+   }
+  }
+ ],
+ "measured": {
+  "layout": "parts",
+  "parts": {
+   "body": {
+    "box_m": [
+     -0.261,
+     0.259,
+     -0.14,
+     0.14,
+     0.004,
+     0.337
+    ],
+    "located": "body outline fitted into the photo"
+   },
+   "crt": {
+    "locate": "inset",
+    "attach": "front of body",
+    "located": "set into body's largest opening (its own front drawing), 274 x 230 mm",
+    "box_m": [
+     -0.151,
+     0.134,
+     -0.132,
+     0.118,
+     0.064,
+     0.303
+    ],
+    "notes": [],
+    "lathe": null
+   }
+  },
+  "depth_from": "sheet dimensions: depth 280 mm, height 360 mm (the views implied 190 and 342 mm)",
+  "body_depth": "the whole object's depth (the body fills the front)",
+  "body_top_paint_only": "top view depth/width 0.43 vs 0.54",
+  "size_from": "body width 0.520 m given; photo 0.525 x 0.280 x 0.360 m",
+  "photo_m": [
+   0.5251,
+   0.28,
+   0.36
+  ],
+  "recess": {
+   "openings": 1,
+   "recess_mm": 33.6,
+   "recess_voxels": 68849
+  },
+  "triangles": {
+   "body": 14128,
+   "crt": 8870
+  },
+  "gaps_mm": [
+   {
+    "part": "crt",
+    "on": "body",
+    "towards": "front",
+    "held": "set into the opening"
+   }
+  ]
+ }
+}

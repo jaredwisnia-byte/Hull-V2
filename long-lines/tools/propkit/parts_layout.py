@@ -28,6 +28,9 @@ How a part is located (where in the object, and how big):
   protrusion  drawn as part of the parent's own view, sticking out of its outline (cradle hooks on a
               shell's top edge): position and size from that protrusion
   attach      on the parent's face ("at": top / bottom / centre), sized to fit that face
+  inset       set into an opening of its parent's front (a CRT in its cabinet): found like match, its face
+              just behind the front surface; the body spec's "recess" recesses the openings its own front
+              drawing shows
   leftover    whatever the photo shows that no part explains (a coiled cord): a hull of those regions,
               painted from the photo
 Then every part is seated on its parent along the face it attaches to and gap-checked.
@@ -46,6 +49,12 @@ from .locate import find_part
 from . import handbook as HB
 
 PART_MIN_TRIS = 300   # no part decimated below this
+RECESS_SHARE = 0.12     # openings drawn in a body's front are recessed this share of its depth (order may set depth_m)
+INSET_BEHIND = 0.03     # an inset part's face sits this share of its parent's depth behind the parent's front
+OPENING_MIN = 0.02      # an opening must cover this share of the front to be recessed (knob holes stay painted)
+INSET_OVERSIZE = 1.04   # an inset part is this much larger than its opening, its rim hidden behind the edge
+CONVEX_OPENING = 0.9    # an opening filling this share of its convex outline is given that outline
+ENVELOPE = 0.9          # a body filling this share of the front (both ways) is the object's envelope
 ELONGATED = 3.0     # a leftover whose centreline is this many widths long is swept as a tube
 INTO = {"front": (0, 1, 0), "back": (0, -1, 0), "top": (0, 0, -1), "bottom": (0, 0, 1),
         "left": (1, 0, 0), "right": (-1, 0, 0)}          # direction from a part on that face into its parent
@@ -105,6 +114,68 @@ def contact_measure(c, boxes, photo, plan, root, todo=()):
         got = repeated_holes(os.path.join(root, spec["views"], "v_front.png"))
         return got[0] * w if got else None
     return None
+
+
+def openings(front_path, min_share=None):
+    """Openings drawn in a part's front view (background seen through), largest first, as (u0, u1, v0, v1)
+    fractions of its object box."""
+    m, _, box = silhouette(front_path, with_box=True)
+    holes = _holes(front_path, box)
+    if holes is None or holes.shape != m.shape:
+        return []
+    lab, k = ndimage.label(ndimage.binary_opening(holes, iterations=1))
+    out = []
+    for i, sl in enumerate(ndimage.find_objects(lab), 1):
+        a = int((lab[sl] == i).sum())
+        if a >= (OPENING_MIN if min_share is None else min_share) * m.sum():
+            out.append((a, (sl[1].start / m.shape[1], sl[1].stop / m.shape[1], sl[0].start / m.shape[0], sl[0].stop / m.shape[0])))
+    return [b for _, b in sorted(out, reverse=True)]
+
+
+def recess_hook(front_path, depth_m, report, min_share=None):
+    """A hull voxel_hook: the openings drawn in a body's own front view (background seen through it: a
+    screen opening in a "no screen" drawing, knob holes) recessed depth_m into the body from its front
+    surface, instead of being painted on a flat front."""
+    m, _, box = silhouette(front_path, with_box=True)
+    holes = _holes(front_path, box)
+    if holes is None or holes.shape != m.shape:
+        return None
+    lab, k = ndimage.label(holes)
+    sizes = ndimage.sum(holes, lab, range(1, k + 1))
+    keepl = [i + 1 for i, s_ in enumerate(sizes) if s_ >= (OPENING_MIN if min_share is None else min_share) * m.sum()]
+    op = np.zeros_like(holes)
+    from skimage.morphology import convex_hull_image
+    for i in keepl:
+        one = lab == i
+        hull_ = convex_hull_image(one)
+        # a nearly convex opening (a screen, a dial window) is drawn with a ragged painted edge: its
+        # convex outline is the opening; a shaped one (an L, a slot pattern) keeps its own outline
+        op |= hull_ if one.sum() >= CONVEX_OPENING * hull_.sum() else ndimage.binary_opening(one, iterations=1)
+    report["openings"] = int(len(keepl))
+    report["recess_mm"] = round(depth_m * 1000, 1)
+
+    def hook(keep, views, W, D, H):
+        nx, ny, nz = keep.shape
+        hh, ww = op.shape
+        xi = np.clip(((np.arange(nx) + 0.5) / nx * ww).astype(int), 0, ww - 1)
+        zi = np.clip(((1 - (np.arange(nz) + 0.5) / nz) * hh).astype(int), 0, hh - 1)
+        mask = op[np.ix_(zi, xi)].T                                   # (x, z)
+        dv = max(1, int(round(depth_m / (D / ny))))
+        front = np.where(keep.any(1), keep.argmax(1), ny)             # first solid voxel from the front, per (x, z)
+        removed = 0
+        lab_, k_ = ndimage.label(mask & (front < ny))
+        for j in range(1, k_ + 1):
+            cells = lab_ == j
+            # one plane per opening (its front surface's median): a recess is a clean prism, not a
+            # copy of every bump of the front surface
+            f = int(np.median(front[cells]))
+            ix, iz = np.nonzero(cells)
+            removed += int(keep[ix, f:f + dv, iz].sum())
+            for a, b in zip(ix, iz):
+                keep[a, :f + dv, b] = False
+        report["recess_voxels"] = removed
+        return keep
+    return hook
 
 
 def build_part(views, w, d, h, name, tmp, res=110, rough=0.5, cut_holes=True, defer=None):
@@ -312,6 +383,12 @@ def build_parts(order, src_root):
     px = (given or 1.0) / ((bu1 - bu0) * fm_.shape[1])
     W, H = fm_.shape[1] * px, fm_.shape[0] * px
     D = sm_.shape[1] * H / sm_.shape[0]
+    dims = order.get("sheet_dims_mm")              # [W, H, D] printed on the sheet's own dimension drawing
+    if dims and given:
+        # the drawn side views can disagree with the sheet's printed size (drawn too narrow): the print wins
+        rep["depth_from"] = "sheet dimensions: depth %.0f mm, height %.0f mm (the views implied %.0f and %.0f mm)" % (
+            dims[2], dims[1], D * 1000, H * 1000)
+        D, H = dims[2] / 1000.0, dims[1] / 1000.0
     sides = []
     for vw in ("right", "left"):
         if vw in sub:
@@ -319,6 +396,11 @@ def build_parts(order, src_root):
             sides.append((u0, u1) if vw == "right" else (1 - u1, 1 - u0))
     body_box = [bu0 * W - W / 2, bu1 * W - W / 2, float(np.median([s[0] for s in sides])) * D - D / 2,
                 float(np.median([s[1] for s in sides])) * D - D / 2, (1 - bv1) * H, (1 - bv0) * H]
+    if bu1 - bu0 > ENVELOPE and bv1 - bv0 > ENVELOPE:
+        # the body fills the whole front: it is the object's envelope (a cabinet), so it is as deep as the
+        # whole object; its own side drawings can be drawn thin
+        body_box[2], body_box[3] = -D / 2, D / 2
+        rep["body_depth"] = "the whole object's depth (the body fills the front)"
 
     def to_world_front(frac):
         u0, u1, v0, v1 = frac
@@ -397,6 +479,26 @@ def build_parts(order, src_root):
             y1 = float(np.median(edges["y1"])) if edges["y1"] else y0 + dd
             box = [x0, x1, y0, y1, z0, z1]
             entry["located"] = "region the body leaves over in the photo; hidden edges from its own proportions"
+        elif loc == "inset":
+            # set into the parent's largest opening (drawn in its own front view): sized to the opening, a
+            # little larger so its rim hides behind the edge; its face just behind the parent's front
+            ppv = _views(os.path.join(root, next(p for p in plan if p["name"] == parent)["views"]))
+            op = openings(ppv["front"])
+            if op:
+                u0, u1, v0, v1 = op[0]
+                x0, x1 = px0 + u0 * (px1 - px0), px0 + u1 * (px1 - px0)
+                z1, z0 = pz1 - v0 * (pz1 - pz0), pz1 - v1 * (pz1 - pz0)
+                cx_, cz_, w, h = (x0 + x1) / 2, (z0 + z1) / 2, (x1 - x0) * INSET_OVERSIZE, (z1 - z0) * INSET_OVERSIZE
+                x0, x1, z0, z1 = cx_ - w / 2, cx_ + w / 2, cz_ - h / 2, cz_ + h / 2
+                entry["located"] = "set into %s's largest opening (its own front drawing), %.0f x %.0f mm" % (
+                    parent, (u1 - u0) * (px1 - px0) * 1000, (v1 - v0) * (pz1 - pz0) * 1000)
+            else:
+                r = find_part(asm["front"], pv["front"])
+                x0, x1, z0, z1 = to_world_front(r["frac"])
+                w, h = x1 - x0, z1 - z0
+                entry["located"] = "no opening drawn: painting matched into the photo (score %.2f)" % r["score"]
+            dd = h * da if da else 0.06 * max(w, h)
+            box = [x0, x1, 0, dd, z0, z1]
         elif loc == "match":
             r = find_part(asm["front"], pv["front"])
             x0, x1, z0, z1 = to_world_front(r["frac"])
@@ -467,7 +569,10 @@ def build_parts(order, src_root):
             x0, x1, y0, y1, z0, z1 = box
             dd = y1 - y0
             # depth placement by face: in front of / behind the parent; others keep their measured depth
-            if face == "front":
+            if loc == "inset":
+                back = INSET_BEHIND * (py1 - py0)
+                y0, y1 = py0 + back, py0 + back + dd
+            elif face == "front":
                 y0, y1 = py0 - dd, py0
             elif face == "back":
                 y0, y1 = py1, py1 + dd                         # behind the parent (the body box is the bare shell)
@@ -503,9 +608,15 @@ def build_parts(order, src_root):
 
     # build: the body, then every part at its place
     bx0, bx1, by0, by1, bz0, bz1 = body_box
+    rhook = None
+    if body_spec.get("recess") and "front" in body_views:
+        # openings in the body's own front drawing are recessed (default: RECESS_SHARE of its depth)
+        rrep = rep.setdefault("recess", {})
+        rd = body_spec["recess"].get("depth_m") if isinstance(body_spec["recess"], dict) else None
+        rhook = recess_hook(body_views["front"], rd or RECESS_SHARE * (by1 - by0), rrep)
     body = hull_prop(body_views, bz1 - bz0, res=order.get("res", 150), name=order["name"] + "_body",
                      width_m=bx1 - bx0, depth_m=by1 - by0, features=False, paint=False, rough=order.get("rough", 0.5),
-                     paint_only=paint_only)
+                     paint_only=paint_only, voxel_hook=rhook)
     body.location = ((bx0 + bx1) / 2, (by0 + by1) / 2, bz0)
     built["body"] = body
     rep["parts"]["body"] = {"box_m": [round(v, 3) for v in body_box], "located": "body outline fitted into the photo"}
@@ -755,7 +866,11 @@ def build_parts(order, src_root):
         return out
 
     rep["gaps_mm"] = []
+    insets = {sp["name"] for sp in plan if sp.get("locate") == "inset"}
     for name, parent, face in placed_order:
+        if name in insets:
+            rep["gaps_mm"].append({"part": name, "on": parent, "towards": face, "held": "set into the opening"})
+            continue
         o, t = built[name], tree(built[parent])
         dv = Vector(INTO[face])
         g, _ = gaps(o, t, dv)
@@ -767,7 +882,7 @@ def build_parts(order, src_root):
         g2, touch = gaps(o, t, dv)
         rep["gaps_mm"].append({"part": name, "on": parent, "towards": face, "gap_mm": None if g2 is None else round(g2 * 1000, 1),
                                "touching": round(touch, 2), "moved_mm": None if g is None else round((g + SNAP_SINK) * 1000, 1)})
-    bad = [g for g in rep["gaps_mm"] if g["gap_mm"] is None or g["gap_mm"] > MAX_GAP * 1000 or g["touching"] < MIN_TOUCH]
+    bad = [g for g in rep["gaps_mm"] if "held" not in g and g["gap_mm"] is None or "held" not in g and (g["gap_mm"] > MAX_GAP * 1000 or g["touching"] < MIN_TOUCH)]
     if bad:
         import json
         print("PARTS report", json.dumps(rep, default=str))

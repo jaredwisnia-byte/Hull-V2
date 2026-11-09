@@ -1696,6 +1696,34 @@
   "desc": "A walnut six-drawer dresser with brass bail pulls, one drawer not quite shut.",
   "kind": "static"
  },
+ "electronics_tv_crt": {
+  "size": [
+   0.5171,
+   0.3303,
+   0.2771
+  ],
+  "min": [
+   -0.2594,
+   0.0,
+   -0.1386
+  ],
+  "max": [
+   0.2577,
+   0.3303,
+   0.1386
+  ],
+  "tris": 22998,
+  "tex": 2048,
+  "standardized": [
+   "seated on floor (-0.005 m)"
+  ],
+  "tags": [
+   "tv",
+   "factory"
+  ],
+  "desc": "A 1970s CRT television in a walnut veneer cabinet, speaker grille left, control panel right.",
+  "kind": "static"
+ },
  "electronics_tv_westbury": {
   "size": [
    0.6615,
@@ -1720,6 +1748,34 @@
    "factory"
   ],
   "desc": "electronics_tv_westbury",
+  "kind": "static"
+ },
+ "exp_tv_nosec": {
+  "size": [
+   0.5171,
+   0.3303,
+   0.2771
+  ],
+  "min": [
+   -0.2594,
+   0.0,
+   -0.1386
+  ],
+  "max": [
+   0.2577,
+   0.3303,
+   0.1386
+  ],
+  "tris": 22998,
+  "tex": 2048,
+  "standardized": [
+   "seated on floor (-0.005 m)"
+  ],
+  "tags": [
+   "tv",
+   "factory"
+  ],
+  "desc": "A 1970s CRT television in a walnut veneer cabinet, speaker grille left, control panel right.",
   "kind": "static"
  },
  "freezer_chest_blue": {
