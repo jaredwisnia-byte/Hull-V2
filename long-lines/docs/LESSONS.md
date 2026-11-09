@@ -213,3 +213,21 @@ add to it whenever something goes wrong.
 - Repository weight: every rebuild commits new binaries (GLB + 3 PNG maps + previews). The repo grew
   to ~570 MB this session. Generated assets are reproducible from sources + orders: commit them only
   when an asset ships, use Git LFS for binaries, and keep previews out of git.
+
+## Hull line: hollows from where the views' edges meet (Nov 9)
+- Silhouettes can't show a hollow: a sofa's seat is hidden by the arms in the side view and by the
+  back cushions in the front view, so the visual hull filled it to arm height. Jared's fix, as an
+  engineer reads drawings: a top-view region (a seat cushion) whose top edge the front view shows as
+  a horizontal line across the region's width is cut down to that line, where the two "blades" meet.
+  `propkit/blades.py`, order option `"hull": {"blades": true}`. Guards that made it safe: no view's
+  outline may change; a region on the outer left/right edge keeps the side view's height (an arm);
+  every top-view pixel belongs to its nearest region (otherwise painted lines between cushions stay
+  as walls and the seat becomes trays).
+- Tried first and dropped: a global search matching every edge found in the paintings. Painted
+  edges are too noisy and the views disagree by centimetres, so it carved holes at random. One clear
+  rule beat an optimiser.
+- The hull kept only the biggest shape in each view, so legs behind a dark gap were lost and the
+  view's height scale shrank with them. Small shapes just beside the body are now kept (the TV's
+  left-view match went 0.85 -> 0.94).
+- Paintings are not drawn to scale: `"hull": {"width_m": ...}` stretches the views to the real width
+  (the sofa came out 2.56 m wide without it).

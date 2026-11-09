@@ -34,8 +34,9 @@ from .core import apply_mods, link, smooth
 
 
 def silhouette(path, thresh=30, convex=False):
-    """Mask of the object in a view: differs from the border colour, biggest
-    connected shape, holes filled. Returns (mask, cropped colour image)."""
+    """Mask of the object in a view: differs from the border colour, biggest connected
+    shape plus small shapes just beside it (legs, feet), holes filled.
+    Returns (mask, cropped colour image)."""
     im = Image.open(path).convert("RGB")
     a = np.asarray(im).astype(np.int32)
     border = np.concatenate([a[0], a[-1], a[:, 0], a[:, -1]])
@@ -46,7 +47,22 @@ def silhouette(path, thresh=30, convex=False):
     if n == 0:
         raise ValueError("no object found in " + path)
     sizes = ndimage.sum(m, lab, range(1, n + 1))
-    m = lab == (int(np.argmax(sizes)) + 1)
+    main = int(np.argmax(sizes)) + 1
+    keep = lab == main
+    # Legs, feet and knobs often sit apart from the body behind a dark gap in the painting:
+    # keep small shapes that touch the body's span and lie within a short gap of it.
+    ys_, xs_ = np.nonzero(keep)
+    my0, my1, mx0, mx1 = ys_.min(), ys_.max(), xs_.min(), xs_.max()
+    gap = max(4, int(0.06 * (my1 - my0)))
+    for i, sl in enumerate(ndimage.find_objects(lab), 1):
+        if i == main or sizes[i - 1] < 0.002 * sizes[main - 1]:
+            continue
+        y0_, y1_, x0_, x1_ = sl[0].start, sl[0].stop - 1, sl[1].start, sl[1].stop - 1
+        near_y = y0_ <= my1 + gap and y1_ >= my0 - gap
+        near_x = x0_ <= mx1 + gap and x1_ >= mx0 - gap
+        if near_x and near_y:
+            keep |= lab == i
+    m = keep
     # Dark parts of an object (screens, back panels) can match a dark sheet
     # background. Treat anything bounded by the object both along its row and
     # its column as solid; outer notches (between legs, under a lip) stay open.
@@ -95,12 +111,17 @@ def _sample(mask, u, v):
     return mask[iy, ix]
 
 
+HULL_REPORT = {}     # what the last hull_prop call carved with blades
+
+
 def hull_prop(views, height, res=110, smooth_iters=4, decimate=0.35, rough=0.5, name="hull",
               convex=False, paint_only=(), features=True, sil_override=None, depth_m=None, grime=0.25,
-              paint=True):
+              paint=True, width_m=None, blades=False):
     """convex: fill each outline to its convex shape (boxy objects; dark areas can't
     punch holes). paint_only: views used for texture but not trusted to carve (e.g. a
-    dark back panel on a dark sheet)."""
+    dark back panel on a dark sheet). width_m: the real width (views painted out of
+    proportion are stretched to it). blades: carve hollows no outline shows (a seat between
+    arms) from where the views' painted edges meet (propkit/blades.py)."""
     # sil_override: {view: (mask, image)} from a part map, when the sheet set provides exact outlines.
     sil = dict(sil_override) if sil_override else {k: silhouette(p, convex=convex) for k, p in views.items()}
     # Raw (non-convex) side outlines keep small bumps such as knobs seen side-on.
@@ -111,7 +132,7 @@ def hull_prop(views, height, res=110, smooth_iters=4, decimate=0.35, rough=0.5, 
     side_key = "right" if "right" in sil else "left"
     sm, _ = sil[side_key]
     H = height
-    W = H * fm.shape[1] / fm.shape[0]
+    W = width_m or H * fm.shape[1] / fm.shape[0]
     D = depth_m or H * sm.shape[1] / sm.shape[0]
     nx = res
     ny = max(8, int(res * D / W))
@@ -129,6 +150,10 @@ def hull_prop(views, height, res=110, smooth_iters=4, decimate=0.35, rough=0.5, 
         keep &= _sample(carve["left"][0], 1 - Yy, 1 - Z)
     if "top" in carve:
         keep &= _sample(carve["top"][0], X, 1 - Yy)
+    if blades:
+        from . import blades as _blades
+        HULL_REPORT.clear()
+        keep = _blades.carve(keep, carve, HULL_REPORT)
     vol = np.pad(keep.astype(np.float32), 1)
     vol = ndimage.gaussian_filter(vol, 0.7)
     verts, faces, _, _ = marching_cubes(vol, 0.5)
