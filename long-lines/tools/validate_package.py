@@ -307,6 +307,26 @@ def validate(asset_file):
         if assigned[name] != 1:
             bad.append("UV panel %s must belong to exactly one assembly part (found %d)" %
                        (name, assigned[name]))
+    # Verify *semantic map registration*: the physical atlas island for a
+    # glass/knob/soft part should actually be painted in that part's ID colour.
+    # Body panels may contain smaller apertures, trim, vents, etc., hence a
+    # majority is not strictly required, but an absent class is a real error.
+    for panel in asset["panels"]:
+        part = parts.get(panel["part_id"])
+        if not part or part_img.size != (w, h):
+            continue
+        colour = PALETTE[part["semantic_class"]]
+        rect = panel["rect_px"]
+        if not rect_ok(rect, (w, h)):
+            continue
+        count = part_img.crop(tuple(rect)).getcolors(maxcolors=256)
+        if count is None:
+            continue  # separately flagged above as an invalid part-ID image
+        count_expected = sum(n for n, c in count if c == colour)
+        total = (rect[2] - rect[0]) * (rect[3] - rect[1])
+        if count_expected / total < .35:
+            bad.append("panel %s part-ID map does not represent expected class %s" %
+                       (panel["id"], part["semantic_class"]))
     for part in parts.values():
         parent = part.get("parent")
         if parent and parent not in parts:
