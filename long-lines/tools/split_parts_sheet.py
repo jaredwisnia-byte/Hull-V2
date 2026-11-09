@@ -13,6 +13,7 @@ ground line removed BEFORE holes are filled (otherwise the gap between legs beco
 --guide EDGE_GUIDE.png [--guide-rows ...] also splits an edge guide sheet into g_<view>.png beside
 each view (propkit/edge_guide.py; a view a guide row names "side" is the part's right side).
 
+Background-coloured holes the fill closed are recorded in h_<view>.png (carved solid, never painted).
 Writes assets/source_textures/NAME/<row>/v_<view>.png and factory/orders/NAME.json (line
 hull_parts, class large, tex 2048). Row names are the part kinds the line understands:
 assembly (required), side (arms: outer side view, feet trimmed if a foot row exists), seat, back,
@@ -102,9 +103,19 @@ def main(a):
                 ab, be = fr[max(0, yy - 6):max(0, yy - 2)], fr[yy + 3:yy + 7]
                 if fr[yy] > 0.6 and (not len(ab) or ab.max() < 0.3) and (not len(be) or be.max() < 0.3):
                     mm[max(0, yy - 2):yy + 3] = False
+            drawn = mm.copy()
             mm = ndimage.binary_fill_holes(ndimage.binary_closing(mm, iterations=2))
+            # holes the fill closed that show the sheet's background (the gap inside a handset's loop):
+            # solid for carving, but never paint; recorded so painting can skip them
+            holes = mm & ~ndimage.binary_dilation(drawn, iterations=1) & (np.abs(crop - bg).sum(2) <= 36)
+            holes = ndimage.binary_opening(holes, iterations=1)
             crop[~mm] = 0
             Image.fromarray(crop.astype(np.uint8)).save(os.path.join(out_root, part, "v_%s.png" % v))
+            hp = os.path.join(out_root, part, "h_%s.png" % v)
+            if holes.sum() > 20:
+                Image.fromarray(holes.astype(np.uint8) * 255).save(hp)
+            elif os.path.exists(hp):
+                os.remove(hp)
             report[part].append([v, list(box)])
     for part, vs in report.items():
         print(part, vs)

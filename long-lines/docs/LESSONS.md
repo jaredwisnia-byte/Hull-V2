@@ -369,3 +369,29 @@ library, ledger and REPORT are restored afterwards (git checkout + delete the ex
   GLBs split vertices at UV seams: weld before measuring adjacency.
 - Tests: `tools/test_hull_geometry.py` (9 s) and `tools/diag/regress_assets.py` (5 min, car + coffee +
   sofa fixture against factory/geometry_baseline.json). Run both after touching propkit/hull.py.
+
+## Wall phone (Nov 9): parts painted like the body, found by subtraction
+- Drive "appliances/wallphone.png": whole phone in 6 views + body shell, handset, dial, hooks, caps, cord.
+  Order: layout `attached`, body `body`, attached `[handset]`, `body_width_m` 0.14 (the one real size;
+  the rest from the drawing), `mount` `wall`. ~45 s per build.
+- Everything is one harvest gold, so colour can't find the handset (colour overlap 0.80 vs 0.12-0.21 for
+  the coffee machine's parts). `SAME_PAINT` switches to subtraction: the body's own outline is fitted
+  into each whole-object view (FFT correlation over scale; placements fully inside tie, so the body's
+  edges must also land on the whole outline's edges) and what it doesn't explain is the part.
+- A part's edge pressed against the fitted body is hidden in that view (the cups in front of the body's
+  edge): every box edge comes from a view where it is visible, the bottom is the highest visible bottom
+  (a cord hanging below only adds), hidden extents from the part's own view proportions.
+- Seating: a C-shaped handset touches with its cups; the touching share is now measured over the near
+  layer (facing surface within 10 mm of the closest approach). The floating-carafe negative test still
+  fails (touching 0.08). Parts can also seat sideways (left/right), after down and up.
+- Top views drawn with the front face showing are not plans: carving with one set the phone's face back
+  18 mm everywhere except where its hooks were drawn (two ribs down the face). A top view now carves only
+  if its proportions agree with the front/side views within 15% and it matched the whole-object top
+  clearly; otherwise it only paints. Found by measuring the front surface depth across the width.
+- Background seen through a hole (the gap inside the handset's loop) was filled into the outline and
+  painted black onto the body. split_parts_sheet now writes h_<view>.png for background-coloured filled
+  holes; painting fills them from the object's colours (carving still treats them as solid).
+- Godot's .import sidecars sit beside every PNG once the editor has imported a folder: filter listings on
+  the extension (a g_*.png.import broke the sofa build; the asset regression caught it).
+- Wall props: `"mount": "wall"` puts the back on the wall plane y = 0 (fronts face -Y) like the hand-built
+  wall props.

@@ -622,6 +622,21 @@
     380
    ],
    "_why": "1970s 10-12 cup drip machines: about 23 x 27 x 33 cm"
+  },
+  "wall_telephone": {
+   "width": [
+    150,
+    230
+   ],
+   "depth": [
+    70,
+    140
+   ],
+   "height": [
+    220,
+    320
+   ],
+   "_why": "1970s rotary wall set (Bell 554 type): body about 140 mm (5.5 in) wide. One ITT 554 listing gives 5.5 x 12 x 5.25 in with the handset (12 in read as the height); drawings scaled by the body width come out nearer 240 mm, so the height range is wide"
   }
  },
  "assembly_rules": [

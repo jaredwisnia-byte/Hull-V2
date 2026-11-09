@@ -34,6 +34,13 @@ def standardize(obj, name, tex, tags=()):
         for v in me.vertices:
             v.co.z += dz
         notes.append("seated on floor (%+.3f m)" % dz)
+    ys = [v.co.y for v in me.vertices]
+    if mount == "wall" and ys and abs(max(ys)) > 1e-4:
+        # wall-mounted: the back (+Y; fronts face -Y) on the wall plane y = 0, as hand-built wall props are
+        dy = -max(ys)
+        for v in me.vertices:
+            v.co.y += dy
+        notes.append("back on the wall plane (%+.3f m)" % dy)
     dims = obj.dimensions
     cls = next((k for k, v in STANDARDS["size_classes"].items() if max(dims) <= v["max_dim_m"]), "building")
     budget = STANDARDS["size_classes"][cls]["tri_budget"]

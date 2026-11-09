@@ -33,10 +33,10 @@ from . import mats as M
 from .core import apply_mods, link, smooth
 
 
-def silhouette(path, thresh=30, convex=False):
+def silhouette(path, thresh=30, convex=False, with_box=False):
     """Mask of the object in a view: differs from the border colour, biggest connected
     shape plus small shapes just beside it (legs, feet), holes filled.
-    Returns (mask, cropped colour image)."""
+    Returns (mask, cropped colour image), and the crop box (x0, y0, x1, y1) if with_box."""
     im = Image.open(path).convert("RGB")
     a = np.asarray(im).astype(np.int32)
     border = np.concatenate([a[0], a[-1], a[:, 0], a[:, -1]])
@@ -79,6 +79,8 @@ def silhouette(path, thresh=30, convex=False):
         m = convex_hull_image(m)
     ys, xs = np.nonzero(m)
     box = (xs.min(), ys.min(), xs.max() + 1, ys.max() + 1)
+    if with_box:
+        return m[box[1]:box[3], box[0]:box[2]], im.crop(box), box
     return m[box[1]:box[3], box[0]:box[2]], im.crop(box)
 
 

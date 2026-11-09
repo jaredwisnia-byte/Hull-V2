@@ -34,7 +34,10 @@ OVERLAP = float(os.environ.get("HULLASM_OVERLAP", 0.015))       # neighbouring p
 MAX_GAP = 0.004       # the gap check fails a build whose parts are further apart than this at a contact
 SUPPORT_REACH = 0.06  # m: body this close along a direction can carry a part
 SUPPORT_SHARE = 0.3   # of the part's vertices facing that way
-MIN_TOUCH = 0.4       # share of a seated part's facing vertices within MAX_GAP of the body
+MIN_TOUCH = 0.4       # share of a seated part's near layer (facing vertices) within MAX_GAP of the body
+NEAR_LAYER = 0.01     # m: the facing surface this close to the closest approach is expected to touch
+TOP_AGREE = 0.15      # a top view carves only if its proportions agree with the front/side views this closely
+SAME_PAINT = 0.6      # colour overlap above which parts are found by subtraction, not colour
 SNAP_SINK = 0.003     # an attached part sinks this far into the body it rests on / hangs from
 
 
@@ -98,10 +101,17 @@ def paint_views(views, out_dir, tag):
     os.makedirs(out_dir, exist_ok=True)
     out = {}
     for k, p in views.items():
-        m, img = silhouette(p)
+        m, img, box = silhouette(p, with_box=True)
         a = np.asarray(img).copy()
-        idx = ndimage.distance_transform_edt(~ndimage.binary_erosion(m, iterations=2), return_distances=False,
-                                             return_indices=True)
+        paintable = ndimage.binary_erosion(m, iterations=2)
+        hp = os.path.join(os.path.dirname(p), "h_%s.png" % os.path.basename(p)[2:-4])
+        if os.path.exists(hp):
+            # background seen through a hole (split_parts_sheet's h_ mask) is not the object's paint:
+            # fill it from the object's own colours around it
+            holes = np.asarray(Image.open(hp).convert("L").crop(box)) > 127
+            if holes.shape == m.shape:
+                paintable &= ~ndimage.binary_dilation(holes, iterations=2)
+        idx = ndimage.distance_transform_edt(~paintable, return_distances=False, return_indices=True)
         a = a[idx[0], idx[1]]
         q = os.path.join(out_dir, "%s_%s.png" % (tag, k))
         Image.fromarray(a).save(q)
@@ -607,7 +617,7 @@ def build(order, src_root):
                 tfold = os.path.join(tmp, "guide_%d" % n)
                 os.makedirs(tfold, exist_ok=True)
                 for f in os.listdir(fold):
-                    if f.startswith("g_"):
+                    if f.startswith("g_") and f.endswith(".png"):
                         im_ = Image.open(os.path.join(fold, f))
                         (im_.transpose(Image.Transpose.ROTATE_90) if f == "g_top.png" else im_).save(os.path.join(tfold, f))
                 fold_guides = tfold
@@ -713,6 +723,102 @@ def locate_by_colour(view_path, models, bins=12):
     return out
 
 
+def colour_overlap(h1, h2):
+    """Shared share of two colour histograms (1 = identical palettes). Parts painted like the body
+    (a harvest-gold handset on a harvest-gold phone) can't be found by colour."""
+    return float(np.minimum(h1 / h1.sum(), h2 / h2.sum()).sum())
+
+
+def match_into(big, small, scales=None):
+    """Where the outline `small` sits inside the outline `big` (both masks): the scale and offset
+    that put the most of it on `big` and the least outside it (FFT correlation over scales).
+    Returns (scale, x0, y0, placed mask in big's pixels)."""
+    from scipy.signal import fftconvolve
+    H_, W_ = big.shape
+    h, w = small.shape
+    base = H_ / h
+    best = None
+    big_edge = ndimage.binary_dilation(big & ~ndimage.binary_erosion(big), iterations=2).astype(float)
+    for f in (scales or np.linspace(0.55, 1.0, 19)):
+        sh, sw = max(4, int(round(h * base * f))), max(4, int(round(w * base * f)))
+        if sh > H_ or sw > W_:
+            continue
+        t = np.asarray(Image.fromarray(small.astype(np.uint8) * 255).resize((sw, sh))) > 127
+        on = fftconvolve(big.astype(float), t[::-1, ::-1].astype(float), mode="valid")
+        # cover the big outline and never stick out of it; then (the tie-breaker: every placement fully
+        # inside scores the same) the small outline's edges must lie on the big outline's edges
+        te = t & ~ndimage.binary_erosion(t)
+        edge_on = fftconvolve(big_edge, te[::-1, ::-1].astype(float), mode="valid")
+        score = on - 2.0 * (t.sum() - on) + 4.0 * edge_on
+        j = np.unravel_index(int(np.argmax(score)), score.shape)
+        if best is None or score[j] > best[0]:
+            best = (score[j], f * base, int(j[1]), int(j[0]), t)
+    _, sc, x0, y0, t = best
+    placed = np.zeros_like(big)
+    placed[y0:y0 + t.shape[0], x0:x0 + t.shape[1]] = t
+    return sc, x0, y0, placed
+
+
+def locate_by_subtraction(view_path, body_view_path):
+    """The body's own view fitted into the whole-object view (match_into); what the body doesn't
+    explain is the attached parts. Returns (body box, [part regions largest first]) with boxes as
+    fractions of the view's object box (u0, u1, v0, v1; v from the top) and each region's mask."""
+    m, _ = silhouette(view_path)
+    b, _ = silhouette(body_view_path)
+    sc, x0, y0, placed = match_into(m, b)
+    H_, W_ = m.shape
+    ys, xs = np.nonzero(placed)
+    body_box = (xs.min() / W_, (xs.max() + 1) / W_, ys.min() / H_, (ys.max() + 1) / H_)
+    rest = ndimage.binary_opening(m & ~ndimage.binary_dilation(placed, iterations=2), iterations=2)
+    lab, k = ndimage.label(rest)
+    regions = []
+    for i in range(1, k + 1):
+        r = lab == i
+        if r.sum() < 0.01 * m.sum():
+            continue
+        ys, xs = np.nonzero(r)
+        # an edge of the region pressed against the fitted body may continue in front of it (a
+        # handset's cups over the body's edge): that edge is hidden in this view
+        touch = r & ndimage.binary_dilation(placed, iterations=5)
+        hidden = set()
+        if touch.any():
+            ty, tx = np.nonzero(touch)
+            w_, h_ = xs.max() - xs.min() + 1, ys.max() - ys.min() + 1
+            if tx.mean() > xs.mean() + 0.15 * w_:
+                hidden.add("right")
+            if tx.mean() < xs.mean() - 0.15 * w_:
+                hidden.add("left")
+            if ty.mean() > ys.mean() + 0.15 * h_:
+                hidden.add("bottom")
+            if ty.mean() < ys.mean() - 0.15 * h_:
+                hidden.add("top")
+        regions.append({"mask": r, "box": (np.percentile(xs, 1) / W_, (np.percentile(xs, 99) + 1) / W_,
+                                           np.percentile(ys, 1) / H_, (np.percentile(ys, 99) + 1) / H_),
+                        "share": float(r.sum() / m.sum()), "hidden": sorted(hidden)})
+    regions.sort(key=lambda r_: -r_["share"])
+    return body_box, regions, {"scale": round(float(sc), 3), "fit_outside": round(float((placed & ~m).sum() / max(1, placed.sum())), 3)}
+
+
+def orient_like(path, ref_path, out_path):
+    """Turn/flip a part's view (0, 180 degrees, mirrored) to best match the same view of the whole
+    object (outline IoU at the reference's size): sheets draw a part's top view upside down."""
+    a, img = silhouette(path)
+    r, _ = silhouette(ref_path)
+    best = None
+    ops = {"as drawn": lambda im: im, "turned 180": lambda im: im.rotate(180),
+           "mirrored": lambda im: im.transpose(Image.Transpose.FLIP_LEFT_RIGHT),
+           "flipped": lambda im: im.transpose(Image.Transpose.FLIP_TOP_BOTTOM)}
+    for name, op in ops.items():
+        t = np.asarray(op(Image.fromarray(a.astype(np.uint8) * 255)).resize(r.shape[::-1])) > 127
+        iou = float((t & r).sum() / max(1, (t | r).sum()))
+        if best is None or iou > best[1] + 0.02:            # keep the drawing unless clearly better
+            best = (name, iou, op)
+    if best[0] == "as drawn":
+        return path, None
+    best[2](Image.open(path)).save(out_path)
+    return out_path, "%s (outline IoU %.2f with the whole-object view)" % (best[0], best[1])
+
+
 def body_front_rule(views, tmp):
     """A body's front view much narrower (for its height) than its back view is a partial view (the
     sheet drew only what is left behind the attached parts): carve with the back's outline instead."""
@@ -745,42 +851,145 @@ def build_attached(order, src_root):
     body_views, note = body_front_rule(body_views, tmp)
     if note:
         rep["body_front"] = note
+    if "top" in body_views and "top" in asm_views:
+        q, note_t = orient_like(body_views["top"], asm_views["top"], os.path.join(tmp, "body_top.png"))
+        if note_t:
+            body_views["top"] = q
+            rep["body_top"] = note_t
+    body_own = {k: p for k, p in part_views(os.path.join(root, order["body"])).items()}
     attached = order["attached"]                  # [folder, ...]
     pviews = {f: {k: p for k, p in part_views(os.path.join(root, f)).items()
                   if k in ("front", "back", "left", "right", "top")} for f in attached}
-    # 2. where each part is: colour in the whole-object front and side views
+    # 2. where each part is. By colour when the parts are painted unlike the body (an orange basket, a
+    #    dark carafe on an almond housing); by subtraction when they share its paint (a harvest-gold
+    #    handset on a harvest-gold phone): the body's own outline fitted into each whole-object view,
+    #    and what it doesn't explain is the parts.
     models = {f: colour_model(list(pviews[f].values())) for f in attached}
-    models["_body"] = colour_model(list(part_views(os.path.join(root, order["body"])).values()))
-    loc = {vw: locate_by_colour(asm_views[vw], models) for vw in ("front", "right", "left") if vw in asm_views}
-    rep["located"] = {vw: {k: [round(x, 3) for x in b] for k, b in d.items()} for vw, d in loc.items()}
+    models["_body"] = colour_model(list(body_own.values()))
+    overlaps = {f: round(colour_overlap(models[f], models["_body"]), 3) for f in attached}
+    mode = "subtraction" if max(overlaps.values()) > SAME_PAINT else "colour"
+    rep["locate"] = {"mode": mode, "colour_overlap_with_body": overlaps}
+    boxes = {}                                    # part -> (x0, x1, y0, y1, z0, z1, located_top, top_from)
+    body_box = None
+    if mode == "colour":
+        loc = {vw: locate_by_colour(asm_views[vw], models) for vw in ("front", "right", "left") if vw in asm_views}
+        rep["located"] = {vw: {k: [round(x, 3) for x in b_] for k, b_ in d.items()} for vw, d in loc.items()}
+        for f in attached:
+            fr = loc.get("front", {}).get(f)
+            sides = []
+            if f in loc.get("right", {}):
+                u0, u1, v0, v1 = loc["right"][f]
+                sides.append((u0, u1, v0, v1))           # right view: image left = front
+            if f in loc.get("left", {}):
+                u0, u1, v0, v1 = loc["left"][f]
+                sides.append((1 - u1, 1 - u0, v0, v1))
+            if fr is None or not sides:
+                rep["skipped"][f] = "not visible in the whole-object front and side views"
+                continue
+            y0 = float(np.median([s_[0] for s_ in sides])) * D - D / 2
+            y1 = float(np.median([s_[1] for s_ in sides])) * D - D / 2
+            zs_ = [(1 - fr[3], 1 - fr[2])] + [(1 - s_[3], 1 - s_[2]) for s_ in sides]
+            z0 = float(np.median([z[0] for z in zs_])) * H
+            located_top = float(np.median([z[1] for z in zs_])) * H
+            x0, x1 = fr[0] * W - W / 2, fr[1] * W - W / 2
+            # The bottom edge is reliable (a part against the body's colour). The top is trusted when
+            # every view agrees on it (the orange basket); when they disagree it has merged with
+            # something dark above it (the carafe under the filter holder): its own proportions decide.
+            tops = [z[1] for z in zs_]
+            top_from = "views agree"
+            z1 = located_top
+            if max(tops) - min(tops) > 0.03 and "front" in pviews[f]:
+                z1 = z0 + aspect(pviews[f]["front"]) * (x1 - x0)
+                top_from = "own proportions (views disagree by %.0f%% of the height)" % ((max(tops) - min(tops)) * 100)
+            boxes[f] = (x0, x1, y0, y1, z0, z1, located_top, top_from)
+    else:
+        sub = {vw: locate_by_subtraction(asm_views[vw], body_own[vw]) for vw in ("front", "right", "left")
+               if vw in asm_views and vw in body_own}
+        if "front" not in sub or not ({"right", "left"} & set(sub)):
+            raise RuntimeError("subtraction needs the body's own front and a side view")
+        rep["located"] = {vw: {"body": [round(x, 3) for x in v[0]], "fit": v[2],
+                               "regions": [[round(x, 3) for x in r_["box"]] + r_["hidden"] for r_ in v[1]]} for vw, v in sub.items()}
+        fm_, _ = silhouette(asm_views["front"])
+        sk = "right" if "right" in sub else "left"
+        sm_, _ = silhouette(asm_views[sk])
+        if order.get("body_width_m"):
+            # one real dimension (the body's width) scales the whole drawing
+            bu0, bu1 = sub["front"][0][:2]
+            px = order["body_width_m"] / ((bu1 - bu0) * fm_.shape[1])
+            W, H = fm_.shape[1] * px, fm_.shape[0] * px
+            D = sm_.shape[1] * H / sm_.shape[0]
+            rep["size_from"] = "body width %.3f m; whole object %.3f x %.3f x %.3f m from the views" % (
+                order["body_width_m"], W, D, H)
+        fb = sub["front"][0]
+        side_boxes = []
+        for vw in ("right", "left"):
+            if vw in sub:
+                u0, u1 = sub[vw][0][:2]
+                side_boxes.append((u0, u1) if vw == "right" else (1 - u1, 1 - u0))
+        body_box = (fb[0] * W - W / 2, fb[1] * W - W / 2,
+                    float(np.median([b_[0] for b_ in side_boxes])) * D - D / 2,
+                    float(np.median([b_[1] for b_ in side_boxes])) * D - D / 2,
+                    (1 - fb[3]) * H, (1 - fb[2]) * H)
+        for n, f in enumerate(attached):
+            # Each edge of the part's box comes from a view where it is visible (not pressed against the
+            # body); the top is the median of the visible tops, the bottom the highest visible bottom
+            # (a cord dangling below only ever adds); hidden extents come from the part's own proportions.
+            edges = {"x0": [], "x1": [], "y0": [], "y1": [], "top": [], "bottom": []}
+            for vw, (bb, regs, _) in sub.items():
+                if n >= len(regs):
+                    continue
+                u0, u1, v0, v1 = regs[n]["box"]
+                hid = set(regs[n]["hidden"])
+                lo_k, hi_k = ("x0", "x1") if vw == "front" else ("y0", "y1")
+                span = W if vw == "front" else D
+                if vw == "left":                        # left view: image left = back
+                    u0, u1 = 1 - u1, 1 - u0
+                    hid = {{"left": "right", "right": "left"}.get(e, e) for e in hid}
+                if "left" not in hid:
+                    edges[lo_k].append(u0 * span - span / 2)
+                if "right" not in hid:
+                    edges[hi_k].append(u1 * span - span / 2)
+                if "top" not in hid:
+                    edges["top"].append((1 - v0) * H)
+                if "bottom" not in hid:
+                    edges["bottom"].append((1 - v1) * H)
+            if not edges["top"] or not edges["bottom"]:
+                rep["skipped"][f] = "no visible top or bottom left over by the body"
+                continue
+            z1 = float(np.median(edges["top"]))
+            z0 = float(max(edges["bottom"]))
+            located_top, top_from = z1, "visible edges"
+            pv = pviews[f]
+            fa = aspect(pv["front"]) if "front" in pv else None                   # height / width
+            sa = aspect(pv.get("left") or pv.get("right")) if ("left" in pv or "right" in pv) else None
+            h = z1 - z0
+            if fa and h > 1.15 * fa * (np.median(edges["x1"]) - np.median(edges["x0"])) if edges["x0"] and edges["x1"] else False:
+                z0 = z1 - fa * (np.median(edges["x1"]) - np.median(edges["x0"]))
+                top_from = "kept the top: more hangs below than the part's proportions"
+                h = z1 - z0
+            def span_of(lo, hi, size):
+                if lo and hi:
+                    return float(np.median(lo)), float(np.median(hi))
+                if lo and size:
+                    return float(np.median(lo)), float(np.median(lo)) + size
+                if hi and size:
+                    return float(np.median(hi)) - size, float(np.median(hi))
+                return None
+            xs_ = span_of(edges["x0"], edges["x1"], h / fa if fa else None)
+            ys_ = span_of(edges["y0"], edges["y1"], h / sa if sa else None)
+            if xs_ is None or ys_ is None:
+                rep["skipped"][f] = "box not measurable from the visible edges"
+                continue
+            (x0, x1), (y0, y1) = xs_, ys_
+            hidden_note = [k for k in ("x0", "x1", "y0", "y1") if not edges[k]]
+            if hidden_note:
+                top_from += "; %s from the part's own proportions (hidden against the body)" % ", ".join(hidden_note)
+            boxes[f] = (x0, x1, y0, y1, z0, z1, located_top, top_from)
     placed = []
-    for n, f in enumerate(attached):
-        fr = loc.get("front", {}).get(f)
-        sides = []
-        if f in loc.get("right", {}):
-            u0, u1, v0, v1 = loc["right"][f]
-            sides.append((u0, u1, v0, v1))           # right view: image left = front
-        if f in loc.get("left", {}):
-            u0, u1, v0, v1 = loc["left"][f]
-            sides.append((1 - u1, 1 - u0, v0, v1))
-        if fr is None or not sides:
-            rep["skipped"][f] = "not visible in the whole-object front and side views"
+    for f in attached:
+        if f not in boxes:
             continue
-        y0 = float(np.median([s_[0] for s_ in sides])) * D - D / 2
-        y1 = float(np.median([s_[1] for s_ in sides])) * D - D / 2
-        zs_ = [(1 - fr[3], 1 - fr[2])] + [(1 - s_[3], 1 - s_[2]) for s_ in sides]
-        z0 = float(np.median([z[0] for z in zs_])) * H
-        located_top = float(np.median([z[1] for z in zs_])) * H
-        x0, x1 = fr[0] * W - W / 2, fr[1] * W - W / 2
-        # The bottom edge is reliable (a part against the body's colour). The top is trusted when every
-        # view agrees on it (the orange basket); when they disagree it has merged with something dark
-        # above it (the carafe under the filter holder) and the part's own proportions decide.
-        tops = [z[1] for z in zs_]
-        top_from = "views agree"
-        z1 = located_top
-        if max(tops) - min(tops) > 0.03 and "front" in pviews[f]:
-            z1 = z0 + aspect(pviews[f]["front"]) * (x1 - x0)
-            top_from = "own proportions (views disagree by %.0f%% of the height)" % ((max(tops) - min(tops)) * 100)
+        x0, x1, y0, y1, z0, z1, located_top, top_from = boxes[f]
         w, d, h = x1 - x0, y1 - y0, z1 - z0
         if min(w, d, h) < 0.01:
             rep["skipped"][f] = "located box too small"
@@ -803,12 +1012,16 @@ def build_attached(order, src_root):
     #    wins where the body's own drawing filled a part's space: a solid arm where the basket hangs)
     bpy.context.view_layer.update()
 
+    bx0, bx1, by0, by1, bz0, bz1 = body_box or (-W / 2, W / 2, -D / 2, D / 2, 0.0, H)
+    if body_box:
+        rep["body_box_m"] = [[round(bx0, 3), round(bx1, 3)], [round(by0, 3), round(by1, 3)], [round(bz0, 3), round(bz1, 3)]]
+
     def minus_part_shapes(keep_, carve_, W_, D_, H_):
         k_ = keep_.copy()
         nx_, ny_, nz_ = k_.shape
-        xs = (np.arange(nx_) + 0.5) / nx_ * W - W / 2
-        ys = (np.arange(ny_) + 0.5) / ny_ * D - D / 2
-        zs = (np.arange(nz_) + 0.5) / nz_ * H
+        xs = bx0 + (np.arange(nx_) + 0.5) / nx_ * (bx1 - bx0)          # world coordinates of the voxels
+        ys = by0 + (np.arange(ny_) + 0.5) / ny_ * (by1 - by0)
+        zs = bz0 + (np.arange(nz_) + 0.5) / nz_ * (bz1 - bz0)
         for o in placed:
             o.data.update()
             t = BVHTree.FromPolygons([o.matrix_world @ v.co for v in o.data.vertices], [p_.vertices for p_ in o.data.polygons])
@@ -816,7 +1029,7 @@ def build_attached(order, src_root):
             inside = np.zeros_like(k_)
             for i in np.nonzero((xs > x0_ - 0.02) & (xs < x1_ + 0.02))[0]:
                 for j in np.nonzero((ys > y0_ - 0.02) & (ys < y1_ + 0.02))[0]:
-                    zs_hit, origin = [], Vector((xs[i], ys[j], -0.01))
+                    zs_hit, origin = [], Vector((xs[i], ys[j], bz0 - 0.01))
                     for _ in range(16):                  # parity along +z: inside between hit pairs
                         h_ = t.ray_cast(origin, Vector((0, 0, 1)), 2 * H)
                         if h_[0] is None:
@@ -828,15 +1041,33 @@ def build_attached(order, src_root):
             inside = ndimage.binary_erosion(inside, iterations=1)   # body keeps a voxel of overlap
             k_ &= ~inside
         return k_
-    body = hull_prop(body_views, H, res=order.get("res", 150), name=order["name"] + "_body", width_m=W, depth_m=D,
-                     features=False, paint=False, rough=order.get("rough", 0.6), voxel_hook=minus_part_shapes)
+    # A top view carves only if it agrees with the front and side views: its depth/width within
+    # TOP_AGREE of the body's measured depth/width, and (if it had to be turned to match the whole-object
+    # top view) a clear match. Sheets often draw the "top" with a band of the front face showing,
+    # which is not a plan: carving with it sets the front back everywhere but where it is drawn
+    # longest (ribs down a phone's face). Such a view still paints.
+    body_paint_only = ()
+    if "top" in body_views:
+        tm_, _ = silhouette(body_views["top"])
+        got, want = tm_.shape[0] / tm_.shape[1], (by1 - by0) / (bx1 - bx0)
+        weak = rep.get("body_top") and float(rep["body_top"].split("IoU ")[1].split(" ")[0]) < 0.85
+        if abs(got / want - 1) > TOP_AGREE or weak:
+            body_paint_only = ("top",)
+            rep["body_top_paint_only"] = "top view depth/width %.2f vs %.2f from the front and side views%s" % (
+                got, want, ", weak match with the whole-object top" if weak else "")
+    body = hull_prop(body_views, bz1 - bz0, res=order.get("res", 150), name=order["name"] + "_body",
+                     width_m=bx1 - bx0, depth_m=by1 - by0, features=False, paint=False, rough=order.get("rough", 0.6),
+                     voxel_hook=minus_part_shapes, paint_only=body_paint_only)
+    body.location = ((bx0 + bx1) / 2, (by0 + by1) / 2, bz0)
+    bpy.context.view_layer.update()
     body.data.update()
     btree = BVHTree.FromPolygons([body.matrix_world @ v.co for v in body.data.vertices], [p.vertices for p in body.data.polygons])
     # 4. snap each part onto the body and check it is seated, measured from the part's real surface
     #    (its vertices facing each way), never from its box: a rounded hull sits inside its box.
     #    Gravity first: a part with body under it stands on it; else one with body over it hangs
     #    from it; else it is mounted against the body behind it.
-    DIRS = {"down": Vector((0, 0, -1)), "up": Vector((0, 0, 1)), "back": Vector((0, 1, 0))}
+    DIRS = {"down": Vector((0, 0, -1)), "up": Vector((0, 0, 1)), "back": Vector((0, 1, 0)),
+            "left": Vector((-1, 0, 0)), "right": Vector((1, 0, 0))}
 
     def in_body(p_):
         h_ = btree.find_nearest(p_)
@@ -868,15 +1099,21 @@ def build_attached(order, src_root):
             if not g_ or not hit:
                 res[name_] = (0.0, None, 0.0)
                 continue
-            res[name_] = (len(hit) / len(g_), float(np.percentile(hit, 10)),
-                          sum(1 for x in hit if x <= MAX_GAP) / len(g_))
+            # touching share over the near layer (the facing surface within NEAR_LAYER of the closest
+            # approach): a C-shaped handset meets the body with its cups and its handle curves away by
+            # design; a part floating at an even gap still has its whole near layer clear
+            p10 = float(np.percentile(hit, 10))
+            near = [x for x in hit if x <= p10 + NEAR_LAYER]
+            res[name_] = (len(hit) / len(g_), p10, sum(1 for x in near if x <= MAX_GAP) / max(1, len(near)))
         return res
 
     for obj, entry in zip(placed, rep["parts"]):
         obj.data.update()
         before = support(obj)
         best = None
-        order_ = ("down", "up", "back")                 # gravity, then hanging, then mounted
+        # gravity, then hanging, then against the nearest body beside or behind it
+        side_ = sorted(("back", "left", "right"), key=lambda k: before[k][1] if before[k][0] >= SUPPORT_SHARE else 1e9)
+        order_ = ("down", "up") + tuple(side_)
         if os.environ.get("HULLASM_NOGRAVITY"):         # test switch: the old nearest-surface snap
             order_ = sorted(order_, key=lambda k: before[k][1] if before[k][0] >= SUPPORT_SHARE else 1e9)
         for name_ in order_:
@@ -911,6 +1148,7 @@ def build_attached(order, src_root):
     bad = [g for g in rep["gaps_mm"] if g["seated_gap_mm"] is None or g["seated_gap_mm"] > MAX_GAP * 1000
            or (g["under_gap_mm"] is not None and g["under_gap_mm"] > MAX_GAP * 1000) or g["touching"] < MIN_TOUCH]
     if bad:
+        print("HULLASM report", json.dumps(rep, default=str))           # what was measured, for the person
         raise RuntimeError("parts not seated on the body: " + "; ".join(
             "%s %s (gap %s mm, under %s mm, touching %s)" % (g["part"], g["support"], g["seated_gap_mm"], g["under_gap_mm"], g["touching"]) for g in bad))
     return rep

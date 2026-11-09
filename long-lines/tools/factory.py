@@ -339,7 +339,8 @@ def build(order, samples=16):
             run_line(order)
             stages = {"geometry_and_paint": round(time.time() - ts, 1)}
             ts = time.time()
-            info = bake.finish(order["name"], LIB, tex_for(order), samples, tags=[order["category"]])
+            mount_tags = ["wall"] if order.get("mount") == "wall" else []      # standards.json mounting: by tag
+            info = bake.finish(order["name"], LIB, tex_for(order), samples, tags=[order["category"]] + mount_tags)
             stages["bake_and_export"] = round(time.time() - ts, 1)
             ts = time.time()
             info.update({"tags": [order["category"], "factory"], "desc": order.get("notes") or order["name"],
