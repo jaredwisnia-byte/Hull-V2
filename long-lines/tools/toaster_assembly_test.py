@@ -20,6 +20,7 @@ import bpy
 from mathutils import Vector
 from PIL import Image, ImageDraw, ImageFont
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from propkit import sheetfirst_engine as engine
 
 
