@@ -30,6 +30,8 @@ from . import blades, edge_guide, texturing
 from .hull import HULL_REPORT, hull_prop, silhouette
 
 FOOT_SINK = 0.015
+OVERLAP = float(os.environ.get("HULLASM_OVERLAP", 0.015))       # neighbouring parts reach this far into each other: rounded hulls never leave a crevice
+MAX_GAP = 0.004       # the gap check fails a build whose parts are further apart than this at a contact
 
 
 def strip_feet(path, out_path):
@@ -113,6 +115,110 @@ def orient_top(path, w, d, out_path):
         Image.open(path).transpose(Image.Transpose.ROTATE_90).save(out_path)
         return out_path, True
     return path, False
+
+
+def fit_to_box(obj, w, d, h, touch):
+    """A rounded hull falls short of its box. On every face that touches a neighbour (or the frame),
+    stretch the surface out to the box face: measure where the face really is (median of the
+    surface facing that way, away from the rounded edges) and map it onto the box plane. Outer faces
+    are left exactly as built. Paint was projected before, so it moves with the surface."""
+    me = obj.data
+    me.update()
+    co = np.array([v.co[:] for v in me.vertices])
+    nrm = np.array([v.normal[:] for v in me.vertices])
+    lo_t = {"x": -w / 2, "y": -d / 2, "z": 0.0}
+    hi_t = {"x": w / 2, "y": d / 2, "z": h}
+    k_of = {"x": 0, "y": 1, "z": 2}
+    moved = {}
+    for ax in "xyz":
+        k = k_of[ax]
+        others = [k_of[a] for a in "xyz" if a != ax]
+        inner = np.ones(len(co), bool)
+        for o in others:
+            lo, hi = np.percentile(co[:, o], 15), np.percentile(co[:, o], 85)
+            inner &= (co[:, o] >= lo) & (co[:, o] <= hi)
+        cur_lo, cur_hi = co[:, k].min(), co[:, k].max()
+        tgt_lo, tgt_hi = cur_lo, cur_hi
+        if (ax, 0) in touch:
+            sel = inner & (nrm[:, k] < -0.5)
+            if sel.sum() >= 5:
+                cur_lo = float(np.median(co[sel, k]))
+                tgt_lo = lo_t[ax]
+        if (ax, 1) in touch:
+            sel = inner & (nrm[:, k] > 0.5)
+            if sel.sum() >= 5:
+                cur_hi = float(np.median(co[sel, k]))
+                tgt_hi = hi_t[ax]
+        if (tgt_lo, tgt_hi) == (co[:, k].min(), co[:, k].max()) or cur_hi - cur_lo < 1e-4:
+            continue
+        sc = (tgt_hi - tgt_lo) / (cur_hi - cur_lo)
+        co[:, k] = tgt_lo + (co[:, k] - cur_lo) * sc
+        moved[ax] = round(float(sc), 3)
+    for v, c in zip(me.vertices, co):
+        v.co = c
+    me.update()
+    return moved
+
+
+def check_gaps(boxes, contacts, frame, rep):
+    """For each contact, sample the first part's surface facing the second (away from the rounded
+    edges) and measure how far it is from the second part (0 where it is inside it). Also each
+    seat/back part against the frame below/behind it."""
+    import bpy
+    from mathutils import Vector
+    from mathutils.bvhtree import BVHTree
+    bpy.context.view_layer.update()        # parts were just moved: world matrices must be current
+
+    def tree(o):
+        o.data.update()
+        return BVHTree.FromPolygons([o.matrix_world @ v.co for v in o.data.vertices], [p.vertices for p in o.data.polygons])
+
+    def inside(t, p):
+        h = t.find_nearest(p)
+        return h[0] is not None and (h[0] - p).dot(h[1]) > 0, (h[3] if h[0] is not None else 1e9)
+
+    ax_i = {"x": 0, "y": 1, "z": 2}
+    pairs = [(boxes[i], boxes[j], ax, pl, +1) for i, j, ax, pl in contacts if "obj" in boxes[i] and "obj" in boxes[j]
+             and "foot" not in (boxes[i]["kind"], boxes[j]["kind"])]
+    out = []
+    ft = tree(frame)
+    for A, B, ax, pl, sgn in pairs:
+        ta, tb = tree(A["obj"]), tree(B["obj"])
+        for P, Q, tq, s_ in ((A, B, tb, +1), (B, A, ta, -1)):
+            k = ax_i[ax]
+            others = [a for a in "xyz" if a != ax]
+            lo = [max(P[a][0], Q[a][0]) + 0.03 for a in others]
+            hi = [min(P[a][1], Q[a][1]) - 0.03 for a in others]
+            if any(l >= h for l, h in zip(lo, hi)):
+                continue
+            ds = []
+            for v in P["obj"].data.vertices:
+                p = P["obj"].matrix_world @ v.co
+                if abs(p[k] - pl) > 0.03 or any(not (l <= p[ax_i[a]] <= h) for a, l, h in zip(others, lo, hi)):
+                    continue
+                if (v.normal[k] * s_) < 0.5:          # only the side facing the neighbour
+                    continue
+                ins, d = inside(tq, p)
+                ds.append(0.0 if ins else d)
+            if len(ds) >= 5:
+                out.append({"a": P["kind"], "b": Q["kind"], "axis": ax, "samples": len(ds),
+                            "p90_mm": round(float(np.percentile(ds, 90)) * 1000, 1)})
+    for b in boxes:                                    # resting on the frame
+        if b["kind"] not in ("seat", "back") or "obj" not in b:
+            continue
+        ds = []
+        for v in b["obj"].data.vertices:
+            p = b["obj"].matrix_world @ v.co
+            if p[2] > b["z"][0] + 0.02 or v.normal[2] > -0.5:
+                continue
+            if not (b["x"][0] + 0.03 <= p[0] <= b["x"][1] - 0.03 and b["y"][0] + 0.03 <= p[1] <= b["y"][1] - 0.03):
+                continue
+            ins, d = inside(ft, p)
+            ds.append(0.0 if ins else d)
+        if len(ds) >= 5:
+            out.append({"a": b["kind"], "b": "frame", "axis": "z", "samples": len(ds),
+                        "p90_mm": round(float(np.percentile(ds, 90)) * 1000, 1)})
+    return out
 
 
 def part_views(folder):
@@ -366,6 +472,45 @@ def build(order, src_root):
             yf = back_front if "back" in parts else by0 * D - D / 2
             boxes.append({"kind": "seat", "x": [x0, x1], "y": [-D / 2, yf], "z": [seat_top - thick, seat_top]})
     print("HULLASM boxes", [(b["kind"], [[round(v, 2) for v in b[a]] for a in "xyz"]) for b in boxes], "foot_top", round(foot_top, 3))
+    # 3b. contacts: where two part boxes meet (or a part rests on / stands in front of the frame), both
+    #     reach OVERLAP into each other. Each part is a rounded hull inside its box, so boxes that only
+    #     touch leave crevices between the rounded surfaces (the sofa's arm/cushion gaps).
+    contacts = []
+    ax_i = {"x": 0, "y": 1, "z": 2}
+    for i, A in enumerate(boxes):
+        for j, B in enumerate(boxes):
+            if j <= i:
+                continue
+            for ax in "xyz":
+                others = [a for a in "xyz" if a != ax]
+                ov = all(min(A[a][1], B[a][1]) - max(A[a][0], B[a][0]) > 0.02 for a in others)
+                if not ov:
+                    continue
+                if abs(A[ax][1] - B[ax][0]) < 0.03:
+                    contacts.append((i, j, ax, (A[ax][1] + B[ax][0]) / 2))
+                elif abs(B[ax][1] - A[ax][0]) < 0.03:
+                    contacts.append((j, i, ax, (B[ax][1] + A[ax][0]) / 2))
+    for b in boxes:
+        b["grown"] = {a: list(b[a]) for a in "xyz"}
+    for b in boxes:
+        b["touch"] = set()
+    for lo_i, hi_i, ax, plane in contacts:   # lo box is below/left/in front of hi box along ax
+        if "foot" in (boxes[lo_i]["kind"], boxes[hi_i]["kind"]):
+            continue                          # feet already sink FOOT_SINK into the body
+        boxes[lo_i]["grown"][ax][1] = plane + OVERLAP
+        boxes[hi_i]["grown"][ax][0] = plane - OVERLAP
+        boxes[lo_i]["touch"].add((ax, 1))
+        boxes[hi_i]["touch"].add((ax, 0))
+    for b in boxes:                            # parts on the frame: into the seat deck / back panel
+        if b["kind"] in ("seat", "back"):
+            b["grown"]["z"][0] -= OVERLAP
+            b["touch"].add(("z", 0))
+        if b["kind"] == "back":
+            b["grown"]["y"][1] += OVERLAP
+            b["touch"].add(("y", 1))
+    rep["contacts"] = [{"a": boxes[i]["kind"], "b": boxes[j]["kind"], "axis": ax, "at_m": round(pl, 3)}
+                       for i, j, ax, pl in contacts]
+
     # 4. the frame: whole-object hull minus the parts' spaces
     def minus_parts(keep_, carve, W_, D_, H_):
         k = keep_.copy()
@@ -375,9 +520,10 @@ def build(order, src_root):
         for b in boxes:
             if b["kind"] == "foot":
                 continue
-            mx = (xs >= b["x"][0] - 0.005) & (xs <= b["x"][1] + 0.005)
-            my = (ys >= b["y"][0] - 0.005) & (ys <= b["y"][1] + 0.005)
-            mz = (zs >= b["z"][0] - 0.005) & (zs <= b["z"][1] + 0.005)
+            # shrunk by OVERLAP: the frame continues a little under each part instead of stopping short
+            mx = (xs >= b["x"][0] + OVERLAP) & (xs <= b["x"][1] - OVERLAP)
+            my = (ys >= b["y"][0] + OVERLAP) & (ys <= b["y"][1] - OVERLAP)
+            mz = (zs >= b["z"][0] + OVERLAP) & (zs <= b["z"][1] - OVERLAP)
             k[np.ix_(mx, my, mz)] = False
         k[:, :, zs < foot_top] = False           # feet are their own parts
         # The frame is what lies under the parts and behind them; strips between part spaces that
@@ -385,15 +531,44 @@ def build(order, src_root):
         under = [b["z"][0] for b in boxes if b["kind"] in ("seat", "back")]
         behind = [b["y"][1] for b in boxes if b["kind"] == "back"]
         if under:
-            zcut = min(under)
+            zcut = min(under) + OVERLAP
             yb = max(behind) if behind else D / 2
-            kill = (zs[None, None, :] >= zcut) & (ys[None, :, None] < yb - 0.005)
+            kill = np.broadcast_to((zs[None, None, :] >= zcut) & (ys[None, :, None] < yb - OVERLAP), k.shape).copy()
+            # side parts cover their own column; the frame stays (under the overlap) next to them
+            for b in boxes:
+                if b["kind"] == "side":
+                    mx = (xs >= b["x"][0] + OVERLAP) & (xs <= b["x"][1] - OVERLAP)
+                    kill[mx] = False
             k &= ~kill
-        for b in boxes:
-            if b["kind"] == "side":
-                mx = (xs >= b["x"][0] - 0.03) & (xs <= b["x"][1] + 0.03)
-                k[mx] = False
         return k
+    # 4b. the frame's shape first: parts resting on it are fitted to its real surface
+    frame = hull_prop(asm_views, H, res=order.get("res", 140), name=order["name"] + "_frame", width_m=W, depth_m=D,
+                      blades=True, features=False, rough=order.get("rough", 0.6), voxel_hook=minus_parts, paint=False,
+                      sil_override=asm_sil,
+                      mesh_hook=guide_hook(guides.get("assembly"), W, D, H))
+    from mathutils import Vector
+    from mathutils.bvhtree import BVHTree
+    frame.data.update()
+    ftree = BVHTree.FromPolygons([frame.matrix_world @ v.co for v in frame.data.vertices], [p_.vertices for p_ in frame.data.polygons])
+
+    def frame_level(b, ax, side):
+        """Where the frame's surface really is under (z) / behind (y) a part's footprint."""
+        hits = []
+        for fx in np.linspace(0.2, 0.8, 5):
+            for fy in np.linspace(0.2, 0.8, 5):
+                x = b["x"][0] + fx * (b["x"][1] - b["x"][0])
+                if ax == "z":
+                    y = b["y"][0] + fy * (b["y"][1] - b["y"][0])
+                    h_ = ftree.ray_cast(Vector((x, y, b["z"][1])), Vector((0, 0, -1)), 5.0)
+                    if h_[0] is not None:
+                        hits.append(h_[0].z)
+                else:
+                    z = b["z"][0] + fy * (b["z"][1] - b["z"][0])
+                    h_ = ftree.ray_cast(Vector((x, b["y"][0], z)), Vector((0, 1, 0)), 5.0)
+                    if h_[0] is not None:
+                        hits.append(h_[0].y)
+        return float(np.median(hits)) if len(hits) >= 5 else None
+
     # 5. every part as its own hull, sized to its box and moved into place
     placed = []
     for n, b in enumerate(boxes):
@@ -430,7 +605,16 @@ def build(order, src_root):
         else:
             g = load_guides(b["kind"], fold_guides, views, rename=rename)
         views = {k: p for k, p in views.items() if k in ("front", "back", "left", "right", "top")}
-        w, d, h = b["x"][1] - b["x"][0], b["y"][1] - b["y"][0], b["z"][1] - b["z"][0]
+        G = b["grown"]
+        if b["kind"] in ("seat", "back"):                 # rest on the frame's real deck
+            zf = frame_level(b, "z", 0)
+            if zf is not None:
+                G["z"][0] = zf - OVERLAP
+        if b["kind"] == "back":                           # stand against the frame's real back panel
+            yf = frame_level(b, "y", 1)
+            if yf is not None:
+                G["y"][1] = yf + OVERLAP
+        w, d, h = G["x"][1] - G["x"][0], G["y"][1] - G["y"][0], G["z"][1] - G["z"][0]
         if min(w, d, h) <= 0.01:
             continue
         obj = hull_prop(views, h, res=order.get("part_res", 90), name="%s_%s_%d" % (order["name"], b["kind"], n),
@@ -439,16 +623,22 @@ def build(order, src_root):
         # blended projection (facing^4 x visibility): no stretched streaks where a face is seen at a slant
         texturing.project(obj, paint_views(views, tmp, "p%d" % n), w, d, h, others=[], name=obj.name,
                           rough=order.get("rough", 0.6))
-        obj.location = ((b["x"][0] + b["x"][1]) / 2, (b["y"][0] + b["y"][1]) / 2, b["z"][0])
+        # HULLASM_NOFIT=1 only to prove the gap check still catches unfitted parts
+        b["fit"] = {} if os.environ.get("HULLASM_NOFIT") else fit_to_box(obj, w, d, h, b["touch"])
+        print("HULLASM part", b["kind"], {a: [round(v, 3) for v in G[a]] for a in "xyz"}, "fit", b["fit"])
+        obj.location = ((G["x"][0] + G["x"][1]) / 2, (G["y"][0] + G["y"][1]) / 2, G["z"][0])
         placed.append(obj)
+        b["obj"] = obj
         rep["parts"].append({"kind": b["kind"], "box_m": [[round(v, 3) for v in b[a]] for a in ("x", "y", "z")]})
-    # 6. the frame last, painted with the placed parts occluding it
-    frame = hull_prop(asm_views, H, res=order.get("res", 140), name=order["name"] + "_frame", width_m=W, depth_m=D,
-                      blades=True, features=False, rough=order.get("rough", 0.6), voxel_hook=minus_parts, paint=False,
-                      sil_override=asm_sil,
-                      mesh_hook=guide_hook(guides.get("assembly"), W, D, H))
+    # 6. the frame painted last, with the placed parts occluding it
     texturing.project(frame, paint_views(asm_views, tmp, "frame"), W, D, H, others=placed, name=frame.name,
                       rough=order.get("rough", 0.6))
     rep["guide_edits"] = guide_counts
+    # 7. gap check: at every contact, how far apart the two built surfaces really are
+    rep["gaps_mm"] = check_gaps(boxes, contacts, frame, rep)
+    worst = max([g["p90_mm"] for g in rep["gaps_mm"]] or [0])
+    if worst > MAX_GAP * 1000:
+        bad = [g for g in rep["gaps_mm"] if g["p90_mm"] > MAX_GAP * 1000]
+        raise RuntimeError("gaps between parts: " + "; ".join("%s-%s %.1f mm" % (g["a"], g["b"], g["p90_mm"]) for g in bad))
 
     return rep

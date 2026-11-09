@@ -279,3 +279,18 @@ library, ledger and REPORT are restored afterwards (git checkout + delete the ex
   (bridge gaps first) and refuse fits under 0.85; in hull_parts red lines are structural (they split the
   parts) and are not carved again, only creases and rounding go onto the meshes. The hull's smoothing keeps
   about a third of a pressed crease.
+
+### Gaps between parts (Nov 9): why, and the guard that stops them shipping
+- Causes found: (1) to kill lumps I removed the frame 3 cm past each arm box, leaving a 3 cm channel; (2) each
+  part is a rounded hull inside its box, so where two boxes only touch, the rounded surfaces leave
+  15-30 mm crevices (back cushions stood 57-62 mm clear of the frame); (3) the frame was cut slightly
+  larger than the parts.
+- Fix (propkit/hull_assembly.py): contacts are found from the boxes; on every touching face the built
+  surface is measured (median of the surface facing that way, away from rounded edges) and stretched to
+  the neighbour's plane plus OVERLAP (1.5 cm) so neighbours interpenetrate; parts resting on the frame
+  are fitted to the frame's real surface (ray cast), not its box; the frame is cut smaller than the parts.
+- Guard: after every build the gap check samples each contact face (and every part on the frame) and the
+  build FAILS if the 90th-percentile gap exceeds 4 mm. Proven both ways: with fitting disabled
+  (HULLASM_NOFIT=1) it flags 8-12 mm gaps; with the fix all 24 contact faces measure 0 mm.
+- Blender: after moving objects, call view_layer.update() before reading matrix_world, or every
+  measurement uses stale positions (the check briefly reported 581 mm "gaps").
