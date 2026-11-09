@@ -231,3 +231,18 @@ add to it whenever something goes wrong.
   left-view match went 0.85 -> 0.94).
 - Paintings are not drawn to scale: `"hull": {"width_m": ...}` stretches the views to the real width
   (the sofa came out 2.56 m wide without it).
+
+## Parts sheets: hull_parts line (Nov 9)
+- A sheet with the whole object plus each part on its own (seat cushion, back cushion, arm, leg) is
+  built part by part: each part a soft hull from its own larger views, placed by measuring the whole
+  object's views (`propkit/hull_assembly.py`, line `hull_parts`). The order only names which folder is
+  which kind of part.
+- What placed the parts reliably: the front view's top outline (flat end stretches = arms), the painted
+  seams above the seat (cushion count and widths), the parts' own view proportions (thickness), the
+  blade rule (seat height), shapes under the body (feet). What did not: top-view region segmentation on
+  soft painted outlines (cushions merged with arms) and template matching (painted fabric matches
+  anywhere; preferring large fits overshoots).
+- The frame must keep only what is under and behind the parts: strips between part spaces show as lumps,
+  and removing the back panel leaves cushions floating.
+- Feet sunk 1.5 cm into the body above them are attached by construction.
+- Don't fill holes before removing a drawn ground line: the gap between legs closes into a "hole".

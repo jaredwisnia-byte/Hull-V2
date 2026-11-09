@@ -208,6 +208,10 @@ def intake_set(manifest, category=None, name=None):
 def run_line(order):
     """Builds the order's geometry in the current scene. One function per line."""
     line = order["line"]
+    if line == "hull_parts":     # an object from its parts, each a hull from its own views
+        from propkit.hull_assembly import build as hull_parts_build
+        order["measured"] = hull_parts_build(order, SRC)
+        return
     if line == "hull":
         from propkit.hull import hull_prop
         d = os.path.join(SRC, order["views_folder"])
@@ -287,6 +291,8 @@ def correct(order, result):
 
 
 def tex_for(order):
+    if order.get("tex"):          # an order may ask for a bigger atlas (many parts, keep their detail)
+        return int(order["tex"])
     cls = order.get("class") or "medium"
     return STANDARDS["size_classes"].get(cls, STANDARDS["size_classes"]["medium"])["tex"]
 
