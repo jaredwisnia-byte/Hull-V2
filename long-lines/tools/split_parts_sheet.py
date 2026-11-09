@@ -78,21 +78,21 @@ def main(a):
     im = Image.open(a.sheet).convert("RGB")
     arr = np.asarray(im).astype(int)
     bg = np.median(np.concatenate([arr[0], arr[-1], arr[:, 0], arr[:, -1]]), axis=0)
-    rows = [r.split(":") for r in a.rows]
+    # a row may hold several parts: "assembly:front,right;carafe:front,top" (views left to right)
+    rows = [[(seg.split(":")[0], v) for seg in r.split(";") for v in seg.split(":")[1].split(",")] for r in a.rows]
     found = bands(arr, bg)
     if len(found) < len(rows):
         raise SystemExit("found %d rows on the sheet, expected %d" % (len(found), len(rows)))
     out_root = os.path.join(ROOT, "assets", "source_textures", a.name)
     report = {}
-    for (y0, y1), (part, views) in zip(found, rows):
-        views = views.split(",")
+    for (y0, y1), named in zip(found, rows):
         m = ndimage.binary_opening(np.abs(arr[y0:y1] - bg).sum(2) > 36, iterations=1)
         its = items(m)
-        if len(its) != len(views):
-            print("WARNING row %s: %d views found, %d named" % (part, len(its), len(views)))
-        os.makedirs(os.path.join(out_root, part), exist_ok=True)
-        report[part] = []
-        for (x0, x1), v in zip(its, views):
+        if len(its) != len(named):
+            print("WARNING row %s: %d views found, %d named" % ("+".join(sorted({p for p, _ in named})), len(its), len(named)))
+        for (x0, x1), (part, v) in zip(its, named):
+            os.makedirs(os.path.join(out_root, part), exist_ok=True)
+            report.setdefault(part, [])
             ys = np.nonzero(m[:, x0:x1 + 1].any(1))[0]
             box = (int(x0) - 14, int(y0 + ys[0]) - 14, int(x1) + 15, int(y0 + ys[-1]) + 15)
             crop = np.asarray(im.crop(box)).astype(int)
@@ -106,28 +106,30 @@ def main(a):
             crop[~mm] = 0
             Image.fromarray(crop.astype(np.uint8)).save(os.path.join(out_root, part, "v_%s.png" % v))
             report[part].append([v, list(box)])
-        print(part, report[part])
+    for part, vs in report.items():
+        print(part, vs)
     if a.guide:
         # the edge guide sheet: split the same way; crops keep their coloured lines (g_<view>.png)
         gim = Image.open(a.guide).convert("RGB")
         garr = np.asarray(gim).astype(int)
         gbg = np.median(np.concatenate([garr[0], garr[-1], garr[:, 0], garr[:, -1]]), axis=0)
-        grows = [r.split(":") for r in (a.guide_rows or a.rows)]
-        for (y0, y1), (part, views) in zip(bands(garr, gbg), grows):
-            views = views.split(",")
+        grows = [[(seg.split(":")[0], v) for seg in r.split(";") for v in seg.split(":")[1].split(",")]
+                 for r in (a.guide_rows or a.rows)]
+        for (y0, y1), named in zip(bands(garr, gbg), grows):
             m = ndimage.binary_opening(np.abs(garr[y0:y1] - gbg).sum(2) > 36, iterations=1)
             its = items(m)
-            if len(its) != len(views):
-                print("WARNING guide row %s: %d views found, %d named" % (part, len(its), len(views)))
-            for (x0, x1), v in zip(its, views):
+            if len(its) != len(named):
+                print("WARNING guide row: %d views found, %d named" % (len(its), len(named)))
+            for (x0, x1), (part, v) in zip(its, named):
                 ys = np.nonzero(m[:, x0:x1 + 1].any(1))[0]
                 box = (int(x0) - 6, int(y0 + ys[0]) - 6, int(x1) + 7, int(y0 + ys[-1]) + 7)
+                os.makedirs(os.path.join(out_root, part), exist_ok=True)
                 gim.crop(box).save(os.path.join(out_root, part, "g_%s.png" % v))
-            print("guide", part, len(its), "views")
+            print("guide row", len(its), "views")
     W, D, H = a.size
     order = {"name": a.name, "category": a.category, "line": "hull_parts", "source": os.path.basename(a.sheet),
              "class": "large", "tex": 2048, "status": "pending", "views_folder": a.name, "assembly": "assembly",
-             "parts": {r[0]: r[0] for r in rows if r[0] != "assembly"},
+             "parts": {p: p for p in report if p != "assembly"},
              "width_m": W, "depth_m": D, "height_m": H, "rough": a.rough, "res": 150, "part_res": 100,
              "edge_guide": bool(a.guide),
              "assumptions": ["size given on the command line"], "notes": "parts sheet split: " + json.dumps(report)}

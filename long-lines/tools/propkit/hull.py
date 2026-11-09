@@ -116,14 +116,16 @@ HULL_REPORT = {}     # what the last hull_prop call carved with blades
 
 def hull_prop(views, height, res=110, smooth_iters=4, decimate=0.35, rough=0.5, name="hull",
               convex=False, paint_only=(), features=True, sil_override=None, depth_m=None, grime=0.25,
-              paint=True, width_m=None, blades=False, voxel_hook=None, mesh_hook=None):
+              paint=True, width_m=None, blades=False, voxel_hook=None, mesh_hook=None, revolve=True):
     """convex: fill each outline to its convex shape (boxy objects; dark areas can't
     punch holes). paint_only: views used for texture but not trusted to carve (e.g. a
     dark back panel on a dark sheet). width_m: the real width (views painted out of
     proportion are stretched to it). blades: carve hollows no outline shows (a seat between
     arms) from where the views' painted edges meet (propkit/blades.py). voxel_hook(keep, views,
     W, D, H) -> keep: a last say over the voxels before meshing (propkit/hull_assembly.py).
-    mesh_hook(obj): edits the dense mesh before smoothing/decimation (propkit/edge_guide.py)."""
+    mesh_hook(obj): edits the dense mesh before smoothing/decimation (propkit/edge_guide.py).
+    revolve: a part whose top view is round (an ellipse once handles/spouts are set aside) is built
+    as a lathe shape, every slice an ellipse sized by the front and side outlines (propkit/revolve.py)."""
     # sil_override: {view: (mask, image)} from a part map, when the sheet set provides exact outlines.
     sil = dict(sil_override) if sil_override else {k: silhouette(p, convex=convex) for k, p in views.items()}
     # Raw (non-convex) side outlines keep small bumps such as knobs seen side-on.
@@ -156,6 +158,10 @@ def hull_prop(views, height, res=110, smooth_iters=4, decimate=0.35, rough=0.5, 
         from . import blades as _blades
         HULL_REPORT.clear()
         keep = _blades.carve(keep, carve, HULL_REPORT)
+    if revolve:
+        from . import revolve as _revolve
+        HULL_REPORT.pop("revolve", None)
+        keep = _revolve.voxel_hook(HULL_REPORT)(keep, carve, W, D, H)
     if voxel_hook is not None:
         keep = voxel_hook(keep, carve, W, D, H)
     vol = np.pad(keep.astype(np.float32), 1)

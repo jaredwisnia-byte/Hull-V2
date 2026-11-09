@@ -294,3 +294,35 @@ library, ledger and REPORT are restored afterwards (git checkout + delete the ex
   (HULLASM_NOFIT=1) it flags 8-12 mm gaps; with the fix all 24 contact faces measure 0 mm.
 - Blender: after moving objects, call view_layer.update() before reading matrix_world, or every
   measurement uses stale positions (the check briefly reported 581 mm "gaps").
+
+## Appliances from a parts sheet: the "attached" layout (coffee machine, Nov 9)
+- A body (housing) with parts hung on it or standing in it doesn't fit the sofa rules. The order says
+  `"layout": "attached", "body": "<folder>", "attached": [<folders>], "skip": {folder: why}`. A row can
+  hold several parts: `--rows "assembly:front,right;carafe:front,top"` (views left to right).
+- Parts are found in the whole-object front/side views by colour (histogram of the part's own views
+  against the body's), largest component, 2-98 percentile box. A part's bottom edge is reliable; its top
+  is trusted only if the views agree within 3% of the height (a dark carafe merges with the dark filter
+  holder above it), otherwise its own proportions decide.
+- The body's own drawing can conflict with the assembly (a solid arm where the basket hangs): the body
+  hull is hollowed by the parts' exact shapes, so the assembled drawing wins.
+- **Gaps again, the same mistake in a new form**: the first seat check measured from the part's BOX and
+  only in the direction it snapped (back, against the column), so a carafe 9 mm above the base passed.
+  Now: measure from the part's real vertices facing each way; gravity first (body under a part = it
+  stands on it), then hanging, then mounted; and a seated part needs 40% of its facing surface within
+  4 mm (a few sunk vertices are not contact). Proven both ways: HULLASM_NOGRAVITY=1 (the old snap) fails
+  with "touching 0.05"; the fixed build touches 60% underneath, 0 mm. Feet are now checked too.
+- Any check that passes must be shown to fail on the broken case before trusting it.
+
+## Round parts are lathe shapes (Nov 9)
+- Intersecting front and side outlines makes every horizontal slice a rectangle, so a carafe came out
+  with flat sides and shoulders. Jared's rule: look at the top view; if the main body is round, it is a
+  vase/lathe shape. `propkit/revolve.py`, on by default in hull_prop: the top view's thin appendages
+  (handle, spout: pieces that stick out more than 0.6x the width where they join) are set aside, the rest
+  must match its fitted ellipse (IoU >= 0.96, axis-aligned); then each slice is an ellipse with the radius
+  from the axis to the NEARER edge in the front and side outlines (a handle drawn joined to the body only
+  widens its own side). Appendages keep their hull; where the body narrows, a wedge in the handle's
+  direction keeps the handle joined. Nothing ever goes outside the plain hull.
+- Calibration (top views): circle/ellipse/carafe/lid 0.99+; square 0.83, squircle 0.90, chamfered housing
+  0.89, sofa parts 0.89-0.91, TVs 0.90. An opening alone shaves a box's corners and made the housing look
+  round (0.95): put shallow wide slivers back before testing. Pad tight-cropped masks before a distance
+  transform (the basket's mask touched the crop edge and the transform found no background).

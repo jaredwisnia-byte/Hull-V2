@@ -607,6 +607,21 @@
     150
    ],
    "why": "1960s-70s desk set (push-button or rotary): wedge base, handset on a cradle"
+  },
+  "coffee_maker": {
+   "width": [
+    180,
+    280
+   ],
+   "depth": [
+    200,
+    320
+   ],
+   "height": [
+    280,
+    380
+   ],
+   "_why": "1970s 10-12 cup drip machines: about 23 x 27 x 33 cm"
   }
  },
  "assembly_rules": [

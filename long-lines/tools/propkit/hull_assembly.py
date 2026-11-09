@@ -32,6 +32,10 @@ from .hull import HULL_REPORT, hull_prop, silhouette
 FOOT_SINK = 0.015
 OVERLAP = float(os.environ.get("HULLASM_OVERLAP", 0.015))       # neighbouring parts reach this far into each other: rounded hulls never leave a crevice
 MAX_GAP = 0.004       # the gap check fails a build whose parts are further apart than this at a contact
+SUPPORT_REACH = 0.06  # m: body this close along a direction can carry a part
+SUPPORT_SHARE = 0.3   # of the part's vertices facing that way
+MIN_TOUCH = 0.4       # share of a seated part's facing vertices within MAX_GAP of the body
+SNAP_SINK = 0.003     # an attached part sinks this far into the body it rests on / hangs from
 
 
 def strip_feet(path, out_path):
@@ -218,6 +222,23 @@ def check_gaps(boxes, contacts, frame, rep):
         if len(ds) >= 5:
             out.append({"a": b["kind"], "b": "frame", "axis": "z", "samples": len(ds),
                         "p90_mm": round(float(np.percentile(ds, 90)) * 1000, 1)})
+    # feet: the top of each foot must be inside (or against) whatever is above it, frame or part
+    above = [ft] + [tree(b["obj"]) for b in boxes if b["kind"] != "foot" and "obj" in b]
+    for b in boxes:
+        if b["kind"] != "foot" or "obj" not in b:
+            continue
+        ds = []
+        for v in b["obj"].data.vertices:
+            p = b["obj"].matrix_world @ v.co
+            if v.normal[2] < 0.5 or p[2] < b["z"][1] - 0.02:
+                continue
+            best = 1e9
+            for t in above:
+                ins, d = inside(t, p)
+                best = min(best, 0.0 if ins else d)
+            ds.append(best)
+        out.append({"a": "foot", "b": "body", "axis": "z", "samples": len(ds),
+                    "p90_mm": round(float(np.percentile(ds, 90)) * 1000, 1) if len(ds) >= 3 else 1e3})
     return out
 
 
@@ -232,6 +253,8 @@ def aspect(path):
 
 def build(order, src_root):
     """Builds the assembly into the scene; returns a report dict."""
+    if order.get("layout") == "attached":
+        return build_attached(order, src_root)
     root = os.path.join(src_root, order["views_folder"])
     W, D, H = order["width_m"], order["depth_m"], order["height_m"]
     parts = order["parts"]                  # {"side": folder, "seat": folder, "back": folder, "foot": folder}
@@ -641,4 +664,253 @@ def build(order, src_root):
         bad = [g for g in rep["gaps_mm"] if g["p90_mm"] > MAX_GAP * 1000]
         raise RuntimeError("gaps between parts: " + "; ".join("%s-%s %.1f mm" % (g["a"], g["b"], g["p90_mm"]) for g in bad))
 
+    return rep
+
+
+# --------------------------------------------------------------------------------------------------
+# Layout "attached": a body (housing) with distinct parts hung on it or standing in it (a coffee
+# machine's basket and carafe). Furniture rules (arms, cushions) don't apply; parts are found by colour.
+
+def colour_model(paths, bins=12):
+    """Colour histogram of a part's own views (non-background pixels)."""
+    h = np.zeros((bins, bins, bins))
+    for p in paths:
+        a = np.asarray(Image.open(p).convert("RGB")).reshape(-1, 3).astype(int)
+        a = a[a.sum(1) > 40]
+        idx = (a * bins // 256)
+        np.add.at(h, (idx[:, 0], idx[:, 1], idx[:, 2]), 1)
+    h = ndimage.gaussian_filter(h, 0.8)
+    return h / max(h.sum(), 1e-9) + 1e-7
+
+
+def locate_by_colour(view_path, models, bins=12):
+    """Assign every pixel of a whole-object view to the part whose own views' colours explain it best;
+    returns {part: (u0, u1, v0, v1)} as fractions of the view's object box (v from the top), or nothing
+    for a part that isn't visible."""
+    m, img = silhouette(view_path)
+    a = np.asarray(img.convert("RGB")).astype(int)
+    valid = m & (a.sum(2) > 40)
+    idx = a * bins // 256
+    names = list(models)
+    like = np.stack([models[n][idx[..., 0], idx[..., 1], idx[..., 2]] for n in names], -1)
+    best = np.argmax(like, -1)
+    out = {}
+    H_, W_ = m.shape
+    for i, n in enumerate(names):
+        # open hard enough to cut thin strands (a dark cavity edge touching dark glass), keep the one
+        # biggest shape, and measure it on the 2nd-98th percentiles (stray pixels don't stretch the box)
+        mask = ndimage.binary_opening(valid & (best == i), iterations=3)
+        lab, k = ndimage.label(mask)
+        if not k:
+            continue
+        sizes = ndimage.sum(mask, lab, range(1, k + 1))
+        j = int(np.argmax(sizes)) + 1
+        if sizes[j - 1] < 0.01 * m.sum():
+            continue
+        ys, xs = np.nonzero(lab == j)
+        out[n] = (np.percentile(xs, 2) / W_, (np.percentile(xs, 98) + 1) / W_,
+                  np.percentile(ys, 2) / H_, (np.percentile(ys, 98) + 1) / H_)
+    return out
+
+
+def body_front_rule(views, tmp):
+    """A body's front view much narrower (for its height) than its back view is a partial view (the
+    sheet drew only what is left behind the attached parts): carve with the back's outline instead."""
+    if "front" not in views or "back" not in views:
+        return views, None
+    fm, _ = silhouette(views["front"])
+    bm, _ = silhouette(views["back"])
+    fa, ba = fm.shape[1] / fm.shape[0], bm.shape[1] / bm.shape[0]
+    if fa < 0.8 * ba:
+        q = os.path.join(tmp, "body_front_from_back.png")
+        Image.open(views["back"]).transpose(Image.Transpose.FLIP_LEFT_RIGHT).save(q)
+        v = dict(views)
+        v["front"] = q
+        return v, "front view %.2f wide vs back %.2f: carved with the back's outline" % (fa, ba)
+    return views, None
+
+
+def build_attached(order, src_root):
+    import bpy
+    from mathutils import Vector
+    from mathutils.bvhtree import BVHTree
+    root = os.path.join(src_root, order["views_folder"])
+    W, D, H = order["width_m"], order["depth_m"], order["height_m"]
+    tmp = os.path.join("/tmp", "_hullasm_" + order["name"])
+    os.makedirs(tmp, exist_ok=True)
+    rep = {"layout": "attached", "parts": [], "skipped": order.get("skip", {})}
+    asm_views = part_views(os.path.join(root, order["assembly"]))
+    body_views = part_views(os.path.join(root, order["body"]))
+    body_views = {k: p for k, p in body_views.items() if k in ("front", "back", "left", "right", "top")}
+    body_views, note = body_front_rule(body_views, tmp)
+    if note:
+        rep["body_front"] = note
+    attached = order["attached"]                  # [folder, ...]
+    pviews = {f: {k: p for k, p in part_views(os.path.join(root, f)).items()
+                  if k in ("front", "back", "left", "right", "top")} for f in attached}
+    # 2. where each part is: colour in the whole-object front and side views
+    models = {f: colour_model(list(pviews[f].values())) for f in attached}
+    models["_body"] = colour_model(list(part_views(os.path.join(root, order["body"])).values()))
+    loc = {vw: locate_by_colour(asm_views[vw], models) for vw in ("front", "right", "left") if vw in asm_views}
+    rep["located"] = {vw: {k: [round(x, 3) for x in b] for k, b in d.items()} for vw, d in loc.items()}
+    placed = []
+    for n, f in enumerate(attached):
+        fr = loc.get("front", {}).get(f)
+        sides = []
+        if f in loc.get("right", {}):
+            u0, u1, v0, v1 = loc["right"][f]
+            sides.append((u0, u1, v0, v1))           # right view: image left = front
+        if f in loc.get("left", {}):
+            u0, u1, v0, v1 = loc["left"][f]
+            sides.append((1 - u1, 1 - u0, v0, v1))
+        if fr is None or not sides:
+            rep["skipped"][f] = "not visible in the whole-object front and side views"
+            continue
+        y0 = float(np.median([s_[0] for s_ in sides])) * D - D / 2
+        y1 = float(np.median([s_[1] for s_ in sides])) * D - D / 2
+        zs_ = [(1 - fr[3], 1 - fr[2])] + [(1 - s_[3], 1 - s_[2]) for s_ in sides]
+        z0 = float(np.median([z[0] for z in zs_])) * H
+        located_top = float(np.median([z[1] for z in zs_])) * H
+        x0, x1 = fr[0] * W - W / 2, fr[1] * W - W / 2
+        # The bottom edge is reliable (a part against the body's colour). The top is trusted when every
+        # view agrees on it (the orange basket); when they disagree it has merged with something dark
+        # above it (the carafe under the filter holder) and the part's own proportions decide.
+        tops = [z[1] for z in zs_]
+        top_from = "views agree"
+        z1 = located_top
+        if max(tops) - min(tops) > 0.03 and "front" in pviews[f]:
+            z1 = z0 + aspect(pviews[f]["front"]) * (x1 - x0)
+            top_from = "own proportions (views disagree by %.0f%% of the height)" % ((max(tops) - min(tops)) * 100)
+        w, d, h = x1 - x0, y1 - y0, z1 - z0
+        if min(w, d, h) < 0.01:
+            rep["skipped"][f] = "located box too small"
+            continue
+        views = dict(pviews[f])
+        if "top" in views:
+            views["top"], _ = orient_top(views["top"], w, d, os.path.join(tmp, "top_%s.png" % f))
+        obj = hull_prop(views, h, res=order.get("part_res", 100), name="%s_%s" % (order["name"], f), width_m=w,
+                        depth_m=d, features=False, paint=False, rough=order.get("rough", 0.6))
+        texturing.project(obj, paint_views(views, tmp, "p_" + f), w, d, h, others=[], name=obj.name,
+                          rough=order.get("rough", 0.6))
+        obj.location = ((x0 + x1) / 2, (y0 + y1) / 2, z0)
+        bpy.context.view_layer.update()
+        placed.append(obj)
+        obj["box"] = [x0, x1, y0, y1, z0, z1]
+        rep["parts"].append({"part": f, "box_m": [[round(x0, 3), round(x1, 3)], [round(y0, 3), round(y1, 3)], [round(z0, 3), round(z1, 3)]],
+                             "located_top_m": round(located_top, 3), "top_from": top_from,
+                             "revolve": HULL_REPORT.get("revolve")})
+    # 3. the body: its own views' shape, hollowed exactly where the parts sit (the assembled drawing
+    #    wins where the body's own drawing filled a part's space: a solid arm where the basket hangs)
+    bpy.context.view_layer.update()
+
+    def minus_part_shapes(keep_, carve_, W_, D_, H_):
+        k_ = keep_.copy()
+        nx_, ny_, nz_ = k_.shape
+        xs = (np.arange(nx_) + 0.5) / nx_ * W - W / 2
+        ys = (np.arange(ny_) + 0.5) / ny_ * D - D / 2
+        zs = (np.arange(nz_) + 0.5) / nz_ * H
+        for o in placed:
+            o.data.update()
+            t = BVHTree.FromPolygons([o.matrix_world @ v.co for v in o.data.vertices], [p_.vertices for p_ in o.data.polygons])
+            x0_, x1_, y0_, y1_, z0_, z1_ = o["box"]
+            inside = np.zeros_like(k_)
+            for i in np.nonzero((xs > x0_ - 0.02) & (xs < x1_ + 0.02))[0]:
+                for j in np.nonzero((ys > y0_ - 0.02) & (ys < y1_ + 0.02))[0]:
+                    zs_hit, origin = [], Vector((xs[i], ys[j], -0.01))
+                    for _ in range(16):                  # parity along +z: inside between hit pairs
+                        h_ = t.ray_cast(origin, Vector((0, 0, 1)), 2 * H)
+                        if h_[0] is None:
+                            break
+                        zs_hit.append(h_[0].z)
+                        origin = h_[0] + Vector((0, 0, 1e-5))
+                    for a_, b_ in zip(zs_hit[0::2], zs_hit[1::2]):
+                        inside[i, j, (zs >= a_) & (zs <= b_)] = True
+            inside = ndimage.binary_erosion(inside, iterations=1)   # body keeps a voxel of overlap
+            k_ &= ~inside
+        return k_
+    body = hull_prop(body_views, H, res=order.get("res", 150), name=order["name"] + "_body", width_m=W, depth_m=D,
+                     features=False, paint=False, rough=order.get("rough", 0.6), voxel_hook=minus_part_shapes)
+    body.data.update()
+    btree = BVHTree.FromPolygons([body.matrix_world @ v.co for v in body.data.vertices], [p.vertices for p in body.data.polygons])
+    # 4. snap each part onto the body and check it is seated, measured from the part's real surface
+    #    (its vertices facing each way), never from its box: a rounded hull sits inside its box.
+    #    Gravity first: a part with body under it stands on it; else one with body over it hangs
+    #    from it; else it is mounted against the body behind it.
+    DIRS = {"down": Vector((0, 0, -1)), "up": Vector((0, 0, 1)), "back": Vector((0, 1, 0))}
+
+    def in_body(p_):
+        h_ = btree.find_nearest(p_)
+        return h_[0] is not None and (h_[0] - p_).dot(h_[1]) > 0
+
+    def gaps_toward(obj_, dv, reach=SUPPORT_REACH):
+        """Distances from the part's vertices facing dv to the body along dv (0 inside the body,
+        None where the body is out of reach)."""
+        m3 = obj_.matrix_world.to_3x3()
+        out = []
+        for v in obj_.data.vertices:
+            n_ = (m3 @ v.normal).normalized()
+            if n_.dot(dv) < 0.7:
+                continue
+            p_ = obj_.matrix_world @ v.co
+            if in_body(p_):
+                out.append(0.0)
+                continue
+            hit = btree.ray_cast(p_ + dv * 1e-4, dv, reach)
+            out.append(None if hit[0] is None else hit[3])
+        return out
+
+    def support(obj_):
+        """{direction: (share of facing vertices with body in reach, p10 gap m, share touching)}"""
+        res = {}
+        for name_, dv in DIRS.items():
+            g_ = gaps_toward(obj_, dv)
+            hit = [x for x in g_ if x is not None]
+            if not g_ or not hit:
+                res[name_] = (0.0, None, 0.0)
+                continue
+            res[name_] = (len(hit) / len(g_), float(np.percentile(hit, 10)),
+                          sum(1 for x in hit if x <= MAX_GAP) / len(g_))
+        return res
+
+    for obj, entry in zip(placed, rep["parts"]):
+        obj.data.update()
+        before = support(obj)
+        best = None
+        order_ = ("down", "up", "back")                 # gravity, then hanging, then mounted
+        if os.environ.get("HULLASM_NOGRAVITY"):         # test switch: the old nearest-surface snap
+            order_ = sorted(order_, key=lambda k: before[k][1] if before[k][0] >= SUPPORT_SHARE else 1e9)
+        for name_ in order_:
+            share, gap, _ = before[name_]
+            if share >= SUPPORT_SHARE:
+                best = name_
+                break
+        if best is not None:
+            obj.location += DIRS[best] * (before[best][1] + SNAP_SINK)
+            bpy.context.view_layer.update()
+        after = support(obj)
+        obj["support"] = best or ""
+        obj["seated_gap_m"] = -1.0 if best is None else after[best][1]
+        # a part that has body right under it must stand on it whatever else it touches
+        obj["under_gap_m"] = after["down"][1] if after["down"][0] >= SUPPORT_SHARE and after["down"][1] is not None else -1.0
+        obj["touch_share"] = after[best][2] if best else 0.0
+        obj["under_touch_share"] = after["down"][2] if obj["under_gap_m"] >= 0 else 1.0
+        entry["snapped"] = None if best is None else {
+            "towards": best, "moved_mm": round((before[best][1] + SNAP_SINK) * 1000, 1),
+            "gap_after_mm": round(after[best][1] * 1000, 1), "touching_share": round(after[best][2], 2),
+            "under_gap_mm": round(obj["under_gap_m"] * 1000, 1) if obj["under_gap_m"] >= 0 else None}
+    # 5. the body painted from the whole-object views, the parts occluding it
+    texturing.project(body, paint_views(asm_views, tmp, "body"), W, D, H, others=placed, name=body.name,
+                      rough=order.get("rough", 0.6))
+    # 6. every part must be seated where it rests/hangs, and stand on any body right under it
+    rep["gaps_mm"] = [{"part": o.name, "support": o["support"] or None,
+                       "seated_gap_mm": round(o["seated_gap_m"] * 1000, 1) if o["seated_gap_m"] >= 0 else None,
+                       "under_gap_mm": round(o["under_gap_m"] * 1000, 1) if o["under_gap_m"] >= 0 else None,
+                       "touching": round(min(o["touch_share"], o["under_touch_share"]), 2)}
+                      for o in placed]
+    # a few vertices sunk in is not seated: a real share of the facing surface must touch
+    bad = [g for g in rep["gaps_mm"] if g["seated_gap_mm"] is None or g["seated_gap_mm"] > MAX_GAP * 1000
+           or (g["under_gap_mm"] is not None and g["under_gap_mm"] > MAX_GAP * 1000) or g["touching"] < MIN_TOUCH]
+    if bad:
+        raise RuntimeError("parts not seated on the body: " + "; ".join(
+            "%s %s (gap %s mm, under %s mm, touching %s)" % (g["part"], g["support"], g["seated_gap_mm"], g["under_gap_mm"], g["touching"]) for g in bad))
     return rep
