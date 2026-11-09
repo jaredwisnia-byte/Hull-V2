@@ -1,0 +1,30 @@
+{
+ "object": "crown",
+ "version": "A",
+ "tris": 76,
+ "size_m": [
+  1.2,
+  0.165,
+  0.28
+ ],
+ "target_m": [
+  1.2000000476837158,
+  0.16500000655651093,
+  0.2800000011920929
+ ],
+ "dimension_error_pct": [
+  0.0,
+  0.0,
+  0.0
+ ],
+ "open_edges": 0,
+ "nonmanifold_edges": 0,
+ "uv_area_distorted_pct": 0.0,
+ "uv_angle_distortion_mean": 1.31,
+ "uv_angle_distorted_pct": 3.0,
+ "silhouette_iou": {
+  "profile": 0.315
+ },
+ "front_texture_correlation": 0.603,
+ "front_texture_coverage": 1.0
+}
