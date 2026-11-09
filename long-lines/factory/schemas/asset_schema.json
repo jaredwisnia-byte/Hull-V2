@@ -91,7 +91,10 @@
         "albedo",
         "signed_depth",
         "part_ids",
-        "orthographic"
+        "orthographic",
+        "concept",
+        "reference_pixel_scale",
+        "reference_canvas_px"
       ],
       "properties": {
         "canvas_px": {
