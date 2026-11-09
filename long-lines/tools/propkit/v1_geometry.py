@@ -358,6 +358,18 @@ class Interpreter:
             return None
         return r
 
+    def nominal_points(self, part):
+        """Corners of the part before painted relief (what a tape measure on the plan gives)."""
+        box = self.base_box(part)
+        if box:
+            return box
+        pts = []
+        for pid in part["panels"]:
+            p = self.panels[pid]
+            steps = 16 if not p.flat else 1
+            pts += [p.point(a / steps, b) for a in range(steps + 1) for b in (0, 1)]
+        return pts
+
     # -- preparation: suppression masks and cavity bands
     def prepare(self):
         S = self.S
@@ -417,7 +429,7 @@ class Interpreter:
                     n = max(1, math.ceil(L / S["coarse_step_m"]))
                 curved_ax = (not p.flat) and p.curve.get("axis", "u") == ax
                 if curved_ax:                           # <= 7.5 degrees per segment
-                    n = max(n, math.ceil(L / float(p.curve["radius_m"]) / math.radians(7.5)))
+                    n = max(n, math.ceil(L / abs(float(p.curve["radius_m"])) / math.radians(7.5)))
                 classes.add((i, ax), uniform(n))
         cavs = [c for c in self.pkg["assembly"]["cavities"] if c["opening_panel"] in P]
         for c in cavs:
@@ -590,8 +602,11 @@ class Interpreter:
 
     def extrude_back(self, mesh, face, t, G, fu, fv):
         """Close a single-panel sheet into a slab: back face + side walls, fold-in UVs."""
-        map_u, _ = inset_map(0, 1, t / face.w)
-        map_v, _ = inset_map(0, 1, t / face.h)
+        map_u, du = inset_map(0, 1, t / face.w)
+        map_v, dv = inset_map(0, 1, t / face.h)
+        squeeze = max(t / face.w / du, t / face.h / dv)
+        if squeeze > 1.5:
+            self.report["warnings"].append("%s: sides deeper than the face allows; side texels squeezed %.1fx (no side panels in the schema)" % (face.spec["part_id"], squeeze))
         back = [[mesh.vert(face.point(a, b, -t)) for b in fv] for a in fu]
         nu, nv = len(fu) - 1, len(fv) - 1
         buv = lambda a, b: face.uv(map_u(fu[a]), map_v(fv[b]))
@@ -782,6 +797,10 @@ class Interpreter:
                     "parent": part.get("parent"), "closed_required": bool(part["closed_solid"]),
                     "closed": closed, **st, "triangles": m.triangles(), "vertices": len(m.verts),
                     "bbox_min": [round(x, 5) for x in lo], "bbox_max": [round(x, 5) for x in hi]}
+            nom = self.nominal_points(part)
+            if nom:
+                info["nominal_bbox_min"] = [round(min(c[i] for c in nom), 5) for i in range(3)]
+                info["nominal_bbox_max"] = [round(max(c[i] for c in nom), 5) for i in range(3)]
             if part.get("dimensions_m"):
                 info["declared_dimensions_m"] = part["dimensions_m"]
             if part.get("anchor_m"):
@@ -806,3 +825,29 @@ def interpret(asset_path, settings=None):
     it = Interpreter(pkg, settings)
     meshes, report = it.run()
     return pkg, meshes, report
+
+
+def suggest_welds(asset, panel_ids, tolerance=1e-4):
+    """Weld connections for panels whose edges coincide in 3D (saves authoring 5 values/edge).
+
+    Every pair of panels is tested edge against edge; a pair is proposed when both ends meet
+    within `tolerance` and the edges have the same length. The result is a draft to paste
+    into assembly.json; the preflight still checks it."""
+    dummy = Image.new("RGB", (1, 1), (255, 255, 255))
+    canvas = tuple(asset["maps"]["canvas_px"])
+    P = [Panel(p, canvas, dummy, {"inward": 0, "outward": 0}) for p in asset["panels"] if p["id"] in panel_ids]
+    out = []
+    for i, a in enumerate(P):
+        for b in P[i + 1:]:
+            best = None
+            for ea in ("u0", "u1", "v0", "v1"):
+                for eb in ("u0", "u1", "v0", "v1"):
+                    a0, a1 = Interpreter.edge_ends(a, ea)
+                    b0, b1 = Interpreter.edge_ends(b, eb)
+                    gap = min(max(norm(sub(a0, b0)), norm(sub(a1, b1))), max(norm(sub(a0, b1)), norm(sub(a1, b0))))
+                    if gap <= tolerance and (best is None or gap < best[0]):
+                        best = (gap, ea, eb)
+            if best:
+                out.append({"a": a.id, "a_edge": best[1], "b": b.id, "b_edge": best[2], "operation": "weld",
+                            "tolerance_m": 0.0005})
+    return out

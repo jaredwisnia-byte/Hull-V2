@@ -27,18 +27,22 @@ spec.loader.exec_module(validate_package)
 DIM_TOL = (0.01, 0.003)   # 1% or 3 mm, whichever is larger
 
 
+def read_json(path):
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def write_json(path, data):
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=1)
+
+
 def blender(binary, *args):
     cmd = [binary, "-b", "--factory-startup", "--python-exit-code", "1",
            "-P", os.path.join(HERE, "factory_v1_blender.py"), "--"] + list(args)
     t = time.time()
     p = subprocess.run(cmd, capture_output=True, text=True)
     return p.returncode, p.stdout[-4000:] + p.stderr[-4000:], round(time.time() - t, 1)
-
-
-def dims_check(declared, measured):
-    errs = [abs(m - d) for m, d in zip(measured, declared)]
-    ok = all(e <= max(DIM_TOL[0] * d, DIM_TOL[1]) for e, d in zip(errs, declared))
-    return ok, [round(e * 1000, 1) for e in errs]
 
 
 def contact_sheet(previews, path, title):
@@ -65,7 +69,7 @@ def contact_sheet(previews, path, title):
 
 def run(asset_path, out=None, binary="blender", render=True):
     asset_path = os.path.realpath(asset_path)
-    asset = json.load(open(asset_path, encoding="utf-8"))
+    asset = read_json(asset_path)
     out = os.path.realpath(out or os.path.join(OUT, asset.get("asset_id", "unknown")))
     if os.path.isdir(out):
         shutil.rmtree(out)
@@ -76,7 +80,7 @@ def run(asset_path, out=None, binary="blender", render=True):
 
     def finish():
         qa["pass"] = not qa["failures"]
-        json.dump(qa, open(os.path.join(out, "qa.json"), "w"), indent=1)
+        write_json(os.path.join(out, "qa.json"), qa)
         return qa
 
     # 1 preflight
@@ -92,8 +96,8 @@ def run(asset_path, out=None, binary="blender", render=True):
     if code != 0 or not os.path.exists(os.path.join(out, "build.json")):
         fail("[builder] Blender build failed: " + log[-1500:])
         return finish()
-    core = json.load(open(os.path.join(out, "core.json")))
-    record = json.load(open(os.path.join(out, "build.json")))
+    core = read_json(os.path.join(out, "core.json"))
+    record = read_json(os.path.join(out, "build.json"))
     qa["operations_used"] = core["operations_used"]
     qa["unsupported"] = core["unsupported"]
     qa["warnings"] = core["warnings"]
@@ -110,7 +114,7 @@ def run(asset_path, out=None, binary="blender", render=True):
     if code != 0 or not os.path.exists(os.path.join(out, "verify.json")):
         fail("[export] reimport/QA failed: " + log[-1500:])
         return finish()
-    ver = json.load(open(os.path.join(out, "verify.json")))
+    ver = read_json(os.path.join(out, "verify.json"))
     for e in ver["failures"]:
         fail("[export/geometry] " + e)
     parts = {}
@@ -123,25 +127,41 @@ def run(asset_path, out=None, binary="blender", render=True):
             "open_edges": v.get("open_edges"), "triangles": v.get("triangles"),
             "uv_samples_matched": v.get("uv_samples_matched"), "texel_density": v.get("texel_density"),
             "bbox_m": v.get("bbox_m"), "declared_dimensions_m": c.get("declared_dimensions_m"),
-            "gap_to_parent_mm": v.get("gap_to_parent_mm")}
+            "gap_to_parent_mm": v.get("gap_to_parent_mm"), "touches_parent": v.get("touches_parent")}
     qa["parts"] = parts
     qa["all_parts_built"] = all(p["built"] and p["in_glb"] for p in parts.values())
     qa["manifold_where_required"] = all(p["manifold_after_reimport"] for p in parts.values() if p["closed_required"])
     qa["uvs_survived_glb"] = all(v.get("uv_roundtrip_ok") for v in ver["parts"].values() if v.get("present"))
     qa["openings"] = ver["openings"]
     qa["triangles"] = ver["triangles"]
-    # 4 dimensions: brief envelope vs the main body or the whole assembly
+    # 4 dimensions. The brief is a nominal envelope: per axis it must match either the main
+    # body or the whole assembly measured before painted relief. The exported GLB must
+    # have the size the builder made (catches unit/axis errors in export).
     d = asset["brief"]["dimensions_m"]
     declared = [d["width"], d["depth"], d["height"]]
-    roots = [pid for pid, c in core["parts"].items() if not c.get("parent")]
-    body = ver["parts"].get(roots[0], {}).get("bbox_m") if len(roots) == 1 else None
-    ok_all, err_all = dims_check(declared, ver["overall_bbox_m"])
-    ok_body, err_body = dims_check(declared, body) if body else (False, None)
-    qa["dimensions"] = {"declared_m": declared, "overall_m": ver["overall_bbox_m"], "overall_err_mm": err_all,
-                        "main_body_m": body, "main_body_err_mm": err_body,
-                        "matches": "overall" if ok_all else "main_body" if ok_body else None}
-    if not (ok_all or ok_body):
-        fail("[manifest] built size %s / body %s does not match the brief %s" % (ver["overall_bbox_m"], body, declared))
+    built = [p for p in core["parts"].values() if p.get("built")]
+    roots = [p for p in built if not p.get("parent")]
+
+    def extent(ps, lo_key, hi_key):
+        return [round(max(p[hi_key][i] for p in ps) - min(p[lo_key][i] for p in ps), 4) for i in range(3)]
+    nominal_all = extent(built, "nominal_bbox_min", "nominal_bbox_max")
+    nominal_body = extent(roots, "nominal_bbox_min", "nominal_bbox_max") if roots else None
+    actual_core = extent(built, "bbox_min", "bbox_max")
+    per_axis = []
+    for i, name in enumerate(("width", "depth", "height")):
+        tol = max(DIM_TOL[0] * declared[i], DIM_TOL[1])
+        match = ("main_body" if nominal_body and abs(nominal_body[i] - declared[i]) <= tol else
+                 "assembly" if abs(nominal_all[i] - declared[i]) <= tol else None)
+        per_axis.append(match)
+        if not match:
+            fail("[manifest] %s: brief %.4f m but body %.4f / assembly %.4f m (nominal)" % (
+                name, declared[i], nominal_body[i] if nominal_body else -1, nominal_all[i]))
+    export_err = [round(abs(a - b) * 1000, 2) for a, b in zip(actual_core, ver["overall_bbox_m"])]
+    if max(export_err) > 0.5:
+        fail("[export] exported size %s differs from the built size %s" % (ver["overall_bbox_m"], actual_core))
+    qa["dimensions"] = {"declared_m": declared, "matched_by_axis": per_axis,
+                        "nominal_main_body_m": nominal_body, "nominal_assembly_m": nominal_all,
+                        "actual_with_relief_m": ver["overall_bbox_m"], "export_vs_build_mm": export_err}
     for pid, p in parts.items():
         dd = p.get("declared_dimensions_m")
         if dd and p.get("bbox_m"):
@@ -168,7 +188,16 @@ def main(argv=None):
     ap.add_argument("--out")
     ap.add_argument("--blender", default=os.environ.get("BLENDER", "blender"))
     ap.add_argument("--no-render", action="store_true")
+    ap.add_argument("--suggest-welds", metavar="PART",
+                    help="print draft weld connections for PART's panels (edges that meet in 3D) and exit")
     a = ap.parse_args(argv)
+    if a.suggest_welds:
+        sys.path.insert(0, HERE)
+        from propkit.v1_geometry import suggest_welds
+        asset = read_json(a.package)
+        ids = [p["id"] for p in asset["panels"] if p["part_id"] == a.suggest_welds]
+        print(json.dumps(suggest_welds(asset, ids), indent=1))
+        return 0
     qa = run(a.package, a.out, a.blender, not a.no_render)
     print(json.dumps({k: qa.get(k) for k in ("asset_id", "pass", "failures", "triangles", "dimensions", "openings", "output_dir")}, indent=1))
     return 0 if qa["pass"] else 1
