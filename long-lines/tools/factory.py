@@ -368,6 +368,13 @@ def build(order, samples=16):
             result = qa.check(order["name"], vd, order.get("class"), tuple(order.get("hull", {}).get("paint_only", ())),
                               solid=order["line"] in STANDARDS["solid_lines"], mount=order.get("mount", "floor"),
                                trim_order=order)
+            if order["line"] == "sheetfirst":
+                from propkit import sheetfirst_engine
+                spec, _, _ = sheetfirst_engine.read_manifest(manifest)
+                uv_fails, uv_accuracy = sheetfirst_blender.verify_imported_uvs(order["name"], spec)
+                result["metrics"]["sheetfirst_uv_max_error_px"] = uv_accuracy
+                result["fails"].extend(uv_fails)
+                result["pass"] = not result["fails"]
         except Exception as e:
             traceback.print_exc()
             result = {"pass": False, "fails": ["build error: %s" % e], "metrics": {}}
