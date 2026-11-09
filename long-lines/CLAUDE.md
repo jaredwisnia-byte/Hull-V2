@@ -62,6 +62,10 @@ Build once, reuse everywhere. Do not hand-code one-off geometry in game code.
 - **Read `docs/LESSONS.md`** before starting; add to it when something goes wrong.
 
 ## How to work here
+- Jared has Blender on his own PC. To inspect a library prop with its textures:
+  `blender --python long-lines/tools/open_in_blender.py -- <name>` (library GLBs carry placeholder
+  materials; the maps are separate PNGs). To run the factory locally, Blender's Python needs:
+  `<blender python> -m pip install scipy scikit-image pillow`.
 - Godot binary: download Godot 4.4.1 (Linux x86_64) from GitHub releases into the
   scratchpad. First run on a checkout: `godot --headless --path long-lines --import`.
 - Tests: `godot --headless --path long-lines --script res://tests/run_tests.gd`
