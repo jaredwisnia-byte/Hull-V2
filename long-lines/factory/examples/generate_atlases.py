@@ -20,6 +20,8 @@ def make(subfolder):
     depth = Image.new("RGB", size, (255, 255, 255))  # white: zero displacement
     a = ImageDraw.Draw(albedo)
     d = ImageDraw.Draw(depth)
+    vector = Image.new("RGB", size, (128, 128, 128)) if spec["atlas"].get("vector") else None
+    vdraw = ImageDraw.Draw(vector) if vector else None
     for panel in spec["panels"]:
         x0, y0, x1, y1 = map(int, panel["rect_px"])
         tag = panel["name"]
@@ -30,6 +32,10 @@ def make(subfolder):
             a.rounded_rectangle((x1 - 62, y0 + 95, x1 - 43, y0 + 390),
                                 radius=8, fill=(130, 127, 113), outline=(52, 48, 38), width=3)
             d.rectangle((x1 - 60, y0 + 98, x1 - 45, y0 + 385), fill=(180, 180, 255))
+            # Tangent displacement near the right edge of the curved front.
+            if vdraw is not None:
+                vdraw.rectangle((x1 - 90, y0 + 100, x1 - 42, y0 + 390),
+                                fill=(180, 128, 155))
             continue
         paint = (174, 155, 113) if tag in ("right", "left", "back") else (200, 185, 145)
         if tag in ("oven_door", "handle"):
@@ -67,6 +73,8 @@ def make(subfolder):
                 a.rectangle((x0 + 75, yy, x0 + 240, yy + 5), fill=(101, 87, 67))
     albedo.save(os.path.join(folder, spec["atlas"]["albedo"]))
     depth.save(os.path.join(folder, spec["atlas"]["depth"]))
+    if vector is not None:
+        vector.save(os.path.join(folder, spec["atlas"]["vector"]))
     print("Generated", folder)
 
 
