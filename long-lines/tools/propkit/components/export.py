@@ -54,6 +54,8 @@ def finish(cfg, out_root, save_blend=True):
     joined = bpy.context.view_layer.objects.active
     joined.data.materials.clear()
     joined.data.materials.append(baked_material(base))
+    # Release the assembly name before assigning component names.
+    joined.name = cfg["parts"][0]["name"]
     objects = {}
     for spec in cfg["parts"][1:]:
         core.select_only(joined)

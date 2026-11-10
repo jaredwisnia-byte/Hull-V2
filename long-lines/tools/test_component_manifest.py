@@ -72,6 +72,29 @@ class ManifestTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     validate_manifest(cfg)
 
+    def test_integer_settings_reject_floats(self):
+        for field in ("triangle_limit", "texture", "reconstruction_resolution"):
+            cfg = example()
+            cfg[field] = 1000.0
+            with self.subTest(field=field), self.assertRaisesRegex(ValueError, "integer"):
+                validate_manifest(cfg)
+        cfg = example()
+        cfg["parts"][0]["budget"] = 500.0
+        with self.assertRaisesRegex(ValueError, "integer"):
+            validate_manifest(cfg)
+
+    def test_polygon_requires_independent_view_axes(self):
+        for views in (("front", "back"), ("left", "right"), ("front", "front")):
+            cfg = example()
+            cfg["parts"][0]["views"] = {v: [0, 0, 100, 100] for v in views}
+            cfg["parts"][0]["geometry_views"] = list(views)
+            with self.subTest(views=views), self.assertRaisesRegex(ValueError, "constrain depth"):
+                validate_manifest(cfg)
+        for views in (("front", "right"), ("front", "top"), ("left", "top")):
+            cfg = example()
+            cfg["parts"][0]["views"] = {v: [0, 0, 100, 100] for v in views}
+            validate_manifest(cfg)
+
     def test_cycles_are_rejected(self):
         cfg = example()
         cfg["parts"][0]["parent"] = "dial"

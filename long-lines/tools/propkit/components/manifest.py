@@ -11,7 +11,7 @@ VIEWS = {"front", "back", "left", "right", "top"}
 def positive(value, label, integer=False):
     if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value <= 0:
         raise ValueError(f"{label} must be positive and finite")
-    if integer and int(value) != value:
+    if integer and type(value) is not int:
         raise ValueError(f"{label} must be an integer")
 
 
@@ -76,7 +76,8 @@ def validate_manifest(data):
             raise ValueError(f"{name}: geometry_views must select supplied views")
         if part["method"] == "round" and ("front" not in geometry or not {"right", "left"}.intersection(geometry)):
             raise ValueError(f"{name}: round reconstruction needs front and a side view")
-        if part["method"] == "polygon" and len(geometry) < 2:
+        axes = {"front": "y", "back": "y", "left": "x", "right": "x", "top": "z"}
+        if part["method"] == "polygon" and len({axes[v] for v in geometry}) < 2:
             raise ValueError(f"{name}: at least two geometry views must constrain depth")
         for key, default in [("contour_tolerance", 1.1), ("bevel_fraction", .01)]:
             value = part.get(key, default)
