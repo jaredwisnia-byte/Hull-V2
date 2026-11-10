@@ -61,3 +61,29 @@ with tempfile.TemporaryDirectory() as d:
     assert report['applied'] and triangle_count(obj)==count
     assert material.node_tree.nodes['Principled BSDF'].inputs['Normal'].is_linked
 print('SURFACE DETAIL PASS')
+
+from PIL import ImageDraw
+from propkit.components.manifest import validate_manifest
+from propkit.components.reconstruction import reconstruct
+with tempfile.TemporaryDirectory() as d:
+    root=Path(d)
+    image=Image.new('RGB',(180,60),'white')
+    draw=ImageDraw.Draw(image)
+    for x in (5,65):
+        draw.rectangle((x,5,x+49,54),fill=(100,20,20))
+        draw.rectangle((x+22,8,x+26,50),fill=(0,0,255))
+    draw.rectangle((125,5,174,54),fill=(20,100,20))
+    image.save(root/'sheet.png')
+    data={'name':'paint_test','reference':'sheet.png','triangle_limit':500,'pad_paint':True,'parts':[
+        {'name':'body','method':'polygon','dimensions':[.1,.1,.1],'budget':500,'bevel_fraction':0,
+         'views':{'front':[0,0,60,60],'right':[60,0,120,60]}}]}
+    cfg=validate_manifest(data)
+    baseline,_,_=reconstruct(cfg['parts'][0],cfg,root,root/'baseline')
+    coords=np.array([v.co for v in baseline.data.vertices])
+    data['parts'][0]['paint_views']={'right':[120,0,180,60]}
+    cfg=validate_manifest(data)
+    corrected,_,_=reconstruct(cfg['parts'][0],cfg,root,root/'corrected')
+    assert np.allclose(coords,np.array([v.co for v in corrected.data.vertices]))
+    paint=np.asarray(Image.open(root/'corrected/body/right_paint_override.png'))
+    assert paint[:,:,1].mean() > paint[:,:,2].mean()*3
+print('PAINT OWNERSHIP PASS')

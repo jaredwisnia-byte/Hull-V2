@@ -76,6 +76,12 @@ def validate_manifest(data):
             if not isinstance(box, (list, tuple)) or len(box) != 4 or any(type(v) is not int for v in box) or min(box) < 0 or box[2] <= box[0] or box[3] <= box[1]:
                 raise ValueError(f"{name}.{view}: invalid pixel crop")
         masks = part.get("masks", {})
+        paint_views = part.get('paint_views', {})
+        if not isinstance(paint_views, dict) or not set(paint_views) <= set(views):
+            raise ValueError('paint_views must select supplied view directions')
+        for box in paint_views.values():
+            if not isinstance(box, (list, tuple)) or len(box) != 4 or any(type(v) is not int for v in box) or min(box) < 0 or box[2] <= box[0] or box[3] <= box[1]:
+                raise ValueError('invalid paint crop')
         if not isinstance(masks, dict) or not set(masks) <= set(views) or any(not isinstance(v, str) for v in masks.values()):
             raise ValueError(f"{name}: masks must map supplied views to image paths")
         detail = part.get("surface_detail")

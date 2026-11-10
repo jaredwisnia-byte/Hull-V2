@@ -53,6 +53,19 @@ def reconstruct(spec, cfg, source_root, work):
             path = directory / f"{view}_paint.png"
             paint.save(path)
             paintings[view] = str(path)
+        # Paint evidence may differ from silhouette evidence when a separate part
+        # occludes the parent's surface in the assembled reference.
+        for view, box in spec.get('paint_views', {}).items():
+            if box[2] > image.width or box[3] > image.height:
+                raise ValueError(f'{name}.{view}: paint crop extends beyond reference')
+            source = directory / f'{view}_paint_source.png'
+            image.crop(box).save(source)
+            clean_mask, clean_paint = silhouette(str(source))
+            target = directory / f'{view}_paint_override.png'
+            if cfg.get('pad_paint', False):
+                clean_paint = texturing.pad_paint(clean_paint, clean_mask)
+            clean_paint.save(target)
+            paintings[view] = str(target)
     width, depth, height = spec["dimensions"]
     geometry = {k: masks[k] for k in spec["geometry_views"]}
     HULL_REPORT.clear()
@@ -81,6 +94,8 @@ def reconstruct(spec, cfg, source_root, work):
         raise RuntimeError(f"{name}: could not meet triangle allocation")
     if cfg.get("pad_paint", False):
         for view, (mask, image) in masks.items():
+            if view in spec.get('paint_views', {}):
+                continue
             path = directory / f"{view}_padded.png"
             texturing.pad_paint(image, mask).save(path)
             paintings[view] = str(path)
