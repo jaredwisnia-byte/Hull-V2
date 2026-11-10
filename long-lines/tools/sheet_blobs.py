@@ -2,6 +2,7 @@
 
     blender -b --factory-startup -P tools/sheet_blobs.py -- list SHEET.png OUT_overlay.png
     blender -b --factory-startup -P tools/sheet_blobs.py -- crop SHEET.png SPEC.json NAME
+    python tools/sheet_blobs.py auto SHEET.png OUT_DIR
 
 list: objects are the sheet's coloured drawings; section labels (grey tags with text), titles and divider
 lines are left out (low colour saturation, or thin). Prints "id x0 y0 x1 y1" per object, numbered left to
@@ -15,6 +16,8 @@ assets/source_textures/NAME/<part>/v_<view>.png on black, plus h_<view>.png for 
 import json
 import os
 import sys
+import re
+from pathlib import Path
 
 import numpy as np
 from PIL import Image, ImageDraw
@@ -22,6 +25,190 @@ from scipy import ndimage
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
+
+VIEW_LABELS = {v.upper(): v for v in ('front', 'back', 'left', 'right', 'top', 'bottom')}
+VIEW_LABELS.update({'THREE-QUARTER':'perspective', 'ISOMETRIC':'perspective', 'REAR DIAGONAL':'perspective'})
+
+
+def recognized_labels(sheet):
+    """Local OCR, loaded only for automatic intake. No LLM or coordinate prompts."""
+    from rapidocr import RapidOCR
+    result = RapidOCR()(str(sheet))
+    labels = []
+    if result.txts is None:
+        return labels
+    for text, score, points in zip(result.txts, result.scores, result.boxes):
+        text = text.strip().upper()
+        box = [int(points[:,0].min()), int(points[:,1].min()), int(points[:,0].max()), int(points[:,1].max())]
+        if score >= .8 and len(re.sub('[^A-Z]', '', text)) >= 3:
+            labels.append({'text':text, 'confidence':float(score), 'box':box,
+                           'view':VIEW_LABELS.get(text)})
+    return labels
+
+
+def visual_regions(a, labels):
+    """Recover dark/transparent drawings without the legacy saturation filter."""
+    height, width = a.shape[:2]
+    left = np.median(a[:,:6], axis=1)
+    right = np.median(a[:,-6:], axis=1)
+    fraction = np.linspace(0,1,width)[None,:,None]
+    background = left[:,None,:]*(1-fraction)+right[:,None,:]*fraction
+    mask = np.abs(a-background).sum(2) > 32
+    for label in labels:
+        x0,y0,x1,y1=label['box']
+        if y1-y0 < height*.06:
+            mask[max(0,y0-3):min(height,y1+4),max(0,x0-3):min(width,x1+4)] = False
+    # Separator lines define sections, not object silhouettes.
+    horizontal = ndimage.binary_opening(mask, structure=np.ones((1,max(20,width//3)),bool))
+    # A divider must be nearly achromatic; preserve coloured straight object edges.
+    neutral = a.max(2)-a.min(2) < 15
+    dividers = horizontal & neutral
+    mask &= ~ndimage.binary_dilation(dividers, iterations=2)
+    mask = ndimage.binary_closing(mask, iterations=3)
+    components,n = ndimage.label(mask)
+    boxes=[]
+    for index,sl in enumerate(ndimage.find_objects(components),1):
+        y,x=sl
+        h,w=y.stop-y.start,x.stop-x.start
+        if h < height*.04 or w < width*.015 or (components[sl]==index).sum() < 250:
+            continue
+        boxes.append([x.start,y.start,x.stop,y.stop])
+    # Join overlapping outlines and nearby detached pieces of a drawing.
+    merged=True
+    while merged:
+        merged=False
+        for i,A in enumerate(boxes):
+            for j in range(i+1,len(boxes)):
+                B=boxes[j]
+                dx=max(0,max(A[0],B[0])-min(A[2],B[2]))
+                dy=max(0,max(A[1],B[1])-min(A[3],B[3]))
+                ox=min(A[2],B[2])-max(A[0],B[0])
+                oy=min(A[3],B[3])-max(A[1],B[1])
+                if (ox>0 and oy>0) or (dx<=4 and oy>.5*min(A[3]-A[1],B[3]-B[1])) or (dy<=10 and ox>.5*min(A[2]-A[0],B[2]-B[0])):
+                    boxes[i]=[min(A[0],B[0]),min(A[1],B[1]),max(A[2],B[2]),max(A[3],B[3])]
+                    boxes.pop(j); merged=True; break
+            if merged:
+                break
+    boxes.sort(key=lambda b:(b[1],b[0]))
+    return boxes, dividers
+
+
+def visual_match(template, scene):
+    """SIFT + affine RANSAC correspondence; returns evidence, never a forced pose."""
+    import cv2
+    detector=cv2.SIFT_create(nfeatures=1600)
+    t=cv2.cvtColor(np.asarray(template),cv2.COLOR_RGB2GRAY)
+    s=cv2.cvtColor(np.asarray(scene),cv2.COLOR_RGB2GRAY)
+    kt,dt=detector.detectAndCompute(t,None)
+    ks,ds=detector.detectAndCompute(s,None)
+    if dt is None or ds is None or len(dt)<4 or len(ds)<4:
+        return None
+    pairs=cv2.BFMatcher().knnMatch(dt,ds,k=2)
+    good=[p[0] for p in pairs if len(p)==2 and p[0].distance < .7*p[1].distance]
+    if len(good)<4:
+        return None
+    src=np.float32([kt[m.queryIdx].pt for m in good])
+    dst=np.float32([ks[m.trainIdx].pt for m in good])
+    cv2.setRNGSeed(0)
+    transform,inliers=cv2.estimateAffinePartial2D(src,dst,method=cv2.RANSAC,ransacReprojThreshold=3)
+    if transform is None or inliers is None:
+        return None
+    count=int(inliers.sum())
+    coverage=float(np.ptp(src[inliers.ravel().astype(bool)],axis=0).prod()/max(1,t.shape[0]*t.shape[1])) if count else 0
+    return {'inliers':count,'matches':len(good),'inlier_fraction':count/len(good),
+            'source_coverage':coverage,'affine_2d':transform.tolist(),
+            'score':float(count*min(1,coverage*4))}
+
+
+def automatic(sheet, output):
+    """Image-only inspection stage. Ambiguous views stay unresolved, not guessed."""
+    sheet=Path(sheet).resolve()
+    output=Path(output).resolve()
+    output.mkdir(parents=True,exist_ok=True)
+    image=Image.open(sheet).convert('RGB')
+    a=np.asarray(image).astype(int)
+    labels=recognized_labels(sheet)
+    boxes,dividers=visual_regions(a,labels)
+    # Detect horizontal section boundaries from long divider support.
+    lines=np.nonzero(dividers.sum(1)>image.width*.4)[0]
+    cuts=[]
+    for y in lines:
+        if not cuts or y-cuts[-1]>8:
+            cuts.append(int(y))
+    def band(y):
+        return sum(y>cut for cut in cuts)
+    headings=[label for label in labels if label['view'] is None]
+    regions=[]
+    for i,box in enumerate(boxes):
+        x0,y0,x1,y1=box
+        b=band((y0+y1)/2)
+        candidates=[h for h in headings if band(h['box'][1])==b and h['box'][1]<y0]
+        # Heading panels are separated by vertical rules; choose the closest
+        # preceding heading along the row, never a fixed object-specific layout.
+        preceding=[h for h in candidates if h['box'][0] <= (x0+x1)/2]
+        heading=max(preceding,key=lambda h:h['box'][0]) if preceding else None
+        part=re.sub('[^a-z0-9]+','_',heading['text'].lower()).strip('_') if heading else 'assembly'
+        regions.append({'id':i,'box':box,'part':part,'view':None,'status':'unresolved', 'section':b})
+    # Captioned assembly views: match each caption to the nearest drawing above it.
+    for label in (l for l in labels if l['view'] is not None):
+        x0,y0,x1,y1=label['box']; cx=(x0+x1)/2
+        candidates=[r for r in regions if r['part']=='assembly' and r['view'] is None
+                    and r['box'][0]<=cx<=r['box'][2] and r['box'][3]<=y0+4]
+        if not candidates:
+            continue
+        region=min(candidates,key=lambda r:y0-r['box'][3])
+        if y0-region['box'][3] > image.height*.12:
+            continue
+        region.update(view=label['view'],status='caption_assigned',confidence=label['confidence'])
+    assembly=[r for r in regions if r['part']=='assembly' and r['view'] not in (None,'perspective')]
+    cv=__import__('cv2'); cv.setNumThreads(1)
+    for region in regions:
+        if region['part']=='assembly':
+            continue
+        matches=[]
+        for target in assembly:
+            result=visual_match(image.crop(region['box']),image.crop(target['box']))
+            if result:
+                matches.append(dict(result,view=target['view'],assembly_region=target['id']))
+        matches.sort(key=lambda m:m['score'],reverse=True)
+        region['matches']=matches
+        if matches:
+            best=matches[0]
+            runner=matches[1]['score'] if len(matches)>1 else 0
+            distinct=best['score']>max(1,runner)*1.4
+            if best['inliers']>=8 and best['source_coverage']>=.12 and distinct:
+                region.update(view=best['view'],status='visual_match',confidence=best['inlier_fraction'])
+    # A duplicate part/view assignment is ambiguous; do not overwrite a crop.
+    groups={}
+    for region in regions:
+        if region['view'] and region['view']!='perspective':
+            groups.setdefault((region['part'],region['view']),[]).append(region)
+    for group in groups.values():
+        if len(group)>1:
+            for region in group:
+                region.update(status='ambiguous_duplicate',view=None)
+    spec={}
+    overlay=image.copy(); draw=ImageDraw.Draw(overlay)
+    for region in regions:
+        accepted=region['view'] is not None and region['view']!='perspective'
+        color='lime' if accepted else 'orange'
+        draw.rectangle(region['box'],outline=color,width=3)
+        text=f"{region['id']}: {region['part']} / {region['view'] or '?'}"
+        draw.text((region['box'][0],region['box'][1]),text,fill=color,stroke_width=1,stroke_fill='black')
+        image.crop(region['box']).save(output/f"region_{region['id']:02d}.png")
+        if accepted:
+            spec.setdefault(region['part'],{})[region['view']]=region['box']
+    unresolved=[r['id'] for r in regions if r['view'] is None]
+    report={'image':str(sheet),'input_mode':'image_only','runtime_llm':False,'labels':labels,
+            'regions':regions,'unresolved':unresolved,'status':'needs_review' if unresolved else 'assigned',
+            'limitations':['Part names come from captions; unlabeled semantic recognition is not implemented.',
+                           '2D visual correspondence is evidence, not a solved 3D mounting transform.',
+                           'No assembly manifest is emitted until all required assignments are resolved.']}
+    overlay.save(output/'detected-regions.png')
+    (output/'sheet-spec.partial.json').write_text(json.dumps(spec,indent=2),encoding='utf-8')
+    (output/'intake-report.json').write_text(json.dumps(report,indent=2),encoding='utf-8')
+    print(json.dumps({'status':report['status'],'regions':len(regions),'unresolved':len(unresolved),'output':str(output)}))
+    return report
 
 
 def load(sheet):
@@ -95,6 +282,9 @@ def crop(a, bg, box, pad=6):
 
 def main(argv):
     cmd, sheet = argv[0], argv[1]
+    if cmd == 'auto':
+        report = automatic(sheet, argv[2])
+        return 2 if report['status'] == 'needs_review' else 0
     a, bg = load(sheet)
     if cmd == "list":
         obs = objects(a, bg)
@@ -126,4 +316,4 @@ def main(argv):
 
 
 if __name__ == "__main__":
-    main(sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else sys.argv[1:])
+    sys.exit(main(sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else sys.argv[1:]))

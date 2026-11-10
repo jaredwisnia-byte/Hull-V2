@@ -1,0 +1,7 @@
+# Optional image-only intake experiment, normal Python; no LLM dependency.
+rapidocr==3.10.0
+onnxruntime==1.31.1
+opencv-python-headless==5.0.0.93
+numpy==2.5.4
+scipy==1.18.1
+Pillow==13.0.0
