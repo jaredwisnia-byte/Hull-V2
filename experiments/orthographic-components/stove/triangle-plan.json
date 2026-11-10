@@ -1,0 +1,177 @@
+{
+  "target": 10000,
+  "hard_limit": 12000,
+  "before_bake": {
+    "stove_body": 1696,
+    "oven_door": 236,
+    "storage_drawer": 244,
+    "unobserved_inner_backing": 38,
+    "oven_handle": 630,
+    "knob_0": 388,
+    "knob_1": 388,
+    "knob_2": 388,
+    "knob_3": 388,
+    "clock_button_0": 58,
+    "clock_button_1": 58,
+    "clock_button_2": 58,
+    "burner_1": 776,
+    "burner_2": 776,
+    "burner_3": 776,
+    "burner_4": 776,
+    "foot_1": 96,
+    "foot_2": 96,
+    "foot_3": 96,
+    "foot_4": 96
+  },
+  "before_bake_total": 8058,
+  "companion_prototypes": {
+    "knob": {
+      "source": {
+        "front": [
+          145,
+          365,
+          375,
+          585
+        ],
+        "right": [
+          390,
+          365,
+          570,
+          585
+        ],
+        "back": [
+          602,
+          365,
+          834,
+          585
+        ],
+        "left": [
+          850,
+          365,
+          1030,
+          585
+        ],
+        "top": [
+          1060,
+          395,
+          1277,
+          570
+        ]
+      },
+      "per_copy_budget": 400,
+      "reconstruction": {
+        "revolve": {
+          "iou": 0.998,
+          "tilt": 0.0,
+          "share": 0.998,
+          "round": true,
+          "axis": "front-to-back",
+          "slices": 35,
+          "voxels_before_after": [
+            99092,
+            92320
+          ]
+        },
+        "field": {
+          "removed_voxels": 6772,
+          "vox_m": 0.001
+        },
+        "timing": {
+          "field_and_mesh_s": 0.13
+        }
+      }
+    },
+    "burner": {
+      "source": {
+        "front": [
+          128,
+          145,
+          374,
+          290
+        ],
+        "right": [
+          378,
+          145,
+          597,
+          290
+        ],
+        "back": [
+          605,
+          145,
+          840,
+          300
+        ],
+        "left": [
+          846,
+          145,
+          1050,
+          300
+        ],
+        "top": [
+          1052,
+          80,
+          1285,
+          340
+        ]
+      },
+      "per_copy_budget": 800,
+      "reconstruction": {
+        "revolve": {
+          "iou": 0.997,
+          "tilt": 0.0,
+          "share": 0.981,
+          "round": true,
+          "axis": "vertical",
+          "slices": 11,
+          "voxels_before_after": [
+            25117,
+            19954
+          ]
+        },
+        "field": {
+          "removed_voxels": 5163,
+          "vox_m": 0.0033
+        },
+        "timing": {
+          "field_and_mesh_s": 0.09
+        }
+      }
+    },
+    "handle": {
+      "source": {
+        "front": [
+          125,
+          645,
+          415,
+          730
+        ],
+        "right": [
+          437,
+          631,
+          550,
+          739
+        ],
+        "back": [
+          565,
+          645,
+          850,
+          735
+        ],
+        "left": [
+          868,
+          631,
+          985,
+          739
+        ],
+        "top": [
+          1009,
+          635,
+          1278,
+          738
+        ]
+      },
+      "per_copy_budget": 650,
+      "reconstruction": {}
+    }
+  }
+}
