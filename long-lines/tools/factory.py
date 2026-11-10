@@ -38,6 +38,7 @@ CATS = json.load(open(os.path.join(FACT, "categories.json")))
 
 import propkit  # noqa: E402
 from propkit import bake, core, mats, qa  # noqa: E402
+from propkit.runtime import scratch_dir  # noqa: E402
 import props  # noqa: E402
 
 for _m in pkgutil.iter_modules(props.__path__):
@@ -235,6 +236,15 @@ def human_scale_height(order, views):
 def run_line(order):
     """Builds the order's geometry in the current scene. One function per line."""
     line = order["line"]
+    if line == "components":
+        from propkit.components import load_manifest
+        from propkit.components.pipeline import build_geometry
+        manifest = component_manifest(order)
+        cfg, _ = load_manifest(manifest)
+        if cfg["name"] != order["name"]:
+            raise ValueError("component manifest name must match work-order name")
+        _, order["measured"] = build_geometry(manifest)
+        return
     if line == "hull_parts":     # an object from its parts, each a hull from its own views
         from propkit.hull_assembly import build as hull_parts_build
         order["measured"] = hull_parts_build(order, SRC)
@@ -259,7 +269,7 @@ def run_line(order):
             bp = os.path.join(d, "v_bottom.png")
             if os.path.exists(bp):
                 allv["bottom"] = bp
-            fixed, size, po, rrep = reconcile.run(allv, order.get("sheet_dims_mm"), tmp=os.path.join("/tmp", "_rec_" + order["name"]))
+            fixed, size, po, rrep = reconcile.run(allv, order.get("sheet_dims_mm"), tmp=scratch_dir("reconcile_" + order["name"]))
             views = {k: fixed[k] for k in views}
             if size:
                 height = size["height_m"]
@@ -312,7 +322,7 @@ def run_line(order):
             from propkit import texturing
             from propkit.hull_assembly import paint_views
             W, D, H = obj["hull_frame"]
-            tmp = os.path.join("/tmp", "_hull_" + order["name"])
+            tmp = scratch_dir("hull_" + order["name"])
             texturing.project(obj, paint_views(views, tmp, "p"), W, D, H, others=[], name=obj.name,
                               rough=hp.get("rough", 0.5))
     elif line == "car":
@@ -355,6 +365,11 @@ def run_line(order):
         propkit.PROPS[order["name"]]["fn"]()
     else:
         raise ValueError("unknown line " + line)
+
+
+def component_manifest(order):
+    manifest = order.get("manifest", "manifest.json")
+    return manifest if os.path.isabs(manifest) else os.path.join(SRC, order.get("views_folder", ""), manifest)
 
 
 def correct(order, result):
@@ -424,7 +439,16 @@ def build(order, samples=16):
             stages = {"geometry_and_paint": round(time.time() - ts, 1)}
             ts = time.time()
             mount_tags = ["wall"] if order.get("mount") == "wall" else []      # standards.json mounting: by tag
-            info = bake.finish(order["name"], LIB, tex_for(order), samples, tags=[order["category"]] + mount_tags)
+            component_cfg = None
+            if order["line"] == "components":
+                from propkit.components import load_manifest
+                component_cfg, _ = load_manifest(component_manifest(order))
+            info = bake.finish(order["name"], LIB, component_cfg.get("texture", tex_for(order)) if component_cfg else tex_for(order),
+                               samples, tags=[order["category"]] + mount_tags,
+                               triangle_budget=component_cfg["triangle_limit"] if component_cfg else None)
+            if component_cfg:
+                from propkit.components.export import finish as finish_components
+                order["measured"].update(finish_components(component_cfg, LIB))
             stages["bake_and_export"] = round(time.time() - ts, 1)
             ts = time.time()
             info.update({"tags": [order["category"], "factory"], "desc": order.get("notes") or order["name"],
