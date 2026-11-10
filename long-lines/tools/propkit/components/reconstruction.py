@@ -35,7 +35,11 @@ def reconstruct(spec, cfg, source_root, work):
                 raise ValueError(f"{name}.{view}: crop extends beyond {reference.name}")
             path = directory / f"{view}_input.png"
             image.crop(box).save(path)
-            if map_image is None:
+            if view in spec.get("masks", {}):
+                from .masks import masked_crop
+                explicit = Path(spec["masks"][view])
+                mask, paint, bounds = masked_crop(image, explicit if explicit.is_absolute() else source_root / explicit, box)
+            elif map_image is None:
                 mask, paint, bounds = silhouette(str(path), with_box=True)
             else:
                 from .. import sheetset

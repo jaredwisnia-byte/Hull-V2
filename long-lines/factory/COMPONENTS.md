@@ -74,3 +74,13 @@ Front attachments can specify `pixel: [x,y]` in the parent's original front pain
 Record guessed dimensions in `assumptions`. Set `dimensions_assumed: false` only when actual measured dimensions are supplied. Continue using `factory/sizing_manual.json` as the source for believable dimensions; this pipeline does not override it with invented image measurements.
 
 Review the build report, exported count, and clay/wireframe renders. A technically valid textured model can hide a bad surface. Hidden geometry, optical prescriptions and material identity remain explicit assumptions. The production camera example is in `examples/camera-clean/`; experimental recipes remain preserved as provenance.
+
+## Reference preparation
+
+`hull.py prepare recipe.json --output prepared` extracts the supplied named `views` regions, writes crop previews, annotated region overlays, a preparation report and a buildable manifest. It does not identify object names or view directions automatically. Supply regions excluding captions and neighbouring parts; inspect the overlays before building.
+
+Instead of `dimensions`, a part may supply `"height_anchor": {"metres": 0.4, "source": "assumed overall height"}`. Front and side silhouette proportions determine width and depth, independently accounting for each drawing's pixel scale. This assumes consistent orthographic proportions and the same complete part in both views. All derived sizes are marked assumed and their anchor is recorded. A picture alone cannot supply absolute scale or hidden geometry. Existing explicit dimensions remain supported; use the sizing manual for defensible anchors.
+
+A part can supply `"masks": {"front": "handle-mask.png"}`. White is foreground, black is background, with the same full canvas size as its reference. Explicit masks preserve holes that ordinary silhouette filling closes. They override the semantic map for their named view. This supports handle apertures without runtime monkey-patching.
+
+The inspection renderer now uses 128 samples and denoising. These settings reduce render noise; they do not repair topology, invent glass, or increase source texture detail.

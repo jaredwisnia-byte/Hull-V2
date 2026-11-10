@@ -10,6 +10,9 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 def main(argv=None):
     parser = argparse.ArgumentParser(description="Hull V2 companion-view component pipeline")
     commands = parser.add_subparsers(dest="command", required=True)
+    prep = commands.add_parser("prepare", help="extract labelled regions and scale explicit height anchors")
+    prep.add_argument("recipe")
+    prep.add_argument("--output", required=True)
     check = commands.add_parser("validate", help="validate assembly schema without building")
     check.add_argument("manifest")
     build = commands.add_parser("build", help="reconstruct, bake and export a complete assembly")
@@ -23,7 +26,10 @@ def main(argv=None):
     render.add_argument("--mode", choices=["textured", "clay", "wireframe"], default="textured")
     render.add_argument("--resolution", type=int, default=640)
     args = parser.parse_args(argv)
-    if args.command == "validate":
+    if args.command == "prepare":
+        from propkit.components.preparation import prepare
+        print(prepare(args.recipe, args.output))
+    elif args.command == "validate":
         from propkit.components import load_manifest
         cfg, _ = load_manifest(args.manifest)
         print(json.dumps({"name": cfg["name"], "parts": len(cfg["parts"]), "triangle_limit": cfg["triangle_limit"]}))

@@ -25,8 +25,8 @@ def render(model, output, mode="textured", resolution=640):
     scene = bpy.context.scene
     scene.render.engine = "CYCLES"
     scene.cycles.device = "CPU"
-    scene.cycles.samples = 24
-    scene.cycles.use_denoising = False
+    scene.cycles.samples = 128
+    scene.cycles.use_denoising = True
     scene.render.resolution_x = scene.render.resolution_y = resolution
     scene.render.resolution_percentage = 100
     scene.render.film_transparent = True
