@@ -169,5 +169,14 @@ env = np.hypot(seg_top[:, 0], seg_top[:, 1]).max()
 check("cord", abs(crep["turns"] - L / 0.0046) < 0.6 and abs(env - 0.0065) < 0.0012,
       "turns %.1f (expected %.1f), coil envelope radius %.1f mm (expected 6.5)" % (crep["turns"], L / 0.0046, env * 1000))
 
+# A short wide housing must fit inside a tall assembly's view.
+from propkit.hull_assembly import match_into  # noqa: E402
+assembly = np.zeros((200, 100), dtype=bool)
+assembly[:120, 20:80] = True
+assembly[120:, :] = True
+scale, x, y, placed = match_into(assembly, np.ones((80, 100), dtype=bool))
+check("short wide part", abs(scale - 1) < 1e-6 and x == 0 and y == 120,
+      "housing matched at scale %.3f, offset (%d, %d)" % (scale, x, y))
+
 print("HULL GEOMETRY TESTS: %d failed" % len(FAILS))
 sys.exit(1 if FAILS else 0)
