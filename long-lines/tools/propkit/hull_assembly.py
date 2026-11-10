@@ -21,6 +21,7 @@ holds which part's views.
 """
 import json
 import os
+import tempfile
 
 import numpy as np
 from PIL import Image
@@ -294,7 +295,7 @@ def build(order, src_root):
     root = os.path.join(src_root, order["views_folder"])
     W, D, H = order["width_m"], order["depth_m"], order["height_m"]
     parts = order["parts"]                  # {"side": folder, "seat": folder, "back": folder, "foot": folder}
-    tmp = os.path.join("/tmp", "_hullasm_" + order["name"])
+    tmp = os.path.join(tempfile.gettempdir(), "_hullasm_" + order["name"])
     os.makedirs(tmp, exist_ok=True)
     asm_views = part_views(os.path.join(root, order["assembly"]))
     for p in asm_views.values():
@@ -868,7 +869,7 @@ def build_attached(order, src_root):
     from mathutils.bvhtree import BVHTree
     root = os.path.join(src_root, order["views_folder"])
     W, D, H = order["width_m"], order["depth_m"], order["height_m"]
-    tmp = os.path.join("/tmp", "_hullasm_" + order["name"])
+    tmp = os.path.join(tempfile.gettempdir(), "_hullasm_" + order["name"])
     os.makedirs(tmp, exist_ok=True)
     rep = {"layout": "attached", "parts": [], "skipped": order.get("skip", {})}
     asm_views = part_views(os.path.join(root, order["assembly"]))

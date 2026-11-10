@@ -15,6 +15,8 @@ left side, front on the RIGHT; back = seen from behind; top = seen from above wi
 front at the BOTTOM of the image. Only front and one side are required.
 """
 import math
+import os
+import tempfile
 
 import bmesh
 import bpy
@@ -390,7 +392,7 @@ def hull_prop(views, height, res=110, smooth_iters=4, decimate=0.35, rough=0.5, 
     mats_ = {}
     for k in order:
         if k in sil:
-            path = "/tmp/_hull_%s_%s.png" % (name, k)
+            path = os.path.join(tempfile.gettempdir(), "_hull_%s_%s.png" % (name, k))
             sil[k][1].save(path)
             mats_[k] = M.image(path, rough, grime, 0.05, name="%s_%s" % (name, k))
             obj.data.materials.append(mats_[k])
