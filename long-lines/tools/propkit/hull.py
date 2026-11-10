@@ -15,6 +15,8 @@ left side, front on the RIGHT; back = seen from behind; top = seen from above wi
 front at the BOTTOM of the image. Only front and one side are required.
 """
 import math
+from pathlib import Path
+from .runtime import scratch_dir
 
 import bmesh
 import bpy
@@ -390,7 +392,7 @@ def hull_prop(views, height, res=110, smooth_iters=4, decimate=0.35, rough=0.5, 
     mats_ = {}
     for k in order:
         if k in sil:
-            path = "/tmp/_hull_%s_%s.png" % (name, k)
+            path = str(Path(scratch_dir("hull_" + name)) / (k + ".png"))
             sil[k][1].save(path)
             mats_[k] = M.image(path, rough, grime, 0.05, name="%s_%s" % (name, k))
             obj.data.materials.append(mats_[k])
@@ -569,14 +571,14 @@ def polygon_hull(masks, W, D, H, name="phull", bevel_frac=0.015, tolerance=1.0):
         else:
             boolean(result, outer, "INTERSECT")
     result.name = name
-    core_link = __import__("propkit.core", fromlist=["link"]) if False else None
     from .core import PARTS
     PARTS.append(result)
-    bv = result.modifiers.new("bevel", "BEVEL")
-    bv.width = bevel_frac * min(W, D, H)
-    bv.segments = 2
-    bv.limit_method = "ANGLE"
-    apply_mods(result)
+    if bevel_frac > 0:
+        bv = result.modifiers.new("bevel", "BEVEL")
+        bv.width = bevel_frac * min(W, D, H)
+        bv.segments = 2
+        bv.limit_method = "ANGLE"
+        apply_mods(result)
     result["hull_frame"] = [W, D, H]
     smooth(result, 35)
     return result

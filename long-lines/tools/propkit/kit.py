@@ -104,7 +104,7 @@ def build(sheet, order, src_dir):
                 ys, xs = np.nonzero(lab == i)
                 cu = (u0 * Wp + xs.mean()) / Wp
                 cv = (v0 * Hp + ys.mean()) / Hp
-                side = max(xs.ptp() + 1, ys.ptp() + 1) / Wp * W * 0.9
+                side = max(np.ptp(xs) + 1, np.ptp(ys) + 1) / Wp * W * 0.9
                 x, z = (cu - 0.5) * W, (1 - cv) * H
                 loc, nor, _, _ = tree.ray_cast(Vector((x, -1.0, z)), Vector((0, 1, 0)), 3)
                 if loc is None:

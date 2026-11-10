@@ -17,6 +17,7 @@ giving view boxes and real dimensions.
 """
 import json
 import os
+from .runtime import scratch_dir
 
 import numpy as np
 from PIL import Image
@@ -291,7 +292,7 @@ def _skeleton_by_row(mask):
     out = {}
     for r in rows:
         xs = np.nonzero(mask[r])[0]
-        if len(xs) <= 3 * width and xs.ptp() <= 4 * width:
+        if len(xs) <= 3 * width and np.ptp(xs) <= 4 * width:
             out[int(r)] = float(xs.mean())
     if len(out) > 5:
         ks = sorted(out)
@@ -360,7 +361,7 @@ def build_set(manifest_path, name, height_m=None, depth_m=None, object_type=None
     otype = object_type or m.get("object_type", "")
     names = [k for k in ("front", "right", "back", "left", "top") if k in m["painted_sheet"]["view_bboxes_px"]]
     V = {k: view(m, imgs, k) for k in names}
-    tmp = os.path.join("/tmp", "_set_" + name)
+    tmp = scratch_dir("sheetset_" + name)
     os.makedirs(tmp, exist_ok=True)
     sil = {}
     for k, v in V.items():
@@ -383,9 +384,9 @@ def build_set(manifest_path, name, height_m=None, depth_m=None, object_type=None
         # top views; anything else is the exact polygonal hull of its outlines.
         from .hull import loft_from_views
         fa, sa = asil["front"][0], asil.get("right", asil.get("left"))[0]
-        fl = np.nonzero(fa.any(0))[0].ptp() / fa.shape[1] * W
-        fh = np.nonzero(fa.any(1))[0].ptp() / fa.shape[0] * H
-        sd = np.nonzero(sa.any(0))[0].ptp() / sa.shape[1] * D
+        fl = np.ptp(np.nonzero(fa.any(0))[0]) / fa.shape[1] * W
+        fh = np.ptp(np.nonzero(fa.any(1))[0]) / fa.shape[0] * H
+        sd = np.ptp(np.nonzero(sa.any(0))[0]) / sa.shape[1] * D
         assy_obj = None
         if "top" in asil and fl > 2.0 * fh:   # long in front view; the top view gives width per station
             assy_obj = loft_from_views(fa, asil["top"][0], W, D, H, name=name + "_assy")
@@ -522,7 +523,7 @@ def build_set(manifest_path, name, height_m=None, depth_m=None, object_type=None
                 if src in ("depth map", "side view") and (mm <= lo or mm >= hi):
                     src += " (clamped: low confidence)"   # the evidence hit the believable limit
                 ys_, xs_ = np.nonzero(prt["mask"])
-                box_fill = prt["mask"].sum() / ((ys_.ptp() + 1) * (xs_.ptp() + 1))
+                box_fill = prt["mask"].sum() / ((np.ptp(ys_) + 1) * (np.ptp(xs_) + 1))
                 if sign < 0 or (sign == 0 and box_fill > 0.8):   # closed boxes: recesses, and panels that are rectangles
                     ys_, xs_ = np.nonzero(prt["mask"])
                     u0, u1 = xs_.min() / Wp, (xs_.max() + 1) / Wp
