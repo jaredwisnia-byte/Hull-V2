@@ -1,0 +1,164 @@
+{
+  "parts": [
+    {
+      "name": "body",
+      "triangles": 592,
+      "budget": 800,
+      "position": [
+        0,
+        0,
+        0
+      ],
+      "hull_report": {}
+    },
+    {
+      "name": "lens",
+      "triangles": 1552,
+      "budget": 1600,
+      "position": [
+        0.007556074766355132,
+        -0.04255628684163094,
+        -0.0005240299927177505
+      ],
+      "hull_report": {
+        "revolve": {
+          "iou": 0.991,
+          "tilt": 4.2,
+          "share": 1.0,
+          "round": "True",
+          "axis": "front-to-back",
+          "slices": 87,
+          "voxels_before_after": [
+            599764,
+            527063
+          ]
+        },
+        "field": {
+          "removed_voxels": 72701,
+          "vox_m": 0.0007
+        },
+        "timing": {
+          "field_and_mesh_s": 0.29
+        }
+      }
+    },
+    {
+      "name": "speed_dial",
+      "triangles": 212,
+      "budget": 220,
+      "position": [
+        -0.046,
+        0.004,
+        0.07393609189987183
+      ],
+      "hull_report": {
+        "revolve": {
+          "iou": 0.981,
+          "tilt": 0.0,
+          "share": 1.0,
+          "round": true,
+          "axis": "vertical",
+          "slices": 42,
+          "voxels_before_after": [
+            240178,
+            212937
+          ]
+        },
+        "field": {
+          "removed_voxels": 27241,
+          "vox_m": 0.0002
+        },
+        "timing": {
+          "field_and_mesh_s": 0.13
+        }
+      }
+    },
+    {
+      "name": "rewind_knob",
+      "triangles": 174,
+      "budget": 180,
+      "position": [
+        0.051,
+        0.004,
+        0.07393609189987183
+      ],
+      "hull_report": {
+        "revolve": {
+          "iou": 0.984,
+          "tilt": 4.3,
+          "share": 0.997,
+          "round": "True",
+          "axis": "vertical",
+          "slices": 48,
+          "voxels_before_after": [
+            330689,
+            301487
+          ]
+        },
+        "field": {
+          "removed_voxels": 29202,
+          "vox_m": 0.0002
+        },
+        "timing": {
+          "field_and_mesh_s": 0.15
+        }
+      }
+    },
+    {
+      "name": "shutter_button",
+      "triangles": 116,
+      "budget": 120,
+      "position": [
+        -0.058,
+        -0.012,
+        0.07393603229522705
+      ],
+      "hull_report": {
+        "revolve": {
+          "iou": 0.993,
+          "tilt": 1.6,
+          "share": 0.997,
+          "round": "True",
+          "axis": "vertical",
+          "slices": 73,
+          "voxels_before_after": [
+            376350,
+            310418
+          ]
+        },
+        "field": {
+          "removed_voxels": 65932,
+          "vox_m": 0.0001
+        },
+        "timing": {
+          "field_and_mesh_s": 0.18
+        }
+      }
+    }
+  ],
+  "bake": {
+    "size": [
+      0.1467,
+      0.0933,
+      0.0941
+    ],
+    "min": [
+      -0.0734,
+      0.0,
+      -0.0229
+    ],
+    "max": [
+      0.0734,
+      0.0933,
+      0.0712
+    ],
+    "tris": 2646,
+    "tex": 2048,
+    "standardized": [
+      "seated on floor (+0.000 m)"
+    ]
+  },
+  "total_triangles": 2646,
+  "seconds": 41.91755509376526,
+  "hull_source_edited": false
+}

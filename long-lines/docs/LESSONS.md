@@ -1,5 +1,11 @@
 # Lessons learned
 
+## Hull V2 integration (Nov 10)
+- Check clay and wireframe before blaming texture projection. Pixel-scale changes in a side outline were extruded across the camera's whole width and bevelled into ridges. A per-part contour tolerance fixed the geometry; the default is not globally increased because small features on other objects may be real.
+- Allocate triangles to the assembly before building components. Eight independently capped small props produced a much larger assembly than intended. Check the actual exported GLB as well as pre-bake counts.
+- Keep the original segmentation mask when padding paint. Re-segmenting a tight crop fails for a uniformly coloured component and can introduce a second, inconsistent outline.
+- Scratch paths must be absolute and writable on Windows. Use propkit.runtime.scratch_dir rather than /tmp. Component manifests keep dimensions and attachment assumptions explicit; generated technical drawings are not independent depth evidence.
+
 Mistakes made on this project and the rule that prevents each one. Read before working;
 add to it whenever something goes wrong.
 

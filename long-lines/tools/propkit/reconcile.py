@@ -21,6 +21,7 @@ Returns the views to build from (flipped copies where needed), the decided size,
 paint, and a report.
 """
 import os
+from .runtime import scratch_dir
 
 import numpy as np
 from PIL import Image
@@ -71,7 +72,8 @@ def _group(values, tol=TOL):
     return float(np.median([values[k] for k in best])), best
 
 
-def run(views, printed_mm=None, tmp="/tmp/_reconcile"):
+def run(views, printed_mm=None, tmp=None):
+    tmp = tmp or scratch_dir("reconcile")
     os.makedirs(tmp, exist_ok=True)
     rep = {"views": {}, "decisions": []}
     m = {k: _box(p) for k, p in views.items() if k in ("front", "back", "left", "right", "top", "bottom")}

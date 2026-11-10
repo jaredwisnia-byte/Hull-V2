@@ -36,6 +36,7 @@ How a part is located (where in the object, and how big):
 Then every part is seated on its parent along the face it attaches to and gap-checked.
 """
 import os
+from .runtime import scratch_dir
 
 import numpy as np
 from PIL import Image
@@ -348,7 +349,7 @@ def build_parts(order, src_root):
     from mathutils import Vector
     from mathutils.bvhtree import BVHTree
     root = os.path.join(src_root, order["views_folder"])
-    tmp = os.path.join("/tmp", "_parts_" + order["name"])
+    tmp = scratch_dir("parts_" + order["name"])
     os.makedirs(tmp, exist_ok=True)
     rep = {"layout": "parts", "parts": {}}
     asm = part_views(os.path.join(root, order["assembly"]))

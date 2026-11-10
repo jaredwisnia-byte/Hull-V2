@@ -30,6 +30,25 @@ DIRS = {"front": Vector((0, -1, 0)), "back": Vector((0, 1, 0)), "right": Vector(
         "left": Vector((-1, 0, 0)), "top": Vector((0, 0, 1))}
 
 
+def pad_paint(image, mask):
+    """Extend object colours across its background using an already-known silhouette.
+
+    Re-detecting the silhouette from a tight crop fails for uniformly coloured parts.
+    Keeping the original mask also avoids two inconsistent segmentation passes.
+    """
+    from PIL import Image
+    from scipy import ndimage
+    pixels = np.asarray(image.convert("RGB"))
+    mask = np.asarray(mask, dtype=bool)
+    if pixels.shape[:2] != mask.shape or not mask.any():
+        raise ValueError("paint padding requires a nonempty aligned silhouette")
+    interior = ndimage.binary_erosion(mask, iterations=2)
+    if not interior.any():
+        interior = mask
+    nearest = ndimage.distance_transform_edt(~interior, return_distances=False, return_indices=True)
+    return Image.fromarray(pixels[nearest[0], nearest[1]])
+
+
 def _uv(view, co, W, D, H):
     x, y, z = co
     if view == "front":

@@ -1,0 +1,232 @@
+{
+  "name": "camera_clean",
+  "reference": "reference-sheet.png",
+  "dimensions_assumed": true,
+  "texture": 2048,
+  "triangle_limit": 5000,
+  "parts": [
+    {
+      "name": "body",
+      "method": "polygon",
+      "dimensions": [
+        0.147,
+        0.046,
+        0.093
+      ],
+      "position": [
+        0,
+        0,
+        0
+      ],
+      "budget": 800,
+      "views": {
+        "front": [
+          20,
+          70,
+          584,
+          495
+        ],
+        "right": [
+          648,
+          70,
+          891,
+          500
+        ],
+        "back": [
+          960,
+          70,
+          1515,
+          495
+        ],
+        "left": [
+          62,
+          510,
+          300,
+          937
+        ],
+        "top": [
+          345,
+          630,
+          905,
+          915
+        ]
+      },
+      "reference": "body-sheet.png",
+      "geometry_views": [
+        "front",
+        "right"
+      ],
+      "contour_tolerance": 6,
+      "bevel_fraction": 0.006,
+      "use_normal_map": false
+    },
+    {
+      "name": "lens",
+      "method": "round",
+      "dimensions": [
+        0.064,
+        0.058,
+        0.064
+      ],
+      "position": [
+        0,
+        -0.052,
+        0.008
+      ],
+      "budget": 1600,
+      "views": {
+        "front": [
+          75,
+          60,
+          478,
+          470
+        ],
+        "right": [
+          579,
+          60,
+          950,
+          470
+        ],
+        "back": [
+          1050,
+          60,
+          1460,
+          470
+        ],
+        "left": [
+          110,
+          570,
+          466,
+          970
+        ],
+        "top": [
+          573,
+          570,
+          970,
+          925
+        ]
+      },
+      "reference": "lens-sheet.png",
+      "geometry_views": [
+        "front",
+        "right"
+      ],
+      "mount": "lens_mount",
+      "mount_pixel": [
+        330,
+        350
+      ]
+    },
+    {
+      "name": "speed_dial",
+      "method": "round",
+      "dimensions": [
+        0.022,
+        0.022,
+        0.01
+      ],
+      "position": [
+        -0.046,
+        0.004,
+        0
+      ],
+      "mount": "top",
+      "budget": 220,
+      "views": {
+        "front": [
+          390,
+          835,
+          580,
+          960
+        ],
+        "right": [
+          390,
+          835,
+          580,
+          960
+        ],
+        "top": [
+          143,
+          802,
+          347,
+          1001
+        ]
+      }
+    },
+    {
+      "name": "rewind_knob",
+      "method": "round",
+      "dimensions": [
+        0.02,
+        0.02,
+        0.01
+      ],
+      "position": [
+        0.051,
+        0.004,
+        0
+      ],
+      "mount": "top",
+      "budget": 180,
+      "views": {
+        "front": [
+          868,
+          839,
+          1038,
+          957
+        ],
+        "right": [
+          868,
+          839,
+          1038,
+          957
+        ],
+        "top": [
+          622,
+          803,
+          805,
+          1000
+        ]
+      }
+    },
+    {
+      "name": "shutter_button",
+      "method": "round",
+      "dimensions": [
+        0.009,
+        0.009,
+        0.007
+      ],
+      "position": [
+        -0.058,
+        -0.012,
+        0
+      ],
+      "mount": "top",
+      "budget": 120,
+      "views": {
+        "front": [
+          1353,
+          851,
+          1493,
+          949
+        ],
+        "right": [
+          1353,
+          851,
+          1493,
+          949
+        ],
+        "top": [
+          1128,
+          835,
+          1252,
+          961
+        ]
+      }
+    }
+  ],
+  "projection_power": 32,
+  "pad_paint": true,
+  "reconstruction_resolution": 96
+}

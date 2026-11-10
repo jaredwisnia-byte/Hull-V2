@@ -1,0 +1,5 @@
+# Verified with Blender 5.2.3 LTS / Python 3.13; install in Blender's environment or an external --target directory.
+numpy==2.5.4
+scipy==1.18.1
+scikit-image==0.26.0
+pillow==13.0.0

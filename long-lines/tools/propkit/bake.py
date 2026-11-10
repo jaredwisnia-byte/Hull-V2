@@ -13,7 +13,7 @@ from . import core, mats
 STANDARDS = json.load(open(os.path.join(os.path.dirname(__file__), "..", "..", "factory", "standards.json")))
 
 
-def standardize(obj, name, tex, tags=()):
+def standardize(obj, name, tex, tags=(), triangle_budget=None):
     """Machine-level enforcement of factory/standards.json on the joined mesh, so no
     asset needs these fixed by hand: normals outward, seated on the floor (floor-mounted
     objects), within its size class's triangle budget, and a texture big enough for the
@@ -44,6 +44,10 @@ def standardize(obj, name, tex, tags=()):
     dims = obj.dimensions
     cls = next((k for k, v in STANDARDS["size_classes"].items() if max(dims) <= v["max_dim_m"]), "building")
     budget = STANDARDS["size_classes"][cls]["tri_budget"]
+    if triangle_budget is not None:
+        if type(triangle_budget) is not int or triangle_budget <= 0:
+            raise ValueError("triangle_budget must be a positive integer")
+        budget = min(budget, triangle_budget)
     tris = sum(len(p.vertices) - 2 for p in me.polygons)
     if tris > budget:
         d = obj.modifiers.new("budget", "DECIMATE")
@@ -74,7 +78,7 @@ def fit_texture(me, tex):
     return tex, notes
 
 
-def finish(name, out_root, tex=1024, samples=24, tags=()):
+def finish(name, out_root, tex=1024, samples=24, tags=(), triangle_budget=None):
     """Bakes albedo / normal / ORM maps for everything built since core.reset()
     and writes <out_root>/<name>/<name>.glb plus textures. Returns manifest info."""
     out = os.path.join(out_root, name)
@@ -96,7 +100,7 @@ def finish(name, out_root, tex=1024, samples=24, tags=()):
     bpy.ops.object.origin_set(type="ORIGIN_CURSOR")
     high = bpy.data.objects.get(name + "__high") or next((o for o in bpy.data.objects if o.name.endswith("__high")), None)
     lo0 = [min(v.co[i] for v in obj.data.vertices) for i in range(3)] if high else None
-    tex, std_notes = standardize(obj, name, tex, tags)
+    tex, std_notes = standardize(obj, name, tex, tags, triangle_budget)
     if high:
         # the dense relief moves with the mesh it was made from (standardize seats it on the floor/wall)
         lo1 = [min(v.co[i] for v in obj.data.vertices) for i in range(3)]

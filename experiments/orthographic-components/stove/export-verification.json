@@ -1,0 +1,30 @@
+{
+  "exported_glb_triangles": 8058,
+  "triangle_target": 10000,
+  "hard_limit": 12000,
+  "meets_target": true,
+  "per_mesh": {
+    "stove_body_front.012": 776,
+    "stove_body_front.013": 776,
+    "stove_body_front.014": 776,
+    "stove_body_front.015": 776,
+    "stove_body_front.009": 58,
+    "stove_body_front.010": 58,
+    "stove_body_front.011": 58,
+    "stove_body_front.016": 96,
+    "stove_body_front.017": 96,
+    "stove_body_front.018": 96,
+    "stove_body_front.019": 96,
+    "stove_body_front.005": 388,
+    "stove_body_front.006": 388,
+    "stove_body_front.007": 388,
+    "stove_body_front.008": 388,
+    "stove_body_front.001": 236,
+    "stove_body_front.004": 630,
+    "stove_body_front.002": 244,
+    "stove_body_front": 1696,
+    "stove_body_front.003": 38
+  },
+  "export_matches_blender": true,
+  "input_companion_sha256": "8aac980fa1c9966de899ae36dc9bed1892b261d15f5b114c141042d27094ef6e"
+}
