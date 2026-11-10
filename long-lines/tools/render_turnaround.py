@@ -9,6 +9,7 @@ and quality-gate result. Orthographic cameras framed on the prop's own size, so 
 import json
 import math
 import os
+import tempfile
 import sys
 
 import bpy
@@ -100,7 +101,7 @@ def shoot(az, el, path):
     bpy.ops.render.render(write_still=True)
 
 
-tmp = os.path.join("/tmp", "_turn_" + name)
+tmp = os.path.join(tempfile.gettempdir(), "_turn_" + name)
 os.makedirs(tmp, exist_ok=True)
 shots = []
 for kind in ("textured", "clay"):
@@ -115,8 +116,12 @@ for kind in ("textured", "clay"):
 
 # one sheet: seven views and a caption
 from PIL import Image, ImageDraw, ImageFont  # noqa: E402
-font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 18)
-bold = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 24)
+try:
+    font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 18)
+    bold = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 24)
+except OSError:
+    font = ImageFont.load_default(size=18)
+    bold = ImageFont.load_default(size=24)
 lib = json.load(open(os.path.join(ROOT, "assets", "props", "library.json"))).get(name, {})
 ledger = [json.loads(l) for l in open(os.path.join(ROOT, "factory", "ledger.jsonl")) if '"%s"' % name in l]
 last = next((r for r in reversed(ledger) if r.get("op") == "build" and r.get("name") == name), {})

@@ -20,6 +20,7 @@ import hashlib
 import importlib
 import json
 import os
+import tempfile
 import pkgutil
 import sys
 import time
@@ -259,7 +260,7 @@ def run_line(order):
             bp = os.path.join(d, "v_bottom.png")
             if os.path.exists(bp):
                 allv["bottom"] = bp
-            fixed, size, po, rrep = reconcile.run(allv, order.get("sheet_dims_mm"), tmp=os.path.join("/tmp", "_rec_" + order["name"]))
+            fixed, size, po, rrep = reconcile.run(allv, order.get("sheet_dims_mm"), tmp=os.path.join(tempfile.gettempdir(), "_rec_" + order["name"]))
             views = {k: fixed[k] for k in views}
             if size:
                 height = size["height_m"]
@@ -312,7 +313,7 @@ def run_line(order):
             from propkit import texturing
             from propkit.hull_assembly import paint_views
             W, D, H = obj["hull_frame"]
-            tmp = os.path.join("/tmp", "_hull_" + order["name"])
+            tmp = os.path.join(tempfile.gettempdir(), "_hull_" + order["name"])
             texturing.project(obj, paint_views(views, tmp, "p"), W, D, H, others=[], name=obj.name,
                               rough=hp.get("rough", 0.5))
     elif line == "car":
