@@ -45,6 +45,8 @@ def validate_manifest(data):
     names = set()
     for part in cfg["parts"]:
         name = part.get("name")
+        if type(part.get('texture_upscale', 1)) is not int or part.get('texture_upscale', 1) not in (1,2,4):
+            raise ValueError('texture_upscale must be 1, 2 or 4')
         if not isinstance(name, str) or not re.fullmatch(r"[A-Za-z0-9_-]+", name) or name in names:
             raise ValueError("part names must be unique filesystem-safe identifiers")
         names.add(name)
@@ -55,6 +57,8 @@ def validate_manifest(data):
             raise ValueError(f"{name}: dimensions must be [width, depth, height] in metres")
         for value in dimensions:
             positive(value, f"{name}.dimensions")
+        if "surface_error_m" in part:
+            positive(part["surface_error_m"], f"{name}.surface_error_m")
         positive(part.get("budget"), f"{name}.budget", True)
         position = part.setdefault("position", [0, 0, 0])
         if not isinstance(position, (list, tuple)) or len(position) != 3 or any(isinstance(v, bool) or not isinstance(v, (float, int)) or not math.isfinite(v) for v in position):
@@ -74,6 +78,20 @@ def validate_manifest(data):
         masks = part.get("masks", {})
         if not isinstance(masks, dict) or not set(masks) <= set(views) or any(not isinstance(v, str) for v in masks.values()):
             raise ValueError(f"{name}: masks must map supplied views to image paths")
+        detail = part.get("surface_detail")
+        if detail is not None:
+            if not isinstance(detail, dict) or detail.get("view") not in views:
+                raise ValueError("surface_detail requires a supplied view")
+            positive(detail.get("depth_m"), "surface detail depth")
+            match = detail.get('minimum_match', .2)
+            if isinstance(match, bool) or not isinstance(match, (int,float)) or not math.isfinite(match) or not 0 <= match <= 1:
+                raise ValueError('minimum_match must be between zero and one')
+            if detail["depth_m"] > min(dimensions) * .07:
+                raise ValueError("surface detail exceeds 7 percent of part thickness")
+            if "height_map" in detail and not isinstance(detail["height_map"], str):
+                raise ValueError("height_map must be a path")
+            if part.get("use_normal_map") is False:
+                raise ValueError("surface detail requires use_normal_map")
         geometry = part.setdefault("geometry_views", list(views))
         if not isinstance(geometry, list) or not geometry or not set(geometry) <= set(views):
             raise ValueError(f"{name}: geometry_views must select supplied views")
@@ -110,7 +128,19 @@ def validate_manifest(data):
         if attachment:
             if attachment.get("parent") not in names or attachment["parent"] == part["name"]:
                 raise ValueError(f"{part['name']}: unknown/self attachment parent")
-            if attachment.get("face") not in {"front", "back", "left", "right", "top"}:
+            if "landmarks" in attachment:
+                if any(k in attachment for k in ("face", "pixel", "overlap")):
+                    raise ValueError("landmarks cannot be mixed with face seating")
+                landmarks = attachment["landmarks"]
+                if not isinstance(landmarks, list) or len(landmarks) < 3:
+                    raise ValueError("at least three attachment landmarks required")
+                for pair in landmarks:
+                    for key in ("source", "target"):
+                        point = pair.get(key) if isinstance(pair, dict) else None
+                        if not isinstance(point, list) or len(point) != 3 or any(isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(v) for v in point):
+                            raise ValueError("landmarks must contain finite source and target 3D points")
+                positive(attachment.get("tolerance_m", .001), "attachment tolerance")
+            elif attachment.get("face") not in {"front", "back", "left", "right", "top"}:
                 raise ValueError(f"{part['name']}: unknown attachment face")
             overlap = attachment.get("overlap", .001)
             if isinstance(overlap, bool) or not isinstance(overlap, (int, float)) or not math.isfinite(overlap) or overlap < 0:

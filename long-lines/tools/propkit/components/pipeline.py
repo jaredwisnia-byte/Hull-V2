@@ -35,6 +35,8 @@ def build_geometry(manifest_path, work_dir=None):
                 prototypes[key] = (obj.data.copy(), copy.deepcopy(frame), copy.deepcopy(row))
         row["attachment"] = place(obj, spec, objects, frames, specs)
         obj["component_origin"] = row["attachment"]["position"]
+        from mathutils import Matrix
+        obj['component_transform'] = row['attachment'].get('transform', [list(r) for r in Matrix.Translation(row['attachment']['position'])])
         group = obj.vertex_groups.new(name="hull_component_" + spec["name"])
         group.add(list(range(len(obj.data.vertices))), 1, "REPLACE")
         objects[spec["name"]], frames[spec["name"]] = obj, frame

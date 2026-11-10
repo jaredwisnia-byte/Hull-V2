@@ -65,7 +65,13 @@ def reconstruct(spec, cfg, source_root, work):
                            name=name, tolerance=spec.get("contour_tolerance", 1.1),
                            bevel_frac=spec.get("bevel_fraction", .01))
     inference = json.loads(json.dumps(HULL_REPORT, default=str))
+    optimization = None
+    if spec.get('surface_error_m') is not None:
+        from .optimization import optimize
+        optimization = optimize(obj, spec['surface_error_m'])
     before = triangle_count(obj)
+    if optimization is not None and before > spec['budget']:
+        raise RuntimeError(f"{name}: error-bounded geometry exceeds allocation; increase budget or tolerance")
     if before > spec["budget"]:
         modifier = obj.modifiers.new("Component triangle allocation", "DECIMATE")
         modifier.ratio = spec["budget"] / before * .97
@@ -78,7 +84,18 @@ def reconstruct(spec, cfg, source_root, work):
             path = directory / f"{view}_padded.png"
             texturing.pad_paint(image, mask).save(path)
             paintings[view] = str(path)
+    upscale = spec.get('texture_upscale', 1)
+    if upscale > 1:
+        for view, source in list(paintings.items()):
+            target = directory / f'{view}_upscaled.png'
+            with Image.open(source) as image:
+                image.resize((image.width*upscale, image.height*upscale), Image.Resampling.LANCZOS).save(target)
+            paintings[view] = str(target)
     projection = texturing.project(obj, paintings, width, depth, height, others=[], name=name,
                                   rough=spec.get("roughness", .65), power=cfg.get("projection_power", 4))
+    detail = None
+    if spec.get('surface_detail'):
+        from .surface_detail import apply
+        detail = apply(obj, spec['surface_detail'], paintings, directory, source_root)
     return obj, frames, {"name": name, "triangles": count, "budget": spec["budget"],
-                         "hull_report": inference, "projection": projection}
+                         "hull_report": inference, "projection": projection, "optimization": optimization, "surface_detail": detail}

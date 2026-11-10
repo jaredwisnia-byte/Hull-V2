@@ -1,11 +1,24 @@
 """Seat components on named parents; do not hard-code camera or stove dimensions."""
-from mathutils import Vector
+from mathutils import Vector, Matrix
 from mathutils.bvhtree import BVHTree
 
 
 def place(obj, spec, objects, frames, specs):
     offset = Vector(spec["position"])
     attachment = spec.get("attachment")
+    if attachment and "landmarks" in attachment:
+        from .alignment import solve
+        parent = objects[attachment['parent']]
+        parent_matrix = Matrix(parent.get('component_transform', Matrix.Identity(4)))
+        source = [p['source'] for p in attachment['landmarks']]
+        target = [list(parent_matrix @ Vector(p['target'])) for p in attachment['landmarks']]
+        matrix, error = solve(source, target, attachment.get('tolerance_m', .001))
+        transform = Matrix(matrix.tolist())
+        for vertex in obj.data.vertices:
+            vertex.co = transform @ vertex.co
+        obj.data.update()
+        return {'position':list(transform.translation), 'transform':[list(r) for r in transform],
+                'parent':attachment['parent'], 'landmark_error_m':error, 'method':'rigid_landmarks'}
     if not attachment:
         for vertex in obj.data.vertices:
             vertex.co += offset

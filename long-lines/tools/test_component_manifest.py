@@ -95,6 +95,25 @@ class ManifestTests(unittest.TestCase):
             cfg["parts"][0]["views"] = {v: [0, 0, 100, 100] for v in views}
             validate_manifest(cfg)
 
+    def test_quality_options_are_validated(self):
+        cfg = example()
+        cfg['parts'][1]['attachment'] = {'parent':'body', 'landmarks':[
+            {'source':[0,0,0], 'target':[0,0,0]},
+            {'source':[0,0,.1], 'target':[0,0,.1]},
+            {'source':[.1,0,0], 'target':[.1,0,0]}]}
+        validate_manifest(cfg)
+        for change in (lambda p:p.update(texture_upscale=3),
+                       lambda p:p.update(surface_error_m=-.01),
+                       lambda p:p.update(surface_detail={'view':'front','depth_m':.1}),
+                       lambda p:p.update(surface_detail={'view':'missing','depth_m':.001})):
+            bad=example()
+            change(bad['parts'][0])
+            with self.assertRaises(ValueError):
+                validate_manifest(bad)
+        cfg['parts'][1]['attachment']['face']='top'
+        with self.assertRaises(ValueError):
+            validate_manifest(cfg)
+
     def test_cycles_are_rejected(self):
         cfg = example()
         cfg["parts"][0]["parent"] = "dial"

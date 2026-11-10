@@ -38,6 +38,9 @@ def prepare(recipe, output):
                 path = Path(part.get(key, cfg.get(key)))
                 part[key] = str((path if path.is_absolute() else recipe.parent / path).resolve())
         part["masks"] = {view: str((Path(path) if Path(path).is_absolute() else recipe.parent / path).resolve()) for view, path in part.get("masks", {}).items()}
+        if part.get('surface_detail', {}).get('height_map'):
+            path = Path(part['surface_detail']['height_map'])
+            part['surface_detail']['height_map'] = str((path if path.is_absolute() else recipe.parent / path).resolve())
         sizes = {}
         with Image.open(ref) as source:
             source = source.convert("RGB")
