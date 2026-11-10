@@ -1,0 +1,10 @@
+{
+  "cause": "silhouette pixel variations extruded across complete body width, multiplied by bevels",
+  "fix": "existing polygon_hull tolerance raised to 6 source pixels; broad planes preserved, no body self-normal map",
+  "body_triangles_before": 2134,
+  "body_triangles_after": 592,
+  "total_triangles": 2646,
+  "rear_face_max_deviation_from_plane_mm": 0.00016513951664465232,
+  "lens_insertion_m": 0.006,
+  "hull_source_modified": false
+}

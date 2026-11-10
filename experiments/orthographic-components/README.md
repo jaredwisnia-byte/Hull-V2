@@ -10,6 +10,15 @@ The external runners import existing `polygon_hull`, `hull_prop`, round-part inf
 | --- | ---: | --- |
 | 1974 stove | 8,058 | Original painting, semantic part map, detached-part companion views |
 | 1970s SLR | 3,022 | Assembled reference, bare-body views, detached lens and dial prototypes |
+| Camera contour repair | 2,646 | Simplified body contours, larger references, measured lens mount |
+
+## Contour repair
+
+The camera's horizontal bands were geometry: pixel-scale changes in the side silhouette were extruded across the whole body and then bevelled. Clay renders confirmed the bands remained without textures or normal maps. The `camera-clean` recipe sets `contour_tolerance: 6` (source pixels) before polygon-hull construction; body complexity fell from 2,134 to 592 triangles. The main rear panel passed a numerical plane-deviation check. Clay and wireframe evidence is stored in `camera-clean/`.
+
+This tolerance is an explicit recipe setting, not a universal new default. It can remove genuine fine features on other references. The shared camera runner additionally supports trusted geometry views, paint padding, projection strength, reconstruction resolution, measured front mount seating, per-part bevel fractions, and disabling a part's self-baked normal map. Defaults preserve the original recipe behavior.
+
+Run the repaired recipe with `python run.py camera-clean --blender PATH_TO_BLENDER --deps PATH_TO_DEPENDENCIES --workdir EXTERNAL_WORK_DIRECTORY`. This builds from the included images, without depending on any previous model file. Glass and material-reasoning prototypes are excluded.
 
 The stove is a fixed recipe preserved as a reproducible baseline. Its physical dimensions and placement rules remain embedded in its external runner; it has not yet been generalized into the manifest format. The camera uses a manifest-driven runner with crop boxes, dimensions, positions and per-part budgets. Dimensions are assumptions, not manufacturer specifications.
 
