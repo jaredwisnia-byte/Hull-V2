@@ -763,7 +763,7 @@ def match_into(big, small, scales=None):
     from scipy.signal import fftconvolve
     H_, W_ = big.shape
     h, w = small.shape
-    base = H_ / h
+    base = min(H_ / h, W_ / w)
     best = None
     big_edge = ndimage.binary_dilation(big & ~ndimage.binary_erosion(big), iterations=2).astype(float)
     for f in (scales or np.linspace(0.55, 1.0, 19)):
