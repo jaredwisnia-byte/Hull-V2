@@ -3,6 +3,17 @@
 Mistakes made on this project and the rule that prevents each one. Read before working;
 add to it whenever something goes wrong.
 
+## Automatic parts-sheet intake (Hull V2)
+- A parts work order keeps complete reference views in its assembly subfolder.
+  Pointing QA at the source root silently skipped every silhouette comparison.
+  Resolve the assembly folder explicitly and fail automatic orders when any of
+  the five required reference comparisons is absent.
+- A failed rebuild can leave an earlier GLB on disk. Standalone export must check
+  that the current build actually wrote its artifact before packaging it.
+- Glass painted against a dark background can be mistaken for silhouette holes.
+  Keep the vessel core filled while preserving the external handle aperture;
+  inspect both clay geometry and textured turnarounds.
+
 ## Brands and content
 - **AI texture sheets paint real brands** (Zenith, Mercury Montego, KitchenAid). Every sheet
   goes through `tools/prepare_sheet.py`, and a person or Claude must look at `_review.png` and

@@ -135,6 +135,56 @@ def intake(image, name, category, height=None, notes=""):
     return order
 
 
+def automatic_build(image, output):
+    """One image through automatic intake, existing parts assembly, QA and render."""
+    import subprocess
+    import bpy
+    from pathlib import Path
+    from sheet_blobs import automatic
+    output=Path(output).resolve()
+    output.mkdir(parents=True,exist_ok=True)
+    t0=time.monotonic()
+    report=automatic(image,output/'intake')
+    result={'input_image':str(Path(image).resolve()),
+            'input_sha256':hashlib.sha256(Path(image).read_bytes()).hexdigest(),
+            'runtime_llm':False,'status':'needs_review'}
+    if report['status']=='ready_to_build':
+        order=json.loads(Path(report['work_order']).read_text())
+        result['assumptions']=order['assumptions']
+        started=time.time_ns()
+        result['qa']=build(order)
+        base=Path(LIB)/order['name']/order['name']
+        artifact=base.with_suffix('.glb')
+        # A previous successful build must never masquerade as this run's output.
+        if artifact.exists() and artifact.stat().st_mtime_ns >= started:
+            result.update(bake.export_textured(order['name'],LIB,output))
+            command=[bpy.app.binary_path,'-b','--factory-startup','--python-use-system-env',
+                     '--python-exit-code','1','-P',str(Path(HERE)/'render_turnaround.py'),
+                     '--',order['name'],str(output)]
+            render_started=time.time_ns()
+            rendered=subprocess.run(command,capture_output=True,text=True)
+            (output/'render.log').write_text(rendered.stdout+rendered.stderr)
+            png=output/(order['name']+'.png')
+            result['render']=str(png) if rendered.returncode==0 and png.exists() and png.stat().st_mtime_ns>=render_started else None
+            result['status']='complete' if result['qa']['pass'] and result['render'] else 'needs_review'
+    else:
+        result['intake_failure']=report.get('failure','unresolved visual assignments')
+    result['seconds']=round(time.monotonic()-t0,2)
+    (output/'result.json').write_text(json.dumps(result,indent=2))
+    print('AUTOMATIC_RESULT',json.dumps(result))
+    return result
+
+
+def reference_views(order):
+    """Parts orders keep the complete reference in their assembly subfolder."""
+    if not order.get('views_folder'):
+        return None
+    folder=os.path.join(SRC,order['views_folder'])
+    if order.get('layout')=='parts':
+        folder=os.path.join(folder,order.get('assembly','assembly'))
+    return folder
+
+
 def intake_sheet(spec_path, source_dir):
     """A multi-asset sheet spec: one work order per listed item. Facade items crop an
     elevation; atlas items keep the whole parts sheet and name which numbered panel
@@ -431,7 +481,7 @@ def build(order, samples=16):
             info.update({"tags": [order["category"], "factory"], "desc": order.get("notes") or order["name"],
                          "kind": order.get("kind", "static")})
             bake.update_manifest(os.path.join(LIB, "library.json"), order["name"], info)
-            vd = os.path.join(SRC, order["views_folder"]) if order.get("views_folder") else None
+            vd = reference_views(order)
             result = qa.check(order["name"], vd, order.get("class"), tuple(order.get("hull", {}).get("paint_only", ())),
                               solid=order["line"] in STANDARDS["solid_lines"], mount=order.get("mount", "floor"),
                                trim_order=order)
@@ -482,7 +532,7 @@ def gate(names):
     for n in names:
         t0 = time.time()
         o = load_order(n) or {}
-        vd = os.path.join(SRC, o["views_folder"]) if o.get("views_folder") else None
+        vd = reference_views(o)
         line = o.get("line") or ("painted" if n.startswith(("car_coupe", "can_", "tv_painted", "range_")) else "recipe")
         try:
             r = qa.check(n, vd, o.get("class"), tuple(o.get("hull", {}).get("paint_only", ())),
@@ -551,7 +601,10 @@ def report():
 if __name__ == "__main__":
     a = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     cmd, rest = (a[0], a[1:]) if a else ("report", [])
-    if cmd == "intake":
+    if cmd == 'auto':
+        result=automatic_build(rest[0],rest[rest.index('--output')+1])
+        sys.exit(0 if result['status']=='complete' else 2)
+    elif cmd == "intake":
         kw = {}
         if "--height" in rest:
             kw["height"] = float(rest[rest.index("--height") + 1])

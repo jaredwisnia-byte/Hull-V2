@@ -217,6 +217,41 @@ def finish(name, out_root, tex=1024, samples=24, tags=()):
             "tris": tris, "tex": tex, "standardized": std_notes}
 
 
+def export_textured(name, out_root, destination):
+    """Package existing baked maps for standalone viewing; geometry is unchanged."""
+    from pathlib import Path
+    base=Path(out_root)/name/name
+    destination=Path(destination)
+    destination.mkdir(parents=True,exist_ok=True)
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    bpy.ops.import_scene.gltf(filepath=str(base.with_suffix('.glb')))
+    objects=[o for o in bpy.context.scene.objects if o.type=='MESH']
+    material=bpy.data.materials.new(name+'_baked')
+    material.use_nodes=True
+    tree=material.node_tree
+    shader=tree.nodes['Principled BSDF']
+    def texture(suffix,space):
+        node=tree.nodes.new('ShaderNodeTexImage')
+        node.image=bpy.data.images.load(str(base.with_name(base.name+'_'+suffix+'.png')))
+        node.image.colorspace_settings.name=space
+        return node
+    tree.links.new(texture('albedo','sRGB').outputs['Color'],shader.inputs['Base Color'])
+    normal=tree.nodes.new('ShaderNodeNormalMap')
+    tree.links.new(texture('normal','Non-Color').outputs['Color'],normal.inputs['Color'])
+    tree.links.new(normal.outputs['Normal'],shader.inputs['Normal'])
+    channels=tree.nodes.new('ShaderNodeSeparateColor')
+    tree.links.new(texture('orm','Non-Color').outputs['Color'],channels.inputs['Color'])
+    tree.links.new(channels.outputs['Green'],shader.inputs['Roughness'])
+    tree.links.new(channels.outputs['Blue'],shader.inputs['Metallic'])
+    bpy.ops.object.select_all(action='DESELECT')
+    for obj in objects:
+        obj.data.materials.clear(); obj.data.materials.append(material); obj.select_set(True)
+    bpy.ops.export_scene.gltf(filepath=str(destination/'model.glb'),export_format='GLB',use_selection=True)
+    bpy.ops.file.pack_all()
+    bpy.ops.wm.save_as_mainfile(filepath=str(destination/'model.blend'))
+    return {'model':str(destination/'model.glb'),'blend':str(destination/'model.blend')}
+
+
 def update_manifest(path, name, entry):
     data = {}
     if os.path.exists(path):

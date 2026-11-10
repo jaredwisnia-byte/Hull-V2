@@ -3,6 +3,10 @@
 The factory is the product; the models are its output. This folder holds the factory's
 standards, work orders, ledger and report. The machinery is in `tools/`.
 
+For captioned vessel-appliance sheets with separate part drawings, the optional
+[automatic image-only build](AUTOMATIC_INTAKE.md) detects/crops the views, generates
+the parts work order, builds, checks and exports from one image argument.
+
 ## Flow
 
 ```

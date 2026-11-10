@@ -4,6 +4,8 @@ import numpy as np
 import cv2
 from PIL import Image
 from sheet_blobs import visual_regions, visual_match
+from propkit.vision import role, repeated_row
+from propkit.vision_order import assign, generate
 
 
 class VisionTests(unittest.TestCase):
@@ -43,6 +45,36 @@ class VisionTests(unittest.TestCase):
     def test_featureless_regions_are_not_forced_to_match(self):
         image=Image.new('RGB',(100,100),'gray')
         self.assertIsNone(visual_match(image,image))
+
+    def test_repeated_controls_are_counted_not_assumed(self):
+        for count in (4,7):
+            with self.subTest(count=count):
+                boxes=[{'box':[20+i*18,40,30+i*18,52]} for i in range(count)]
+                boxes.append({'box':[20,100,30,112]})
+                self.assertEqual(len(repeated_row(boxes)),count)
+
+    def test_irregular_controls_are_not_a_repeated_row(self):
+        boxes=[{'box':[x,40,x+10,52]} for x in (0,12,100)]
+        self.assertEqual(repeated_row(boxes),[])
+
+    def test_support_caption_wins_over_container_word(self):
+        self.assertEqual(role('jar_base_blade_housing'),'support')
+        self.assertEqual(role('glass_jar'),'container')
+        self.assertEqual(role('push_button_switch'),'button')
+        self.assertEqual(role('unrecognized_shape'),'part')
+
+    def test_joint_assignment_uses_distinct_drawings(self):
+        parts=[{'id':1,'dense_matches':[{'view':'front','score':10},{'view':'back','score':9}]},
+               {'id':2,'dense_matches':[{'view':'front','score':8},{'view':'back','score':1}]}]
+        result=assign(parts,['front','back'])
+        self.assertEqual(result['front']['id'],2)
+        self.assertEqual(result['back']['id'],1)
+
+    def test_incomplete_sheet_is_flagged_without_inventing_parts(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as folder:
+            with self.assertRaisesRegex(ValueError,'five labelled'):
+                generate({'regions':[]},Image.new('RGB',(100,100)),np.zeros(3),folder)
 
 
 if __name__=='__main__':

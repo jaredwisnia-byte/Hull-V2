@@ -162,31 +162,41 @@ def automatic(sheet, output):
         region.update(view=label['view'],status='caption_assigned',confidence=label['confidence'])
     assembly=[r for r in regions if r['part']=='assembly' and r['view'] not in (None,'perspective')]
     cv=__import__('cv2'); cv.setNumThreads(1)
+    from propkit.vision import DenseVision, compact_parts
+    from propkit.vision_order import generate
+    _, background = load(sheet)
+    engine = DenseVision(output.parent / 'models', background)
     for region in regions:
         if region['part']=='assembly':
             continue
         matches=[]
         for target in assembly:
-            result=visual_match(image.crop(region['box']),image.crop(target['box']))
+            result=engine.match(image.crop(region['box']),image.crop(target['box']))
             if result:
                 matches.append(dict(result,view=target['view'],assembly_region=target['id']))
         matches.sort(key=lambda m:m['score'],reverse=True)
-        region['matches']=matches
-        if matches:
-            best=matches[0]
-            runner=matches[1]['score'] if len(matches)>1 else 0
-            distinct=best['score']>max(1,runner)*1.4
-            if best['inliers']>=8 and best['source_coverage']>=.12 and distinct:
-                region.update(view=best['view'],status='visual_match',confidence=best['inlier_fraction'])
-    # A duplicate part/view assignment is ambiguous; do not overwrite a crop.
-    groups={}
-    for region in regions:
-        if region['view'] and region['view']!='perspective':
-            groups.setdefault((region['part'],region['view']),[]).append(region)
-    for group in groups.values():
-        if len(group)>1:
-            for region in group:
-                region.update(status='ambiguous_duplicate',view=None)
+        region['dense_matches']=matches
+    compact=compact_parts(image,regions,assembly,engine)
+    report={'image':str(sheet),'input_mode':'image_only','runtime_llm':False,'labels':labels,
+            'regions':regions,'compact_parts':compact,'status':'needs_review',
+            'limitations':['Caption vocabulary supplies semantic part names.',
+                           'Absolute size is inferred from physical priors and is not a measurement.',
+                           'Hidden-face orientation uses recorded geometric hypotheses.']}
+    try:
+        order=generate(report,image,background,output/'manufacture')
+        report['work_order']=str(output/'manufacture'/'work-order.json')
+        report['status']='ready_to_build'
+        evidence=json.loads((output/'manufacture'/'vision-report.json').read_text())
+        for name,record in evidence['records'].items():
+            for view,identifier in record.get('views',{}).items():
+                region=next(r for r in regions if r['id']==identifier)
+                region.setdefault('assigned_views',[]).append(view)
+                region.update(view=region.get('view') or view,status='joint_visual_and_geometry_assignment')
+        for region in regions:
+            if region['part']!='assembly' and region['view'] is None:
+                region['status']='alternate_hidden_surface_evidence'
+    except ValueError as exc:
+        report['failure']=str(exc)
     spec={}
     overlay=image.copy(); draw=ImageDraw.Draw(overlay)
     for region in regions:
@@ -198,12 +208,8 @@ def automatic(sheet, output):
         image.crop(region['box']).save(output/f"region_{region['id']:02d}.png")
         if accepted:
             spec.setdefault(region['part'],{})[region['view']]=region['box']
-    unresolved=[r['id'] for r in regions if r['view'] is None]
-    report={'image':str(sheet),'input_mode':'image_only','runtime_llm':False,'labels':labels,
-            'regions':regions,'unresolved':unresolved,'status':'needs_review' if unresolved else 'assigned',
-            'limitations':['Part names come from captions; unlabeled semantic recognition is not implemented.',
-                           '2D visual correspondence is evidence, not a solved 3D mounting transform.',
-                           'No assembly manifest is emitted until all required assignments are resolved.']}
+    unresolved=[r['id'] for r in regions if r['view'] is None and r['status']!='alternate_hidden_surface_evidence']
+    report['unresolved']=unresolved
     overlay.save(output/'detected-regions.png')
     (output/'sheet-spec.partial.json').write_text(json.dumps(spec,indent=2),encoding='utf-8')
     (output/'intake-report.json').write_text(json.dumps(report,indent=2),encoding='utf-8')

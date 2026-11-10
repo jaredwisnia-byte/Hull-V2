@@ -199,6 +199,10 @@ def check(name, views_dir=None, category_class=None, paint_only=(), solid=False,
             if ious[k] < MIN["silhouette_iou"]:
                 fails.append("%s outline matches the reference only %.0f%%" % (k, ious[k] * 100))
         m["silhouette_iou"] = ious
+        if trim_order and trim_order.get('vision_generated'):
+            missing=set(('front','back','left','right','top'))-set(ious)
+            if missing:
+                fails.append('automatic reference comparison missing: '+', '.join(sorted(missing)))
     # The generic gate only checks v_front/v_side reference views. Trim orders
     # are produced from p_section/p_strip/p_front and need their own checks.
     if trim_order is None:
