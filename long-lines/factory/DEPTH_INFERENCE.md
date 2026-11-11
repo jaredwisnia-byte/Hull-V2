@@ -4,6 +4,12 @@ The image-only `factory.py -- auto IMAGE --output DIRECTORY` path enables this
 without per-image depth values. Existing orders are unchanged unless they enable
 `automatic_depth`. No runtime LLM or external image-to-3D service is involved.
 
+Single-body `hull` orders can also enable `automatic_depth` alongside their
+existing `hull.relief` option. Their existing guide, section and sizing stations
+remain active. Engineering export supports these orders as one physical node.
+This does not extend automatic image-only caption/part intake to new object
+families: a pre-existing sheet preset is still a supplied input when one is used.
+
 ## Component thickness
 
 `propkit/depth_inference.py` measures occupied spans in a companion side profile,
@@ -64,3 +70,13 @@ button-derived prior and was correctly flagged. All body shading hypotheses were
 too weak: no extra relief was added. A repeated run reproduced the geometry
 signature. The known contradictory handle drawings and texture ghosting remain
 unresolved by this change; the coarse legacy silhouette gate remains limited.
+
+The guided-leg regression used the existing preset only after verifying that
+the submitted updatedleg.png had the identical SHA-256 as its source sheet.
+No new crop coordinates were supplied. Single-body inference built 23,750
+triangles in 114 seconds and recovered the guided round shaft, but selected
+flat in all four shading views. The clay comparison with the original relief
+asset reveals lost carving depth despite high silhouette IoU. This is a failed
+ornament-depth acceptance case: whole-view shading variance is too conservative
+for locally carved painted surfaces. Do not treat its legacy mesh-gate pass as
+proof that the carved detail was reconstructed.

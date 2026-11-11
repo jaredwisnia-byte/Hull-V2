@@ -70,6 +70,11 @@ class InferenceTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             construction_graph({'parts':[{'name':'a','vision_box':[1,0,0,1,0,1]}]})
 
+    def test_single_body_order_has_one_shared_identity(self):
+        graph=construction_graph({'name':'single_body','line':'hull'})
+        self.assertEqual([n['id'] for n in graph['nodes']],['single_body'])
+        self.assertFalse(graph['production_ready'])
+
     def test_sections_are_actual_intersections(self):
         vertices=np.array([[0,0,0],[1,0,0],[0,0,1]])
         segments=section_segments(vertices,np.array([[0,1,2]]),.5)

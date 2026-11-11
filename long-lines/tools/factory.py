@@ -345,7 +345,11 @@ def run_line(order):
             W_ = hp.get("width_m") or height * fm_.shape[1] / fm_.shape[0]
             D_ = hp.get("depth_m") or height * sm_.shape[1] / sm_.shape[0]
             order.setdefault("measured", {})["relief"] = rrep = {}
-            hp["mesh_hook"] = relief.hook(views, W_, D_, height, rrep)
+            if order.get('automatic_depth'):
+                from propkit.depth_inference import body_hook
+                hp["mesh_hook"] = body_hook(views,W_,D_,height,rrep)
+            else:
+                hp["mesh_hook"] = relief.hook(views, W_, D_, height, rrep)
         from propkit.hull import HULL_REPORT
         HULL_REPORT.pop("sections", None)
         obj = hull_prop(views, height, name=order["name"], **hp)

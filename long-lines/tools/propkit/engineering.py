@@ -9,7 +9,10 @@ import numpy as np
 
 def construction_graph(order):
     nodes=[]
-    parts={p['name']:p for p in order['parts']}
+    plan=order.get('parts')
+    if plan is None:
+        plan=[{'name':order['name'],'root':True}]
+    parts={p['name']:p for p in plan}
     measured=order.get('measured',{}).get('parts',{})
     for name,part in parts.items():
         parent=part.get('attach',{}).get('to')
