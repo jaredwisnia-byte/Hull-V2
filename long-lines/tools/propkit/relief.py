@@ -140,6 +140,8 @@ def _region_votes(L, m, cn, lab):
 def light_of(votes):
     """One light direction (image x right, y down) from many regions' shading vectors: their principal
     axis, signed so the light comes from above (as painters light)."""
+    if not votes:
+        return np.array([-2**-.5,-2**-.5])
     M = sum(v["w"] * np.outer(v["coef"], v["coef"]) for v in votes)
     l = np.linalg.eigh(M)[1][:, -1]
     if l[1] > 0 or (abs(l[1]) < 0.2 and l[0] > 0):
@@ -253,7 +255,7 @@ def _sample(img, u, v):
     return ndimage.map_coordinates(img, [y, x], order=1, mode="nearest")
 
 
-def hook(views, W, D, H, report):
+def hook(views, W, D, H, report, maps_override=None, keep_high=True, cap_share=MAX_RELIEF):
     """A hull mesh_hook: displace the dense mesh by the views' relief. Fills report (per view and totals)."""
     from .texturing import _uv
     maps, mpp = {}, {}
@@ -262,10 +264,11 @@ def hook(views, W, D, H, report):
     for k in ELEVATIONS:
         if k in views:
             h, rep = view_relief(views[k], k, light)
-            maps[k] = h
+            maps[k] = maps_override.get(k,np.zeros_like(h)) if maps_override is not None else h
             mpp[k] = (W if k in ("front", "back") else D) / h.shape[1]
-            report.setdefault("views", {})[k] = rep
-    cap = MAX_RELIEF * min(W, D)
+            if maps_override is None:
+                report.setdefault("views", {})[k] = rep
+    cap = cap_share * min(W, D)
     dirs = {"front": (0, -1, 0), "back": (0, 1, 0), "right": (1, 0, 0), "left": (-1, 0, 0)}
 
     def apply(obj):
@@ -291,6 +294,10 @@ def hook(views, W, D, H, report):
         co += n * disp[:, None]
         me.vertices.foreach_set("co", co.ravel())
         me.update()
+        report["displaced_mm"] = {"max_out": round(float(disp.max()) * 1000, 2), "max_in": round(float(-disp.min()) * 1000, 2),
+                                  "cap": round(cap * 1000, 2), "vertices": int(nv)}
+        if not keep_high:
+            return
         # the dense relief, kept for baking its detail into the normal map (bake.finish bakes
         # "<name>__high" onto the simplified mesh): geometry keeps what the triangle budget can hold
         import bpy

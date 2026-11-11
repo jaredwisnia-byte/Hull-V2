@@ -626,9 +626,20 @@ def build_parts(order, src_root):
         rrep = rep.setdefault("recess", {})
         rd = body_spec["recess"].get("depth_m") if isinstance(body_spec["recess"], dict) else None
         rhook = recess_hook(body_views["front"], rd or RECESS_SHARE * (by1 - by0), rrep)
+    depth_hook = None
+    if order.get('automatic_depth'):
+        from .depth_inference import body_hook
+        exclusions=[]
+        for spec in plan:
+            if spec.get('attach',{}).get('to')=='body' and spec.get('attach',{}).get('face')=='front' and spec['name'] in boxes:
+                a,b,_,_,c,d=boxes[spec['name']]
+                exclusions.append(('front',[(a-bx0)/(bx1-bx0),(bz1-d)/(bz1-bz0),
+                                             (b-bx0)/(bx1-bx0),(bz1-c)/(bz1-bz0)]))
+        depth_hook=body_hook(body_views,bx1-bx0,by1-by0,bz1-bz0,
+                             rep.setdefault('automatic_depth',{}),exclusions)
     body = hull_prop(body_views, bz1 - bz0, res=order.get("res", 150), name=order["name"] + "_body",
                      width_m=bx1 - bx0, depth_m=by1 - by0, features=False, paint=False, rough=order.get("rough", 0.5),
-                     paint_only=paint_only, voxel_hook=rhook)
+                     paint_only=paint_only, voxel_hook=rhook, mesh_hook=depth_hook)
     body.location = ((bx0 + bx1) / 2, (by0 + by1) / 2, bz0)
     built["body"] = body
     rep["parts"]["body"] = {"box_m": [round(v, 3) for v in body_box], "located": "body outline fitted into the photo"}

@@ -42,6 +42,10 @@ a low-resolution source drawing.
 
 ## Processing
 
+Automatic orders now include [depth inference and engineering evidence](DEPTH_INFERENCE.md):
+profile-derived control thickness, conservative relief selection, uncertainty
+flags, a part constraint graph and technical mesh sections.
+
 1. `sheet_blobs.py`: OCR reads captions; foreground regions supply drawing bounds.
    Perspective evidence is retained but excluded from silhouette carving.
 2. `propkit/vision.py`: DINOv2 dense features and affine RANSAC match detached

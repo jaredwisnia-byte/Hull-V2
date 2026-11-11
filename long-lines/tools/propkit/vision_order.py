@@ -203,15 +203,22 @@ def generate(report,image,background,output):
         if location['view']!='front':
             raise ValueError('non-front control orientation needs additional pose support: '+name)
         side=mappings[name].get('right'); face=mappings[name]['front']
-        ratio=(side['box'][2]-side['box'][0])/(side['box'][3]-side['box'][1]) if side else .3
+        from .depth_inference import profile_depth
+        profiles={}
+        for view in ('left','right'):
+            profile=source/name/f'v_{view}.png'
+            if profile.exists():
+                profiles[view]=np.asarray(Image.open(profile).convert('RGB')).max(2)>0
         for i,box in enumerate(location['instances']):
             h=(box[3]-box[1])*scale
             kind=roles[name]; rule=catalog.get('knob' if kind=='knob' else 'button')
             minimum,maximum=(v/1000 for v in rule['depth_mm'])
-            depth=float(np.clip(h*ratio,minimum,maximum))
+            inference=profile_depth(h,profiles,(minimum,maximum))
+            depth=inference['depth_m']
             vb=world_box(box,depth,body_front_y-depth/2)
             identifier=name if len(location['instances'])==1 else f'{name}_{i+1}'
             plan.append({'name':identifier,'views':name,'locate':'vision','vision_box':vb,
+                         'depth_inference':inference,
                          'attach':{'to':'body','face':'front'}})
         records[name]['visual_location']=location
     asset='vision_'+__import__('re').sub('[^a-z0-9]+','_',Path(report['image']).stem.lower()).strip('_')
@@ -223,7 +230,7 @@ def generate(report,image,background,output):
            'body_width_m':body_width,'sheet_dims_mm':[W*1000,H*1000,D*1000],
            'parts':plan,'budget':'screen','rough':.65,
            'assumptions':[scale_source,'Hidden faces use the companion-view geometry hypotheses recorded in vision-report.json.'],
-           'vision_generated':True,'source':report['image']}
+           'vision_generated':True,'automatic_depth':True,'source':report['image']}
     (output/'work-order.json').write_text(json.dumps(order,indent=2))
     (output/'vision-report.json').write_text(json.dumps({'scale_m_per_pixel':scale,'scale_source':scale_source,
         'records':records,'part_count':len(plan),'image_only':True,'runtime_llm':False},indent=2))

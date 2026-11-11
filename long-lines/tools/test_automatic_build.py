@@ -41,7 +41,8 @@ class BuildGuards(unittest.TestCase):
 
 def artifact_acceptance(path):
     result=json.loads(path.read_text())
-    assert result['status']=='complete' and result['qa']['pass'],result
+    expected_status='needs_review' if result.get('inference_warnings') else 'complete'
+    assert result['status']==expected_status and result['qa']['pass'],result
     assert not result['runtime_llm']
     assert hashlib.sha256(Path(result['input_image']).read_bytes()).hexdigest()==result['input_sha256']
     metrics=result['qa']['metrics']

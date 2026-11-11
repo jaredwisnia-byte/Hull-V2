@@ -151,6 +151,8 @@ def automatic_build(image, output):
     if report['status']=='ready_to_build':
         order=json.loads(Path(report['work_order']).read_text())
         result['assumptions']=order['assumptions']
+        result['inference_warnings']=[p['name'] for p in order.get('parts',[])
+                                      if p.get('depth_inference',{}).get('needs_review')]
         started=time.time_ns()
         result['qa']=build(order)
         base=Path(LIB)/order['name']/order['name']
@@ -158,6 +160,9 @@ def automatic_build(image, output):
         # A previous successful build must never masquerade as this run's output.
         if artifact.exists() and artifact.stat().st_mtime_ns >= started:
             result.update(bake.export_textured(order['name'],LIB,output))
+            if order.get('automatic_depth'):
+                from propkit import engineering
+                result.update(engineering.export(order,output))
             command=[bpy.app.binary_path,'-b','--factory-startup','--python-use-system-env',
                      '--python-exit-code','1','-P',str(Path(HERE)/'render_turnaround.py'),
                      '--',order['name'],str(output)]
@@ -166,7 +171,7 @@ def automatic_build(image, output):
             (output/'render.log').write_text(rendered.stdout+rendered.stderr)
             png=output/(order['name']+'.png')
             result['render']=str(png) if rendered.returncode==0 and png.exists() and png.stat().st_mtime_ns>=render_started else None
-            result['status']='complete' if result['qa']['pass'] and result['render'] else 'needs_review'
+            result['status']='complete' if result['qa']['pass'] and result['render'] and not result['inference_warnings'] else 'needs_review'
     else:
         result['intake_failure']=report.get('failure','unresolved visual assignments')
     result['seconds']=round(time.monotonic()-t0,2)
