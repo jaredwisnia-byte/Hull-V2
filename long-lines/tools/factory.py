@@ -352,24 +352,52 @@ def run_line(order):
                         od, "sections_%s.png" % k))
             json.dump(srep, open(os.path.join(od, "sections.json"),
                       "w"), indent=1, default=str)
+        manufactured = [obj]
+        if blended and order.get("automatic_depth"):
+            from propkit import construction
+            order.setdefault('measured', {}).pop('construction', None)
+            guide = order.get("measured", {}).get(
+                "guides", {}).get("round_band")
+            guide_band = (guide["v_top"], guide["v_bottom"]) if guide else None
+            model = construction.infer(views, height, guide_band)
+            if model is not None:
+                import bpy
+                high = bpy.data.objects.get(order["name"] + "__high")
+                construction.refine_dense_shaft(high, model)
+                manufactured = construction.manufacture(
+                    obj, model, order["name"])
+                order.setdefault("measured", {})[
+                    "construction"] = model["report"]
         if blended and (order.get("automatic_depth") or order.get("budget") == "screen"):
             from propkit.simplification import screen_tolerance, decimate_to_error, refresh_normals
             tolerance = screen_tolerance(
                 STANDARDS, order.get("kind", "static"))
+            totals = {}
             if tolerance:
-                triangles, error = decimate_to_error(obj, tolerance)
-                refresh_normals(obj)
+                for part in manufactured:
+                    if part.get("preserve_profile_features"):
+                        triangles = sum(len(face.vertices) -
+                                        2 for face in part.data.polygons)
+                        error = 0.0
+                    else:
+                        triangles, error = decimate_to_error(part, tolerance)
+                    refresh_normals(part)
+                    totals[part.name] = {
+                        "triangles": triangles, "surface_error_m": error}
                 order.setdefault("measured", {})["simplification"] = {
-                    "triangles": triangles, "tolerance_m": tolerance, "surface_error_m": error,
-                    "stage": "before projection and baking",
-                }
+                    "parts": totals, "triangles": sum(p["triangles"] for p in totals.values()),
+                    "tolerance_m": tolerance, "stage": "independent regions before projection and baking"}
         if blended:
             from propkit import texturing
             from propkit.hull_assembly import paint_views
-            W, D, H = obj["hull_frame"]
             tmp = os.path.join(tempfile.gettempdir(), "_hull_" + order["name"])
-            texturing.project(obj, paint_views(views, tmp, "p"), W, D, H, others=[], name=obj.name,
-                              rough=hp.get("rough", 0.5))
+            for part in manufactured:
+                W, D, H = part["hull_frame"]
+                texturing.project(part, paint_views(views, tmp, "p"), W, D, H,
+                                  others=[
+                                      other for other in manufactured if other != part],
+                                  name=part.name, rough=hp.get("rough", .5),
+                                  camera_fit=order.get('measured', {}).get('construction', {}).get('camera_axis_fit'))
     elif line == "car":
         from props.cars_painted import painted_car
         painted_car(order["name"], order.get("body", "car_coupe"))
@@ -488,7 +516,8 @@ def build(order, samples=16):
             # standards.json mounting: by tag
             mount_tags = ["wall"] if order.get("mount") == "wall" else []
             info = bake.finish(order["name"], LIB, tex_for(
-                order), samples, tags=[order["category"]] + mount_tags)
+                order), samples, tags=[order["category"]] + mount_tags,
+                owned_projection=bool(order.get('automatic_depth')))
             stages["bake_and_export"] = round(time.time() - ts, 1)
             ts = time.time()
             info.update({"tags": [order["category"], "factory"], "desc": order.get("notes") or order["name"],
@@ -513,13 +542,18 @@ def build(order, samples=16):
         except Exception as e:
             result["pass"] = False
             result["fails"].append("preview generation failed: %s" % e)
-    order["status"] = "shipped" if result["pass"] else "needs_person"
+    inferred = order.get('measured', {}).get(
+        'construction', {}).get('features', [])
+    result['inference_warnings'] = ['uncertain groove depth: ' + f['id']
+                                    for f in inferred if f['uncertain']]
+    order["status"] = "shipped" if result["pass"] and not result['inference_warnings'] else "needs_person"
     order["attempts"] = attempt
     save_order(order)
     srcs = glob.glob(os.path.join(
         SRC, order.get("views_folder", "-"), "*.png"))
     ledger({"op": "build", "name": order["name"], "line": order["line"], "pass": result["pass"],
-            "attempts": attempt, "auto": result["pass"] and attempt == 1, "seconds": round(time.time() - t0, 1),
+            "attempts": attempt, "auto": result["pass"] and attempt == 1 and not result['inference_warnings'], "seconds": round(time.time() - t0, 1),
+            "inference_warnings": result['inference_warnings'],
             "stage_seconds": stages,
             "fails": result["fails"], "metrics": result["metrics"],
             "input_hash": file_hash(srcs + [os.path.join(ORDERS, order["name"] + ".json")]),
@@ -636,7 +670,7 @@ if __name__ == "__main__":
     a = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     cmd, rest = (a[0], a[1:]) if a else ("report", [])
     if cmd == 'auto':
-        result = automatic_build(rest[0], rest[rest.index('--output')+1])
+        result = automatic_build(rest[0], rest[rest.index('--output') + 1])
         sys.exit(0 if result['status'] == 'complete' else 2)
     elif cmd == "intake":
         kw = {}

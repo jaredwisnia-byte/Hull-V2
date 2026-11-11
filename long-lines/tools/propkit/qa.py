@@ -106,6 +106,20 @@ def check(name, views_dir=None, category_class=None, paint_only=(), solid=False,
                 uv_area += 0.5 * abs(sum(pts[i].x * pts[(i + 1) % len(pts)].y - pts[(i + 1) % len(pts)].x * pts[i].y
                                          for i in range(len(pts))))
     tris = sum(len(p) - 2 for p in polys)
+    library_path = os.path.join(LIB, 'library.json')
+    if trim_order and trim_order.get('automatic_depth') and os.path.isfile(library_path):
+        projection = json.load(open(library_path)).get(
+            name, {}).get('texture_ownership', {})
+        m['texture_ownership'] = projection
+        if projection.get('needs_review'):
+            fails.append(
+                'projected surfaces have no valid texture source for their physical owner')
+    construction = (trim_order or {}).get('measured', {}).get('construction')
+    if construction:
+        from .local_features import check_channels
+        local = check_channels(verts, polys, construction)
+        m['local_features'] = local
+        fails.extend(local['fails'])
     # Reproducibility must include actual topology, not just size and triangle count.
     m["geometry_signature"] = trim_checks.geometry_signature(verts, polys)
     lo = Vector([min(v[i] for v in verts) for i in range(3)])
@@ -231,10 +245,11 @@ def check(name, views_dir=None, category_class=None, paint_only=(), solid=False,
         m["silhouette_iou_raw"] = raw_ious
         m["silhouette_raster_width"] = n
         if trim_order and trim_order.get('vision_generated'):
-            missing = set(('front', 'back', 'left', 'right', 'top'))-set(ious)
+            missing = set(('front', 'back', 'left',
+                          'right', 'top')) - set(ious)
             if missing:
                 fails.append(
-                    'automatic reference comparison missing: '+', '.join(sorted(missing)))
+                    'automatic reference comparison missing: ' + ', '.join(sorted(missing)))
     # The generic gate only checks v_front/v_side reference views. Trim orders
     # are produced from p_section/p_strip/p_front and need their own checks.
     if trim_order is None:

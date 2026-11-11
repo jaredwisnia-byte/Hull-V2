@@ -27,5 +27,6 @@ jobs:
         run: |
           python long-lines/tools/test_sectioning.py
           python long-lines/tools/test_depth_engineering.py
+          python long-lines/tools/test_profile_pipeline.py
           python long-lines/tools/test_sizing.py
           python long-lines/tools/test_human_scale.py

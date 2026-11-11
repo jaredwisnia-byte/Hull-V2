@@ -1,6 +1,6 @@
 # Hull knowledge file
 
-Last audited: 2026-11-10. Read this before proposing a new reconstruction module.
+Last audited: 2026-11-11. Read this before proposing a new reconstruction module.
 Update it when verified behaviour, inputs, call paths or test results change.
 
 ## Purpose and evidence level
@@ -16,12 +16,11 @@ It is not a claim that every algorithm or asset was executed or proven correct.
 Binary textures/GLBs were counted, not exhaustively visually audited.
 
 The accompanying [machine-readable inventory](long-lines/docs/CODEBASE_INVENTORY.json)
-records 391 source/configuration/documentation files, all 82 tracked Python files,
+records 412 source/configuration/documentation files, all 100 tracked Python files,
 36 Godot scripts, module descriptions, definitions/line numbers, imports, static
 calls, JSON shapes, documentation headings and content hashes. All Python files
 parsed successfully; JSON parsing found no errors. Static calls are not a resolved
-runtime call graph. Inventory counts describe the pre-knowledge-file snapshot;
-the new knowledge documents themselves are additional files.
+runtime call graph. Counts include the currently staged new reconstruction tools.
 
 ## Current implementation update (2026-11-10)
 
@@ -35,8 +34,60 @@ Single-body automatic-depth projected builds now simplify before painting.
 Local relief regions replace the failed whole-view selector; dense single-body
 relief is retained for normal baking. Automatic-depth QA uses unfiltered outlines,
 144-pixel width and available bottom references. Legacy route defaults remain.
-The restricted intake grammar, camera/shape optimizer and automatic construction
-region decomposition remain unresolved as listed in the plan.
+The restricted intake grammar remains. The following new profile-family stations
+are integrated; they must not be mistaken for universal semantic or inverse-CAD
+reconstruction.
+
+### Profile, feature and ownership implementation (2026-11-11)
+
+`profile_inference.py` fits a shared nonlinear shaft axis and per-view image roll
+with robust numerical optimization. Linear camera tilt versus actual linear object
+tilt has a declared coordinate ambiguity. This is an orthographic profile model,
+not arbitrary perspective calibration. Spline radii follow source silhouettes;
+the source projection applies the corresponding camera roll when baking.
+
+Longitudinal valleys are traced after alternating smooth lighting and chromatic
+material fits. Each candidate gets a bounded joint shape/light/albedo fit, compared
+against both a flat surface and a painted stripe. Retained depths are hypotheses;
+paint-equivalent explanations and single-view observations remain uncertain. The
+workflow returns those warnings instead of labelling uncertain inference complete.
+
+`construction.py` selects elongated profile families from masks, finds strong width
+transitions and manufactures complementary construction bands independently. The
+smooth shaft is a cubic spline loft with explicit recessed channels; other bands
+reuse the existing hull and shared error-bounded simplification. Simple solid cut
+interfaces are capped; nested/open/ambiguous cut topology is rejected. Regions have
+shared physical IDs, not invented semantic labels or claimed manufacturing joints.
+The current leg has eight regions. This route does not classify arbitrary furniture
+parts, handles or appliance housings.
+
+`ownership.py` rejects coincident duplicate geometry, labels faces before joining,
+and transfers oriented triangle ownership through the GLB round trip. Standalone
+GLB/Blend packages restore separate named parts. Explicit triangulation before UVs,
+baking and export prevents exporter diagonal changes from invalidating ownership.
+
+`raster.py` and `pixel_bake.py` add final-UV per-texel camera visibility, physical
+owner checks, source resolution/facing selection, incompatible-colour rejection,
+bounded global overlap exposure correction and linear-light blending. Unsupported
+projected texels fill from valid evidence of the same owner; this is labelled hole
+filling, not recovered hidden detail. Procedural materials retain their normal bake.
+Source-confidence maps and unresolved-owner counts are recorded. Semantic mistakes
+already present in image segmentation/part placement can still produce ghosts;
+geometric ownership alone is not full image semantic ownership.
+
+`local_features.py` casts rays through final exported triangles at three shaft
+stations per channel. Missing recesses fail QA independently of silhouette scores.
+The most recent trial has 3,308 triangles and seven retained channels, roughly
+0.1-0.6 mm deep, zero normal disagreement/inward hits and raw elevation IoUs
+.940-.979. The original preset is reused only after an exact input SHA match; no
+new LLM crop/part/placement values were supplied. Ornate capital/foot detail remains
+incomplete, and these conservative groove depths are not measured ground truth.
+
+New contracts cover camera roll with genuine curvature, source reprojection,
+single-feature identity across two views, flat/painted negative controls, raster
+occlusion, seam offsets, duplicate geometry, oriented caps, real GLB part round
+tripping and an exported local groove disappearing while the silhouette stays the
+same. See `test_profile_pipeline.py` and `test_ownership_blender.py`.
 
 The updated leg trial has 1,302 triangles, zero normal disagreement, and 58 locally
 accepted candidate regions. The stricter raw top-view test rejects the blender

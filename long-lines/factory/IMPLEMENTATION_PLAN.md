@@ -95,27 +95,68 @@ and 8 trim checks; Godot 39 unit and 45 smoke checks. New CI runs syntax and
 pure-Python section/depth/sizing contracts. Blender integration still needs a
 Blender-equipped runner; it is not falsely counted as hosted CI coverage.
 
-## Remaining implementation backlog and exit criteria
+## Profile-family implementation (2026-11-11)
+
+The next production path is integrated in `factory.run_line` for automatic-depth
+projected hull orders. It selects elongated profiles from masks, fits camera roll
+and shared nonlinear curvature, traces longitudinal channels, and compares bounded
+shape/light/material fits against flat and painted-stripe alternatives. Construction
+bands are independently cut from the original hull; the shaft uses a spline loft
+with channel vertices. Other geometry continues through the original engines.
+
+The finished leg has eight construction identities, seven channels and 3,308
+triangles. Ray probes through the exported mesh verify all seven recesses at three
+stations. Inward hits and normal disagreement are zero. This passes geometric QA,
+while uncertain depth evidence is separately reported. The rendering still shows
+limited ornamental geometry; source paint is substantially richer than the capital
+and foot meshes. Do not call the object fully reconstructed from its silhouette.
+
+The held-out blender image ran through the full image-only pipeline in 72.7 s,
+without runtime LLM preparation. It retains 3,650 triangles, no inward-facing hits
+and no normal disagreement, and correctly remains `needs_review`: raw top-view
+overlap is .787, below the unchanged .8 threshold. This is a regression/abstention
+case, not a claim that its handle semantics or assembly are fully corrected.
+
+Physical IDs survive join/bake/export and return as separate standalone nodes.
+Final UV texels use rasterized source visibility and owner labels rather than
+interpolated vertex visibility. Per-source overlap correction is shared across
+triangles, bounded, and rejects incompatible paint. Unsupported pixels fill only
+from the same owner's evidence, with confidence/unresolved counts. Invisible
+details are not synthesized or represented as observed texture.
+
+The new pure-Python and Blender contracts exercise known curved/rolled axes,
+source reprojection, paint ambiguity, duplicate observation merging, raster
+occlusion, colour-space handling, seam correction, duplicate geometry rejection,
+oriented internal caps, actual GLB part round trips and local missing-depth checks.
+Existing hull/guide/section/sizing/orchestration checks and Godot 39 unit/45 smoke
+checks pass locally. Hosted CI includes the pure-Python profile contracts; actual
+Blender integration requires the local Blender runtime.
+
+## Remaining generalization and exit criteria
 
 1. **Ownership and part recognition:** adapt existing sheetset part ownership to
-   automatic inputs, with one physical identity across observations. It must reject
-   duplicate paint/geometry and distinguish genuine two-handle objects. Do not merge
+   arbitrary automatic inputs, with one physical identity across observations. The
+   new geometry ownership and rounded-shaft feature matcher are not a general
+   image semantic segmenter. Distinguish genuine two-handle objects. Do not merge
    sheetset and isolated-profile depth estimators without reconciling their different
    coordinate/evidence contracts.
 2. **Region construction:** use existing section/revolve/loft/sweep engines to fit
-   meaningful construction regions. A leg's capital, bands, shaft and foot are not
-   yet independently manufactured automatically. Preserve interfaces and feature
-   identity; hold out unrelated object families.
+   meaningful construction regions beyond the integrated elongated profile family.
+   Its bands/shaft now manufacture independently, but semantic names and ornamental
+   subpart decomposition remain unresolved. Hold out unrelated object families.
 3. **Joint camera/shape fitting:** fit roll, projection and landmark correspondence
    with bounded numerical optimization; separate genuine bends from camera tilt.
    Test known camera perturbations, curved shafts and contradictory drawings.
-   Current reconciliation is not this solver; a planar warp is not general 3D
-   rectification. Do not add an unexercised optimizer and call recognition solved.
-4. **Appearance ownership:** per-pixel source validity/occlusion, disagreement
-   rejection and seam handling. Final-topology baking already exists. Larger atlases
-   or synthesized pixels do not create authentic source evidence.
+   The integrated, tested roll/shared-bend fit applies only to nominal orthographic
+   profiles. Perspective pose, unknown view direction and absolute linear tilt
+   remain unresolved; a planar warp is not general 3D rectification.
+4. **Appearance ownership:** integrated per-texel validity/occlusion, disagreement
+   rejection and bounded seam correction still depend on correct physical placement
+   and image semantics. Validate unrelated families and incorrect semantic masks.
+   Larger atlases or synthesized pixels do not create authentic source evidence.
 5. **Feature validation:** add local contours, groove depth/sign, attachment frames,
-   apertures, part IDs and small-feature checks beyond sampled/global metrics.
+   apertures and small-feature checks beyond the new exported shaft-depth probes,
+   existing attachment gaps and persistent physical IDs.
 
 These research-dependent stages require independent fixtures and acceptance gates.
 Preserve the original and approved assets; do not lower thresholds to make one

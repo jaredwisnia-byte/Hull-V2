@@ -16,6 +16,8 @@ _CACHE = {}
 def reset():
     BAKE.clear()
     _CACHE.clear()
+    from . import texturing
+    texturing.PROJECTIONS.clear()
 
 
 def _new(name):
@@ -73,8 +75,10 @@ def mix(nt, fac, a, b):
 def ramp(nt, fac, stops):
     n = nt.nodes.new("ShaderNodeValToRGB")
     cr = n.color_ramp
-    cr.elements[0].position, cr.elements[0].color = stops[0][0], (*stops[0][1], 1)
-    cr.elements[1].position, cr.elements[1].color = stops[-1][0], (*stops[-1][1], 1)
+    cr.elements[0].position, cr.elements[0].color = stops[0][0], (
+        *stops[0][1], 1)
+    cr.elements[1].position, cr.elements[1].color = stops[-1][0], (
+        *stops[-1][1], 1)
     for pos, col in stops[1:-1]:
         cr.elements.new(pos).color = (*col, 1)
     nt.links.new(fac, n.inputs["Fac"])
@@ -117,9 +121,11 @@ def axis_part(nt, axis):
 def weathered(nt, col, edge=0.25, grime=0.45, dust=0.2, edge_col=(0.75, 0.68, 0.58)):
     col = _sock(nt, col)
     e = m_(nt, "SUBTRACT", 1.0, ao(nt, 0.006, inside=True))
-    e = m_(nt, "MULTIPLY", m_(nt, "GREATER_THAN", e, 0.35), e)  # only real edges, not AO noise
+    # only real edges, not AO noise
+    e = m_(nt, "MULTIPLY", m_(nt, "GREATER_THAN", e, 0.35), e)
     e = m_(nt, "POWER", e, 1.5)
-    e = m_(nt, "MULTIPLY", e, m_(nt, "GREATER_THAN", noise(nt, 60.0, detail=6.0), 0.48))
+    e = m_(nt, "MULTIPLY", e, m_(nt, "GREATER_THAN",
+           noise(nt, 60.0, detail=6.0), 0.48))
     col = mix(nt, m_(nt, "MULTIPLY", e, edge * 4.0), col, edge_col)
     c = m_(nt, "SUBTRACT", 1.0, ao(nt, 0.04))
     c = m_(nt, "MULTIPLY", m_(nt, "GREATER_THAN", c, 0.12), c)
@@ -128,7 +134,8 @@ def weathered(nt, col, edge=0.25, grime=0.45, dust=0.2, edge_col=(0.75, 0.68, 0.
     sep = nt.nodes.new("ShaderNodeSeparateXYZ")
     nt.links.new(geo.outputs["Normal"], sep.inputs[0])
     up = m_(nt, "GREATER_THAN", sep.outputs["Z"], 0.8)
-    col = mix(nt, m_(nt, "MULTIPLY", m_(nt, "MULTIPLY", up, noise(nt, 9.0)), dust), col, (0.55, 0.53, 0.5))
+    col = mix(nt, m_(nt, "MULTIPLY", m_(nt, "MULTIPLY", up,
+              noise(nt, 9.0)), dust), col, (0.55, 0.53, 0.5))
     return col
 
 
@@ -142,13 +149,15 @@ def bump(nt, height, strength, dist=0.002):
 
 def register(name, m, bsdf, out, albedo, rough, metal, normal=None):
     nt = m.node_tree
-    albedo, rough, metal = _sock(nt, albedo), _sock(nt, rough), _sock(nt, metal)
+    albedo, rough, metal = _sock(nt, albedo), _sock(
+        nt, rough), _sock(nt, metal)
     nt.links.new(albedo, bsdf.inputs["Base Color"])
     nt.links.new(rough, bsdf.inputs["Roughness"])
     nt.links.new(metal, bsdf.inputs["Metallic"])
     if normal is not None:
         nt.links.new(normal, bsdf.inputs["Normal"])
-    BAKE[name] = {"albedo": albedo, "rough": rough, "metal": metal, "out": out, "bsdf": bsdf, "mat": m}
+    BAKE[name] = {"albedo": albedo, "rough": rough,
+                  "metal": metal, "out": out, "bsdf": bsdf, "mat": m}
     _CACHE[name] = m
     return m
 
@@ -184,14 +193,17 @@ def wood(tone="walnut", axis="Z", scale=8.0, dust=0.15, edge=0.3, gloss=0.42, na
     w.inputs["Distortion"].default_value = 5.0
     w.inputs["Detail"].default_value = 4.0
     nt.links.new(v, w.inputs["Vector"])
-    g = m_(nt, "ADD", m_(nt, "MULTIPLY", w.outputs["Fac"], 0.75), m_(nt, "MULTIPLY", noise(nt, 140, v, 3), 0.12))
+    g = m_(nt, "ADD", m_(nt, "MULTIPLY", w.outputs["Fac"], 0.75), m_(
+        nt, "MULTIPLY", noise(nt, 140, v, 3), 0.12))
     st = WOODS[tone]
-    base = ramp(nt, g, [(0.0, st[0]), (0.45, st[1]), (0.8, st[2]), (1.0, st[3])])
+    base = ramp(nt, g, [(0.0, st[0]), (0.45, st[1]),
+                (0.8, st[2]), (1.0, st[3])])
     return register(name, m, bsdf, out, weathered(nt, base, edge, 0.5, dust), gloss, 0.0, bump(nt, g, 0.25))
 
 
 def metal(col, rough=0.35, brushed=False, grime=0.5, name=None):
-    name = name or "metal_%.2f_%.2f_%.2f_%d" % (col[0], col[1], col[2], brushed)
+    name = name or "metal_%.2f_%.2f_%.2f_%d" % (
+        col[0], col[1], col[2], brushed)
     if _cached(name):
         return _cached(name)
     m, nt, bsdf, out = _new(name)
@@ -217,7 +229,8 @@ def iron(col=(0.09, 0.09, 0.095)):
 
 def plain(col, rough=0.5, edge=0.15, grime=0.4, dust=0.2, metal_v=0.0, name=None):
     """Plastic, enamel, rubber, ceramic: a solid colour with the shared wear."""
-    name = name or "plain_%.2f_%.2f_%.2f_%.2f" % (col[0], col[1], col[2], rough)
+    name = name or "plain_%.2f_%.2f_%.2f_%.2f" % (
+        col[0], col[1], col[2], rough)
     if _cached(name):
         return _cached(name)
     m, nt, bsdf, out = _new(name)
@@ -237,7 +250,8 @@ def paint(col, under=(0.55, 0.5, 0.42), chips=0.5, rough=0.55, name=None):
 
 def fabric(col, col2=(0.2, 0.15, 0.1), pattern="plain", scale=10.0, rough=0.95, dust=0.15, name=None):
     """Upholstery and textiles. Patterns: plain, plaid, stripes, floral, zigzag, tweed, chenille."""
-    name = name or "fabric_%s_%.2f_%.2f_%.2f" % (pattern, col[0], col[1], col[2])
+    name = name or "fabric_%s_%.2f_%.2f_%.2f" % (
+        pattern, col[0], col[1], col[2])
     if _cached(name):
         return _cached(name)
     m, nt, bsdf, out = _new(name)
@@ -246,26 +260,32 @@ def fabric(col, col2=(0.2, 0.15, 0.1), pattern="plain", scale=10.0, rough=0.95, 
     nt.links.new(v, sep.inputs[0])
     weave = noise(nt, 400.0, detail=2.0)
     if pattern == "plaid":
-        a = m_(nt, "GREATER_THAN", m_(nt, "SINE", sep.outputs["X"], clamp=False), 0.3)
-        b = m_(nt, "GREATER_THAN", m_(nt, "SINE", m_(nt, "ADD", sep.outputs["Z"], sep.outputs["Y"], clamp=False), clamp=False), 0.3)
-        thin = m_(nt, "GREATER_THAN", m_(nt, "SINE", m_(nt, "MULTIPLY", sep.outputs["X"], 3.0, clamp=False), clamp=False), 0.9)
+        a = m_(nt, "GREATER_THAN", m_(
+            nt, "SINE", sep.outputs["X"], clamp=False), 0.3)
+        b = m_(nt, "GREATER_THAN", m_(nt, "SINE", m_(
+            nt, "ADD", sep.outputs["Z"], sep.outputs["Y"], clamp=False), clamp=False), 0.3)
+        thin = m_(nt, "GREATER_THAN", m_(nt, "SINE", m_(
+            nt, "MULTIPLY", sep.outputs["X"], 3.0, clamp=False), clamp=False), 0.9)
         f = m_(nt, "MULTIPLY", m_(nt, "ADD", a, b), 0.5)
         base = mix(nt, f, col, col2)
         base = mix(nt, m_(nt, "MULTIPLY", thin, 0.6), base, (0.75, 0.62, 0.35))
     elif pattern == "stripes":
-        base = mix(nt, m_(nt, "GREATER_THAN", m_(nt, "SINE", sep.outputs["X"], clamp=False), 0.2), col, col2)
+        base = mix(nt, m_(nt, "GREATER_THAN", m_(
+            nt, "SINE", sep.outputs["X"], clamp=False), 0.2), col, col2)
     elif pattern == "floral":
         vor = nt.nodes.new("ShaderNodeTexVoronoi")
         vor.inputs["Scale"].default_value = 1.0
         nt.links.new(v, vor.inputs["Vector"])
-        base = mix(nt, m_(nt, "LESS_THAN", vor.outputs["Distance"], 0.28), col, col2)
+        base = mix(
+            nt, m_(nt, "LESS_THAN", vor.outputs["Distance"], 0.28), col, col2)
     elif pattern == "zigzag":
         z = m_(nt, "SINE", m_(nt, "ADD", m_(nt, "MULTIPLY", sep.outputs["Z"], 2.0, clamp=False),
-                             m_(nt, "ABSOLUTE", m_(nt, "SINE", sep.outputs["X"], clamp=False), clamp=False), clamp=False), clamp=False)
+                              m_(nt, "ABSOLUTE", m_(nt, "SINE", sep.outputs["X"], clamp=False), clamp=False), clamp=False), clamp=False)
         base = ramp(nt, m_(nt, "MULTIPLY", m_(nt, "ADD", z, 1.0, clamp=False), 0.5),
                     [(0.0, col[:3]), (0.5, col2[:3]), (0.75, (0.85, 0.7, 0.4)), (1.0, col[:3])])
     elif pattern in ("tweed", "chenille"):
-        base = mix(nt, m_(nt, "MULTIPLY", noise(nt, 120.0, detail=8.0), 0.7), col, col2)
+        base = mix(nt, m_(nt, "MULTIPLY", noise(
+            nt, 120.0, detail=8.0), 0.7), col, col2)
     else:
         base = _sock(nt, col)
     base = mix(nt, m_(nt, "MULTIPLY", weave, 0.18), base, (0.0, 0.0, 0.0))
@@ -310,11 +330,13 @@ def cardboard():
         return _cached("cardboard")
     m, nt, bsdf, out = _new("cardboard")
     n = noise(nt, 30.0, detail=6)
-    base = mix(nt, m_(nt, "MULTIPLY", n, 0.4), (0.5, 0.36, 0.2), (0.36, 0.25, 0.13))
+    base = mix(nt, m_(nt, "MULTIPLY", n, 0.4),
+               (0.5, 0.36, 0.2), (0.36, 0.25, 0.13))
     return register("cardboard", m, bsdf, out, weathered(nt, base, 0.15, 0.5, 0.25), 0.9, 0.0, bump(nt, n, 0.1))
 
 
-SURFACES = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", "assets", "surfaces"))
+SURFACES = os.path.normpath(os.path.join(
+    os.path.dirname(__file__), "..", "..", "assets", "surfaces"))
 
 
 def painted(name, repeat_m=None, rough=0.6, edge=0.2, grime=0.4, dust=0.15, metal_v=0.0):
@@ -325,7 +347,8 @@ def painted(name, repeat_m=None, rough=0.6, edge=0.2, grime=0.4, dust=0.15, meta
     if _cached(key):
         return _cached(key)
     import json
-    cat = json.load(open(os.path.join(SURFACES, "..", "..", "data", "surfaces.json")))
+    cat = json.load(
+        open(os.path.join(SURFACES, "..", "..", "data", "surfaces.json")))
     rep = repeat_m or float(cat.get(name, {}).get("repeat_m", 0.6))
     m, nt, bsdf, out = _new(key)
     tc = nt.nodes.new("ShaderNodeTexCoord")
@@ -334,7 +357,8 @@ def painted(name, repeat_m=None, rough=0.6, edge=0.2, grime=0.4, dust=0.15, meta
     nt.links.new(tc.outputs["Object"], mp.inputs["Vector"])
     img = nt.nodes.new("ShaderNodeTexImage")
     fn = os.path.basename(cat.get(name, {}).get("file", name + ".jpg"))
-    img.image = bpy.data.images.load(os.path.join(SURFACES, fn), check_existing=True)
+    img.image = bpy.data.images.load(
+        os.path.join(SURFACES, fn), check_existing=True)
     img.projection = "BOX"
     img.projection_blend = 0.25
     nt.links.new(mp.outputs["Vector"], img.inputs["Vector"])

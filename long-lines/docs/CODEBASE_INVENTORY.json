@@ -1,9 +1,9 @@
 {
-  "audit_date": "2026-11-10",
+  "audit_date": "2026-11-11",
   "method": "Static parse and catalog; not proof of runtime correctness",
-  "local_head": "453c0961e12dff0376b1d251808568ad29df8417",
+  "local_head": "0f90e7f80780c8702a01b38301460aad61356036",
   "canonical_dirac": "9d8df082dfbef7d5a508be3578d78d7c488561ab",
-  "tracked_files": 2847,
+  "tracked_files": 2855,
   "tracked_extensions": {
     ".yml": 3,
     "": 3,
@@ -16,7 +16,7 @@
     ".glb": 120,
     ".json": 164,
     ".jpg": 83,
-    ".py": 92,
+    ".py": 100,
     ".csv": 1,
     ".jsonl": 1,
     ".godot": 1,
@@ -29,8 +29,8 @@
     ".mjs": 1,
     ".css": 1
   },
-  "catalogued_files": 404,
-  "python_files": 92,
+  "catalogued_files": 412,
+  "python_files": 100,
   "parse_errors": [],
   "files": [
     {
@@ -41,8 +41,8 @@
     },
     {
       "path": ".github/workflows/hull-contracts.yml",
-      "lines": 31,
-      "sha256": "11378e7ff041ade6d6d025e7565dddd26b4e28d3f165aa513d59e40f3e15bdc6",
+      "lines": 32,
+      "sha256": "a669c132eb5f166dfd0a253c67298ac054446984e4d8bfd5bf9b1eb564ea9ece",
       "definitions": []
     },
     {
@@ -61,12 +61,13 @@
     },
     {
       "path": "KNOWLEDGE_FILE.md",
-      "lines": 349,
-      "sha256": "009a665e2f9ac0bb72946420bc5ebf03b4c08e210a3d9cddd00be4492aaf407c",
+      "lines": 400,
+      "sha256": "98b2507c3982fba1f4a27410862ce07895d9f2085c5c0c50a6d4e6a37e63555e",
       "headings": [
         "Hull knowledge file\r",
         "Purpose and evidence level\r",
         "Current implementation update (2026-11-10)\r",
+        "Profile, feature and ownership implementation (2026-11-11)\r",
         "Repository identity and boundaries\r",
         "High-level data flow and entry points\r",
         "All production routes and required inputs\r",
@@ -172,10 +173,10 @@
     },
     {
       "path": "long-lines/assets/props/library.json",
-      "lines": 2795,
-      "sha256": "8a7a6b497b92917c0e0c5a2d432f066e30c41fa080fe0d2dfa41784fec9c5363",
+      "lines": 2846,
+      "sha256": "ec4a7d4465ecef85738acb41c1c741fb5ca1990434805eb7a51923e87a0d287f",
       "root_type": "dict",
-      "item_count": 104,
+      "item_count": 105,
       "keys": [
         "access_panel_util",
         "armchair_vinyl",
@@ -2268,15 +2269,16 @@
     },
     {
       "path": "long-lines/factory/IMPLEMENTATION_PLAN.md",
-      "lines": 122,
-      "sha256": "656191024779bbd9e541fe7b9585b16effb32f0131a87874ac65bcd53aeb8364",
+      "lines": 163,
+      "sha256": "8a7edf87a896e3a4e33551f0fa4098f0910a55681ab7db87e6b883d3fee8b53b",
       "headings": [
         "Hull audit implementation and acceptance plan",
         "Implemented: shared stages and readable code",
         "Implemented: local depth decisions and honest validation",
         "Implemented: section and cutaway inspection",
         "Observed acceptance results",
-        "Remaining implementation backlog and exit criteria"
+        "Profile-family implementation (2026-11-11)",
+        "Remaining generalization and exit criteria"
       ]
     },
     {
@@ -5815,11 +5817,12 @@
     },
     {
       "path": "long-lines/tools/audit_inventory.py",
-      "lines": 88,
-      "sha256": "62e6e37a5c6efae0340de560a2d64f999f15d964fde8cf765779e067948a164d",
+      "lines": 89,
+      "sha256": "ed32511deb3ad5224a29b123fea0d43a72658bb37042e59c74ab327561e31b36",
       "description": "Regenerate the static code/documentation inventory. Requires Git; never imports builders.\n\nRun: python long-lines/tools/audit_inventory.py\nOutput: long-lines/docs/CODEBASE_INVENTORY.json (tracked files plus Python tools).",
       "imports": [
         "from collections import Counter",
+        "from datetime import date",
         "from pathlib import Path",
         "import ast",
         "import hashlib",
@@ -5830,7 +5833,7 @@
       "definitions": [
         {
           "name": "git",
-          "line": 16,
+          "line": 17,
           "kind": "FunctionDef",
           "description": ""
         }
@@ -5848,6 +5851,8 @@
         "ast.unparse",
         "ast.walk",
         "data.decode",
+        "date.today",
+        "date.today().isoformat",
         "dict",
         "e.get",
         "e.get('description', '').split",
@@ -6521,12 +6526,13 @@
     },
     {
       "path": "long-lines/tools/factory.py",
-      "lines": 672,
-      "sha256": "d0ca21fd2b6e6faa23ad872a9d8a41ae2d111440cede729bbc46846f7dc6a2ea",
+      "lines": 706,
+      "sha256": "126ee431fb8686a257fba4dd39176f4b796d26d2b89198224f762eee5c484687",
       "description": "The asset factory: work orders in, game-ready assets out, every run measured.\n\nRun under Blender (all stations share one process):\n    blender -b --factory-startup -P tools/factory.py -- intake IMAGE NAME --category tv [--height 0.5]\n    blender -b --factory-startup -P tools/factory.py -- intake_sheet SHEET_SPEC.json --source-dir DIR\n    blender -b --factory-startup -P tools/factory.py -- intake_set MANIFEST.json [--category fridge] [--name N]\n    blender -b --factory-startup -P tools/factory.py -- build NAME... | --pending | --all-orders\n    blender -b --factory-startup -P tools/factory.py -- qa NAME... | --library\n    blender -b --factory-startup -P tools/factory.py -- report\n\nStations: intake (classify the reference, split views, size from the category table,\nwrite a work order) -> build (the order's production line) -> bake/export (propkit.bake)\n-> gate (propkit.qa against factory/standards.json, one codified automatic correction,\nthen flag for a person) -> ledger (factory/ledger.jsonl) -> report (factory/REPORT.md).\nWork orders live in factory/orders/<name>.json; lines read them, so a new asset needs\nno code. See factory/README.md.",
       "imports": [
         "from PIL import Image",
         "from propkit import bake, core, mats, qa",
+        "from propkit import construction",
         "from propkit import extrude",
         "from propkit import guides",
         "from propkit import handbook as HB, human_scale as HS",
@@ -6643,43 +6649,43 @@
         },
         {
           "name": "correct",
-          "line": 419,
+          "line": 447,
           "kind": "FunctionDef",
           "description": "Codified corrections for known failure modes (docs/LESSONS.md). Returns True if\nthe order was changed and is worth one more attempt."
         },
         {
           "name": "tex_for",
-          "line": 452,
+          "line": 480,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "render_trim_preview",
-          "line": 459,
+          "line": 487,
           "kind": "FunctionDef",
           "description": "Always make a PNG turnaround of a shipped extruded asset. No source sheets."
         },
         {
           "name": "build",
-          "line": 476,
+          "line": 504,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "mount_of",
-          "line": 537,
+          "line": 571,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "gate",
-          "line": 549,
+          "line": 583,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "report",
-          "line": 567,
+          "line": 601,
           "kind": "FunctionDef",
           "description": ""
         }
@@ -6715,6 +6721,8 @@
         "bake.update_manifest",
         "blobs.append",
         "body_hook",
+        "bool",
+        "bpy.data.objects.get",
         "build",
         "build_image",
         "build_set",
@@ -6722,6 +6730,9 @@
         "by_line.setdefault",
         "c.isdigit",
         "cat.get",
+        "construction.infer",
+        "construction.manufacture",
+        "construction.refine_dense_shaft",
         "core.reset",
         "correct",
         "decimate_to_error",
@@ -6802,8 +6813,12 @@
         "open(p, 'rb').read",
         "order.get",
         "order.get('hull', {}).get",
+        "order.get('measured', {}).get",
+        "order.get('measured', {}).get('construction', {}).get",
+        "order.get('measured', {}).get('guides', {}).get",
         "order.setdefault",
         "order.setdefault('corrections', []).append",
+        "order.setdefault('measured', {}).pop",
         "order.update",
         "order['assumptions'].append",
         "os.makedirs",
@@ -6818,6 +6833,7 @@
         "paint_views",
         "painted_can",
         "painted_car",
+        "part.get",
         "pkgutil.iter_modules",
         "print",
         "propkit.PROPS[order['name']]['fn']",
@@ -6858,6 +6874,7 @@
         "texturing.project",
         "time.strftime",
         "time.time",
+        "totals.values",
         "traceback.print_exc",
         "tuple",
         "views.get",
@@ -7654,12 +7671,16 @@
     },
     {
       "path": "long-lines/tools/propkit/bake.py",
-      "lines": 262,
-      "sha256": "18f91eb74d29f7a6c31a26b4ae002aeb9336917b95d5102d27e5ae269f9cc7f5",
+      "lines": 318,
+      "sha256": "e624e39915921239cec68343ae91c47ca15efd0a007e776d95ddfa1d7bd98861",
       "description": "Joins a recipe's parts, unwraps, bakes and exports one prop.",
       "imports": [
         "from . import core, mats",
+        "from . import pixel_bake, texturing",
+        "from .ownership import split_standalone",
+        "from .ownership import tag_parts, save_mesh_ownership",
         "from pathlib import Path",
+        "import bmesh",
         "import bmesh as _bm",
         "import bpy",
         "import json",
@@ -7670,31 +7691,31 @@
       "definitions": [
         {
           "name": "standardize",
-          "line": 16,
+          "line": 17,
           "kind": "FunctionDef",
           "description": "Machine-level enforcement of factory/standards.json on the joined mesh, so no\nasset needs these fixed by hand: normals outward, seated on the floor (floor-mounted\nobjects), within its size class's triangle budget, and a texture big enough for the\nminimum texel density. Returns (texture size, notes)."
         },
         {
           "name": "fit_texture",
-          "line": 56,
+          "line": 63,
           "kind": "FunctionDef",
           "description": "After unwrapping: measure real UV coverage and raise the texture size until the\ntexel density meets the standard (estimates were wrong by 4x on many-island props)."
         },
         {
           "name": "finish",
-          "line": 77,
+          "line": 86,
           "kind": "FunctionDef",
           "description": "Bakes albedo / normal / ORM maps for everything built since core.reset()\nand writes <out_root>/<name>/<name>.glb plus textures. Returns manifest info."
         },
         {
           "name": "export_textured",
-          "line": 220,
+          "line": 262,
           "kind": "FunctionDef",
           "description": "Package existing baked maps for standalone viewing; geometry is unchanged."
         },
         {
           "name": "update_manifest",
-          "line": 255,
+          "line": 311,
           "kind": "FunctionDef",
           "description": ""
         }
@@ -7712,6 +7733,8 @@
         "bm.free",
         "bm.from_mesh",
         "bm.to_mesh",
+        "bmesh.new",
+        "bmesh.ops.triangulate",
         "bpy.data.images.load",
         "bpy.data.images.new",
         "bpy.data.materials.new",
@@ -7741,10 +7764,13 @@
         "fit_texture",
         "high.select_set",
         "i['mat'].node_tree.links.new",
+        "identity_path.exists",
+        "identity_path.read_text",
         "img.pixels.foreach_get",
         "img.save",
         "json.dump",
         "json.load",
+        "json.loads",
         "len",
         "list",
         "math.radians",
@@ -7779,19 +7805,27 @@
         "os.path.join",
         "p.select_set",
         "p_.data.validate",
+        "pixel_bake.bind_sources",
+        "pixel_bake.refine_albedo",
         "px",
         "range",
         "round",
         "save",
+        "save_mesh_ownership",
         "sorted",
+        "split_standalone",
         "standardize",
         "std_notes.append",
         "str",
         "sum",
+        "tag_parts",
         "target",
         "texture",
         "tree.links.new",
         "tree.nodes.new",
+        "triangles.free",
+        "triangles.from_mesh",
+        "triangles.to_mesh",
         "tuple"
       ],
       "environment_keys": []
@@ -7887,6 +7921,137 @@
         "xs[np.nonzero(col_lab == i)[0]].min",
         "ys[np.nonzero(col_lab == i)[1]].max",
         "ys[np.nonzero(col_lab == i)[1]].min"
+      ],
+      "environment_keys": []
+    },
+    {
+      "path": "long-lines/tools/propkit/construction.py",
+      "lines": 217,
+      "sha256": "03e6d605d6feea125ec412f9262ff08839ad94d803b0b5821e8df8fc8f3cf669",
+      "description": "Evidence-selected construction regions using existing hulls and spline lofts.\n\nPhysical region IDs are shared by all views. Unidentified ornament remains hull\ngeometry; this does not invent semantic labels or hidden manufacturing joints.",
+      "imports": [
+        "from . import core",
+        "from . import profile_inference",
+        "from .hull import silhouette",
+        "from .sectioning import closed_contours",
+        "from scipy import interpolate",
+        "import bmesh",
+        "import bpy",
+        "import numpy as np"
+      ],
+      "definitions": [
+        {
+          "name": "infer",
+          "line": 11,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "shaft_vertices",
+          "line": 38,
+          "kind": "FunctionDef",
+          "description": "A spline loft with explicit vertices around channel shoulders and floors."
+        },
+        {
+          "name": "refine_dense_shaft",
+          "line": 123,
+          "kind": "FunctionDef",
+          "description": "Give the normal-bake source the same fitted shaft as the low-poly model."
+        },
+        {
+          "name": "manufacture",
+          "line": 159,
+          "kind": "FunctionDef",
+          "description": "Clip complementary construction bands; replace only the fitted shaft.\nEach region is independently simplified/painted; original core list updated."
+        }
+      ],
+      "calls": [
+        "ValueError",
+        "abs",
+        "all",
+        "angles.extend",
+        "angles.tolist",
+        "bm.free",
+        "bm.from_mesh",
+        "bm.to_mesh",
+        "bmesh.new",
+        "bmesh.ops.bisect_plane",
+        "bmesh.ops.holes_fill",
+        "bmesh.ops.recalc_face_normals",
+        "bpy.context.scene.collection.objects.link",
+        "bpy.data.meshes.new",
+        "bpy.data.objects.new",
+        "bpy.data.objects.remove",
+        "built.append",
+        "centers.tolist",
+        "closed_contours",
+        "co.ravel",
+        "core.PARTS.append",
+        "core.PARTS.remove",
+        "core.link",
+        "core.smooth",
+        "end_centers.append",
+        "enumerate",
+        "faces.append",
+        "field",
+        "float",
+        "high.append",
+        "int",
+        "interpolate.RegularGridInterpolator",
+        "interpolate.UnivariateSpline",
+        "len",
+        "list",
+        "low.append",
+        "max",
+        "mesh.from_pydata",
+        "np.angle",
+        "np.arange",
+        "np.arctan2",
+        "np.argmin",
+        "np.argsort",
+        "np.array",
+        "np.asarray",
+        "np.broadcast_to",
+        "np.concatenate",
+        "np.cos",
+        "np.exp",
+        "np.interp",
+        "np.linspace",
+        "np.max",
+        "np.maximum",
+        "np.mean",
+        "np.median",
+        "np.min",
+        "np.minimum",
+        "np.radians",
+        "np.sin",
+        "np.sqrt",
+        "np.stack",
+        "np.tan",
+        "obj.copy",
+        "obj.data.copy",
+        "obj.data.update",
+        "obj.data.vertices.foreach_set",
+        "profile_inference.analyse",
+        "profile_inference.elevation",
+        "profile_inference.feature_identities",
+        "r.copy",
+        "radii.append",
+        "range",
+        "report['camera_axis_fit']['roll_degrees'].get",
+        "round",
+        "rx.tolist",
+        "ry.tolist",
+        "set",
+        "shaft_vertices",
+        "silhouette",
+        "sorted",
+        "spline",
+        "tuple",
+        "validation.append",
+        "vertices.reshape",
+        "views.items",
+        "zip"
       ],
       "environment_keys": []
     },
@@ -10127,6 +10292,47 @@
       "environment_keys": []
     },
     {
+      "path": "long-lines/tools/propkit/local_features.py",
+      "lines": 48,
+      "sha256": "432f587a42fed47ed857effda8f82bac43f839fad28eeefcb48509c6a4b162e6",
+      "description": "Probe the finished mesh for the local evidence a silhouette cannot verify.",
+      "imports": [
+        "from mathutils import Vector",
+        "from mathutils.bvhtree import BVHTree",
+        "import numpy as np"
+      ],
+      "definitions": [
+        {
+          "name": "check_channels",
+          "line": 5,
+          "kind": "FunctionDef",
+          "description": "Measure recesses by rays through actual exported triangles, not normals.\n\nReference radii come from the independently fitted silhouette splines.\nGeometry below 45% of the fitted recess is flagged; shading fit confidence\nremains separate from this check of whether the mesh retained the feature."
+        }
+      ],
+      "calls": [
+        "BVHTree.FromPolygons",
+        "Vector",
+        "all",
+        "construction.get",
+        "depths.append",
+        "expected.append",
+        "fails.append",
+        "float",
+        "min",
+        "np.array",
+        "np.asarray",
+        "np.cos",
+        "np.dot",
+        "np.linspace",
+        "np.sin",
+        "np.sqrt",
+        "records.append",
+        "tree.ray_cast",
+        "zip"
+      ],
+      "environment_keys": []
+    },
+    {
       "path": "long-lines/tools/propkit/locate.py",
       "lines": 74,
       "sha256": "c3ee1ecd971f440b3e05f4eb3abf73b24f2fd61f9ddc77a839237e70d2103285",
@@ -10203,10 +10409,11 @@
     },
     {
       "path": "long-lines/tools/propkit/mats.py",
-      "lines": 342,
-      "sha256": "99e1ee799f243b46d71418088a51cd971fa0afc99c8bbf80a207ece586af3cee",
+      "lines": 366,
+      "sha256": "325611392e306792bcd6f668882626aad155905760de2c2c099853db5113e87a",
       "description": "Material presets for prop recipes.\n\nEvery preset routes through `weathered()`: lighter chipped edges, dark grime in\ncrevices, dust on upward faces. That shared look is what makes props from\ndifferent recipes sit together. `BAKE` records the sockets the baker needs.",
       "imports": [
+        "from . import texturing",
         "import bpy",
         "import json",
         "import os"
@@ -10220,157 +10427,157 @@
         },
         {
           "name": "_new",
-          "line": 21,
+          "line": 23,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "_sock",
-          "line": 32,
+          "line": 34,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "m_",
-          "line": 44,
+          "line": 46,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "mix",
-          "line": 58,
+          "line": 60,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "ramp",
-          "line": 73,
+          "line": 75,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "coords",
-          "line": 84,
+          "line": 88,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "noise",
-          "line": 92,
+          "line": 96,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "ao",
-          "line": 101,
+          "line": 105,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "axis_part",
-          "line": 110,
+          "line": 114,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "weathered",
-          "line": 117,
+          "line": 121,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "bump",
-          "line": 135,
+          "line": 142,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "register",
-          "line": 143,
+          "line": 150,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "_cached",
-          "line": 156,
+          "line": 165,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "wood",
-          "line": 172,
+          "line": 181,
           "kind": "FunctionDef",
           "description": "Wood grain. axis is the direction the grain runs across (Z = horizontal grain)."
         },
         {
           "name": "metal",
-          "line": 193,
+          "line": 204,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "chrome",
-          "line": 206,
+          "line": 218,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "brass",
-          "line": 210,
+          "line": 222,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "iron",
-          "line": 214,
+          "line": 226,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "plain",
-          "line": 218,
+          "line": 230,
           "kind": "FunctionDef",
           "description": "Plastic, enamel, rubber, ceramic: a solid colour with the shared wear."
         },
         {
           "name": "paint",
-          "line": 227,
+          "line": 240,
           "kind": "FunctionDef",
           "description": "Painted wood or metal, chipped at the edges to show the coat underneath."
         },
         {
           "name": "fabric",
-          "line": 238,
+          "line": 251,
           "kind": "FunctionDef",
           "description": "Upholstery and textiles. Patterns: plain, plaid, stripes, floral, zigzag, tweed, chenille."
         },
         {
           "name": "glass",
-          "line": 275,
+          "line": 295,
           "kind": "FunctionDef",
           "description": "Bottle and jar glass, baked as an opaque painted glass (Long Dark style)."
         },
         {
           "name": "image",
-          "line": 287,
+          "line": 307,
           "kind": "FunctionDef",
           "description": "A printed surface (label, box art, record sleeve, poster) mapped through the\n'label_uv' attribute that core.planar_uv / core.wrap_uv store."
         },
         {
           "name": "paper",
-          "line": 304,
+          "line": 324,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "cardboard",
-          "line": 308,
+          "line": 328,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "painted",
-          "line": 320,
+          "line": 342,
           "kind": "FunctionDef",
           "description": "A painted surface tile (assets/surfaces/<name>.png, made by tools/make_tiles.py)\nwrapped onto any shape with box projection, plus the shared weathering. The same\ntiles dress walls and floors in the game, so props and rooms share one look."
         }
@@ -10412,8 +10619,119 @@
         "plain",
         "ramp",
         "register",
+        "texturing.PROJECTIONS.clear",
         "tuple",
         "weathered"
+      ],
+      "environment_keys": []
+    },
+    {
+      "path": "long-lines/tools/propkit/ownership.py",
+      "lines": 134,
+      "sha256": "f1a3597595575ce36e1c30561fd45f58d740323998aa564a61390ab2398c6366",
+      "description": "Physical part identity through joining/baking and standalone export.\n\nInteger face ownership is captured before joining; triangle centroids bridge the\nlibrary GLB round trip without assuming exporter vertex/triangle ordering.",
+      "imports": [
+        "from pathlib import Path",
+        "from scipy.spatial import cKDTree",
+        "import bmesh",
+        "import bpy",
+        "import json",
+        "import numpy as np"
+      ],
+      "definitions": [
+        {
+          "name": "tag_parts",
+          "line": 12,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "reject_duplicate_geometry",
+          "line": 29,
+          "kind": "FunctionDef",
+          "description": "Reject near-coincident copies before baking, regardless of their names.\n\nSmall contact patches between legitimate components do not constitute a\nduplicate. Both complete surfaces must coincide within metric tolerance."
+        },
+        {
+          "name": "save_mesh_ownership",
+          "line": 51,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "split_standalone",
+          "line": 75,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "match_ownership",
+          "line": 110,
+          "kind": "FunctionDef",
+          "description": "Match oriented triangles; opposing internal caps have distinct owners.\n\nAmbiguous coincident triangles from different owners are an error, rather\nthan whichever nearest-neighbour happened to be returned first."
+        }
+      ],
+      "calls": [
+        "(assignment == index).any",
+        "(normal / max(np.linalg.norm(normal), 1e-12)).tolist",
+        "Path",
+        "Path(path).write_text",
+        "ValueError",
+        "a.max",
+        "a.min",
+        "abs",
+        "ambiguous.any",
+        "assignments.append",
+        "attribute.data.foreach_set",
+        "b.max",
+        "b.min",
+        "bm.faces.ensure_lookup_table",
+        "bm.faces.index_update",
+        "bm.free",
+        "bm.from_mesh",
+        "bm.to_mesh",
+        "bmesh.new",
+        "bmesh.ops.delete",
+        "bpy.context.scene.collection.objects.link",
+        "bpy.data.objects.remove",
+        "cKDTree",
+        "cKDTree(a).query",
+        "cKDTree(a).query(b)[0].max",
+        "cKDTree(b).query",
+        "cKDTree(b).query(a)[0].max",
+        "cKDTree(original).query",
+        "centers.append",
+        "clouds.append",
+        "enumerate",
+        "json.dumps",
+        "len",
+        "match_ownership",
+        "max",
+        "mesh.attributes.get",
+        "mesh.calc_loop_triangles",
+        "min",
+        "normals.append",
+        "np.any",
+        "np.array",
+        "np.asarray",
+        "np.cross",
+        "np.full",
+        "np.linalg.norm",
+        "np.max",
+        "np.maximum",
+        "np.mean",
+        "obj.copy",
+        "obj.data.copy",
+        "obj.matrix_world.to_3x3",
+        "obj.matrix_world.to_3x3().inverted",
+        "obj.matrix_world.to_3x3().inverted().transposed",
+        "owners.append",
+        "part.data.attributes.get",
+        "part.data.attributes.new",
+        "part.data.attributes.remove",
+        "part.get",
+        "parts.append",
+        "reject_duplicate_geometry",
+        "tuple"
       ],
       "environment_keys": []
     },
@@ -10819,8 +11137,8 @@
     },
     {
       "path": "long-lines/tools/propkit/pipeline.py",
-      "lines": 117,
-      "sha256": "ea764ae7c13c509df0bbe8ffeaebae85341e4b8c87eebddc2ca1a780d360f01c",
+      "lines": 118,
+      "sha256": "1ff3a505472a1e97122ea145f9bd89a2474ce3c6483a6299386deef2e6a24c36",
       "description": "Image-only orchestration. Geometry stays in the existing factory engines.\n\nCallbacks keep this station testable without importing or duplicating factory\ndispatch. All file freshness checks belong here, before packaging or reporting.",
       "imports": [
         "from . import engineering",
@@ -10861,7 +11179,7 @@
         },
         {
           "name": "build_image",
-          "line": 94,
+          "line": 95,
           "kind": "FunctionDef",
           "description": "Persist a reviewable failure report even if a station raises unexpectedly."
         }
@@ -10899,13 +11217,173 @@
         "print",
         "render_asset",
         "result.update",
+        "result['qa'].get",
         "round",
         "str",
         "subprocess.run",
         "time.monotonic",
         "time.time_ns",
         "traceback.format_exc",
-        "warnings.append"
+        "warnings.append",
+        "warnings.extend"
+      ],
+      "environment_keys": []
+    },
+    {
+      "path": "long-lines/tools/propkit/pixel_bake.py",
+      "lines": 276,
+      "sha256": "c59b57ebe2ac9331fb0da7ef581ad796e13dc8ea00e47c7fd160c577e31dc50b",
+      "description": "Final-UV per-texel projection with geometric ownership and source rejection.\n\nUses source-camera depth buffers, not interpolated vertex visibility. Material\nfamilies without projection evidence retain their normal Cycles bake.",
+      "imports": [
+        "from .raster import triangle_samples, depth_buffer",
+        "from PIL import Image",
+        "from scipy import ndimage",
+        "import numpy as np"
+      ],
+      "definitions": [
+        {
+          "name": "linear_rgb",
+          "line": 17,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "srgb",
+          "line": 21,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "overlap_offsets",
+          "line": 25,
+          "kind": "FunctionDef",
+          "description": "One bounded exposure correction per source, shared by all UV islands.\n\nUse only consistent overlapping observations. Incompatible paint patterns\nare rejected, not explained away with a large brightness correction."
+        },
+        {
+          "name": "calibrate_sources",
+          "line": 55,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "uv",
+          "line": 74,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "transform",
+          "line": 88,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "camera_uv",
+          "line": 92,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "bind_sources",
+          "line": 110,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "refine_albedo",
+          "line": 119,
+          "kind": "FunctionDef",
+          "description": ""
+        }
+      ],
+      "calls": [
+        "(disagreement & (weights > 0)).sum",
+        "(mapping <= 1).all",
+        "(mapping >= 0).all",
+        "(~valid).sum",
+        "Image.fromarray",
+        "Image.fromarray(image).save",
+        "Image.fromarray(np.uint8(confidence * 255)).save",
+        "Image.open",
+        "Image.open(output_path).convert",
+        "Image.open(path).convert",
+        "abs",
+        "bool",
+        "calibrate_sources",
+        "camera.get",
+        "camera_sources.append",
+        "camera_uv",
+        "colour_samples.append",
+        "colours.append",
+        "covered.any",
+        "covered.sum",
+        "depth_buffer",
+        "differences.append",
+        "enumerate",
+        "equations.append",
+        "fit.get",
+        "fit['roll_degrees'].get",
+        "int",
+        "keep.sum",
+        "known.any",
+        "len",
+        "linear_rgb",
+        "material_sources.get",
+        "matrix.tobytes",
+        "max",
+        "mesh.calc_loop_triangles",
+        "missing.sum",
+        "ndimage.distance_transform_edt",
+        "ndimage.map_coordinates",
+        "np.arange",
+        "np.argmax",
+        "np.array",
+        "np.asarray",
+        "np.asarray(Image.open(output_path).convert('RGB')).copy",
+        "np.clip",
+        "np.cos",
+        "np.einsum",
+        "np.full",
+        "np.linalg.inv",
+        "np.linalg.lstsq",
+        "np.linalg.norm",
+        "np.max",
+        "np.maximum",
+        "np.median",
+        "np.ones",
+        "np.radians",
+        "np.rint",
+        "np.rint((1 - mapping[:, 1]) * sh - 0.5).astype",
+        "np.rint(mapping[:, 0] * sw - 0.5).astype",
+        "np.rint(px).astype",
+        "np.rint(py).astype",
+        "np.sin",
+        "np.stack",
+        "np.uint8",
+        "np.unique",
+        "np.vstack",
+        "np.where",
+        "np.zeros",
+        "overlap_offsets",
+        "range",
+        "record.get",
+        "record['views'].items",
+        "record['world_to_source'].copy",
+        "registry.items",
+        "sorted",
+        "sources.get",
+        "srgb",
+        "str",
+        "str(output_path).replace",
+        "transform",
+        "triangle_samples",
+        "tuple",
+        "uv",
+        "valid.append",
+        "weights.append",
+        "weights.max",
+        "weights.sum",
+        "zip"
       ],
       "environment_keys": []
     },
@@ -10938,13 +11416,176 @@
       "environment_keys": []
     },
     {
+      "path": "long-lines/tools/propkit/profile_inference.py",
+      "lines": 323,
+      "sha256": "595d92ca32b16850ffcbcb9701edc48f454cb824786a0b53a513f582858b36d0",
+      "description": "Software-only cross-view profiles, construction bands and continuous valleys.\n\nAll coordinates are inferred from masks. There are no object names or supplied\nshaft boxes. Absolute scale remains the responsibility of the sizing station.",
+      "imports": [
+        "from scipy import ndimage, signal, interpolate, optimize",
+        "import numpy as np"
+      ],
+      "definitions": [
+        {
+          "name": "elevation",
+          "line": 10,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "construction_regions",
+          "line": 32,
+          "kind": "FunctionDef",
+          "description": "Find a long tapered span from cross-view width derivatives; retain other\nregions as independently identified construction bands, not false cylinders."
+        },
+        {
+          "name": "fit_axis",
+          "line": 81,
+          "kind": "FunctionDef",
+          "description": "Joint orthographic axis fit: shared nonlinear 3D bend plus per-view roll.\nLinear tilt is a coordinate gauge, not uniquely observable absolute pose.\nThis intentionally does not claim arbitrary perspective calibration."
+        },
+        {
+          "name": "trace_valleys",
+          "line": 118,
+          "kind": "FunctionDef",
+          "description": "Longitudinal, scale-normalized channels with curvature-smoothed paths.\nJointly remove smooth illumination and colour-dependent reflectance first.\nDark stripes alone remain ambiguous; fit/validation records their support."
+        },
+        {
+          "name": "groove_map",
+          "line": 168,
+          "kind": "FunctionDef",
+          "description": "Signed channel hypothesis in image pixels, with smooth end closures.\nPhysical depth is bounded from observed width and reported as inferred."
+        },
+        {
+          "name": "fit_channel",
+          "line": 189,
+          "kind": "FunctionDef",
+          "description": "Bounded inverse rendering of a channel, illumination and smooth albedo.\n\nConstant/linear albedo and a fixed light gauge prevent arbitrary per-pixel\npaint from explaining every shape. A flat fit is retained for comparison.\nAchromatic paint remains a real ambiguity and is explicitly recorded."
+        },
+        {
+          "name": "analyse",
+          "line": 265,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "feature_identities",
+          "line": 288,
+          "kind": "FunctionDef",
+          "description": "One physical channel per angular cluster, retaining every observation.\nThis is appropriate only for the fitted rounded shaft family."
+        }
+      ],
+      "calls": [
+        "(design @ coefficients).reshape",
+        "(luminance - illumination).ravel",
+        "(predict(p, depth) - observed).ravel",
+        "(predicted - observed).ravel",
+        "(prediction - observed).ravel",
+        "abs",
+        "any",
+        "bool",
+        "chroma.mean",
+        "chroma.reshape",
+        "coefficients.tolist",
+        "construction_regions",
+        "curved.x[2:7].tolist",
+        "curved.x[:2].tolist",
+        "enumerate",
+        "fit_axis",
+        "fit_channel",
+        "float",
+        "groove['fit'].get",
+        "groove_map",
+        "group['observations'].append",
+        "groups.append",
+        "int",
+        "interpolate.UnivariateSpline",
+        "keep.sum",
+        "len",
+        "list",
+        "max",
+        "min",
+        "ndimage.binary_closing",
+        "ndimage.find_objects",
+        "ndimage.gaussian_filter",
+        "ndimage.gaussian_filter1d",
+        "ndimage.label",
+        "ndimage.map_coordinates",
+        "next",
+        "np.abs",
+        "np.angle",
+        "np.arange",
+        "np.arccos",
+        "np.arcsin",
+        "np.arctan",
+        "np.argmax",
+        "np.argsort",
+        "np.array",
+        "np.asarray",
+        "np.broadcast_to",
+        "np.clip",
+        "np.degrees",
+        "np.einsum",
+        "np.exp",
+        "np.flatnonzero",
+        "np.gradient",
+        "np.interp",
+        "np.isfinite",
+        "np.linalg.lstsq",
+        "np.linspace",
+        "np.log",
+        "np.max",
+        "np.maximum",
+        "np.mean",
+        "np.median",
+        "np.minimum",
+        "np.ones",
+        "np.polyfit",
+        "np.polyval",
+        "np.quantile",
+        "np.sin",
+        "np.sqrt",
+        "np.stack",
+        "np.std",
+        "np.sum",
+        "np.zeros",
+        "np.zeros_like",
+        "observations.append",
+        "observed.mean",
+        "optimize.least_squares",
+        "parameters[:4].reshape",
+        "path.tolist",
+        "predict",
+        "profiles.items",
+        "profiles.values",
+        "range",
+        "report.get",
+        "report.get('views', {}).items",
+        "residual",
+        "result.append",
+        "rgb.mean",
+        "row.any",
+        "set",
+        "signal.find_peaks",
+        "signal.peak_widths",
+        "slice",
+        "solution.x[:4].reshape",
+        "solution.x[:4].reshape(2, 2).tolist",
+        "sorted",
+        "spline",
+        "trace_valleys",
+        "zip"
+      ],
+      "environment_keys": []
+    },
+    {
       "path": "long-lines/tools/propkit/qa.py",
-      "lines": 308,
-      "sha256": "7b17286884839e641983b4117be9753faa4948851f431b2d33d0e96f3c3abb95",
+      "lines": 323,
+      "sha256": "7ab0cc6882c22786243aff377e9f4f1f200dd0590b67ad6ef409399cd83a628e",
       "description": "The factory's quality gate: measures a built prop against factory/standards.json.\n\ncheck(name, views_dir=None, category=None) -> {\"pass\": bool, \"fails\": [...], \"metrics\": {...}}\n\nFast (ray casts and mesh statistics, no rendering), so the whole library can be gated\nin one Blender process. The visual turnaround stays in tools/critique.py and is only\nrendered for failures or spot checks: the gate enforces a minimum standard, not polish.",
       "imports": [
         "from . import trim_checks",
         "from .hull import silhouette",
+        "from .local_features import check_channels",
         "from .texturing import uv_quality",
         "from PIL import Image",
         "from mathutils import Vector",
@@ -10991,6 +11632,8 @@
         "(ref & got).sum",
         "(ref | core).sum",
         "(ref | got).sum",
+        "(trim_order or {}).get",
+        "(trim_order or {}).get('measured', {}).get",
         "(worst < 0.3).sum",
         "BVHTree.FromPolygons",
         "Image.fromarray",
@@ -11014,8 +11657,10 @@
         "bpy.ops.import_scene.gltf",
         "bpy.ops.wm.read_factory_settings",
         "bv.get",
+        "check_channels",
         "enumerate",
         "fails.append",
+        "fails.extend",
         "fg[top:bottom, left:right].mean",
         "float",
         "glb_normal_disagreement",
@@ -11024,6 +11669,8 @@
         "int",
         "js.get",
         "json.load",
+        "json.load(open(library_path)).get",
+        "json.load(open(library_path)).get(name, {}).get",
         "lab.ravel",
         "len",
         "list",
@@ -11056,6 +11703,7 @@
         "os.path.isfile",
         "os.path.join",
         "os.path.normpath",
+        "projection.get",
         "range",
         "round",
         "set",
@@ -11078,6 +11726,47 @@
         "xs_.min",
         "ys_.max",
         "ys_.min"
+      ],
+      "environment_keys": []
+    },
+    {
+      "path": "long-lines/tools/propkit/raster.py",
+      "lines": 38,
+      "sha256": "000d0b6ca9cb124ca887760001fe617221228d90cbe0f4d9ab3e166deec87c31",
+      "description": "Small deterministic orthographic/UV rasterizer shared by visibility and QA.",
+      "imports": [
+        "import numpy as np"
+      ],
+      "definitions": [
+        {
+          "name": "triangle_samples",
+          "line": 5,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "depth_buffer",
+          "line": 26,
+          "kind": "FunctionDef",
+          "description": ""
+        }
+      ],
+      "calls": [
+        "abs",
+        "enumerate",
+        "np.any",
+        "np.asarray",
+        "np.ceil",
+        "np.ceil(points.min(0)).astype",
+        "np.floor",
+        "np.floor(points.max(0)).astype",
+        "np.full",
+        "np.maximum",
+        "np.minimum",
+        "np.stack",
+        "points.max",
+        "points.min",
+        "triangle_samples"
       ],
       "environment_keys": []
     },
@@ -12299,8 +12988,8 @@
     },
     {
       "path": "long-lines/tools/propkit/texturing.py",
-      "lines": 196,
-      "sha256": "eee45c3480370ed259e708c95f6d65d909283728032ebbf3a5f16b2edcdcdd82",
+      "lines": 211,
+      "sha256": "bf7ddc7755200231991914badbd5a7aaa0c4d571b83ced9e41b9c0af5df84b46",
       "description": "Texture manufacturing: colour a finished mesh from orthographic painted views.\n\nThe mesh decides, not the reference sheet. bake.finish later unwraps the mesh into its own UV\natlas and bakes; this module makes what gets baked right:\n\n- every surface point takes a weighted blend of the views, not one view per face:\n      weight = facing^4 x visible x resolution\n  facing     how squarely the (smoothed) surface faces that view's camera\n  visible    1 unless other geometry sits between the point and that camera (ray cast)\n  resolution the view's pixels per metre, relative to the best view\n- normals used for the choice are smoothed over the surface, so a voxel-carved or decimated\n  mesh doesn't flip between views face by face (the patchwork seams);\n- where no view sees a point (undersides, inside the cradle) the weight falls back to the\n  best-facing view instead of leaving a hole.\n\nproject(obj, views, W, D, H, others) -> a material on obj, registered for baking.\nviews: {\"front\": path, \"back\": path, \"right\": path, \"left\": path, \"top\": path} (any subset),\neach image cropped tight to the object as seen from that side (front at the image's left in\nthe right view, front at the bottom of the top view: the hull line's conventions).",
       "imports": [
         "from . import mats",
@@ -12315,25 +13004,25 @@
       "definitions": [
         {
           "name": "_uv",
-          "line": 33,
+          "line": 34,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "smoothed_normals",
-          "line": 46,
+          "line": 48,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "project",
-          "line": 60,
+          "line": 63,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "uv_quality",
-          "line": 173,
+          "line": 188,
           "kind": "FunctionDef",
           "description": "After unwrapping: how evenly texture is spread over the surface. stretch = a face's UV\narea / 3-D area, relative to the median face. Distorted = stretch outside 1/2..2."
         }
@@ -12357,6 +13046,7 @@
         "bm.verts.ensure_lookup_table",
         "bmesh.new",
         "bpy.data.images.load",
+        "dict",
         "e.other_vert",
         "enumerate",
         "float",
@@ -12370,6 +13060,7 @@
         "me.color_attributes.new",
         "me.materials.append",
         "me.materials.clear",
+        "mw.copy",
         "mw.to_3x3",
         "n[js].sum",
         "names.index",
@@ -14380,8 +15071,8 @@
     },
     {
       "path": "long-lines/tools/render_turnaround.py",
-      "lines": 143,
-      "sha256": "979e0e14415b0ad0eee0431ee7dcd096926582803e2ab2fe4585c2836c884f84",
+      "lines": 147,
+      "sha256": "5d756649c59853dcfb697fac3a1b244b81fbda0203660ee0dd9bc8d3949dd3fe",
       "description": "Final renders of a shipped library prop: the assembly line's last station.\n\n    blender -b --factory-startup -P tools/render_turnaround.py -- NAME [OUT_DIR]\n\nWrites OUT_DIR/NAME.png (default docs/renders/): front, right, back, left, top and three-quarter views\nwith its textures, plus a clay three-quarter (shape only), on one sheet with its size, triangles, build time\nand quality-gate result. Orthographic cameras framed on the prop's own size, so any prop works.",
       "imports": [
         "from PIL import Image, ImageDraw, ImageFont",
@@ -14456,9 +15147,11 @@
         "o.data.materials.append",
         "o.data.materials.clear",
         "open",
+        "order.get",
         "os.makedirs",
         "os.path.abspath",
         "os.path.dirname",
+        "os.path.isfile",
         "os.path.join",
         "print",
         "r.get",
@@ -15295,6 +15988,84 @@
       "environment_keys": []
     },
     {
+      "path": "long-lines/tools/test_ownership_blender.py",
+      "lines": 104,
+      "sha256": "1f36847131756589269dbb5ef0edafc3a68a1deedf611103eb1363c04e92feef",
+      "description": "Real Blender mesh/UV/export regressions for physical and texel ownership.",
+      "imports": [
+        "from PIL import Image",
+        "from pathlib import Path",
+        "from propkit import ownership, pixel_bake",
+        "from propkit.local_features import check_channels",
+        "import bpy",
+        "import json",
+        "import numpy as np",
+        "import sys",
+        "import tempfile",
+        "import unittest"
+      ],
+      "definitions": [
+        {
+          "name": "OwnershipContracts",
+          "line": 14,
+          "kind": "ClassDef",
+          "description": ""
+        }
+      ],
+      "calls": [
+        "Image.fromarray",
+        "Image.fromarray(source).save",
+        "Image.new",
+        "Image.new('RGB', (64, 64), (90, 90, 90)).save",
+        "Image.open",
+        "Path",
+        "Path(__file__).resolve",
+        "bpy.context.scene.collection.objects.link",
+        "bpy.data.materials.new",
+        "bpy.data.meshes.new",
+        "bpy.data.objects.new",
+        "bpy.ops.export_scene.gltf",
+        "bpy.ops.import_scene.gltf",
+        "bpy.ops.mesh.primitive_cube_add",
+        "bpy.ops.object.delete",
+        "bpy.ops.object.join",
+        "bpy.ops.object.select_all",
+        "check_channels",
+        "enumerate",
+        "len",
+        "mesh.attributes.new",
+        "mesh.from_pydata",
+        "mesh.materials.append",
+        "mesh.uv_layers.new",
+        "next",
+        "np.array",
+        "np.asarray",
+        "np.cos",
+        "np.eye",
+        "np.full",
+        "np.linspace",
+        "np.sin",
+        "ownership.save_mesh_ownership",
+        "ownership.split_standalone",
+        "ownership.tag_parts",
+        "parts.append",
+        "pixel_bake.refine_albedo",
+        "range",
+        "result[32, 32].min",
+        "result[8, 32].mean",
+        "self.assertEqual",
+        "self.assertGreater",
+        "self.assertRaisesRegex",
+        "set",
+        "str",
+        "sum",
+        "sys.path.insert",
+        "tempfile.TemporaryDirectory",
+        "unittest.main"
+      ],
+      "environment_keys": []
+    },
+    {
       "path": "long-lines/tools/test_preflight.py",
       "lines": 23,
       "sha256": "ee5f3c4ff351d4f7aefc53e641bd0690c471ecd87eeda0203ab32e58b7bcdf17",
@@ -15325,6 +16096,72 @@
         "sys.path.insert",
         "tempfile.TemporaryDirectory",
         "{'front': (90, 160), 'back': (45, 160), 'right': (45, 160), 'top': (90, 45)}.items"
+      ],
+      "environment_keys": []
+    },
+    {
+      "path": "long-lines/tools/test_profile_pipeline.py",
+      "lines": 126,
+      "sha256": "f63900d6d58382e6c9f5733ae01e719dd242dff8e674bba71b27ad8d47a06683",
+      "description": "Evidence, pose, raster ownership and appearance regressions on synthetic data.",
+      "imports": [
+        "from propkit import profile_inference as profiles",
+        "from propkit.ownership import match_ownership",
+        "from propkit.pixel_bake import linear_rgb, srgb, uv, overlap_offsets, camera_uv",
+        "from propkit.raster import depth_buffer, triangle_samples",
+        "import numpy as np",
+        "import unittest"
+      ],
+      "definitions": [
+        {
+          "name": "ProfileContracts",
+          "line": 10,
+          "kind": "ClassDef",
+          "description": ""
+        }
+      ],
+      "calls": [
+        "camera_uv",
+        "depth_buffer",
+        "len",
+        "linear_rgb",
+        "match_ownership",
+        "np.arange",
+        "np.arctan",
+        "np.array",
+        "np.broadcast_to",
+        "np.cos",
+        "np.degrees",
+        "np.exp",
+        "np.full",
+        "np.interp",
+        "np.linspace",
+        "np.mean",
+        "np.ones",
+        "np.radians",
+        "np.sin",
+        "np.testing.assert_allclose",
+        "np.testing.assert_array_equal",
+        "np.zeros",
+        "observation",
+        "overlap_offsets",
+        "profiles.elevation",
+        "profiles.feature_identities",
+        "profiles.fit_axis",
+        "profiles.fit_channel",
+        "profiles.trace_valleys",
+        "self.assertAlmostEqual",
+        "self.assertEqual",
+        "self.assertFalse",
+        "self.assertIn",
+        "self.assertIsNone",
+        "self.assertLess",
+        "self.assertRaisesRegex",
+        "self.assertTrue",
+        "srgb",
+        "triangle_samples",
+        "unittest.main",
+        "uv"
       ],
       "environment_keys": []
     },

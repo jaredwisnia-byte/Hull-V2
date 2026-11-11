@@ -75,6 +75,7 @@ def _build_image(image, output, *, build_order, library_root, render_script, exp
         result["inference_warnings"] = warnings
         build_started_ns = time.time_ns()
         result["qa"] = build_order(order)
+        warnings.extend(result['qa'].get('inference_warnings', []))
         artifact = Path(library_root) / name / (name + ".glb")
         if is_fresh(artifact, build_started_ns):
             result.update(export_model(name, library_root, destination))

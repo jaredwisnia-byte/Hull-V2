@@ -10,6 +10,7 @@ import re
 import subprocess
 from pathlib import Path
 from collections import Counter
+from datetime import date
 root = Path(__file__).resolve().parents[2]
 
 
@@ -71,7 +72,7 @@ for path in sorted(sources):
         entry['definitions'] = re.findall(
             r'^(?:export\s+)?(?:async\s+)?function\s+(\w+)|^class\s+(\w+)', text, re.M)
     entries.append(entry)
-result = {'audit_date': '2026-11-10', 'method': 'Static parse and catalog; not proof of runtime correctness',
+result = {'audit_date': date.today().isoformat(), 'method': 'Static parse and catalog; not proof of runtime correctness',
           'local_head': git('rev-parse', 'HEAD').strip(), 'canonical_dirac': '9d8df082dfbef7d5a508be3578d78d7c488561ab',
           'tracked_files': len(tracked), 'tracked_extensions': dict(extensions),
           'catalogued_files': len(entries), 'python_files': sum(e['path'].endswith('.py') for e in entries),

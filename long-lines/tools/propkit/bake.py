@@ -10,7 +10,8 @@ import numpy as np
 from . import core, mats
 
 
-STANDARDS = json.load(open(os.path.join(os.path.dirname(__file__), "..", "..", "factory", "standards.json")))
+STANDARDS = json.load(open(os.path.join(os.path.dirname(
+    __file__), "..", "..", "factory", "standards.json")))
 
 
 def standardize(obj, name, tex, tags=()):
@@ -20,6 +21,7 @@ def standardize(obj, name, tex, tags=()):
     minimum texel density. Returns (texture size, notes)."""
     import bmesh as _bm
     notes = []
+    obj['projection_translation'] = [0.0, 0.0, 0.0]
     me = obj.data
     bm = _bm.new()
     bm.from_mesh(me)
@@ -27,10 +29,12 @@ def standardize(obj, name, tex, tags=()):
     bm.to_mesh(me)
     bm.free()
     mt = STANDARDS["mounting"]
-    mount = mt["by_name"].get(name) or next((m for t, m in mt["by_tag"].items() if t in tags), "floor")
+    mount = mt["by_name"].get(name) or next(
+        (m for t, m in mt["by_tag"].items() if t in tags), "floor")
     zs = [v.co.z for v in me.vertices]
     if mount == "floor" and zs and abs(min(zs)) > 1e-4:
         dz = -min(zs)
+        obj['projection_translation'][2] = dz
         for v in me.vertices:
             v.co.z += dz
         notes.append("seated on floor (%+.3f m)" % dz)
@@ -38,18 +42,21 @@ def standardize(obj, name, tex, tags=()):
     if mount == "wall" and ys and abs(max(ys)) > 1e-4:
         # wall-mounted: the back (+Y; fronts face -Y) on the wall plane y = 0, as hand-built wall props are
         dy = -max(ys)
+        obj['projection_translation'][1] = dy
         for v in me.vertices:
             v.co.y += dy
         notes.append("back on the wall plane (%+.3f m)" % dy)
     dims = obj.dimensions
-    cls = next((k for k, v in STANDARDS["size_classes"].items() if max(dims) <= v["max_dim_m"]), "building")
+    cls = next((k for k, v in STANDARDS["size_classes"].items() if max(
+        dims) <= v["max_dim_m"]), "building")
     budget = STANDARDS["size_classes"][cls]["tri_budget"]
     tris = sum(len(p.vertices) - 2 for p in me.polygons)
     if tris > budget:
         d = obj.modifiers.new("budget", "DECIMATE")
         d.ratio = budget / tris * 0.95
         core.apply_mods(obj)
-        notes.append("decimated %d -> %d tris" % (tris, sum(len(p.vertices) - 2 for p in me.polygons)))
+        notes.append("decimated %d -> %d tris" %
+                     (tris, sum(len(p.vertices) - 2 for p in me.polygons)))
     return tex, notes
 
 
@@ -63,8 +70,10 @@ def fit_texture(me, tex):
         pts = [uv.data[li].uv for li in p.loop_indices]
         uv_area += 0.5 * abs(sum(pts[i].x * pts[(i + 1) % len(pts)].y - pts[(i + 1) % len(pts)].x * pts[i].y
                                  for i in range(len(pts))))
-    dims = me.vertices and [max(v.co[i] for v in me.vertices) - min(v.co[i] for v in me.vertices) for i in range(3)]
-    cls = next((k for k, v in STANDARDS["size_classes"].items() if max(dims or [0]) <= v["max_dim_m"]), "building")
+    dims = me.vertices and [max(v.co[i] for v in me.vertices) - min(v.co[i]
+                                                                    for v in me.vertices) for i in range(3)]
+    cls = next((k for k, v in STANDARDS["size_classes"].items() if max(
+        dims or [0]) <= v["max_dim_m"]), "building")
     lo_density = STANDARDS["size_classes"][cls].get("texel_density_px_per_m",
                                                     STANDARDS["minimum_acceptable"]["texel_density_px_per_m"])[0]
     notes = []
@@ -74,44 +83,67 @@ def fit_texture(me, tex):
     return tex, notes
 
 
-def finish(name, out_root, tex=1024, samples=24, tags=()):
+def finish(name, out_root, tex=1024, samples=24, tags=(), owned_projection=False):
     """Bakes albedo / normal / ORM maps for everything built since core.reset()
     and writes <out_root>/<name>/<name>.glb plus textures. Returns manifest info."""
     out = os.path.join(out_root, name)
     os.makedirs(out, exist_ok=True)
     parts = [p for p in core.PARTS if p.name in bpy.data.objects]
+    from . import pixel_bake, texturing
+    projection_sources = pixel_bake.bind_sources(
+        texturing.PROJECTIONS) if owned_projection else {}
+    from .ownership import tag_parts, save_mesh_ownership
     bpy.ops.object.select_all(action="DESELECT")
     for p in parts:
         p.select_set(True)
     bpy.context.view_layer.objects.active = parts[0]
     bpy.ops.object.convert(target="MESH")
     bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
+    parts = list(bpy.context.selected_objects)
+    physical_owners = tag_parts(parts)
     # repair invalid meshes before joining: one invalid part (a thin plate with holes, decimated hard)
     # makes the glTF exporter misalign its arrays, garbling the normals of every part written after it
-    repaired = [p_.name for p_ in parts if p_.data.validate(verbose=False, clean_customdata=False)]
+    repaired = [p_.name for p_ in parts if p_.data.validate(
+        verbose=False, clean_customdata=False)]
     bpy.ops.object.join()
     obj = bpy.context.view_layer.objects.active
     obj.name = name
     bpy.context.scene.cursor.location = (0, 0, 0)
     bpy.ops.object.origin_set(type="ORIGIN_CURSOR")
-    high = bpy.data.objects.get(name + "__high") or next((o for o in bpy.data.objects if o.name.endswith("__high")), None)
-    lo0 = [min(v.co[i] for v in obj.data.vertices) for i in range(3)] if high else None
+    high = bpy.data.objects.get(
+        name + "__high") or next((o for o in bpy.data.objects if o.name.endswith("__high")), None)
+    lo0 = [min(v.co[i] for v in obj.data.vertices)
+           for i in range(3)] if high else None
     tex, std_notes = standardize(obj, name, tex, tags)
     if high:
         # the dense relief moves with the mesh it was made from (standardize seats it on the floor/wall)
         lo1 = [min(v.co[i] for v in obj.data.vertices) for i in range(3)]
-        high.location = tuple(high.location[i] + lo1[i] - lo0[i] for i in range(3))
+        high.location = tuple(
+            high.location[i] + lo1[i] - lo0[i] for i in range(3))
     if repaired:
-        std_notes.append("repaired invalid mesh data: %s" % ", ".join(repaired))
+        std_notes.append("repaired invalid mesh data: %s" %
+                         ", ".join(repaired))
     if obj.data.validate(verbose=False, clean_customdata=False):
         std_notes.append("repaired invalid mesh data after joining")
+    # Resolve n-gons once before UVs, baking, ownership capture and export.
+    # Otherwise the exporter can choose a different diagonal on tiny cap
+    # polygons, invalidating both local checks and triangle ownership.
+    import bmesh
+    triangles = bmesh.new()
+    try:
+        triangles.from_mesh(obj.data)
+        bmesh.ops.triangulate(triangles, faces=list(triangles.faces))
+        triangles.to_mesh(obj.data)
+    finally:
+        triangles.free()
     me = obj.data
     for uv in list(me.uv_layers):
         me.uv_layers.remove(uv)
     me.uv_layers.new(name="UVMap")
     bpy.ops.object.mode_set(mode="EDIT")
     bpy.ops.mesh.select_all(action="SELECT")
-    bpy.ops.uv.smart_project(angle_limit=math.radians(60), island_margin=0.004, area_weight=0.0, scale_to_bounds=True)
+    bpy.ops.uv.smart_project(angle_limit=math.radians(
+        60), island_margin=0.004, area_weight=0.0, scale_to_bounds=True)
     bpy.ops.uv.pack_islands(margin=0.004)
     bpy.ops.object.mode_set(mode="OBJECT")
     tex, fit_notes = fit_texture(me, tex)
@@ -121,7 +153,8 @@ def finish(name, out_root, tex=1024, samples=24, tags=()):
     scene.render.engine = "CYCLES"
     scene.cycles.device = "CPU"
     scene.cycles.samples = samples
-    scene.cycles.use_denoising = False  # some builds lack OIDN; bakes then fail silently
+    # some builds lack OIDN; bakes then fail silently
+    scene.cycles.use_denoising = False
     scene.render.bake.margin = max(4, tex // 128)
     core.select_only(obj)
 
@@ -131,7 +164,8 @@ def finish(name, out_root, tex=1024, samples=24, tags=()):
     def target(img):
         for i in infos:
             nt = i["mat"].node_tree
-            node = nt.nodes.get("bake_target") or nt.nodes.new("ShaderNodeTexImage")
+            node = nt.nodes.get("bake_target") or nt.nodes.new(
+                "ShaderNodeTexImage")
             node.name = "bake_target"
             node.image = img
             nt.nodes.active = node
@@ -139,7 +173,8 @@ def finish(name, out_root, tex=1024, samples=24, tags=()):
     def emit(key):
         for i in infos:
             nt = i["mat"].node_tree
-            em = nt.nodes.get("bake_emit") or nt.nodes.new("ShaderNodeEmission")
+            em = nt.nodes.get("bake_emit") or nt.nodes.new(
+                "ShaderNodeEmission")
             em.name = "bake_emit"
             nt.links.new(i[key], em.inputs["Color"])
             nt.links.new(em.outputs["Emission"], i["out"].inputs["Surface"])
@@ -164,6 +199,9 @@ def finish(name, out_root, tex=1024, samples=24, tags=()):
     emit("albedo")
     bpy.ops.object.bake(type="EMIT")
     save(alb, name + "_albedo.png")
+    projection_report = pixel_bake.refine_albedo(
+        obj, projection_sources, os.path.join(out, name + '_albedo.png'),
+        shift=obj['projection_translation']) if projection_sources else {}
     r = new_img(name + "_r", "Non-Color")
     target(r)
     emit("rough")
@@ -175,7 +213,8 @@ def finish(name, out_root, tex=1024, samples=24, tags=()):
     nrm = new_img(name + "_normal", "Non-Color")
     target(nrm)
     for i in infos:
-        i["mat"].node_tree.links.new(i["bsdf"].outputs["BSDF"], i["out"].inputs["Surface"])
+        i["mat"].node_tree.links.new(
+            i["bsdf"].outputs["BSDF"], i["out"].inputs["Surface"])
     scene.cycles.samples = 4
     if high:
         # high to low: the dense relief's detail into the simplified mesh's normal map
@@ -210,46 +249,63 @@ def finish(name, out_root, tex=1024, samples=24, tags=()):
     lo = [min(v[i] for v in bb) for i in range(3)]
     hi = [max(v[i] for v in bb) for i in range(3)]
     tris = sum(len(p.vertices) - 2 for p in me.polygons)
+    save_mesh_ownership(obj, physical_owners,
+                        os.path.join(out, name + '_parts.json'))
     # Godot axes: x = x, y = z, z = -y
     return {"size": [round(dims.x, 4), round(dims.z, 4), round(dims.y, 4)],
             "min": [round(lo[0], 4), round(lo[2], 4), round(-hi[1], 4)],
             "max": [round(hi[0], 4), round(hi[2], 4), round(-lo[1], 4)],
-            "tris": tris, "tex": tex, "standardized": std_notes}
+            "tris": tris, "tex": tex, "standardized": std_notes,
+            "texture_ownership": projection_report}
 
 
 def export_textured(name, out_root, destination):
     """Package existing baked maps for standalone viewing; geometry is unchanged."""
     from pathlib import Path
-    base=Path(out_root)/name/name
-    destination=Path(destination)
-    destination.mkdir(parents=True,exist_ok=True)
+    base = Path(out_root) / name / name
+    destination = Path(destination)
+    destination.mkdir(parents=True, exist_ok=True)
     bpy.ops.wm.read_factory_settings(use_empty=True)
     bpy.ops.import_scene.gltf(filepath=str(base.with_suffix('.glb')))
-    objects=[o for o in bpy.context.scene.objects if o.type=='MESH']
-    material=bpy.data.materials.new(name+'_baked')
-    material.use_nodes=True
-    tree=material.node_tree
-    shader=tree.nodes['Principled BSDF']
-    def texture(suffix,space):
-        node=tree.nodes.new('ShaderNodeTexImage')
-        node.image=bpy.data.images.load(str(base.with_name(base.name+'_'+suffix+'.png')))
-        node.image.colorspace_settings.name=space
+    objects = [o for o in bpy.context.scene.objects if o.type == 'MESH']
+    identity_path = base.with_name(base.name + '_parts.json')
+    if identity_path.exists():
+        from .ownership import split_standalone
+        identity = json.loads(identity_path.read_text())
+        objects = [
+            part for obj in objects for part in split_standalone(obj, identity)]
+    material = bpy.data.materials.new(name + '_baked')
+    material.use_nodes = True
+    tree = material.node_tree
+    shader = tree.nodes['Principled BSDF']
+
+    def texture(suffix, space):
+        node = tree.nodes.new('ShaderNodeTexImage')
+        node.image = bpy.data.images.load(
+            str(base.with_name(base.name + '_' + suffix + '.png')))
+        node.image.colorspace_settings.name = space
         return node
-    tree.links.new(texture('albedo','sRGB').outputs['Color'],shader.inputs['Base Color'])
-    normal=tree.nodes.new('ShaderNodeNormalMap')
-    tree.links.new(texture('normal','Non-Color').outputs['Color'],normal.inputs['Color'])
-    tree.links.new(normal.outputs['Normal'],shader.inputs['Normal'])
-    channels=tree.nodes.new('ShaderNodeSeparateColor')
-    tree.links.new(texture('orm','Non-Color').outputs['Color'],channels.inputs['Color'])
-    tree.links.new(channels.outputs['Green'],shader.inputs['Roughness'])
-    tree.links.new(channels.outputs['Blue'],shader.inputs['Metallic'])
+    tree.links.new(
+        texture('albedo', 'sRGB').outputs['Color'], shader.inputs['Base Color'])
+    normal = tree.nodes.new('ShaderNodeNormalMap')
+    tree.links.new(
+        texture('normal', 'Non-Color').outputs['Color'], normal.inputs['Color'])
+    tree.links.new(normal.outputs['Normal'], shader.inputs['Normal'])
+    channels = tree.nodes.new('ShaderNodeSeparateColor')
+    tree.links.new(
+        texture('orm', 'Non-Color').outputs['Color'], channels.inputs['Color'])
+    tree.links.new(channels.outputs['Green'], shader.inputs['Roughness'])
+    tree.links.new(channels.outputs['Blue'], shader.inputs['Metallic'])
     bpy.ops.object.select_all(action='DESELECT')
     for obj in objects:
-        obj.data.materials.clear(); obj.data.materials.append(material); obj.select_set(True)
-    bpy.ops.export_scene.gltf(filepath=str(destination/'model.glb'),export_format='GLB',use_selection=True)
+        obj.data.materials.clear()
+        obj.data.materials.append(material)
+        obj.select_set(True)
+    bpy.ops.export_scene.gltf(filepath=str(
+        destination / 'model.glb'), export_format='GLB', use_selection=True)
     bpy.ops.file.pack_all()
-    bpy.ops.wm.save_as_mainfile(filepath=str(destination/'model.blend'))
-    return {'model':str(destination/'model.glb'),'blend':str(destination/'model.blend')}
+    bpy.ops.wm.save_as_mainfile(filepath=str(destination / 'model.blend'))
+    return {'model': str(destination / 'model.glb'), 'blend': str(destination / 'model.blend')}
 
 
 def update_manifest(path, name, entry):
