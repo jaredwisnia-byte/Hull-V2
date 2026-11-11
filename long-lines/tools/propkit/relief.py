@@ -149,7 +149,7 @@ def light_of(votes):
     return l
 
 
-def view_relief(path, view=None, light=None):
+def view_relief(path, view=None, light=None, region_masks=None):
     """Height map (px, + out of the surface) for one painted view, over its silhouette crop; and a report.
     light: a shared light direction (image coords) from all the sheet's views, else this view's own."""
     m, img = silhouette(path)
@@ -201,6 +201,10 @@ def view_relief(path, view=None, light=None):
         raised += s > 0
         sunk += s < 0
         h[sl][r] = s * dome[r]
+        if region_masks is not None:
+            region = np.zeros_like(m)
+            region[sl] = r
+            region_masks.append(region)
     h -= CREASE_DEPTH * cn * 2
     h = ndimage.gaussian_filter(h, 0.7)
     h[~m] = 0
@@ -255,15 +259,19 @@ def _sample(img, u, v):
     return ndimage.map_coordinates(img, [y, x], order=1, mode="nearest")
 
 
-def hook(views, W, D, H, report, maps_override=None, keep_high=True, cap_share=MAX_RELIEF):
+def hook(views, W, D, H, report, maps_override=None, keep_high=True, cap_share=MAX_RELIEF, light_override=None):
     """A hull mesh_hook: displace the dense mesh by the views' relief. Fills report (per view and totals)."""
     from .texturing import _uv
     maps, mpp = {}, {}
-    light = shared_light(views)
+    light = shared_light(views) if light_override is None else light_override
     report["light_dir"] = [round(float(light[0]), 2), round(float(-light[1]), 2)]
     for k in ELEVATIONS:
         if k in views:
-            h, rep = view_relief(views[k], k, light)
+            if maps_override is not None:
+                h = maps_override[k]
+                rep = {}
+            else:
+                h, rep = view_relief(views[k], k, light)
             maps[k] = maps_override.get(k,np.zeros_like(h)) if maps_override is not None else h
             mpp[k] = (W if k in ("front", "back") else D) / h.shape[1]
             if maps_override is None:

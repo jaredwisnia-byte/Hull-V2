@@ -1,22 +1,22 @@
 {
   "audit_date": "2026-11-10",
   "method": "Static parse and catalog; not proof of runtime correctness",
-  "local_head": "b54cc377f4e85e107fedc03952507684cdfdc95b",
+  "local_head": "453c0961e12dff0376b1d251808568ad29df8417",
   "canonical_dirac": "9d8df082dfbef7d5a508be3578d78d7c488561ab",
-  "tracked_files": 2833,
+  "tracked_files": 2847,
   "tracked_extensions": {
-    ".yml": 2,
+    ".yml": 3,
     "": 3,
-    ".md": 97,
+    ".md": 99,
     ".js": 3,
     ".png": 1116,
     ".svg": 1,
     ".html": 1,
     ".import": 1076,
     ".glb": 120,
-    ".json": 163,
+    ".json": 164,
     ".jpg": 83,
-    ".py": 82,
+    ".py": 92,
     ".csv": 1,
     ".jsonl": 1,
     ".godot": 1,
@@ -29,14 +29,20 @@
     ".mjs": 1,
     ".css": 1
   },
-  "catalogued_files": 391,
-  "python_files": 82,
+  "catalogued_files": 404,
+  "python_files": 92,
   "parse_errors": [],
   "files": [
     {
       "path": ".github/workflows/collect.yml",
       "lines": 52,
       "sha256": "1558e7dcff0ca8f3f907ca215b7afee5a280c524cd9b34077615b186baf282d2",
+      "definitions": []
+    },
+    {
+      "path": ".github/workflows/hull-contracts.yml",
+      "lines": 31,
+      "sha256": "11378e7ff041ade6d6d025e7565dddd26b4e28d3f165aa513d59e40f3e15bdc6",
       "definitions": []
     },
     {
@@ -47,10 +53,32 @@
     },
     {
       "path": "CLAUDE.md",
-      "lines": 6,
-      "sha256": "3b48786d3a0e8c16c0a0251e95995ef2961c5537b01e53473c65d8cce87b74cb",
+      "lines": 10,
+      "sha256": "4f68f4ab6403864118fb8572fc1091f54b5638c05c056c4ac1f975d984e58e11",
       "headings": [
         "Repository notes for Claude\r"
+      ]
+    },
+    {
+      "path": "KNOWLEDGE_FILE.md",
+      "lines": 349,
+      "sha256": "009a665e2f9ac0bb72946420bc5ebf03b4c08e210a3d9cddd00be4492aaf407c",
+      "headings": [
+        "Hull knowledge file\r",
+        "Purpose and evidence level\r",
+        "Current implementation update (2026-11-10)\r",
+        "Repository identity and boundaries\r",
+        "High-level data flow and entry points\r",
+        "All production routes and required inputs\r",
+        "Existing reconstruction capability: reuse map\r",
+        "Recent V2 additions: exact scope\r",
+        "Actual station gaps and ordering hazards\r",
+        "Standards, schemas and source-of-truth data\r",
+        "Diagnostics and tests that must not be overlooked\r",
+        "Known quality limitations, backed by observed trials\r",
+        "Root web application and Godot game boundaries\r",
+        "Runtime, reproducibility and working safely\r",
+        "Next-work rules and maintenance\r"
       ]
     },
     {
@@ -144,10 +172,10 @@
     },
     {
       "path": "long-lines/assets/props/library.json",
-      "lines": 2766,
-      "sha256": "135e93768498892a862fb2cd43068d8c97ed3b5ac138621e6fe7fe075121c623",
+      "lines": 2795,
+      "sha256": "8a7a6b497b92917c0e0c5a2d432f066e30c41fa080fe0d2dfa41784fec9c5363",
       "root_type": "dict",
-      "item_count": 103,
+      "item_count": 104,
       "keys": [
         "access_panel_util",
         "armchair_vinyl",
@@ -2228,14 +2256,27 @@
     },
     {
       "path": "long-lines/factory/DEPTH_INFERENCE.md",
-      "lines": 82,
-      "sha256": "1a93bffe134c5afa9633bc6c3690ca2e4c0902d50d7a95614de60f206f7023d1",
+      "lines": 87,
+      "sha256": "68fa65924f445b836f8d318d3fa583745daeefb78c364312367cf3b308be39ba",
       "headings": [
-        "Automatic depth and engineering evidence",
-        "Component thickness",
-        "Surface relief",
-        "Engineering outputs",
-        "Verification"
+        "Automatic depth and engineering evidence\r",
+        "Component thickness\r",
+        "Surface relief\r",
+        "Engineering outputs\r",
+        "Historical verification before the local-region cleanup\r"
+      ]
+    },
+    {
+      "path": "long-lines/factory/IMPLEMENTATION_PLAN.md",
+      "lines": 122,
+      "sha256": "656191024779bbd9e541fe7b9585b16effb32f0131a87874ac65bcd53aeb8364",
+      "headings": [
+        "Hull audit implementation and acceptance plan",
+        "Implemented: shared stages and readable code",
+        "Implemented: local depth decisions and honest validation",
+        "Implemented: section and cutaway inspection",
+        "Observed acceptance results",
+        "Remaining implementation backlog and exit criteria"
       ]
     },
     {
@@ -5773,6 +5814,80 @@
       "environment_keys": []
     },
     {
+      "path": "long-lines/tools/audit_inventory.py",
+      "lines": 88,
+      "sha256": "62e6e37a5c6efae0340de560a2d64f999f15d964fde8cf765779e067948a164d",
+      "description": "Regenerate the static code/documentation inventory. Requires Git; never imports builders.\n\nRun: python long-lines/tools/audit_inventory.py\nOutput: long-lines/docs/CODEBASE_INVENTORY.json (tracked files plus Python tools).",
+      "imports": [
+        "from collections import Counter",
+        "from pathlib import Path",
+        "import ast",
+        "import hashlib",
+        "import json",
+        "import re",
+        "import subprocess"
+      ],
+      "definitions": [
+        {
+          "name": "git",
+          "line": 16,
+          "kind": "FunctionDef",
+          "description": ""
+        }
+      ],
+      "calls": [
+        "', '.join",
+        "'\\n'.join",
+        "(root / 'long-lines/tools').rglob",
+        "Counter",
+        "Path",
+        "Path(__file__).resolve",
+        "Path(p).suffix.lower",
+        "ast.get_docstring",
+        "ast.parse",
+        "ast.unparse",
+        "ast.walk",
+        "data.decode",
+        "dict",
+        "e.get",
+        "e.get('description', '').split",
+        "e['path'].endswith",
+        "entries.append",
+        "errors.append",
+        "git",
+        "git('ls-files').splitlines",
+        "git('rev-parse', 'HEAD').strip",
+        "hashlib.sha256",
+        "hashlib.sha256(data).hexdigest",
+        "isinstance",
+        "json.dumps",
+        "json.loads",
+        "len",
+        "line.startswith",
+        "list",
+        "out.write_text",
+        "p.is_file",
+        "p.read_bytes",
+        "p.relative_to",
+        "p.relative_to(root).as_posix",
+        "p.suffix.lower",
+        "print",
+        "re.findall",
+        "result.items",
+        "set",
+        "sorted",
+        "sources.discard",
+        "sources.update",
+        "str",
+        "subprocess.check_output",
+        "sum",
+        "summary.append",
+        "text.splitlines",
+        "type"
+      ],
+      "environment_keys": []
+    },
+    {
       "path": "long-lines/tools/build_props.py",
       "lines": 81,
       "sha256": "54ff880efc79b7efd2850411ecb5c1bcb200734318fe4aeebad77f2a40c0c3fb",
@@ -6406,14 +6521,12 @@
     },
     {
       "path": "long-lines/tools/factory.py",
-      "lines": 644,
-      "sha256": "b6aab23a9274d6a24219270d34effe66410605374023f25a51c76702c8b95d22",
+      "lines": 672,
+      "sha256": "d0ca21fd2b6e6faa23ad872a9d8a41ae2d111440cede729bbc46846f7dc6a2ea",
       "description": "The asset factory: work orders in, game-ready assets out, every run measured.\n\nRun under Blender (all stations share one process):\n    blender -b --factory-startup -P tools/factory.py -- intake IMAGE NAME --category tv [--height 0.5]\n    blender -b --factory-startup -P tools/factory.py -- intake_sheet SHEET_SPEC.json --source-dir DIR\n    blender -b --factory-startup -P tools/factory.py -- intake_set MANIFEST.json [--category fridge] [--name N]\n    blender -b --factory-startup -P tools/factory.py -- build NAME... | --pending | --all-orders\n    blender -b --factory-startup -P tools/factory.py -- qa NAME... | --library\n    blender -b --factory-startup -P tools/factory.py -- report\n\nStations: intake (classify the reference, split views, size from the category table,\nwrite a work order) -> build (the order's production line) -> bake/export (propkit.bake)\n-> gate (propkit.qa against factory/standards.json, one codified automatic correction,\nthen flag for a person) -> ledger (factory/ledger.jsonl) -> report (factory/REPORT.md).\nWork orders live in factory/orders/<name>.json; lines read them, so a new asset needs\nno code. See factory/README.md.",
       "imports": [
         "from PIL import Image",
-        "from pathlib import Path",
         "from propkit import bake, core, mats, qa",
-        "from propkit import engineering",
         "from propkit import extrude",
         "from propkit import guides",
         "from propkit import handbook as HB, human_scale as HS",
@@ -6432,11 +6545,12 @@
         "from propkit.hull_assembly import build as hull_parts_build",
         "from propkit.hull_assembly import paint_views",
         "from propkit.kit import build as kit_build",
+        "from propkit.pipeline import build_image",
         "from propkit.sheetset import build_set",
+        "from propkit.simplification import screen_tolerance, decimate_to_error, refresh_normals",
         "from props.cars_painted import painted_car",
         "from props.goods_painted import painted_can",
         "from scipy import ndimage",
-        "from sheet_blobs import automatic",
         "import bpy",
         "import glob",
         "import hashlib",
@@ -6487,85 +6601,85 @@
         },
         {
           "name": "intake",
-          "line": 113,
+          "line": 115,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "automatic_build",
-          "line": 138,
+          "line": 143,
           "kind": "FunctionDef",
-          "description": "One image through automatic intake, existing parts assembly, QA and render."
+          "description": "Compatibility entry point for the image-only orchestration station."
         },
         {
           "name": "reference_views",
-          "line": 183,
+          "line": 153,
           "kind": "FunctionDef",
           "description": "Parts orders keep the complete reference in their assembly subfolder."
         },
         {
           "name": "intake_sheet",
-          "line": 193,
+          "line": 163,
           "kind": "FunctionDef",
           "description": "A multi-asset sheet spec: one work order per listed item. Facade items crop an\nelevation; atlas items keep the whole parts sheet and name which numbered panel\n(propkit.atlas.panels) is which face. Sources go to source_textures/<name>/."
         },
         {
           "name": "intake_set",
-          "line": 234,
+          "line": 209,
           "kind": "FunctionDef",
           "description": "A v2 sheet set (painted + depth + part map + section + manifest, REFERENCE_SPEC.md):\nfiles copied to source_textures/<name>/, size from the manifest's dimensions."
         },
         {
           "name": "human_scale_height",
-          "line": 264,
+          "line": 241,
           "kind": "FunctionDef",
           "description": "The height a hull order's views imply under human scale (propkit/human_scale.py): each whole-object\ncontact measured in the views (front height = 1), solved and cross-checked. Returns (height_m, report)."
         },
         {
           "name": "run_line",
-          "line": 291,
+          "line": 268,
           "kind": "FunctionDef",
           "description": "Builds the order's geometry in the current scene. One function per line."
         },
         {
           "name": "correct",
-          "line": 420,
+          "line": 419,
           "kind": "FunctionDef",
           "description": "Codified corrections for known failure modes (docs/LESSONS.md). Returns True if\nthe order was changed and is worth one more attempt."
         },
         {
           "name": "tex_for",
-          "line": 451,
+          "line": 452,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "render_trim_preview",
-          "line": 458,
+          "line": 459,
           "kind": "FunctionDef",
           "description": "Always make a PNG turnaround of a shipped extruded asset. No source sheets."
         },
         {
           "name": "build",
-          "line": 474,
+          "line": 476,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "mount_of",
-          "line": 529,
+          "line": 537,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "gate",
-          "line": 540,
+          "line": 549,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "report",
-          "line": 557,
+          "line": 567,
           "kind": "FunctionDef",
           "description": ""
         }
@@ -6575,8 +6689,6 @@
         "', '.join",
         "'; '.join",
         "'\\n'.join",
-        "(output / 'render.log').write_text",
-        "(output / 'result.json').write_text",
         "HB.contacts",
         "HB.entry",
         "HS.anchor",
@@ -6588,11 +6700,6 @@
         "Image.open(os.path.join(source_dir, it['sheet'])).convert",
         "Image.open(os.path.join(source_dir, it['sheet'])).convert('RGB').crop",
         "Image.open(os.path.join(source_dir, it['sheet'])).convert('RGB').crop(tuple(it['box'])).save",
-        "Path",
-        "Path(image).read_bytes",
-        "Path(image).resolve",
-        "Path(output).resolve",
-        "Path(report['work_order']).read_text",
         "RuntimeError",
         "STANDARDS['size_classes'].get",
         "ValueError",
@@ -6601,19 +6708,15 @@
         "anchors.append",
         "any",
         "appliance",
-        "artifact.exists",
-        "artifact.stat",
         "assets.values",
-        "automatic",
         "automatic_build",
         "b.get",
-        "bake.export_textured",
         "bake.finish",
         "bake.update_manifest",
-        "base.with_suffix",
         "blobs.append",
         "body_hook",
         "build",
+        "build_image",
         "build_set",
         "by_line.items",
         "by_line.setdefault",
@@ -6621,10 +6724,10 @@
         "cat.get",
         "core.reset",
         "correct",
+        "decimate_to_error",
         "dict",
         "dims.get",
         "e.get",
-        "engineering.export",
         "enumerate",
         "extrude.frame",
         "extrude.moulding",
@@ -6648,8 +6751,6 @@
         "h.update",
         "hashlib.sha1",
         "hashlib.sha1(json.dumps([result['metrics'].get(k) for k in ('tris', 'size_m', 'silhouette_iou', 'geometry_signature', 'texture_signature', 'trim_section_iou', 'frame_opening_occlusion', 'trim_colour_difference')], sort_keys=True).encode()).hexdigest",
-        "hashlib.sha256",
-        "hashlib.sha256(Path(image).read_bytes()).hexdigest",
         "hp.get",
         "hp.pop",
         "hull_parts_build",
@@ -6714,15 +6815,10 @@
         "os.path.normpath",
         "os.path.relpath",
         "out.append",
-        "output.mkdir",
-        "p.get",
-        "p.get('depth_inference', {}).get",
         "paint_views",
         "painted_can",
         "painted_car",
         "pkgutil.iter_modules",
-        "png.exists",
-        "png.stat",
         "print",
         "propkit.PROPS[order['name']]['fn']",
         "qa.check",
@@ -6730,20 +6826,20 @@
         "r['metrics'].get",
         "reconcile.run",
         "reference_views",
+        "refresh_normals",
         "relief.hook",
         "render_trim_preview",
         "report",
-        "report.get",
         "reps.setdefault",
         "reps.setdefault((r['name'], r['input_hash']), set()).add",
         "reps.values",
         "rest.index",
-        "result.update",
         "result['fails'].append",
         "result['metrics'].get",
         "round",
         "run_line",
         "save_order",
+        "screen_tolerance",
         "set",
         "shutil.copy",
         "silhouette",
@@ -6752,7 +6848,6 @@
         "spec.get",
         "spec['items'].items",
         "split_views",
-        "str",
         "subprocess.run",
         "sum",
         "sys.argv.index",
@@ -6761,10 +6856,8 @@
         "tempfile.gettempdir",
         "tex_for",
         "texturing.project",
-        "time.monotonic",
         "time.strftime",
         "time.time",
-        "time.time_ns",
         "traceback.print_exc",
         "tuple",
         "views.get",
@@ -8113,9 +8206,55 @@
       "environment_keys": []
     },
     {
+      "path": "long-lines/tools/propkit/cutaway.py",
+      "lines": 53,
+      "sha256": "eedeb25b9ea31501b0a67ccfaf2a93efaa06a1a2141b74185d19d1a67f8bacaf",
+      "description": "Non-destructive surface cutaways for inspection, never replacement assets.\n\nCut boundaries stay open. The separate section drawing describes cut material;\nblindly filling boundaries here could falsely cap a real hollow component.",
+      "imports": [
+        "from mathutils import Vector",
+        "import bmesh",
+        "import bpy"
+      ],
+      "definitions": [
+        {
+          "name": "export_surface_cutaway",
+          "line": 8,
+          "kind": "FunctionDef",
+          "description": ""
+        }
+      ],
+      "calls": [
+        "Vector",
+        "bmesh.new",
+        "bmesh.ops.bisect_plane",
+        "bpy.context.scene.collection.objects.link",
+        "bpy.data.meshes.remove",
+        "bpy.data.objects.remove",
+        "bpy.ops.export_scene.gltf",
+        "bpy.ops.object.select_all",
+        "copied.matrix_world.inverted",
+        "copied.matrix_world.to_3x3",
+        "copied.matrix_world.to_3x3().transposed",
+        "copied.select_set",
+        "list",
+        "local_normal.normalized",
+        "mesh.free",
+        "mesh.from_mesh",
+        "mesh.to_mesh",
+        "meshes.append",
+        "obj.select_set",
+        "plane.frame",
+        "source.copy",
+        "source.data.copy",
+        "str",
+        "temporary.append"
+      ],
+      "environment_keys": []
+    },
+    {
       "path": "long-lines/tools/propkit/depth_inference.py",
-      "lines": 100,
-      "sha256": "66ecf001a153eac129a125e79dbc230b99c0c70b4dec4b4eda58125d9883e2f7",
+      "lines": 117,
+      "sha256": "81540456428b4ff5ed3257208f21872db8e3e39dc2dd34c98c40b6c78d0e3e7f",
       "description": "Evidence-first depth estimates and conservative selection of existing relief.\n\nDimensions remain estimates when source scale/camera orientation is inferred.\nNo object names, per-image coordinates or runtime LLM calls are used here.",
       "imports": [
         "from . import relief",
@@ -8138,7 +8277,7 @@
         },
         {
           "name": "body_hook",
-          "line": 69,
+          "line": 71,
           "kind": "FunctionDef",
           "description": "Reuse relief segmentation/displacement, but compare hypotheses first and\nsuppress regions already owned by separately manufactured components."
         }
@@ -8146,11 +8285,13 @@
       "calls": [
         "ValueError",
         "bool",
-        "candidates.get",
         "candidates.items",
+        "decisions.append",
+        "enumerate",
         "float",
         "int",
         "len",
+        "local_mask.sum",
         "map",
         "max",
         "min",
@@ -8181,6 +8322,7 @@
         "signal.mean",
         "silhouette",
         "sorted",
+        "sum",
         "views.items",
         "xs.max",
         "xs.min",
@@ -8335,10 +8477,12 @@
     },
     {
       "path": "long-lines/tools/propkit/engineering.py",
-      "lines": 97,
-      "sha256": "82b719bfaf332298133c115907eadd931aa755bc38cd2af2e9896c4388625c70",
+      "lines": 151,
+      "sha256": "b751e0bcd239cfcfab2173be444a06e4dda8f37b40b9571f8a5e69d4e554959d",
       "description": "Shared dimension/attachment evidence and technical projections of real meshes.\n\nSections are intersections with the reconstructed mesh, never invented interiors.",
       "imports": [
+        "from .cutaway import export_surface_cutaway",
+        "from .sectioning import CuttingPlane, intersect_mesh, section_image",
         "from PIL import Image, ImageDraw",
         "from pathlib import Path",
         "import bpy",
@@ -8354,20 +8498,22 @@
         },
         {
           "name": "section_segments",
-          "line": 43,
+          "line": 45,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "export",
-          "line": 56,
+          "line": 58,
           "kind": "FunctionDef",
           "description": "Use the loaded finished export, not the source paintings, for every line."
         }
       ],
       "calls": [
+        "(-np.asarray(plane.normal)).tolist",
         "(destination / 'engineering.json').write_text",
         "(hi - lo).tolist",
+        "CuttingPlane",
         "Image.new",
         "ImageDraw.Draw",
         "Path",
@@ -8380,7 +8526,10 @@
         "draw.polygon",
         "draw.text",
         "enumerate",
+        "export_surface_cutaway",
         "faces.extend",
+        "float",
+        "intersect_mesh",
         "json.dumps",
         "len",
         "max",
@@ -8388,13 +8537,14 @@
         "measured.get(name, {}).get",
         "nodes.append",
         "np.any",
+        "np.array",
         "np.asarray",
         "np.asarray(result, dtype=float).reshape",
-        "np.full",
         "np.isfinite",
         "np.isfinite(box).all",
         "obj.data.calc_loop_triangles",
         "order.get",
+        "order.get('engineering', {}).get",
         "order.get('measured', {}).get",
         "part.get",
         "part.get('attach', {}).get",
@@ -8404,7 +8554,9 @@
         "pixel",
         "points.append",
         "result.append",
-        "section_segments",
+        "section_image",
+        "section_reports.append",
+        "sheet.paste",
         "sheet.save",
         "str",
         "tuple",
@@ -10349,8 +10501,8 @@
     },
     {
       "path": "long-lines/tools/propkit/parts_layout.py",
-      "lines": 920,
-      "sha256": "a7ba1b549b6e7ae5d8324759b28ae4a06b0c4f91c74fea4e6c36ca65dedaa1f3",
+      "lines": 951,
+      "sha256": "1f795a19572dd1b40bbf64366d3f7f243a150774015687d972c660fd9ed44f08",
       "description": "Layout \"parts\": every part manufactured from its own views, then assembled like the photo shows.\n\nA parts sheet gives the whole object (the \"photo\": front, sides, back, top) and each part with its own\nviews. Each part is built separately (a hull from its views; round parts as lathes; thin parts with their\ndrawn holes cut through) and painted from its own views, then placed and seated on what it attaches to.\nThe order is a declarative plan, one entry per part; nothing here knows what the object is:\n\n    \"layout\": \"parts\", \"assembly\": \"<folder>\", \"body_width_m\": 0.14, \"parts\": [\n      {\"name\": \"body\", \"views\": \"body\", \"root\": true},\n      {\"name\": \"plate\", \"views\": \"plate\", \"attach\": {\"to\": \"body\", \"face\": \"back\", \"fit\": \"inside\"}},\n      {\"name\": \"dial_face\", \"views\": \"dial_face\", \"locate\": \"match\", \"attach\": {\"to\": \"body\", \"face\": \"front\"}},\n      {\"name\": \"dial_wheel\", \"views\": \"dial_wheel\", \"locate\": \"concentric\", \"attach\": {\"to\": \"dial_face\", \"face\": \"front\"}},\n      {\"name\": \"hooks\", \"views\": \"hooks\", \"locate\": \"protrusion\", \"attach\": {\"to\": \"body\", \"face\": \"top\"}},\n      {\"name\": \"handset\", \"views\": \"handset\", \"locate\": \"residual\", \"attach\": {\"to\": \"body\", \"face\": \"left\"}},\n      {\"name\": \"earpiece\", \"views\": \"cap\", \"attach\": {\"to\": \"handset\", \"face\": \"right\", \"at\": \"top\"}},\n      {\"name\": \"mouthpiece\", \"views\": \"cap\", \"attach\": {\"to\": \"handset\", \"face\": \"right\", \"at\": \"bottom\"}},\n      {\"name\": \"cord\", \"locate\": \"leftover\", \"attach\": {\"to\": \"handset\", \"face\": \"bottom\"}}]\n\nHow a part is located (where in the object, and how big):\n  root        the body's own outline fitted into the photo (hull_assembly.match_into). Every part is\n              located in drawing units first; then the scale comes from human scale (the handbook's\n              contacts measured in the drawing, propkit/human_scale.py) or from a given body_width_m\n  residual    the part sticks out of the body's outline: the region the body leaves over in the photo,\n              each box edge from a view where it is visible (hull_assembly.locate_by_subtraction)\n  match       the part lies on the body: its painting matched into the photo (propkit.locate)\n  concentric  centred on its parent; size from the sheet's drawing scale relative to the parent's own\n              drawing\n  protrusion  drawn as part of the parent's own view, sticking out of its outline (cradle hooks on a\n              shell's top edge): position and size from that protrusion\n  attach      on the parent's face (\"at\": top / bottom / centre), sized to fit that face\n  inset       set into an opening of its parent's front (a CRT in its cabinet): found like match, its face\n              just behind the front surface; the body spec's \"recess\" recesses the openings its own front\n              drawing shows\n  leftover    whatever the photo shows that no part explains (a coiled cord): a hull of those regions,\n              painted from the photo\nThen every part is seated on its parent along the face it attaches to and gap-checked.",
       "imports": [
         "from . import handbook as HB",
@@ -10361,11 +10513,12 @@
         "from .cord import make_cord",
         "from .cord import tube",
         "from .core import apply_mods",
-        "from .core import smooth",
         "from .depth_inference import body_hook",
         "from .hull import HULL_REPORT, hull_prop, silhouette",
         "from .hull_assembly import MAX_GAP, MIN_TOUCH, NEAR_LAYER, SNAP_SINK, SUPPORT_REACH, aspect, locate_by_subtraction, orient_like, paint_views, part_views",
         "from .locate import find_part",
+        "from .simplification import refresh_normals",
+        "from .simplification import screen_tolerance, decimate_to_error",
         "from PIL import Image",
         "from collections import deque",
         "from mathutils import Vector",
@@ -10375,7 +10528,6 @@
         "from skimage.morphology import skeletonize",
         "import bpy",
         "import json",
-        "import math",
         "import numpy as np",
         "import os",
         "import tempfile"
@@ -10383,79 +10535,67 @@
       "definitions": [
         {
           "name": "_views",
-          "line": 64,
+          "line": 72,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "_holes",
-          "line": 68,
+          "line": 76,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "repeated_holes",
-          "line": 76,
+          "line": 85,
           "kind": "FunctionDef",
           "description": "The repeated openings drawn in a part's front view (a dial's finger holes): their median\ndiameter as a share of the part's drawn width, and how many. One big opening (a centre window) is\nnot a repeat. Returns (share, count) or None."
         },
         {
           "name": "contact_measure",
-          "line": 95,
+          "line": 104,
           "kind": "FunctionDef",
           "description": "A handbook contact measured in the drawing (drawing units), or None. The part is found by its\nname or by the views it is drawn from (both caps of a handset are drawn as one \"cap\"). Measures:\nwidth / height / depth (the part as drawn, before it is turned onto a side face), top_height (above\nthe floor), and hole_diameter (the repeated openings drawn in its front view)."
         },
         {
           "name": "openings",
-          "line": 120,
+          "line": 131,
           "kind": "FunctionDef",
           "description": "Openings drawn in a part's front view (background seen through), largest first, as (u0, u1, v0, v1)\nfractions of its object box."
         },
         {
           "name": "recess_hook",
-          "line": 136,
+          "line": 148,
           "kind": "FunctionDef",
           "description": "A hull voxel_hook: the openings drawn in a body's own front view (background seen through it: a\nscreen opening in a \"no screen\" drawing, knob holes) recessed depth_m into the body from its front\nsurface, instead of being painted on a flat front."
         },
         {
           "name": "build_part",
-          "line": 182,
+          "line": 198,
           "kind": "FunctionDef",
           "description": "A part from its own views at size w x d x h (m), painted from its own views. Background seen\nthrough its front view (split's h_ mask: a hook frame's opening, a dial's finger holes) is an opening\nalong that view and is cut through; a part with only a front view is a plate of depth d."
         },
         {
           "name": "_longest_path",
-          "line": 218,
+          "line": 239,
           "kind": "FunctionDef",
           "description": "Pixels of a skeleton's longest path (two breadth-first sweeps), in order."
         },
         {
           "name": "centreline",
-          "line": 247,
+          "line": 268,
           "kind": "FunctionDef",
           "description": "The 3D centreline of an elongated region seen in the front and side views, in the part's own\nframe (x, y centred, z from 0): the front view's skeleton gives x and z, the side view's region y."
         },
         {
           "name": "sweep_tube",
-          "line": 274,
+          "line": 297,
           "kind": "FunctionDef",
           "description": "A tube swept along an elongated region's centreline, radius its half width (no handbook entry)."
         },
         {
-          "name": "screen_tolerance",
-          "line": 282,
-          "kind": "FunctionDef",
-          "description": "The surface error (m) a mesh may have: error_px pixels at the kind's near viewing distance."
-        },
-        {
-          "name": "decimate_to_error",
-          "line": 293,
-          "kind": "FunctionDef",
-          "description": "Simplify a mesh as far as it can go while its surface stays within tol (metres) of the dense\nmesh (99th percentile, both ways: detail lost and corners cut). Binary search on\nthe decimation ratio; returns (triangles, error)."
-        },
-        {
           "name": "build_parts",
-          "line": 347,
+          "line": 309,
           "kind": "FunctionDef",
           "description": ""
         }
@@ -10509,10 +10649,7 @@
         "body_spec.get",
         "body_spec['recess'].get",
         "boxes.items",
-        "bpy.context.scene.collection.objects.link",
         "bpy.context.view_layer.update",
-        "bpy.data.meshes.remove",
-        "bpy.data.objects.remove",
         "build_part",
         "built.items",
         "built.values",
@@ -10527,7 +10664,6 @@
         "decimate_to_error",
         "defer.append",
         "dense.values",
-        "dense_tree.find_nearest",
         "deque",
         "descendants",
         "dict",
@@ -10569,11 +10705,8 @@
         "m.sum",
         "make_cord",
         "map",
-        "math.radians",
-        "math.tan",
         "mats.plain",
         "max",
-        "me.copy",
         "min",
         "n_.dot",
         "ndimage.binary_closing",
@@ -10600,9 +10733,6 @@
         "np.median",
         "np.nonzero",
         "np.percentile",
-        "np.random.default_rng",
-        "np.random.default_rng(0).choice",
-        "np.random.default_rng(1).choice",
         "np.sqrt",
         "np.vstack",
         "np.where",
@@ -10614,11 +10744,7 @@
         "o.matrix_world.to_3x3",
         "o.modifiers.new",
         "o.rotation_euler.copy",
-        "o2.modifiers.new",
-        "obj.copy",
         "obj.data.materials.append",
-        "obj.data.normals_split_custom_set",
-        "obj.modifiers.new",
         "one.sum",
         "openings",
         "order.get",
@@ -10643,6 +10769,7 @@
         "q.popleft",
         "range",
         "recess_hook",
+        "refresh_normals",
         "regions.items",
         "regions['front'][1].convert",
         "rep.get",
@@ -10653,7 +10780,6 @@
         "rep['triangles'].update",
         "repeated_holes",
         "round",
-        "sb['near_m'].get",
         "screen_tolerance",
         "set",
         "sides.append",
@@ -10661,13 +10787,11 @@
         "skeletonize",
         "skeletonize(fcrop).sum",
         "slice",
-        "smooth",
         "sorted",
         "sp.get",
         "spec.get",
         "spec.get('attach', {}).get",
         "spec_.get",
-        "standards.get",
         "sub.items",
         "sum",
         "sweep_tube",
@@ -10678,7 +10802,6 @@
         "to_world_front",
         "todo.append",
         "tree",
-        "trial",
         "tube",
         "tuple",
         "unmeasured.append",
@@ -10695,9 +10818,129 @@
       "environment_keys": []
     },
     {
+      "path": "long-lines/tools/propkit/pipeline.py",
+      "lines": 117,
+      "sha256": "ea764ae7c13c509df0bbe8ffeaebae85341e4b8c87eebddc2ca1a780d360f01c",
+      "description": "Image-only orchestration. Geometry stays in the existing factory engines.\n\nCallbacks keep this station testable without importing or duplicating factory\ndispatch. All file freshness checks belong here, before packaging or reporting.",
+      "imports": [
+        "from . import engineering",
+        "from .preflight import inspect_order",
+        "from pathlib import Path",
+        "from sheet_blobs import automatic",
+        "import bpy",
+        "import hashlib",
+        "import json",
+        "import subprocess",
+        "import time",
+        "import traceback"
+      ],
+      "definitions": [
+        {
+          "name": "is_fresh",
+          "line": 13,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "available_digest",
+          "line": 17,
+          "kind": "FunctionDef",
+          "description": "Failure reporting must also work when the source file is unreadable."
+        },
+        {
+          "name": "render_asset",
+          "line": 25,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "_build_image",
+          "line": 41,
+          "kind": "FunctionDef",
+          "description": "Intake -> native work order -> build/QA -> fresh exports -> diagnostics."
+        },
+        {
+          "name": "build_image",
+          "line": 94,
+          "kind": "FunctionDef",
+          "description": "Persist a reviewable failure report even if a station raises unexpectedly."
+        }
+      ],
+      "calls": [
+        "(destination / 'render.log').write_text",
+        "(destination / 'result.json').write_text",
+        "Path",
+        "Path(image).resolve",
+        "Path(intake['work_order']).read_text",
+        "Path(output).resolve",
+        "_build_image",
+        "automatic",
+        "available_digest",
+        "build_order",
+        "destination.mkdir",
+        "engineering.export",
+        "export_model",
+        "hashlib.sha256",
+        "hashlib.sha256(image.read_bytes()).hexdigest",
+        "hashlib.sha256(path.read_bytes()).hexdigest",
+        "image.read_bytes",
+        "inspect_order",
+        "intake.get",
+        "is_fresh",
+        "json.dumps",
+        "json.loads",
+        "log.write_text",
+        "order.get",
+        "part.get",
+        "part.get('depth_inference', {}).get",
+        "path.is_file",
+        "path.read_bytes",
+        "path.stat",
+        "print",
+        "render_asset",
+        "result.update",
+        "round",
+        "str",
+        "subprocess.run",
+        "time.monotonic",
+        "time.time_ns",
+        "traceback.format_exc",
+        "warnings.append"
+      ],
+      "environment_keys": []
+    },
+    {
+      "path": "long-lines/tools/propkit/preflight.py",
+      "lines": 25,
+      "sha256": "0e80b9d6acf37d4603fd18ae7390d6d61c68e95846a9c20f49bfa97dfee07e28",
+      "description": "Reuse legacy view reconciliation as a non-destructive evidence inspector.\n\nProposed transformations are reported, never silently applied to authoritative\nsource views. This station is not a camera-pose or inverse-CAD solver.",
+      "imports": [
+        "from . import reconcile",
+        "from pathlib import Path"
+      ],
+      "definitions": [
+        {
+          "name": "inspect_order",
+          "line": 9,
+          "kind": "FunctionDef",
+          "description": ""
+        }
+      ],
+      "calls": [
+        "(folder / ('v_' + name + '.png')).is_file",
+        "Path",
+        "order.get",
+        "reconcile.run",
+        "report.pop",
+        "set",
+        "str"
+      ],
+      "environment_keys": []
+    },
+    {
       "path": "long-lines/tools/propkit/qa.py",
-      "lines": 271,
-      "sha256": "f9be57939197c8fa640b97ae1e808460016789de25e36bff2aac1f42efcce17a",
+      "lines": 308,
+      "sha256": "7b17286884839e641983b4117be9753faa4948851f431b2d33d0e96f3c3abb95",
       "description": "The factory's quality gate: measures a built prop against factory/standards.json.\n\ncheck(name, views_dir=None, category=None) -> {\"pass\": bool, \"fails\": [...], \"metrics\": {...}}\n\nFast (ray casts and mesh statistics, no rendering), so the whole library can be gated\nin one Blender process. The visual turnaround stays in tools/critique.py and is only\nrendered for failures or spot checks: the gate enforces a minimum standard, not polish.",
       "imports": [
         "from . import trim_checks",
@@ -10735,7 +10978,7 @@
         },
         {
           "name": "check",
-          "line": 77,
+          "line": 82,
           "kind": "FunctionDef",
           "description": ""
         }
@@ -10745,7 +10988,9 @@
         "(N[I[ok, k]] * fn).sum",
         "(ndimage.binary_fill_holes(pm) & ~pm).mean",
         "(ref & core).sum",
+        "(ref & got).sum",
         "(ref | core).sum",
+        "(ref | got).sum",
         "(worst < 0.3).sum",
         "BVHTree.FromPolygons",
         "Image.fromarray",
@@ -10764,6 +11009,7 @@
         "acc",
         "acc(prim['indices']).reshape",
         "arr.reshape",
+        "bool",
         "bpy.context.evaluated_depsgraph_get",
         "bpy.ops.import_scene.gltf",
         "bpy.ops.wm.read_factory_settings",
@@ -10960,8 +11206,8 @@
     },
     {
       "path": "long-lines/tools/propkit/relief.py",
-      "lines": 335,
-      "sha256": "4f1d860aef2d6db5bfe1543cd27d88f56dd9e00c59ae87a60f2d6fef98c692d7",
+      "lines": 343,
+      "sha256": "26b9eeb2b26e30c9f982233e3114f3b92ecd1f0f967e50c6c63f1de432384489",
       "description": "Relief: the surface inside an outline, read from the painting (2.5D carving: flutes, beads, leaves).\n\nA silhouette says nothing about what the surface does inside it. A painting does, but ambiguously:\ndarkness means either occlusion (a crease, a groove: light cannot get in) or a surface turned away from\nthe light (one side of a raised bead). This module separates the two:\n\n1. Outlines from occlusion. \"Cavity\" = how much darker a point is than its neighbourhood. It traces\n   every crease between carved parts, so the creases split the view into regions (a bead, a leaf, a\n   flute channel, the strip between two flutes).\n2. A shape per region from its outline: a dome (or dish) whose height grows with the distance from the\n   region's edge, up to a share of the region's own half width (a bead comes out near a hemisphere; a\n   long strip a rounded rib). The creases themselves become shallow V-grooves.\n3. Raised or sunk from the shading. A raised dome and a sunk dish have the same outline but opposite\n   shading: the dome is lit on the side facing the light, the dish on the side away from it. Each region's\n   painted shading is regressed on its dome's slopes; the regions agree on one light direction (taken as\n   coming from above, as painters light), and each region is raised if its shading matches the dome, sunk\n   if it matches the dish, and left flat (paint only) if the shading says neither clearly.\n4. The check: the finished relief, lit by that light, is compared with the painting's shading (correlation\n   over the carved area). A relief that contradicts the painting scores near zero or below.\n\nHeights are in the view's pixels until scaled by the view's metres per pixel; every relief is capped at a\nshare of the object's thinner side. hook(...) displaces a dense hull mesh along its smoothed normals, each\npoint blending the elevation views by how squarely it faces them (as texturing.project blends paint).",
       "imports": [
         "from .hull import silhouette",
@@ -11012,31 +11258,31 @@
         },
         {
           "name": "shared_light",
-          "line": 221,
+          "line": 225,
           "kind": "FunctionDef",
           "description": "The painter's light, from all elevation views' regions together."
         },
         {
           "name": "_smoothed_normals",
-          "line": 235,
+          "line": 239,
           "kind": "FunctionDef",
           "description": "Vertex normals from face areas, then averaged over neighbours (vectorised with bincount: a dense hull\nhas ~1M vertices)."
         },
         {
           "name": "_sample",
-          "line": 250,
+          "line": 254,
           "kind": "FunctionDef",
           "description": "Bilinear sample of a crop-sized map at (u, v) in [0,1], v measured up from the bottom."
         },
         {
           "name": "hook",
-          "line": 258,
+          "line": 262,
           "kind": "FunctionDef",
           "description": "A hull mesh_hook: displace the dense mesh by the views' relief. Fills report (per view and totals)."
         },
         {
           "name": "maps_preview",
-          "line": 320,
+          "line": 328,
           "kind": "FunctionDef",
           "description": "The relief maps side by side (grey = flat, light = raised, dark = sunk), for checking by eye."
         }
@@ -11137,6 +11383,7 @@
         "pairs.items",
         "peak_local_max",
         "range",
+        "region_masks.append",
         "report.setdefault",
         "res.var",
         "ring.any",
@@ -11264,6 +11511,94 @@
         "top_mask.astype",
         "xs.mean",
         "ys.mean"
+      ],
+      "environment_keys": []
+    },
+    {
+      "path": "long-lines/tools/propkit/sectioning.py",
+      "lines": 125,
+      "sha256": "49afb128facb23d8337669601b3c0226a34342843d740bf463b11b231aeeb759",
+      "description": "Plane/mesh intersections and hole-aware section drawings, without Blender.\n\nOpen contour networks remain diagnostic lines; they are never silently filled.",
+      "imports": [
+        "from PIL import Image, ImageDraw",
+        "from dataclasses import dataclass",
+        "import numpy as np"
+      ],
+      "definitions": [
+        {
+          "name": "CuttingPlane",
+          "line": 10,
+          "kind": "ClassDef",
+          "description": ""
+        },
+        {
+          "name": "intersect_mesh",
+          "line": 31,
+          "kind": "FunctionDef",
+          "description": "Half-open crossing convention avoids duplicate intersections at vertices."
+        },
+        {
+          "name": "closed_contours",
+          "line": 51,
+          "kind": "FunctionDef",
+          "description": "Join degree-two contour components. Reject ambiguous/nonmanifold branches."
+        },
+        {
+          "name": "section_image",
+          "line": 94,
+          "kind": "FunctionDef",
+          "description": "Even/odd fill preserves nested voids. Hatching marks cut material only."
+        }
+      ],
+      "calls": [
+        "Image.fromarray",
+        "Image.new",
+        "ImageDraw.Draw",
+        "ImageDraw.Draw(mask).polygon",
+        "ValueError",
+        "adjacency.setdefault",
+        "adjacency.setdefault(a, set()).add",
+        "adjacency.setdefault(b, set()).add",
+        "any",
+        "closed_contours",
+        "component.add",
+        "dataclass",
+        "draw.line",
+        "extent.max",
+        "float",
+        "len",
+        "loops.append",
+        "material.sum",
+        "max",
+        "min",
+        "np.abs",
+        "np.argmin",
+        "np.asarray",
+        "np.asarray(image).copy",
+        "np.asarray(segments).reshape",
+        "np.cross",
+        "np.eye",
+        "np.isfinite",
+        "np.isfinite([origin, normal]).all",
+        "np.linalg.norm",
+        "np.ptp",
+        "np.rint",
+        "np.rint(point / tolerance).astype",
+        "np.subtract",
+        "np.zeros",
+        "path.append",
+        "pending.extend",
+        "pending.pop",
+        "pixels",
+        "plane.frame",
+        "points.append",
+        "segments.append",
+        "segments.max",
+        "segments.min",
+        "segments.reshape",
+        "set",
+        "tuple",
+        "zip"
       ],
       "environment_keys": []
     },
@@ -11759,6 +12094,72 @@
       "environment_keys": []
     },
     {
+      "path": "long-lines/tools/propkit/simplification.py",
+      "lines": 84,
+      "sha256": "652ba0da60d0a8964de8f4f14643e0711697cee6257b6b787d686382ce01126c",
+      "description": "Shared screen-space error budgets and pre-paint mesh simplification.",
+      "imports": [
+        "from .core import apply_mods",
+        "from .core import smooth",
+        "from mathutils.bvhtree import BVHTree",
+        "import bpy",
+        "import math",
+        "import numpy as np"
+      ],
+      "definitions": [
+        {
+          "name": "refresh_normals",
+          "line": 5,
+          "kind": "FunctionDef",
+          "description": "Discard stale split normals after topology changes, then mark sharp edges."
+        },
+        {
+          "name": "screen_tolerance",
+          "line": 13,
+          "kind": "FunctionDef",
+          "description": "The surface error (m) a mesh may have: error_px pixels at the kind's near viewing distance."
+        },
+        {
+          "name": "decimate_to_error",
+          "line": 25,
+          "kind": "FunctionDef",
+          "description": "Simplify a mesh as far as it can go while its surface stays within tol (metres) of the dense\nmesh (99th percentile, both ways: detail lost and corners cut). Binary search on\nthe decimation ratio; returns (triangles, error)."
+        }
+      ],
+      "calls": [
+        "BVHTree.FromPolygons",
+        "apply_mods",
+        "bpy.context.scene.collection.objects.link",
+        "bpy.data.meshes.remove",
+        "bpy.data.objects.remove",
+        "dense_tree.find_nearest",
+        "float",
+        "len",
+        "math.radians",
+        "math.tan",
+        "max",
+        "me.copy",
+        "np.array",
+        "np.percentile",
+        "np.random.default_rng",
+        "np.random.default_rng(0).choice",
+        "np.random.default_rng(1).choice",
+        "o2.modifiers.new",
+        "obj.copy",
+        "obj.data.normals_split_custom_set",
+        "obj.modifiers.new",
+        "range",
+        "sb['near_m'].get",
+        "smooth",
+        "standards.get",
+        "sum",
+        "t.find_nearest",
+        "trial",
+        "tuple"
+      ],
+      "environment_keys": []
+    },
+    {
       "path": "long-lines/tools/propkit/sizing.py",
       "lines": 188,
       "sha256": "86cf672de4024c9b68cbe38a281bb4b4d3d7bfdbdb498f7c3803274d0ad2a30a",
@@ -12127,8 +12528,8 @@
     },
     {
       "path": "long-lines/tools/propkit/vision.py",
-      "lines": 298,
-      "sha256": "084147314009fd8975304668cba80537a742e8ace4459d055b4b94b250655169",
+      "lines": 344,
+      "sha256": "671085d4be08dc4726e76175f219e1a50c5da908f131e754d1acb3c02d1f5459",
       "description": "Local learned image correspondence for the existing reference-sheet intake.",
       "imports": [
         "from PIL import Image",
@@ -12149,49 +12550,49 @@
         },
         {
           "name": "DenseVision",
-          "line": 30,
+          "line": 31,
           "kind": "ClassDef",
           "description": ""
         },
         {
           "name": "role",
-          "line": 130,
+          "line": 147,
           "kind": "FunctionDef",
           "description": "Part roles from caption vocabulary, not an object-specific part inventory."
         },
         {
           "name": "face_color",
-          "line": 142,
+          "line": 160,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "appearance_components",
-          "line": 152,
+          "line": 170,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "repeated_row",
-          "line": 172,
+          "line": 192,
           "kind": "FunctionDef",
           "description": "Discover repeated controls and count them from the image."
         },
         {
           "name": "overlap",
-          "line": 194,
+          "line": 219,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "rectangular_components",
-          "line": 199,
+          "line": 225,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "compact_parts",
-          "line": 216,
+          "line": 245,
           "kind": "FunctionDef",
           "description": "Find repeated buttons, round dials and levers at their observed image scale."
         }
@@ -12331,8 +12732,8 @@
     },
     {
       "path": "long-lines/tools/propkit/vision_order.py",
-      "lines": 237,
-      "sha256": "8d3f5f090d7e3054368057bd24608db122073d6196db68c6cc41198d99a1aaf6",
+      "lines": 286,
+      "sha256": "49447dd3ebdfbc4b0d0248408363e8c4f1f9dd1ecbde3f20ca3bbe6b7f28a604",
       "description": "Generate the original parts-layout work order from measured visual evidence.",
       "imports": [
         "from . import sizing, part_rules",
@@ -12362,25 +12763,25 @@
         },
         {
           "name": "companion_views",
-          "line": 24,
+          "line": 25,
           "kind": "FunctionDef",
           "description": "Resolve view families jointly rather than assigning every view independently."
         },
         {
           "name": "support_band",
-          "line": 52,
+          "line": 60,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "bounds",
-          "line": 72,
+          "line": 84,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "generate",
-          "line": 81,
+          "line": 93,
           "kind": "FunctionDef",
           "description": "No user coordinates, dimensions, inventory or placement values are accepted."
         }
@@ -14409,8 +14810,8 @@
     },
     {
       "path": "long-lines/tools/test_automatic_build.py",
-      "lines": 80,
-      "sha256": "5f9b93bd5aea2781bccfb1ac7f3a204ac05895b77370c3d3f53a344f3ca95a8d",
+      "lines": 106,
+      "sha256": "1437eb6e39db7fe16926c894445ff5be61b9610b74c48ab83cae743d22c95ef6",
       "description": "Run under Blender; optional -- RESULT.json verifies a complete real run.",
       "imports": [
         "from pathlib import Path",
@@ -14434,19 +14835,22 @@
         },
         {
           "name": "artifact_acceptance",
-          "line": 42,
+          "line": 61,
           "kind": "FunctionDef",
           "description": ""
         }
       ],
       "calls": [
+        "(destination / 'result.json').is_file",
         "(path.parent / 'intake/manufacture/work-order.json').read_text",
         "Path",
         "Path(__file__).resolve",
         "Path(args[0]).resolve",
+        "Path(result['error_log']).is_file",
         "Path(result['input_image']).read_bytes",
         "Path(result['model']).read_bytes",
         "Path(result[key]).is_file",
+        "ValueError",
         "all",
         "any",
         "artifact_acceptance",
@@ -14472,9 +14876,12 @@
         "print",
         "result.get",
         "self.assertEqual",
+        "self.assertIn",
         "self.assertIsNone",
         "self.assertNotIn",
+        "self.assertTrue",
         "set",
+        "source.write_bytes",
         "str",
         "struct.unpack",
         "sum",
@@ -14553,9 +14960,41 @@
       "environment_keys": []
     },
     {
+      "path": "long-lines/tools/test_cutaway_export.py",
+      "lines": 25,
+      "sha256": "1a77b5e55b675d43342bc45369133ffd5276977e86406d56c48367a5a7f1d23a",
+      "description": "Blender integration: clipping an inspection copy cannot mutate the asset.",
+      "imports": [
+        "from pathlib import Path",
+        "from propkit.cutaway import export_surface_cutaway",
+        "from propkit.sectioning import CuttingPlane",
+        "import bpy",
+        "import sys",
+        "import tempfile"
+      ],
+      "definitions": [],
+      "calls": [
+        "CuttingPlane",
+        "Path",
+        "Path(__file__).resolve",
+        "all",
+        "bpy.ops.import_scene.gltf",
+        "bpy.ops.mesh.primitive_cube_add",
+        "export_surface_cutaway",
+        "print",
+        "set",
+        "source.select_get",
+        "str",
+        "sys.path.insert",
+        "tempfile.TemporaryDirectory",
+        "tuple"
+      ],
+      "environment_keys": []
+    },
+    {
       "path": "long-lines/tools/test_depth_engineering.py",
-      "lines": 87,
-      "sha256": "2b29fabb0c16a429ec0eb0a6c0b5d799d60b59ae8021770efd795c0cf24c9b10",
+      "lines": 118,
+      "sha256": "2fb0d3208a4f5bd3333f96259505ee7016905080eec64fce447cce46cc5150ba",
       "description": "Synthetic evidence regressions; no per-object coordinates in the pipeline.",
       "imports": [
         "from pathlib import Path",
@@ -14577,6 +15016,7 @@
         }
       ],
       "calls": [
+        "(~mask).sum",
         "Path",
         "Path(__file__).resolve",
         "abs",
@@ -14597,6 +15037,8 @@
         "np.linalg.norm",
         "np.ones",
         "np.ones_like",
+        "np.random.default_rng",
+        "np.random.default_rng(4).normal",
         "np.zeros",
         "patch.object",
         "profile_depth",
@@ -14608,6 +15050,7 @@
         "self.assertFalse",
         "self.assertRaises",
         "self.assertTrue",
+        "signal.copy",
         "str",
         "sys.path.insert",
         "unittest.main",
@@ -14852,6 +15295,81 @@
       "environment_keys": []
     },
     {
+      "path": "long-lines/tools/test_preflight.py",
+      "lines": 23,
+      "sha256": "ee5f3c4ff351d4f7aefc53e641bd0690c471ecd87eeda0203ab32e58b7bcdf17",
+      "description": "Blender: conflicting views are reported without editing source evidence.",
+      "imports": [
+        "from PIL import Image",
+        "from pathlib import Path",
+        "from propkit.preflight import inspect_order",
+        "import hashlib",
+        "import sys",
+        "import tempfile"
+      ],
+      "definitions": [],
+      "calls": [
+        "Image.new",
+        "Path",
+        "Path(__file__).resolve",
+        "hashlib.sha256",
+        "hashlib.sha256(p.read_bytes()).hexdigest",
+        "image.paste",
+        "image.save",
+        "inspect_order",
+        "p.read_bytes",
+        "print",
+        "source.iterdir",
+        "source.mkdir",
+        "str",
+        "sys.path.insert",
+        "tempfile.TemporaryDirectory",
+        "{'front': (90, 160), 'back': (45, 160), 'right': (45, 160), 'top': (90, 45)}.items"
+      ],
+      "environment_keys": []
+    },
+    {
+      "path": "long-lines/tools/test_sectioning.py",
+      "lines": 54,
+      "sha256": "402a111272daa6538235a8143adbebc7448e181fd468ced06b24ac591ed866dd",
+      "description": "Known-geometry section contracts; no Blender or model download required.",
+      "imports": [
+        "from propkit.sectioning import CuttingPlane, intersect_mesh, closed_contours, section_image",
+        "import numpy as np",
+        "import unittest"
+      ],
+      "definitions": [
+        {
+          "name": "SectionTests",
+          "line": 7,
+          "kind": "ClassDef",
+          "description": ""
+        }
+      ],
+      "calls": [
+        "CuttingPlane",
+        "CuttingPlane((0, 0, 0), normal).frame",
+        "closed_contours",
+        "image.getpixel",
+        "intersect_mesh",
+        "len",
+        "np.array",
+        "np.concatenate",
+        "np.roll",
+        "np.stack",
+        "np.testing.assert_allclose",
+        "plane.frame",
+        "section_image",
+        "self.assertAlmostEqual",
+        "self.assertEqual",
+        "self.assertNotEqual",
+        "self.assertRaises",
+        "self.square",
+        "unittest.main"
+      ],
+      "environment_keys": []
+    },
+    {
       "path": "long-lines/tools/test_sections.py",
       "lines": 72,
       "sha256": "5dc2ab95aa6088539ee9907adba8d7f2925310c3a683ea58079bd5682abf0d5c",
@@ -14916,6 +15434,33 @@
         "sys.path.insert",
         "tempfile.mkdtemp",
         "top.save"
+      ],
+      "environment_keys": []
+    },
+    {
+      "path": "long-lines/tools/test_simplification.py",
+      "lines": 16,
+      "sha256": "98a892ca80120a6bf9ead46804468ad7d1effa2289c20f524b1045be0c8bb756",
+      "description": "Run with Blender: shared simplification must reduce geometry within its bound.",
+      "imports": [
+        "from pathlib import Path",
+        "from propkit.simplification import decimate_to_error, refresh_normals",
+        "import bpy",
+        "import sys"
+      ],
+      "definitions": [],
+      "calls": [
+        "Path",
+        "Path(__file__).resolve",
+        "all",
+        "bpy.ops.mesh.primitive_uv_sphere_add",
+        "decimate_to_error",
+        "len",
+        "print",
+        "refresh_normals",
+        "str",
+        "sum",
+        "sys.path.insert"
       ],
       "environment_keys": []
     },

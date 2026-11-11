@@ -23,6 +23,30 @@ parsed successfully; JSON parsing found no errors. Static calls are not a resolv
 runtime call graph. Inventory counts describe the pre-knowledge-file snapshot;
 the new knowledge documents themselves are additional files.
 
+## Current implementation update (2026-11-10)
+
+The implemented cleanup is documented in
+[IMPLEMENTATION_PLAN.md](long-lines/factory/IMPLEMENTATION_PLAN.md).
+New shared modules are pipeline.py (orchestration/failure reports), preflight.py
+(non-destructive reconciliation proposals), simplification.py (shared adaptive
+reduction and normal refresh), sectioning.py (arbitrary plane contours and
+hole-aware hatching) and cutaway.py (non-destructive clipped surface export).
+Single-body automatic-depth projected builds now simplify before painting.
+Local relief regions replace the failed whole-view selector; dense single-body
+relief is retained for normal baking. Automatic-depth QA uses unfiltered outlines,
+144-pixel width and available bottom references. Legacy route defaults remain.
+The restricted intake grammar, camera/shape optimizer and automatic construction
+region decomposition remain unresolved as listed in the plan.
+
+The updated leg trial has 1,302 triangles, zero normal disagreement, and 58 locally
+accepted candidate regions. The stricter raw top-view test rejects the blender
+reference despite its former filtered pass. These are limited acceptance cases,
+not universal reconstruction quality guarantees.
+
+Regenerate the inventory with:
+python long-lines/tools/audit_inventory.py
+It parses source without importing builders and excludes its generated JSON output.
+
 ## Repository identity and boundaries
 
 - This repository contains **two products**: root Midnight Watch (static web app and
@@ -152,24 +176,20 @@ absolute scale uses physical priors. It is not general camera-pose recovery.
 depth_inference.py adds robust side-profile spans and explicit prior/conflict
 provenance, plus conservative shading-candidate selection around existing relief.
 It overlaps sheetset.side_profile_mm conceptually; reconcile their contracts before
-deleting or replacing either. The new whole-view score failed the carved-leg case.
+deleting or replacing either. The original whole-view score failed the carved-leg case and is now replaced by per-region evaluation.
 Do not present abstention as proof there are no grooves.
 
 engineering.py records identity, inferred boxes before seating, attachment/positive
-dimension checks and unknown internals. It generates common-scale silhouettes
-and three horizontal triangle intersections of the exported mesh.
+dimension checks and unknown internals. It generates common-scale silhouettes, labelled hatched plane sections and a clipped inspection GLB.
 It is reporting, not an optimizing engineering constraint solver.
-Arbitrary section planes, hatching, hidden-line elimination, robust contour nesting,
-cutaway rendering, full CAD/CSG reconstruction and manufacturing certification are
-not implemented by that file.
+Arbitrary section planes and hole-aware hatching are now implemented in sectioning.py. A separately clipped, uncapped surface cutaway is exported. Full hidden-line elimination, solid CAD/CSG reconstruction and manufacturing certification remain unimplemented.
 
 ## Actual station gaps and ordering hazards
 
 - factory.run_line returns from hull_parts before hull-only reconciliation,
   guide and relief configuration. Selected relief was later connected explicitly
   for automatic parts; that is not universal station parity.
-- Single-body hull does not call parts_layout.decimate_to_error. Dense geometry
-  is reduced to 95% of the class ceiling when oversized: medium 25,000 -> 23,750.
+- Single-body automatic-depth/projected or budget=screen builds now call the shared adaptive simplifier. Legacy defaults still use size ceilings, including medium 25,000 -> 23,750.
 - sections can improve a voxel solid without generating economical profile topology.
 - parts layout simplifies before projection to avoid painted triangles collapsing.
   The single-body route can still encounter later joined-mesh budget reduction.
@@ -228,9 +248,10 @@ current or previously generated assets are acceptable.
 ## Known quality limitations, backed by observed trials
 
 Existing QA includes geometry/export integrity, normal disagreement, floor contact,
-UV density/stretch, holes, silhouette overlap and trim-source checks. The generic
+UV density/stretch, holes, silhouette overlap and trim-source checks. The legacy generic
 silhouette gate uses coarse 72-pixel-width masks, independent reference fitting,
-small-excess-component removal and five directions (no generic bottom comparison).
+small-excess-component removal and five directions. Automatic-depth orders now
+also enforce raw unfiltered overlap, use 144-pixel masks and compare available bottom views.
 A global “pass” can coexist with missing grooves or a malformed handle.
 
 Blender reference trial:
@@ -322,7 +343,7 @@ be a deterministic inspection station with arbitrary planes and nested-loop hand
 No joint inverse-CAD solver or general camera optimizer currently exists.
 
 Mark knowledge as SOURCE-VERIFIED, OBSERVED RUN or PROPOSED in new entries.
-Update this file and the inventory when code contracts change. Historical successes
+Update this file and the inventory when code contracts change. The original 391/82/36 counts above are the initial audit snapshot; use the regenerated inventory metadata for current counts. Historical successes
 and failures must retain their actual input assistance and limitations.
 This file records knowledge; it does not authorize destructive operations, broad
 rewrites or changes to the untouched original repository.

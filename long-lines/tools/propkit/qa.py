@@ -54,21 +54,26 @@ def glb_normal_disagreement(path):
         a = js["accessors"][i]
         bv = js["bufferViews"][a["bufferView"]]
         n = {"SCALAR": 1, "VEC2": 2, "VEC3": 3, "VEC4": 4}[a["type"]]
-        dt = {5126: np.float32, 5125: np.uint32, 5123: np.uint16, 5121: np.uint8}[a["componentType"]]
-        arr = np.frombuffer(bin_, dtype=dt, count=a["count"] * n, offset=bv.get("byteOffset", 0) + a.get("byteOffset", 0))
+        dt = {5126: np.float32, 5125: np.uint32,
+              5123: np.uint16, 5121: np.uint8}[a["componentType"]]
+        arr = np.frombuffer(
+            bin_, dtype=dt, count=a["count"] * n, offset=bv.get("byteOffset", 0) + a.get("byteOffset", 0))
         return arr.reshape(-1, n) if n > 1 else arr
     tot = bad = 0
     for mesh in js.get("meshes", []):
         for prim in mesh["primitives"]:
             if "NORMAL" not in prim["attributes"] or "indices" not in prim:
                 continue
-            P, N = acc(prim["attributes"]["POSITION"]), acc(prim["attributes"]["NORMAL"])
+            P, N = acc(prim["attributes"]["POSITION"]), acc(
+                prim["attributes"]["NORMAL"])
             I = acc(prim["indices"]).reshape(-1, 3)
             a, b_, c = P[I[:, 0]], P[I[:, 1]], P[I[:, 2]]
             fn = np.cross(b_ - a, c - a)
-            ok = np.linalg.norm(fn, axis=1) > 1e-12                       # degenerate slivers have no facing
+            # degenerate slivers have no facing
+            ok = np.linalg.norm(fn, axis=1) > 1e-12
             fn = fn[ok] / np.linalg.norm(fn[ok], axis=1, keepdims=True)
-            worst = np.minimum.reduce([(N[I[ok, k]] * fn).sum(1) for k in range(3)])
+            worst = np.minimum.reduce(
+                [(N[I[ok, k]] * fn).sum(1) for k in range(3)])
             tot += int(ok.sum())
             bad += int((worst < 0.3).sum())
     return bad / max(1, tot)
@@ -115,10 +120,13 @@ def check(name, views_dir=None, category_class=None, paint_only=(), solid=False,
     m.update({"tris": tris, "size_m": [round(s, 3) for s in size], "class": cls, "tex": tex,
               "texel_density": round(density), "lowest_z": round(lo.z, 4)})
     if tris > budget:
-        fails.append("over triangle budget: %d > %d (%s)" % (tris, budget, cls))
-    lo_d, hi_d = STANDARDS["size_classes"][cls].get("texel_density_px_per_m", MIN["texel_density_px_per_m"])
+        fails.append("over triangle budget: %d > %d (%s)" %
+                     (tris, budget, cls))
+    lo_d, hi_d = STANDARDS["size_classes"][cls].get(
+        "texel_density_px_per_m", MIN["texel_density_px_per_m"])
     if not lo_d <= density <= hi_d:
-        fails.append("texel density %d px/m outside %d-%d" % (density, lo_d, hi_d))
+        fails.append("texel density %d px/m outside %d-%d" %
+                     (density, lo_d, hi_d))
     from .texturing import uv_quality
     uq = {}
     for o in objs:
@@ -127,7 +135,8 @@ def check(name, views_dir=None, category_class=None, paint_only=(), solid=False,
             uq = q if not uq or q["distorted_area_fraction"] > uq["distorted_area_fraction"] else uq
     m.update(uq)
     if uq and uq["distorted_area_fraction"] > MIN.get("max_uv_distorted_fraction", 1.0):
-        fails.append("UV stretch: %.0f%% of the surface is distorted more than 2x" % (uq["distorted_area_fraction"] * 100))
+        fails.append("UV stretch: %.0f%% of the surface is distorted more than 2x" % (
+            uq["distorted_area_fraction"] * 100))
     m["mount"] = mount
     if mount == "floor" and abs(lo.z) > MIN["floor_tolerance_m"]:
         fails.append("not standing on z = 0 (lowest point %.3f m)" % lo.z)
@@ -140,15 +149,20 @@ def check(name, views_dir=None, category_class=None, paint_only=(), solid=False,
         "left": (Vector((1, 0, 0)), lambda u, v: Vector((lo.x - 1, hi.y - u * size.y, lo.z + v * size.z)), size.z / max(size.y, 1e-6)),
         "top": (Vector((0, 0, -1)), lambda u, v: Vector((lo.x + u * size.x, hi.y - v * size.y, hi.z + 1)), size.y / max(size.x, 1e-6)),
     }
+    strict_geometry = bool(trim_order and trim_order.get("automatic_depth"))
+    if strict_geometry:
+        views["bottom"] = (Vector((0, 0, 1)), lambda u, v: Vector(
+            (lo.x + u * size.x, lo.y + v * size.y, lo.z - 1)), size.y / max(size.x, 1e-6))
     back_hits, hits = 0, 0
     sil = {}
     for k, (direc, origin, aspect) in views.items():
-        n = 72
-        w, h = n, max(6, min(240, int(n * aspect)))
+        n = 144 if strict_geometry else 72
+        w, h = n, max(6, min(480 if strict_geometry else 240, int(n * aspect)))
         got = np.zeros((h, w), bool)
         for j in range(h):
             for i in range(w):
-                loc, nor, idx, dist = tree.ray_cast(origin((i + 0.5) / w, 1 - (j + 0.5) / h), direc, 10)
+                loc, nor, idx, dist = tree.ray_cast(
+                    origin((i + 0.5) / w, 1 - (j + 0.5) / h), direc, 10)
                 if loc is not None:
                     got[j, i] = True
                     hits += 1
@@ -160,19 +174,24 @@ def check(name, views_dir=None, category_class=None, paint_only=(), solid=False,
     nd = glb_normal_disagreement(os.path.join(d, name + ".glb"))
     m["normal_disagreement"] = round(nd, 4)
     if nd > 0.01:
-        fails.append("%.1f%% of triangles have normals that disagree with their facing (stale or reversed normals)" % (nd * 100))
-    if solid and back_frac > MIN["max_backfacing_fraction"]:  # thin leaves and cloth have no inside
-        fails.append("%.0f%% of visible faces point inward (flipped normals or open mesh)" % (back_frac * 100))
+        fails.append(
+            "%.1f%% of triangles have normals that disagree with their facing (stale or reversed normals)" % (nd * 100))
+    # thin leaves and cloth have no inside
+    if solid and back_frac > MIN["max_backfacing_fraction"]:
+        fails.append("%.0f%% of visible faces point inward (flipped normals or open mesh)" % (
+            back_frac * 100))
     from scipy import ndimage
     holes = ndimage.binary_fill_holes(sil["front"]) & ~sil["front"]
     m["front_hole_fraction"] = round(float(holes.mean()), 4)
     allow = MIN["max_hole_fraction"]
     man = os.path.join(views_dir, "manifest.json") if views_dir else None
-    if man and os.path.exists(man):   # a sheet set: compare with the holes the reference really has
+    # a sheet set: compare with the holes the reference really has
+    if man and os.path.exists(man):
         try:
             mj = json.load(open(man))
             x0, y0, x1, y1 = mj["part_map"]["view_bboxes_px"]["front"]
-            pm = np.asarray(Image.open(os.path.join(views_dir, mj["part_map"]["filename"])).convert("L").crop((x0, y0, x1, y1 - 3))) > 30
+            pm = np.asarray(Image.open(os.path.join(views_dir, mj["part_map"]["filename"])).convert(
+                "L").crop((x0, y0, x1, y1 - 3))) > 30
             ys_, xs_ = np.nonzero(pm)
             pm = pm[ys_.min():ys_.max() + 1, xs_.min():xs_.max() + 1]
             ref_holes = float((ndimage.binary_fill_holes(pm) & ~pm).mean())
@@ -185,24 +204,37 @@ def check(name, views_dir=None, category_class=None, paint_only=(), solid=False,
     if views_dir:
         from .hull import silhouette
         ious = {}
+        raw_ious = {}
         for k, got in sil.items():
             p = os.path.join(views_dir, "v_%s.png" % k)
             if k in paint_only or not os.path.exists(p):
                 continue
             mask, _ = silhouette(p)
-            ref = np.asarray(Image.fromarray(mask.astype(np.uint8) * 255).resize((got.shape[1], got.shape[0]))) > 127
+            ref = np.asarray(Image.fromarray(mask.astype(
+                np.uint8) * 255).resize((got.shape[1], got.shape[0]))) > 127
+            raw_ious[k] = round(
+                float((ref & got).sum() / max((ref | got).sum(), 1)), 3)
+            if strict_geometry and raw_ious[k] < MIN["silhouette_iou"]:
+                fails.append("%s full geometry outline matches only %.0f%%" % (
+                    k, raw_ious[k] * 100))
             lab = ndimage.label(got & ~ref)[0]
             sizes = np.bincount(lab.ravel())
-            bumps = np.isin(lab, [i for i, c in enumerate(sizes) if i and c < got.sum() * 0.03])
+            bumps = np.isin(lab, [i for i, c in enumerate(
+                sizes) if i and c < got.sum() * 0.03])
             core = got & ~bumps
-            ious[k] = round(float((ref & core).sum() / max((ref | core).sum(), 1)), 3)
+            ious[k] = round(float((ref & core).sum() /
+                            max((ref | core).sum(), 1)), 3)
             if ious[k] < MIN["silhouette_iou"]:
-                fails.append("%s outline matches the reference only %.0f%%" % (k, ious[k] * 100))
+                fails.append(
+                    "%s outline matches the reference only %.0f%%" % (k, ious[k] * 100))
         m["silhouette_iou"] = ious
+        m["silhouette_iou_raw"] = raw_ious
+        m["silhouette_raster_width"] = n
         if trim_order and trim_order.get('vision_generated'):
-            missing=set(('front','back','left','right','top'))-set(ious)
+            missing = set(('front', 'back', 'left', 'right', 'top'))-set(ious)
             if missing:
-                fails.append('automatic reference comparison missing: '+', '.join(sorted(missing)))
+                fails.append(
+                    'automatic reference comparison missing: '+', '.join(sorted(missing)))
     # The generic gate only checks v_front/v_side reference views. Trim orders
     # are produced from p_section/p_strip/p_front and need their own checks.
     if trim_order is None:
@@ -221,7 +253,8 @@ def check(name, views_dir=None, category_class=None, paint_only=(), solid=False,
             else:
                 match = trim_checks.section_match(p, verts, polys)
                 if match is None:
-                    fails.append("trim exported section cannot be compared to reference")
+                    fails.append(
+                        "trim exported section cannot be compared to reference")
                 else:
                     iou, ratio_error = match
                     m["trim_section_iou"] = iou
@@ -241,7 +274,8 @@ def check(name, views_dir=None, category_class=None, paint_only=(), solid=False,
             if not os.path.isfile(p):
                 fails.append("frame painted reference is missing")
             else:
-                opening = trim_checks.opening_from_paint(p, trim_order.get("opening_mode", "strict"))
+                opening = trim_checks.opening_from_paint(
+                    p, trim_order.get("opening_mode", "strict"))
                 m["reference_opening"] = list(opening) if opening else None
                 if opening is None:
                     fails.append("frame reference opening not found")
@@ -250,9 +284,11 @@ def check(name, views_dir=None, category_class=None, paint_only=(), solid=False,
                     fg = sil["front"]
                     H, W = fg.shape
                     left = max(0, min(W - 1, int((x0 + (x1 - x0) * .2) * W)))
-                    right = max(left + 1, min(W, int((x1 - (x1 - x0) * .2) * W)))
+                    right = max(
+                        left + 1, min(W, int((x1 - (x1 - x0) * .2) * W)))
                     top = max(0, min(H - 1, int((y0 + (y1 - y0) * .2) * H)))
-                    bottom = max(top + 1, min(H, int((y1 - (y1 - y0) * .2) * H)))
+                    bottom = max(
+                        top + 1, min(H, int((y1 - (y1 - y0) * .2) * H)))
                     occlusion = float(fg[top:bottom, left:right].mean())
                     m["frame_opening_occlusion"] = round(occlusion, 3)
                     if occlusion > MIN["trim"]["frame_opening_occlusion_max"]:
@@ -267,5 +303,6 @@ def check(name, views_dir=None, category_class=None, paint_only=(), solid=False,
             difference = trim_checks.texture_difference(reference, albedo_path)
             m["trim_colour_difference"] = difference
             if difference is None or difference > MIN["trim"]["colour_difference_max"]:
-                fails.append("trim baked colour differs from painted reference: %s" % difference)
+                fails.append(
+                    "trim baked colour differs from painted reference: %s" % difference)
     return {"pass": not fails, "fails": fails, "metrics": m}

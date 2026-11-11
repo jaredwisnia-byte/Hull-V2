@@ -1,0 +1,117 @@
+"""Image-only orchestration. Geometry stays in the existing factory engines.
+
+Callbacks keep this station testable without importing or duplicating factory
+dispatch. All file freshness checks belong here, before packaging or reporting.
+"""
+import hashlib
+import json
+from pathlib import Path
+import subprocess
+import time
+
+
+def is_fresh(path, started_ns):
+    return path.is_file() and path.stat().st_mtime_ns >= started_ns
+
+
+def available_digest(path):
+    """Failure reporting must also work when the source file is unreadable."""
+    try:
+        return hashlib.sha256(path.read_bytes()).hexdigest()
+    except OSError:
+        return None
+
+
+def render_asset(name, destination, render_script):
+    import bpy
+    command = [
+        bpy.app.binary_path, "-b", "--factory-startup", "--python-use-system-env",
+        "--python-exit-code", "1", "-P", str(render_script),
+        "--", name, str(destination),
+    ]
+    started_ns = time.time_ns()
+    process = subprocess.run(command, capture_output=True, text=True)
+    (destination / "render.log").write_text(process.stdout + process.stderr)
+    image = destination / (name + ".png")
+    if process.returncode == 0 and is_fresh(image, started_ns):
+        return str(image)
+    return None
+
+
+def _build_image(image, output, *, build_order, library_root, render_script, export_model):
+    """Intake -> native work order -> build/QA -> fresh exports -> diagnostics."""
+    from sheet_blobs import automatic
+    from . import engineering
+
+    image = Path(image).resolve()
+    destination = Path(output).resolve()
+    destination.mkdir(parents=True, exist_ok=True)
+    started = time.monotonic()
+    result = {
+        "input_image": str(image),
+        "input_sha256": hashlib.sha256(image.read_bytes()).hexdigest(),
+        "runtime_llm": False,
+        "status": "needs_review",
+    }
+    intake = automatic(image, destination / "intake")
+    if intake["status"] != "ready_to_build":
+        result["intake_failure"] = intake.get(
+            "failure", "unresolved visual assignments")
+    else:
+        order = json.loads(Path(intake["work_order"]).read_text())
+        name = order["name"]
+        result["assumptions"] = order["assumptions"]
+        warnings = [part["name"] for part in order.get("parts", [])
+                    if part.get("depth_inference", {}).get("needs_review")]
+        if order.get("automatic_depth"):
+            from .preflight import inspect_order
+            order["view_consistency"] = inspect_order(
+                order, Path(library_root).parent / "source_textures",
+                destination / "view-consistency",
+            )
+            result["view_consistency"] = order["view_consistency"]
+            if order["view_consistency"]["status"] == "needs_review":
+                warnings.append("view_consistency")
+        result["inference_warnings"] = warnings
+        build_started_ns = time.time_ns()
+        result["qa"] = build_order(order)
+        artifact = Path(library_root) / name / (name + ".glb")
+        if is_fresh(artifact, build_started_ns):
+            result.update(export_model(name, library_root, destination))
+            if order.get("automatic_depth"):
+                result.update(engineering.export(order, destination))
+            result["render"] = render_asset(name, destination, render_script)
+            if result["qa"]["pass"] and result["render"] and not warnings:
+                result["status"] = "complete"
+        else:
+            result["export_failure"] = "Current build did not produce a fresh model"
+    result["seconds"] = round(time.monotonic() - started, 2)
+    (destination / "result.json").write_text(json.dumps(result, indent=2))
+    print("AUTOMATIC_RESULT", json.dumps(result))
+    return result
+
+
+def build_image(image, output, **stations):
+    """Persist a reviewable failure report even if a station raises unexpectedly."""
+    import traceback
+    destination = Path(output).resolve()
+    destination.mkdir(parents=True, exist_ok=True)
+    started = time.monotonic()
+    try:
+        return _build_image(image, destination, **stations)
+    except Exception as error:
+        log = destination / "pipeline-error.log"
+        log.write_text(traceback.format_exc())
+        source = Path(image).resolve()
+        result = {
+            "input_image": str(source),
+            "input_sha256": available_digest(source),
+            "runtime_llm": False,
+            "status": "needs_review",
+            "pipeline_failure": str(error),
+            "error_log": str(log),
+            "seconds": round(time.monotonic() - started, 2),
+        }
+        (destination / "result.json").write_text(json.dumps(result, indent=2))
+        print("AUTOMATIC_RESULT", json.dumps(result))
+        return result

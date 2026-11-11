@@ -35,6 +35,7 @@ How a part is located (where in the object, and how big):
               painted from the photo
 Then every part is seated on its parent along the face it attaches to and gap-checked.
 """
+from .simplification import screen_tolerance, decimate_to_error
 import os
 import tempfile
 
@@ -50,15 +51,22 @@ from .locate import find_part
 from . import handbook as HB
 
 PART_MIN_TRIS = 300   # no part decimated below this
-RECESS_SHARE = 0.12     # openings drawn in a body's front are recessed this share of its depth (order may set depth_m)
-INSET_BEHIND = 0.03     # an inset part's face sits this share of its parent's depth behind the parent's front
-OPENING_MIN = 0.02      # an opening must cover this share of the front to be recessed (knob holes stay painted)
-INSET_OVERSIZE = 1.04   # an inset part is this much larger than its opening, its rim hidden behind the edge
-CONVEX_OPENING = 0.9    # an opening filling this share of its convex outline is given that outline
-ENVELOPE = 0.9          # a body filling this share of the front (both ways) is the object's envelope
+# openings drawn in a body's front are recessed this share of its depth (order may set depth_m)
+RECESS_SHARE = 0.12
+# an inset part's face sits this share of its parent's depth behind the parent's front
+INSET_BEHIND = 0.03
+# an opening must cover this share of the front to be recessed (knob holes stay painted)
+OPENING_MIN = 0.02
+# an inset part is this much larger than its opening, its rim hidden behind the edge
+INSET_OVERSIZE = 1.04
+# an opening filling this share of its convex outline is given that outline
+CONVEX_OPENING = 0.9
+# a body filling this share of the front (both ways) is the object's envelope
+ENVELOPE = 0.9
 ELONGATED = 3.0     # a leftover whose centreline is this many widths long is swept as a tube
 INTO = {"front": (0, 1, 0), "back": (0, -1, 0), "top": (0, 0, -1), "bottom": (0, 0, 1),
-        "left": (1, 0, 0), "right": (-1, 0, 0)}          # direction from a part on that face into its parent
+        # direction from a part on that face into its parent
+        "left": (1, 0, 0), "right": (-1, 0, 0)}
 
 
 def _views(folder):
@@ -66,7 +74,8 @@ def _views(folder):
 
 
 def _holes(path, box):
-    hp = os.path.join(os.path.dirname(path), "h_%s.png" % os.path.basename(path)[2:-4])
+    hp = os.path.join(os.path.dirname(path), "h_%s.png" %
+                      os.path.basename(path)[2:-4])
     if not os.path.exists(hp):
         return None
     h = np.asarray(Image.open(hp).convert("L").crop(box)) > 127
@@ -101,12 +110,14 @@ def contact_measure(c, boxes, photo, plan, root, todo=()):
     part, m = c["part"], c["measure"]
     if part == "whole":
         return {"width": W, "depth": D, "height": H}.get(m)
-    spec = next((p for p in plan if p["name"] == part), None) or next((p for p in plan if p.get("views") == part), None)
+    spec = next((p for p in plan if p["name"] == part), None) or next(
+        (p for p in plan if p.get("views") == part), None)
     if spec is None or spec["name"] not in boxes:
         return None
     b = boxes[spec["name"]]
     side = any(t[0] == spec["name"] and t[3][0] == "side" for t in todo)
-    w, d, h = (b[3] - b[2], b[1] - b[0], b[5] - b[4]) if side else (b[1] - b[0], b[3] - b[2], b[5] - b[4])
+    w, d, h = (b[3] - b[2], b[1] - b[0], b[5] - b[4]
+               ) if side else (b[1] - b[0], b[3] - b[2], b[5] - b[4])
     if m in ("width", "depth", "height"):
         return {"width": w, "depth": d, "height": h}[m]
     if m == "top_height":
@@ -129,7 +140,8 @@ def openings(front_path, min_share=None):
     for i, sl in enumerate(ndimage.find_objects(lab), 1):
         a = int((lab[sl] == i).sum())
         if a >= (OPENING_MIN if min_share is None else min_share) * m.sum():
-            out.append((a, (sl[1].start / m.shape[1], sl[1].stop / m.shape[1], sl[0].start / m.shape[0], sl[0].stop / m.shape[0])))
+            out.append((a, (sl[1].start / m.shape[1], sl[1].stop / m.shape[1],
+                       sl[0].start / m.shape[0], sl[0].stop / m.shape[0])))
     return [b for _, b in sorted(out, reverse=True)]
 
 
@@ -143,7 +155,8 @@ def recess_hook(front_path, depth_m, report, min_share=None):
         return None
     lab, k = ndimage.label(holes)
     sizes = ndimage.sum(holes, lab, range(1, k + 1))
-    keepl = [i + 1 for i, s_ in enumerate(sizes) if s_ >= (OPENING_MIN if min_share is None else min_share) * m.sum()]
+    keepl = [i + 1 for i, s_ in enumerate(sizes) if s_ >= (
+        OPENING_MIN if min_share is None else min_share) * m.sum()]
     op = np.zeros_like(holes)
     from skimage.morphology import convex_hull_image
     for i in keepl:
@@ -151,7 +164,8 @@ def recess_hook(front_path, depth_m, report, min_share=None):
         hull_ = convex_hull_image(one)
         # a nearly convex opening (a screen, a dial window) is drawn with a ragged painted edge: its
         # convex outline is the opening; a shaped one (an L, a slot pattern) keeps its own outline
-        op |= hull_ if one.sum() >= CONVEX_OPENING * hull_.sum() else ndimage.binary_opening(one, iterations=1)
+        op |= hull_ if one.sum() >= CONVEX_OPENING * \
+            hull_.sum() else ndimage.binary_opening(one, iterations=1)
     report["openings"] = int(len(keepl))
     report["recess_mm"] = round(depth_m * 1000, 1)
 
@@ -159,10 +173,12 @@ def recess_hook(front_path, depth_m, report, min_share=None):
         nx, ny, nz = keep.shape
         hh, ww = op.shape
         xi = np.clip(((np.arange(nx) + 0.5) / nx * ww).astype(int), 0, ww - 1)
-        zi = np.clip(((1 - (np.arange(nz) + 0.5) / nz) * hh).astype(int), 0, hh - 1)
+        zi = np.clip(((1 - (np.arange(nz) + 0.5) / nz)
+                     * hh).astype(int), 0, hh - 1)
         mask = op[np.ix_(zi, xi)].T                                   # (x, z)
         dv = max(1, int(round(depth_m / (D / ny))))
-        front = np.where(keep.any(1), keep.argmax(1), ny)             # first solid voxel from the front, per (x, z)
+        # first solid voxel from the front, per (x, z)
+        front = np.where(keep.any(1), keep.argmax(1), ny)
         removed = 0
         lab_, k_ = ndimage.label(mask & (front < ny))
         for j in range(1, k_ + 1):
@@ -202,16 +218,21 @@ def build_part(views, w, d, h, name, tmp, res=110, rough=0.5, cut_holes=True, de
         if holes is not None and holes.shape == m.shape:
             sil["front"] = (m & ~holes, img)
             if "back" in sil and sil["back"][0].shape == m.shape:
-                sil["back"] = (sil["back"][0] & ~holes[:, ::-1], sil["back"][1])
-            notes.append("%d px of background seen through its front view cut through" % int(holes.sum()))
+                sil["back"] = (sil["back"][0] & ~
+                               holes[:, ::-1], sil["back"][1])
+            notes.append(
+                "%d px of background seen through its front view cut through" % int(holes.sum()))
     obj = hull_prop(views, h, res=res, name=name, width_m=w, depth_m=d, features=False, paint=False, rough=rough,
                     sil_override=sil)
     rev = HULL_REPORT.get("revolve")
-    paint = ({k: v for k, v in views.items() if not v.endswith("_side.png")}, w, d, h)
+    paint = ({k: v for k, v in views.items()
+             if not v.endswith("_side.png")}, w, d, h)
     if defer is not None:
-        defer.append((obj, paint))           # painted once its final topology is known (paint_deferred)
+        # painted once its final topology is known (paint_deferred)
+        defer.append((obj, paint))
     else:
-        texturing.project(obj, paint_views(paint[0], tmp, "p_" + name), w, d, h, others=[], name=obj.name, rough=rough)
+        texturing.project(obj, paint_views(
+            paint[0], tmp, "p_" + name), w, d, h, others=[], name=obj.name, rough=rough)
     return obj, notes, rev
 
 
@@ -252,7 +273,8 @@ def centreline(front, side, box, side_is_left=False):
     w, d, h = x1 - x0, y1 - y0, z1 - z0
     hh, ww = front.shape
     path = _longest_path(skeletonize(front))
-    r_px = float(np.median(ndimage.distance_transform_edt(front)[tuple(np.array(path).T)])) if path else 1.0
+    r_px = float(np.median(ndimage.distance_transform_edt(
+        front)[tuple(np.array(path).T)])) if path else 1.0
     sh, sw = side.shape
     pts = []
     for (py, px_) in path[::max(1, int(r_px / 2))]:
@@ -267,7 +289,8 @@ def centreline(front, side, box, side_is_left=False):
     if len(pts) < 3:
         return None, r_px / ww * w
     P = np.array(pts)
-    P = np.vstack([ndimage.gaussian_filter1d(P[:, i], 1.5, mode="nearest") for i in range(3)]).T
+    P = np.vstack([ndimage.gaussian_filter1d(
+        P[:, i], 1.5, mode="nearest") for i in range(3)]).T
     return P, r_px / ww * w
 
 
@@ -279,69 +302,8 @@ def sweep_tube(front, side, box, name, side_is_left=False, segments=10):
         return None, r
     return tube(P, r, name, segments), r
 
-def screen_tolerance(standards, kind):
-    """The surface error (m) a mesh may have: error_px pixels at the kind's near viewing distance."""
-    import math
-    sb = standards.get("screen_error_budget")
-    if not sb:
-        return None
-    d = sb["near_m"].get(kind, sb["near_m"]["static"])
-    px_per_m = sb["screen_px"][1] / (2 * d * math.tan(math.radians(sb["vertical_fov_deg"]) / 2))
-    return sb["error_px"] / px_per_m
 
-
-def decimate_to_error(obj, tol, min_tris=120, samples=2500):
-    """Simplify a mesh as far as it can go while its surface stays within tol (metres) of the dense
-    mesh (99th percentile, both ways: detail lost and corners cut). Binary search on
-    the decimation ratio; returns (triangles, error)."""
-    import bpy
-    from mathutils.bvhtree import BVHTree
-    from .core import apply_mods
-    me = obj.data
-    dense = np.array([v.co for v in me.vertices])
-    if len(dense) > samples:
-        dense = dense[np.random.default_rng(0).choice(len(dense), samples, replace=False)]
-    tris0 = sum(len(p_.vertices) - 2 for p_ in me.polygons)
-    if tris0 <= min_tris:
-        return tris0, 0.0
-    dense_tree = BVHTree.FromPolygons([v.co for v in me.vertices], [p_.vertices for p_ in me.polygons])
-
-    def trial(ratio):
-        o2 = obj.copy()
-        o2.data = me.copy()
-        bpy.context.scene.collection.objects.link(o2)
-        m_ = o2.modifiers.new("d", "DECIMATE")
-        m_.ratio = ratio
-        apply_mods(o2)
-        t = BVHTree.FromPolygons([v.co for v in o2.data.vertices], [p_.vertices for p_ in o2.data.polygons])
-        simple = np.array([v.co for v in o2.data.vertices])
-        if len(simple) > samples:
-            simple = simple[np.random.default_rng(1).choice(len(simple), samples, replace=False)]
-        # both ways: detail the simplified mesh lost, and corners it cut through
-        e1 = np.percentile([(t.find_nearest(tuple(c))[3] or 0.0) for c in dense], 99)
-        e2 = np.percentile([(dense_tree.find_nearest(tuple(c))[3] or 0.0) for c in simple], 99)
-        err = float(max(e1, e2))
-        n = sum(len(p_.vertices) - 2 for p_ in o2.data.polygons)
-        mesh2 = o2.data
-        bpy.data.objects.remove(o2)
-        bpy.data.meshes.remove(mesh2)
-        return err, n
-
-    lo, hi = max(min_tris / tris0, 0.002), 1.0
-    best = 1.0
-    for _ in range(8):
-        mid = (lo * hi) ** 0.5
-        err, n = trial(mid)
-        if err <= tol:
-            best, hi = mid, mid
-        else:
-            lo = mid
-    if best < 1.0:
-        m_ = obj.modifiers.new("to_error", "DECIMATE")
-        m_.ratio = best
-        apply_mods(obj)
-    err, _ = trial(1.0) if best < 1.0 else (0.0, 0)
-    return sum(len(p_.vertices) - 2 for p_ in obj.data.polygons), err
+# Compatibility imports preserve existing callers while sharing one implementation.
 
 
 def build_parts(order, src_root):
@@ -359,7 +321,8 @@ def build_parts(order, src_root):
     contacts = HB.contacts(hb)
     given = order.get("body_width_m")
     if not given and not contacts:
-        raise ValueError("%s: no body_width_m and no human-scale contacts in the handbook" % order["name"])
+        raise ValueError(
+            "%s: no body_width_m and no human-scale contacts in the handbook" % order["name"])
     if hb:
         rep["handbook"] = hb["name"]
         if hb.get("mount") and not order.get("mount"):
@@ -376,7 +339,8 @@ def build_parts(order, src_root):
 
     # 1. the body's place in the photo. Until the scale is known every length is in drawing units
     #    (the body's drawn width = 1), or in metres when the order gives the body's real width
-    sub = {vw: locate_by_subtraction(asm[vw], body_own[vw]) for vw in ("front", "right", "left") if vw in asm and vw in body_own}
+    sub = {vw: locate_by_subtraction(asm[vw], body_own[vw]) for vw in (
+        "front", "right", "left") if vw in asm and vw in body_own}
     fm_, _ = silhouette(asm["front"])
     sk = "right" if "right" in sub else "left"
     sm_, _ = silhouette(asm[sk])
@@ -384,7 +348,8 @@ def build_parts(order, src_root):
     px = (given or 1.0) / ((bu1 - bu0) * fm_.shape[1])
     W, H = fm_.shape[1] * px, fm_.shape[0] * px
     D = sm_.shape[1] * H / sm_.shape[0]
-    dims = order.get("sheet_dims_mm")              # [W, H, D] printed on the sheet's own dimension drawing
+    # [W, H, D] printed on the sheet's own dimension drawing
+    dims = order.get("sheet_dims_mm")
     if dims and given:
         # the drawn side views can disagree with the sheet's printed size (drawn too narrow): the print wins
         rep["depth_from"] = "sheet dimensions: depth %.0f mm, height %.0f mm (the views implied %.0f and %.0f mm)" % (
@@ -408,11 +373,13 @@ def build_parts(order, src_root):
         return u0 * W - W / 2, u1 * W - W / 2, (1 - v1) * H, (1 - v0) * H
 
     built, boxes, placed_order = {}, {"body": body_box}, []
-    pending = []                                                 # (part, paint views) painted after decimation
+    # (part, paint views) painted after decimation
+    pending = []
 
     # the body: its own views, a top view only carves if it agrees with them (else paint only)
     if "top" in body_views and "top" in asm:
-        q, note = orient_like(body_views["top"], asm["top"], os.path.join(tmp, "body_top.png"))
+        q, note = orient_like(
+            body_views["top"], asm["top"], os.path.join(tmp, "body_top.png"))
         if note:
             body_views["top"] = q
             rep["body_top"] = note
@@ -421,11 +388,14 @@ def build_parts(order, src_root):
     if "top" in body_views:
         tm_, _ = silhouette(body_views["top"])
         got, want = tm_.shape[0] / tm_.shape[1], (by1 - by0) / (bx1 - bx0)
-        weak = rep.get("body_top") and float(rep["body_top"].split("IoU ")[1].split(" ")[0]) < 0.85
+        weak = rep.get("body_top") and float(
+            rep["body_top"].split("IoU ")[1].split(" ")[0]) < 0.85
         if abs(got / want - 1) > 0.15 or weak:
             paint_only = ("top",)
-            rep["body_top_paint_only"] = "top view depth/width %.2f vs %.2f" % (got, want)
-    todo = []                                                    # (name, spec, views, placement, entry): built once scaled
+            rep["body_top_paint_only"] = "top view depth/width %.2f vs %.2f" % (
+                got, want)
+    # (name, spec, views, placement, entry): built once scaled
+    todo = []
 
     residual_n = 0
     for spec in plan:
@@ -438,29 +408,35 @@ def build_parts(order, src_root):
         loc = spec.get("locate", "attach")
         entry = {"locate": loc, "attach": "%s of %s" % (face, parent)}
         if loc == "leftover":
-            continue                                             # after everything else is placed
+            # after everything else is placed
+            continue
         pv = _views(os.path.join(root, spec["views"]))
-        fa = aspect(pv["front"])                                 # height / width
+        # height / width
+        fa = aspect(pv["front"])
         side_key = "right" if "right" in pv else "left" if "left" in pv else None
         da = None
         if side_key:
             sm, _ = silhouette(pv[side_key])
-            da = sm.shape[1] / sm.shape[0]                       # depth / height
+            # depth / height
+            da = sm.shape[1] / sm.shape[0]
         P = boxes[parent]
         px0, px1, py0, py1, pz0, pz1 = P
         box = None
         if loc == "residual":
             # the region the body leaves over in the photo; visible edges, hidden ones from proportions
-            edges = {"x0": [], "x1": [], "y0": [], "y1": [], "top": [], "bottom": []}
+            edges = {"x0": [], "x1": [], "y0": [],
+                     "y1": [], "top": [], "bottom": []}
             for vw, (bb, regs, _) in sub.items():
                 if residual_n >= len(regs):
                     continue
                 u0, u1, v0, v1 = regs[residual_n]["box"]
                 hid = set(regs[residual_n]["hidden"])
-                lo_k, hi_k, span = ("x0", "x1", W) if vw == "front" else ("y0", "y1", D)
+                lo_k, hi_k, span = (
+                    "x0", "x1", W) if vw == "front" else ("y0", "y1", D)
                 if vw == "left":
                     u0, u1 = 1 - u1, 1 - u0
-                    hid = {{"left": "right", "right": "left"}.get(e, e) for e in hid}
+                    hid = {{"left": "right", "right": "left"}.get(
+                        e, e) for e in hid}
                 if "left" not in hid:
                     edges[lo_k].append(u0 * span - span / 2)
                 if "right" not in hid:
@@ -470,26 +446,31 @@ def build_parts(order, src_root):
                 if "bottom" not in hid:
                     edges["bottom"].append((1 - v1) * H)
             residual_n += 1
-            z1, z0 = float(np.median(edges["top"])), float(max(edges["bottom"]))
+            z1, z0 = float(np.median(edges["top"])), float(
+                max(edges["bottom"]))
             h = z1 - z0
             w = h / fa
-            x0 = float(np.median(edges["x0"])) if edges["x0"] else float(np.median(edges["x1"])) - w
+            x0 = float(np.median(edges["x0"])) if edges["x0"] else float(
+                np.median(edges["x1"])) - w
             x1 = float(np.median(edges["x1"])) if edges["x1"] else x0 + w
             dd = h * da if da else (x1 - x0)
-            y0 = float(np.median(edges["y0"])) if edges["y0"] else float(np.median(edges["y1"])) - dd
+            y0 = float(np.median(edges["y0"])) if edges["y0"] else float(
+                np.median(edges["y1"])) - dd
             y1 = float(np.median(edges["y1"])) if edges["y1"] else y0 + dd
             box = [x0, x1, y0, y1, z0, z1]
             entry["located"] = "region the body leaves over in the photo; hidden edges from its own proportions"
         elif loc == "inset":
             # set into the parent's largest opening (drawn in its own front view): sized to the opening, a
             # little larger so its rim hides behind the edge; its face just behind the parent's front
-            ppv = _views(os.path.join(root, next(p for p in plan if p["name"] == parent)["views"]))
+            ppv = _views(os.path.join(root, next(
+                p for p in plan if p["name"] == parent)["views"]))
             op = openings(ppv["front"])
             if op:
                 u0, u1, v0, v1 = op[0]
                 x0, x1 = px0 + u0 * (px1 - px0), px0 + u1 * (px1 - px0)
                 z1, z0 = pz1 - v0 * (pz1 - pz0), pz1 - v1 * (pz1 - pz0)
-                cx_, cz_, w, h = (x0 + x1) / 2, (z0 + z1) / 2, (x1 - x0) * INSET_OVERSIZE, (z1 - z0) * INSET_OVERSIZE
+                cx_, cz_, w, h = (x0 + x1) / 2, (z0 + z1) / 2, (x1 - x0) * \
+                    INSET_OVERSIZE, (z1 - z0) * INSET_OVERSIZE
                 x0, x1, z0, z1 = cx_ - w / 2, cx_ + w / 2, cz_ - h / 2, cz_ + h / 2
                 entry["located"] = "set into %s's largest opening (its own front drawing), %.0f x %.0f mm" % (
                     parent, (u1 - u0) * (px1 - px0) * 1000, (v1 - v0) * (pz1 - pz0) * 1000)
@@ -497,19 +478,20 @@ def build_parts(order, src_root):
                 r = find_part(asm["front"], pv["front"])
                 x0, x1, z0, z1 = to_world_front(r["frac"])
                 w, h = x1 - x0, z1 - z0
-                entry["located"] = "no opening drawn: painting matched into the photo (score %.2f)" % r["score"]
+                entry["located"] = "no opening drawn: painting matched into the photo (score %.2f)" % r[
+                    "score"]
             dd = h * da if da else 0.06 * max(w, h)
             box = [x0, x1, 0, dd, z0, z1]
         elif loc == "vision":
             # Coordinates generated by image correspondence, in the same physical
             # frame as the assembly views. Manufacturing/seating stay unchanged.
             candidate = spec.get('vision_box')
-            if not isinstance(candidate, list) or len(candidate)!=6 or not np.isfinite(candidate).all():
+            if not isinstance(candidate, list) or len(candidate) != 6 or not np.isfinite(candidate).all():
                 raise ValueError(name+': invalid visual measurement box')
-            x0,x1,y0,y1,z0,z1 = map(float,candidate)
-            if min(x1-x0,y1-y0,z1-z0)<=0:
+            x0, x1, y0, y1, z0, z1 = map(float, candidate)
+            if min(x1-x0, y1-y0, z1-z0) <= 0:
                 raise ValueError(name+': degenerate visual measurement box')
-            box = [x0,x1,y0,y1,z0,z1]
+            box = [x0, x1, y0, y1, z0, z1]
             entry['located'] = 'automatic visual correspondence in the assembly reference'
         elif loc == "match":
             r = find_part(asm["front"], pv["front"])
@@ -517,9 +499,11 @@ def build_parts(order, src_root):
             w, h = x1 - x0, z1 - z0
             dd = h * da if da else 0.06 * max(w, h)
             box = [x0, x1, 0, dd, z0, z1]
-            entry["located"] = "painting matched into the photo (score %.2f, scale %.2f)" % (r["score"], r["scale"])
+            entry["located"] = "painting matched into the photo (score %.2f, scale %.2f)" % (
+                r["score"], r["scale"])
         elif loc == "concentric":
-            ppv = _views(os.path.join(root, next(p for p in plan if p["name"] == parent)["views"]))
+            ppv = _views(os.path.join(root, next(
+                p for p in plan if p["name"] == parent)["views"]))
             pfm, _ = silhouette(ppv["front"])
             ofm, _ = silhouette(pv["front"])
             ratio = ofm.shape[1] / pfm.shape[1]
@@ -528,14 +512,17 @@ def build_parts(order, src_root):
             cx, cz = (px0 + px1) / 2, (pz0 + pz1) / 2
             dd = h * da if da else 0.06 * max(w, h)
             box = [cx - w / 2, cx + w / 2, 0, dd, cz - h / 2, cz + h / 2]
-            entry["located"] = "centred on %s; %.2f of its width from the sheet's drawing scale" % (parent, ratio)
+            entry["located"] = "centred on %s; %.2f of its width from the sheet's drawing scale" % (
+                parent, ratio)
         elif loc == "protrusion":
-            ppv = _views(os.path.join(root, next(p for p in plan if p["name"] == parent)["views"]))
+            ppv = _views(os.path.join(root, next(
+                p for p in plan if p["name"] == parent)["views"]))
             pm, _ = silhouette(ppv["front"])
             widths = pm.sum(1)
             full = np.median(widths[widths > 0])
             rows = np.nonzero((widths > 0) & (widths < 0.7 * full))[0]
-            rows = rows[rows < 0.3 * pm.shape[0]] if face == "top" else rows[rows > 0.7 * pm.shape[0]]
+            rows = rows[rows < 0.3 * pm.shape[0]
+                        ] if face == "top" else rows[rows > 0.7 * pm.shape[0]]
             band = np.zeros_like(pm)
             band[rows] = pm[rows]
             ys_, xs_ = np.nonzero(band)
@@ -547,7 +534,8 @@ def build_parts(order, src_root):
             dd = h * da if da else 0.3 * w
             z1 = pz1 if face == "top" else pz0 + h
             box = [x0, x1, 0, dd, z1 - h, z1]
-            entry["located"] = "the protrusion on %s's own %s outline" % (parent, face)
+            entry["located"] = "the protrusion on %s's own %s outline" % (
+                parent, face)
         else:                                                    # attach by rule, sized to the face
             if face in ("front", "back"):
                 fw_, fh_ = px1 - px0, pz1 - pz0
@@ -565,9 +553,12 @@ def build_parts(order, src_root):
                 entry["size_from"] = "the parent's depth"
                 h = w * fa
                 dd = h * da if da else 0.3 * w
-                zc = pz1 - h / 2 - 0.02 * (pz1 - pz0) if att.get("at") == "top" else pz0 + h / 2 + 0.02 * (pz1 - pz0)
+                zc = pz1 - h / 2 - 0.02 * \
+                    (pz1 - pz0) if att.get("at") == "top" else pz0 + \
+                    h / 2 + 0.02 * (pz1 - pz0)
                 box = ["side", face, (py0 + py1) / 2, zc, w, dd, h]
-            entry["located"] = "on %s's %s face%s" % (parent, face, (" at the " + att["at"]) if att.get("at") else "")
+            entry["located"] = "on %s's %s face%s" % (
+                parent, face, (" at the " + att["at"]) if att.get("at") else "")
         if box is None:
             rep["parts"][name] = dict(entry, skipped="could not be located")
             continue
@@ -575,7 +566,8 @@ def build_parts(order, src_root):
             # built facing front, then turned so its front faces out of the parent's side face
             _, face_, yc, zc, w, dd, h = box
             xside = px1 + dd / 2 if face_ == "right" else px0 - dd / 2
-            boxes[name] = [xside - dd / 2, xside + dd / 2, yc - w / 2, yc + w / 2, zc - h / 2, zc + h / 2]
+            boxes[name] = [xside - dd / 2, xside + dd / 2,
+                           yc - w / 2, yc + w / 2, zc - h / 2, zc + h / 2]
             todo.append((name, spec, pv, ("side", face_), entry))
         else:
             x0, x1, y0, y1, z0, z1 = box
@@ -587,7 +579,8 @@ def build_parts(order, src_root):
             elif face == "front":
                 y0, y1 = py0 - dd, py0
             elif face == "back":
-                y0, y1 = py1, py1 + dd                         # behind the parent (the body box is the bare shell)
+                # behind the parent (the body box is the bare shell)
+                y0, y1 = py1, py1 + dd
             elif loc in ("protrusion", "match", "concentric") and face == "top":
                 y0, y1 = py0, py0 + dd                         # at the parent's front edge
             boxes[name] = [x0, x1, y0, y1, z0, z1]
@@ -615,7 +608,8 @@ def build_parts(order, src_root):
         rep["size_from"] = "human scale (%d of %d contacts agree); photo %.3f x %.3f x %.3f m" % (
             srep["agreeing"], srep["of"], W, D, H)
     else:
-        rep["size_from"] = "body width %.3f m given; photo %.3f x %.3f x %.3f m" % (given, W, D, H)
+        rep["size_from"] = "body width %.3f m given; photo %.3f x %.3f x %.3f m" % (
+            given, W, D, H)
     rep["photo_m"] = [round(W, 4), round(D, 4), round(H, 4)]
 
     # build: the body, then every part at its place
@@ -624,39 +618,45 @@ def build_parts(order, src_root):
     if body_spec.get("recess") and "front" in body_views:
         # openings in the body's own front drawing are recessed (default: RECESS_SHARE of its depth)
         rrep = rep.setdefault("recess", {})
-        rd = body_spec["recess"].get("depth_m") if isinstance(body_spec["recess"], dict) else None
-        rhook = recess_hook(body_views["front"], rd or RECESS_SHARE * (by1 - by0), rrep)
+        rd = body_spec["recess"].get("depth_m") if isinstance(
+            body_spec["recess"], dict) else None
+        rhook = recess_hook(body_views["front"],
+                            rd or RECESS_SHARE * (by1 - by0), rrep)
     depth_hook = None
     if order.get('automatic_depth'):
         from .depth_inference import body_hook
-        exclusions=[]
+        exclusions = []
         for spec in plan:
-            if spec.get('attach',{}).get('to')=='body' and spec.get('attach',{}).get('face')=='front' and spec['name'] in boxes:
-                a,b,_,_,c,d=boxes[spec['name']]
-                exclusions.append(('front',[(a-bx0)/(bx1-bx0),(bz1-d)/(bz1-bz0),
-                                             (b-bx0)/(bx1-bx0),(bz1-c)/(bz1-bz0)]))
-        depth_hook=body_hook(body_views,bx1-bx0,by1-by0,bz1-bz0,
-                             rep.setdefault('automatic_depth',{}),exclusions)
+            if spec.get('attach', {}).get('to') == 'body' and spec.get('attach', {}).get('face') == 'front' and spec['name'] in boxes:
+                a, b, _, _, c, d = boxes[spec['name']]
+                exclusions.append(('front', [(a-bx0)/(bx1-bx0), (bz1-d)/(bz1-bz0),
+                                             (b-bx0)/(bx1-bx0), (bz1-c)/(bz1-bz0)]))
+        depth_hook = body_hook(body_views, bx1-bx0, by1-by0, bz1-bz0,
+                               rep.setdefault('automatic_depth', {}), exclusions)
     body = hull_prop(body_views, bz1 - bz0, res=order.get("res", 150), name=order["name"] + "_body",
                      width_m=bx1 - bx0, depth_m=by1 - by0, features=False, paint=False, rough=order.get("rough", 0.5),
                      paint_only=paint_only, voxel_hook=rhook, mesh_hook=depth_hook)
     body.location = ((bx0 + bx1) / 2, (by0 + by1) / 2, bz0)
     built["body"] = body
-    rep["parts"]["body"] = {"box_m": [round(v, 3) for v in body_box], "located": "body outline fitted into the photo"}
+    rep["parts"]["body"] = {"box_m": [
+        round(v, 3) for v in body_box], "located": "body outline fitted into the photo"}
     for name, spec, pv, (how, face_), entry in todo:
         x0, x1, y0, y1, z0, z1 = boxes[name]
         if how == "side":
             w, dd, h = y1 - y0, x1 - x0, z1 - z0
         else:
             w, dd, h = x1 - x0, y1 - y0, z1 - z0
-        obj, notes, rev = build_part(pv, w, dd, h, "%s_%s" % (order["name"], name), tmp, rough=order.get("rough", 0.5), defer=pending)
+        obj, notes, rev = build_part(pv, w, dd, h, "%s_%s" % (
+            order["name"], name), tmp, rough=order.get("rough", 0.5), defer=pending)
         obj["finish"] = list(finish_of(name, spec)[:2])
         if how == "side":
-            obj.rotation_euler = (0, 0, np.pi / 2 if face_ == "right" else -np.pi / 2)
+            obj.rotation_euler = (
+                0, 0, np.pi / 2 if face_ == "right" else -np.pi / 2)
             obj.location = ((x0 + x1) / 2, (y0 + y1) / 2, z0)
         else:
             if face_ == "back":
-                obj.rotation_euler = (0, 0, np.pi)            # its drawn front faces out, away from the parent
+                # its drawn front faces out, away from the parent
+                obj.rotation_euler = (0, 0, np.pi)
             obj.location = ((x0 + x1) / 2, (y0 + y1) / 2, z0)
         bpy.context.view_layer.update()
         built[name] = obj
@@ -678,14 +678,17 @@ def build_parts(order, src_root):
             explained = np.zeros_like(m)
             for o in built.values():
                 co = np.array([o.matrix_world @ v.co for v in o.data.vertices])
-                us = (co[:, 0] + W / 2) / W if vw == "front" else ((co[:, 1] + D / 2) / D if vw == "right" else 1 - (co[:, 1] + D / 2) / D)
+                us = (co[:, 0] + W / 2) / W if vw == "front" else ((co[:, 1] +
+                                                                    D / 2) / D if vw == "right" else 1 - (co[:, 1] + D / 2) / D)
                 vs = 1 - co[:, 2] / H
                 xi = np.clip((us * ww).astype(int), 0, ww - 1)
                 yi = np.clip((vs * hh).astype(int), 0, hh - 1)
                 hit = np.zeros_like(m)
                 hit[yi, xi] = True
-                explained |= ndimage.binary_closing(ndimage.binary_dilation(hit, iterations=2), iterations=3)
-            rest = ndimage.binary_opening(m & ~ndimage.binary_dilation(explained, iterations=2), iterations=1)
+                explained |= ndimage.binary_closing(
+                    ndimage.binary_dilation(hit, iterations=2), iterations=3)
+            rest = ndimage.binary_opening(m & ~ndimage.binary_dilation(
+                explained, iterations=2), iterations=1)
             lab, k = ndimage.label(rest)
             if not k:
                 continue
@@ -695,13 +698,15 @@ def build_parts(order, src_root):
                 continue
             regions[vw] = (big, img)
         if "front" not in regions or sk not in regions:
-            rep["parts"][name] = {"locate": "leftover", "skipped": "nothing left over in the front and side views"}
+            rep["parts"][name] = {
+                "locate": "leftover", "skipped": "nothing left over in the front and side views"}
             continue
         boxes_ = {}
         for vw, (mk, img) in regions.items():
             ys_, xs_ = np.nonzero(mk)
             hh, ww = mk.shape
-            boxes_[vw] = (xs_.min() / ww, (xs_.max() + 1) / ww, ys_.min() / hh, (ys_.max() + 1) / hh)
+            boxes_[vw] = (xs_.min() / ww, (xs_.max() + 1) / ww,
+                          ys_.min() / hh, (ys_.max() + 1) / hh)
         fu0, fu1, fv0, fv1 = boxes_["front"]
         su0, su1, sv0, sv1 = boxes_[sk]
         if sk == "left":
@@ -712,7 +717,8 @@ def build_parts(order, src_root):
         crops = {}
         for vw, (mk, img) in regions.items():
             ys_, xs_ = np.nonzero(mk)
-            sl = (slice(ys_.min(), ys_.max() + 1), slice(xs_.min(), xs_.max() + 1))
+            sl = (slice(ys_.min(), ys_.max() + 1),
+                  slice(xs_.min(), xs_.max() + 1))
             q = os.path.join(tmp, "leftover_%s_%s.png" % (name, vw))
             a = np.asarray(img.convert("RGB")).copy()[sl]
             a[~mk[sl]] = 0
@@ -722,19 +728,23 @@ def build_parts(order, src_root):
         fsl = tuple(slice(a_.min(), a_.max() + 1) for a_ in np.nonzero(fmk))
         smk = regions[sk][0]
         ssl = tuple(slice(a_.min(), a_.max() + 1) for a_ in np.nonzero(smk))
-        fcrop, scrop = np.ascontiguousarray(fmk[fsl]), np.ascontiguousarray(smk[ssl])
+        fcrop, scrop = np.ascontiguousarray(
+            fmk[fsl]), np.ascontiguousarray(smk[ssl])
         from skimage.morphology import skeletonize
         sk_len = int(skeletonize(fcrop).sum())
-        width = 2 * float(np.median(ndimage.distance_transform_edt(fcrop)[skeletonize(fcrop)])) if sk_len else 1
+        width = 2 * float(np.median(ndimage.distance_transform_edt(fcrop)
+                          [skeletonize(fcrop)])) if sk_len else 1
         notes = []
         obj = None
-        notes.append("leftover region %.1f widths long" % (sk_len / max(width, 1e-6)))
+        notes.append("leftover region %.1f widths long" %
+                     (sk_len / max(width, 1e-6)))
         hpart = HB.part(hb, name, kind_of(spec))
         if hpart.get("make") == "cord":
             # a cord: straight first, then curled along the path the photo shows (propkit/cord.py)
             from .cord import make_cord
             from . import mats
-            P, _ = centreline(fcrop, scrop, [x0, x1, y0, y1, z0, z1], side_is_left=(sk == "left"))
+            P, _ = centreline(
+                fcrop, scrop, [x0, x1, y0, y1, z0, z1], side_is_left=(sk == "left"))
             # coil thickness: the drawn cord's width at the photo's scale, kept within what the body says
             # a cord like this is (a finger's thickness); wire and pitch as shares of it
             coil = width * (x1 - x0) / max(fcrop.shape[1], 1)
@@ -746,29 +756,37 @@ def build_parts(order, src_root):
                     # the drawn width is not a cord's (loops of the coil merge in the drawing): the body's
                     # typical size, not the edge of its range
                     coil = HS.size_range(hpart["coil_outer"])[1]
-                    coil_from += ", outside the human range %s-%s mm: typical %.1f mm" % (lo_, hi_, coil * 1000)
+                    coil_from += ", outside the human range %s-%s mm: typical %.1f mm" % (
+                        lo_, hi_, coil * 1000)
                 else:
                     coil_from += " (human range %s-%s mm)" % (lo_, hi_)
             wire = coil * hpart.get("wire_share_of_coil", 0.33)
             pitch = wire * hpart.get("pitch_share_of_wire", 1.0)
             if P is not None:
-                obj, crep = make_cord(P, wire, coil, pitch, "%s_%s" % (order["name"], name))
-                fimg = np.asarray(regions["front"][1].convert("RGB"))[fmk].astype(float)
+                obj, crep = make_cord(
+                    P, wire, coil, pitch, "%s_%s" % (order["name"], name))
+                fimg = np.asarray(regions["front"][1].convert("RGB"))[
+                    fmk].astype(float)
                 if len(fimg):
-                    lum = fimg.sum(1)                                   # the coils, not the dark gaps between them
+                    # the coils, not the dark gaps between them
+                    lum = fimg.sum(1)
                     fimg = fimg[lum >= np.percentile(lum, 50)]
-                col = tuple(float(c) / 255 for c in np.median(fimg, axis=0)) if len(fimg) else (0.6, 0.5, 0.3)
-                col = tuple(c ** 2.2 for c in col)                      # sRGB painting -> linear material
+                col = tuple(float(c) / 255 for c in np.median(fimg,
+                            axis=0)) if len(fimg) else (0.6, 0.5, 0.3)
+                # sRGB painting -> linear material
+                col = tuple(c ** 2.2 for c in col)
                 rough_, metal_, _ = finish_of(name, spec)
                 obj.data.materials.append(mats.plain(col, rough=rough_, metal_v=metal_, grime=0.1, dust=0.03,
                                                      name="cord_%s" % order["name"]))
                 obj["procedural"] = True
-                notes.append("cord: built straight, curled along the photo's path; %s; coil %s" % (crep, coil_from))
+                notes.append("cord: built straight, curled along the photo's path; %s; coil %s" % (
+                    crep, coil_from))
                 obj.location = ((x0 + x1) / 2, (y0 + y1) / 2, z0)
                 bpy.context.view_layer.update()
                 built[name] = obj
                 boxes[name] = [x0, x1, y0, y1, z0, z1]
-                placed_order.append((name, parent, spec.get("attach", {}).get("face", "bottom")))
+                placed_order.append((name, parent, spec.get(
+                    "attach", {}).get("face", "bottom")))
                 rep["parts"][name] = {"locate": "leftover", "make": "cord", "box_m": [round(v, 3) for v in boxes[name]],
                                       "located": "what the photo shows that no part explains", "notes": notes}
                 continue
@@ -777,7 +795,8 @@ def build_parts(order, src_root):
             obj, rad = sweep_tube(fcrop, scrop, [x0, x1, y0, y1, z0, z1], "%s_%s" % (order["name"], name),
                                   side_is_left=(sk == "left"))
             if obj is not None:
-                notes.append("swept along its centreline (length %.1f widths), radius %.1f mm" % (sk_len / width, rad * 1000))
+                notes.append("swept along its centreline (length %.1f widths), radius %.1f mm" % (
+                    sk_len / width, rad * 1000))
                 pending.append((obj, (crops, x1 - x0, y1 - y0, z1 - z0)))
         if obj is None:
             obj, notes, rev = build_part(crops, x1 - x0, y1 - y0, z1 - z0, "%s_%s" % (order["name"], name), tmp,
@@ -786,7 +805,8 @@ def build_parts(order, src_root):
         bpy.context.view_layer.update()
         built[name] = obj
         boxes[name] = [x0, x1, y0, y1, z0, z1]
-        placed_order.append((name, parent, spec.get("attach", {}).get("face", "bottom")))
+        placed_order.append((name, parent, spec.get(
+            "attach", {}).get("face", "bottom")))
         rep["parts"][name] = {"locate": "leftover", "box_m": [round(v, 3) for v in boxes[name]],
                               "located": "what the photo shows that no part explains", "notes": notes}
 
@@ -822,33 +842,42 @@ def build_parts(order, src_root):
     from .bake import STANDARDS
     from .core import apply_mods
     dims = max(W, D, H)
-    budget = next(v["tri_budget"] for k, v in STANDARDS["size_classes"].items() if dims <= v["max_dim_m"]) * 0.92
+    budget = next(v["tri_budget"] for k, v in STANDARDS["size_classes"].items(
+    ) if dims <= v["max_dim_m"]) * 0.92
     # shared by each part's dense triangle count (its detail: a finger wheel's holes, a handset's
     # curves), as one uniform decimation of the whole would, never below PART_MIN_TRIS; by area alone a
     # small detailed part got too few and shattered into slivers that shade as dark streaks
-    fixed = {n: sum(len(p_.vertices) - 2 for p_ in o.data.polygons) for n, o in built.items() if o.get("procedural")}
+    fixed = {n: sum(len(p_.vertices) - 2 for p_ in o.data.polygons)
+             for n, o in built.items() if o.get("procedural")}
     budget -= sum(fixed.values())
     mode = order.get("budget", "screen" if hb else "share")
-    tol = screen_tolerance(STANDARDS, order.get("kind", "fixture" if order.get("mount") == "wall" else "static")) if mode == "screen" else None
-    dense = {n: sum(len(p_.vertices) - 2 for p_ in o.data.polygons) for n, o in built.items() if not o.get("procedural")}
+    tol = screen_tolerance(STANDARDS, order.get("kind", "fixture" if order.get(
+        "mount") == "wall" else "static")) if mode == "screen" else None
+    dense = {n: sum(len(p_.vertices) - 2 for p_ in o.data.polygons)
+             for n, o in built.items() if not o.get("procedural")}
     total = sum(dense.values())
     rep["triangles"] = dict(fixed)
     if tol:
         # simplify every part to the screen error; if the total still exceeds the size class ceiling,
         # loosen the tolerance until it fits
-        rep["budget"] = {"mode": "screen error", "tolerance_mm": round(tol * 1000, 2), "ceiling": int(budget + sum(fixed.values()))}
-        copies = {n: o.data.copy() for n, o in built.items() if not o.get("procedural")}
+        rep["budget"] = {"mode": "screen error", "tolerance_mm": round(
+            tol * 1000, 2), "ceiling": int(budget + sum(fixed.values()))}
+        copies = {n: o.data.copy() for n, o in built.items()
+                  if not o.get("procedural")}
         for attempt in range(4):
             got = {}
             for n, o in built.items():
                 if o.get("procedural"):
                     continue
                 o.data = copies[n].copy()
-                got[n] = decimate_to_error(o, tol * (1.6 ** attempt), PART_MIN_TRIS)
+                got[n] = decimate_to_error(
+                    o, tol * (1.6 ** attempt), PART_MIN_TRIS)
             if sum(t for t, _ in got.values()) <= budget:
                 break
-        rep["budget"]["tolerance_used_mm"] = round(tol * (1.6 ** attempt) * 1000, 2)
-        rep["budget"]["error_mm"] = {n: round(e * 1000, 2) for n, (t, e) in got.items()}
+        rep["budget"]["tolerance_used_mm"] = round(
+            tol * (1.6 ** attempt) * 1000, 2)
+        rep["budget"]["error_mm"] = {
+            n: round(e * 1000, 2) for n, (t, e) in got.items()}
         rep["triangles"].update({n: t for n, (t, e) in got.items()})
     for n, o in built.items():
         if o.get("procedural") or tol:
@@ -859,13 +888,12 @@ def build_parts(order, src_root):
             m_ = o.modifiers.new("share", "DECIMATE")
             m_.ratio = target / tris
             apply_mods(o)
-        rep["triangles"][n] = sum(len(p_.vertices) - 2 for p_ in o.data.polygons)
+        rep["triangles"][n] = sum(
+            len(p_.vertices) - 2 for p_ in o.data.polygons)
     if order.get('vision_generated'):
-        from .core import smooth
+        from .simplification import refresh_normals
         for obj in built.values():
-            if obj.data.has_custom_normals:
-                obj.data.normals_split_custom_set([(0,0,0)]*len(obj.data.loops))
-            smooth(obj,35)
+            refresh_normals(obj)
     for o, (views_, w_, d_, h_) in pending:
         loc, rot = o.location.copy(), o.rotation_euler.copy()
         o.location, o.rotation_euler = (0, 0, 0), (0, 0, 0)
@@ -898,20 +926,23 @@ def build_parts(order, src_root):
     insets = {sp["name"] for sp in plan if sp.get("locate") == "inset"}
     for name, parent, face in placed_order:
         if name in insets:
-            rep["gaps_mm"].append({"part": name, "on": parent, "towards": face, "held": "set into the opening"})
+            rep["gaps_mm"].append(
+                {"part": name, "on": parent, "towards": face, "held": "set into the opening"})
             continue
         o, t = built[name], tree(built[parent])
         dv = Vector(INTO[face])
         g, _ = gaps(o, t, dv)
         if g is not None:
             delta = dv * (g + SNAP_SINK)
-            for n in [name] + descendants(name):            # what is attached to it moves with it
+            # what is attached to it moves with it
+            for n in [name] + descendants(name):
                 built[n].location += delta
             bpy.context.view_layer.update()
         g2, touch = gaps(o, t, dv)
         rep["gaps_mm"].append({"part": name, "on": parent, "towards": face, "gap_mm": None if g2 is None else round(g2 * 1000, 1),
                                "touching": round(touch, 2), "moved_mm": None if g is None else round((g + SNAP_SINK) * 1000, 1)})
-    bad = [g for g in rep["gaps_mm"] if "held" not in g and g["gap_mm"] is None or "held" not in g and (g["gap_mm"] > MAX_GAP * 1000 or g["touching"] < MIN_TOUCH)]
+    bad = [g for g in rep["gaps_mm"] if "held" not in g and g["gap_mm"]
+           is None or "held" not in g and (g["gap_mm"] > MAX_GAP * 1000 or g["touching"] < MIN_TOUCH)]
     if bad:
         import json
         print("PARTS report", json.dumps(rep, default=str))

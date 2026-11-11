@@ -28,8 +28,8 @@ keeps the final automatic result at `needs_review`, even if coarse mesh QA passe
 ## Surface relief
 
 The existing `relief.py` segmentation, light estimation and displacement remain
-the builders. A new selector compares their relief map, a broader smooth candidate
-and flat paint using a positive lighting gain and explained shading variance.
+the builders. The selector evaluates each existing carving region against flat
+paint using positive lighting gain and explained local shading variance.
 Ambiguous/weak results remain flat. Separate front-mounted controls are excluded
 from body relief; image edges and uncertain silhouette borders are excluded too.
 Displacement is bounded to 2% of the smaller horizontal body dimension. Existing
@@ -39,7 +39,8 @@ This is conservative shading-based inference, not measured depth or a learned
 universal depth map. The relief candidate already contains raised/recessed regions
 from the original module. The new selector does not override that module's
 compact-region recess restrictions. This path keeps selected relief in geometry;
-it does not create a partial high-resolution bake source for the joined assembly.
+single-body builds retain the dense source for normal baking. Parts builds do
+not create a partial body-only bake source for the joined assembly.
 
 ## Engineering outputs
 
@@ -50,15 +51,19 @@ integrity are validated. Unobserved wall thickness, interiors and manufacturing
 tolerances stay explicitly unknown; `production_ready` is false.
 
 `technical-views.png` contains front/right/top silhouettes at a common scale and
-three horizontal intersections with the finished exported mesh. These sections
+labelled, hole-aware hatched transverse/longitudinal sections of the finished mesh
+and a separately clipped, uncapped surface-cutaway.glb. These sections
 describe the reconstruction, not the real object's unseen interior. They do not
 add independent reconstruction evidence. There is no hidden-line elimination,
 manufacturing CAD export, joint camera optimizer or general CSG search yet.
 
-## Verification
+See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) for current shared stages,
+stronger QA, section contracts, acceptance evidence and remaining work.
+
+## Historical verification before the local-region cleanup
 
 `tools/test_depth_engineering.py` runs in normal Python; its additional signed
-mesh displacement/cap test requires Blender. Nine tests under Blender cover
+mesh displacement/cap test requires Blender. Eleven tests under Blender cover
 mounting pins, profile conflicts, prior conflicts, missing evidence, raised /
 recessed / flat hypotheses, ambiguity, invalid constraints and actual plane/mesh
 intersections. Existing intake, orchestration, geometry and Godot suites also pass.

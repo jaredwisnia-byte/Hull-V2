@@ -1,0 +1,31 @@
+name: Hull software contracts
+
+on:
+  push:
+    paths:
+      - 'long-lines/tools/**'
+      - 'long-lines/factory/standards.json'
+      - '.github/workflows/hull-contracts.yml'
+  pull_request:
+    paths:
+      - 'long-lines/tools/**'
+      - 'long-lines/factory/standards.json'
+      - '.github/workflows/hull-contracts.yml'
+
+jobs:
+  pure-python-contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install numpy scipy Pillow
+      - name: Check all tool syntax without importing Blender
+        run: python -m compileall -q long-lines/tools
+      - name: Test section topology and depth evidence
+        run: |
+          python long-lines/tools/test_sectioning.py
+          python long-lines/tools/test_depth_engineering.py
+          python long-lines/tools/test_sizing.py
+          python long-lines/tools/test_human_scale.py

@@ -99,13 +99,15 @@ def split_views(image_path, out_dir):
         return []
     top = min(b[0] for b in blobs)
     row_h = max(b[1] - b[0] for b in blobs if b[0] < top + H * 0.08)
-    row = sorted([b for b in blobs if b[0] < top + row_h * 0.5], key=lambda b: b[2])
+    row = sorted([b for b in blobs if b[0] < top +
+                 row_h * 0.5], key=lambda b: b[2])
     names = ["front", "right", "back", "left", "top"]
     os.makedirs(out_dir, exist_ok=True)
     found = []
     for nm, (y0, y1, x0, x1) in zip(names, row):
         pad = 4
-        im.crop((max(0, x0 - pad), max(0, y0 - pad), min(W, x1 + pad), min(H, y1 + pad))).save(os.path.join(out_dir, "v_%s.png" % nm))
+        im.crop((max(0, x0 - pad), max(0, y0 - pad), min(W, x1 + pad),
+                min(H, y1 + pad))).save(os.path.join(out_dir, "v_%s.png" % nm))
         found.append(nm)
     return found
 
@@ -122,71 +124,39 @@ def intake(image, name, category, height=None, notes=""):
         order["views"] = found
         order["height_m"] = height or cat["height_m"]
         if height is None:
-            order["assumptions"].append("height %.2f m from category '%s' (typical period size)" % (cat["height_m"], category))
+            order["assumptions"].append(
+                "height %.2f m from category '%s' (typical period size)" % (cat["height_m"], category))
         order["hull"] = dict(cat.get("hull", {}))
         missing = [v for v in ("front", "right", "top") if v not in found]
         if missing:
-            order["assumptions"].append("views missing: %s (fewer constraints on shape)" % ", ".join(missing))
+            order["assumptions"].append(
+                "views missing: %s (fewer constraints on shape)" % ", ".join(missing))
         if "front" not in found or ("right" not in found and "left" not in found):
             order["status"] = "needs_person"
-            order["assumptions"].append("sheet does not follow REFERENCE_SPEC: need front and a side view")
+            order["assumptions"].append(
+                "sheet does not follow REFERENCE_SPEC: need front and a side view")
     save_order(order)
     print("ORDER", json.dumps(order))
     return order
 
 
 def automatic_build(image, output):
-    """One image through automatic intake, existing parts assembly, QA and render."""
-    import subprocess
-    import bpy
-    from pathlib import Path
-    from sheet_blobs import automatic
-    output=Path(output).resolve()
-    output.mkdir(parents=True,exist_ok=True)
-    t0=time.monotonic()
-    report=automatic(image,output/'intake')
-    result={'input_image':str(Path(image).resolve()),
-            'input_sha256':hashlib.sha256(Path(image).read_bytes()).hexdigest(),
-            'runtime_llm':False,'status':'needs_review'}
-    if report['status']=='ready_to_build':
-        order=json.loads(Path(report['work_order']).read_text())
-        result['assumptions']=order['assumptions']
-        result['inference_warnings']=[p['name'] for p in order.get('parts',[])
-                                      if p.get('depth_inference',{}).get('needs_review')]
-        started=time.time_ns()
-        result['qa']=build(order)
-        base=Path(LIB)/order['name']/order['name']
-        artifact=base.with_suffix('.glb')
-        # A previous successful build must never masquerade as this run's output.
-        if artifact.exists() and artifact.stat().st_mtime_ns >= started:
-            result.update(bake.export_textured(order['name'],LIB,output))
-            if order.get('automatic_depth'):
-                from propkit import engineering
-                result.update(engineering.export(order,output))
-            command=[bpy.app.binary_path,'-b','--factory-startup','--python-use-system-env',
-                     '--python-exit-code','1','-P',str(Path(HERE)/'render_turnaround.py'),
-                     '--',order['name'],str(output)]
-            render_started=time.time_ns()
-            rendered=subprocess.run(command,capture_output=True,text=True)
-            (output/'render.log').write_text(rendered.stdout+rendered.stderr)
-            png=output/(order['name']+'.png')
-            result['render']=str(png) if rendered.returncode==0 and png.exists() and png.stat().st_mtime_ns>=render_started else None
-            result['status']='complete' if result['qa']['pass'] and result['render'] and not result['inference_warnings'] else 'needs_review'
-    else:
-        result['intake_failure']=report.get('failure','unresolved visual assignments')
-    result['seconds']=round(time.monotonic()-t0,2)
-    (output/'result.json').write_text(json.dumps(result,indent=2))
-    print('AUTOMATIC_RESULT',json.dumps(result))
-    return result
+    """Compatibility entry point for the image-only orchestration station."""
+    from propkit.pipeline import build_image
+    return build_image(
+        image, output, build_order=build, library_root=LIB,
+        render_script=os.path.join(HERE, "render_turnaround.py"),
+        export_model=bake.export_textured,
+    )
 
 
 def reference_views(order):
     """Parts orders keep the complete reference in their assembly subfolder."""
     if not order.get('views_folder'):
         return None
-    folder=os.path.join(SRC,order['views_folder'])
-    if order.get('layout')=='parts':
-        folder=os.path.join(folder,order.get('assembly','assembly'))
+    folder = os.path.join(SRC, order['views_folder'])
+    if order.get('layout') == 'parts':
+        folder = os.path.join(folder, order.get('assembly', 'assembly'))
     return folder
 
 
@@ -205,26 +175,31 @@ def intake_sheet(spec_path, source_dir):
         d = os.path.join(SRC, name)
         os.makedirs(d, exist_ok=True)
         if line == "facade":
-            Image.open(os.path.join(source_dir, it["sheet"])).convert("RGB").crop(tuple(it["box"])).save(os.path.join(d, "facade.png"))
+            Image.open(os.path.join(source_dir, it["sheet"])).convert(
+                "RGB").crop(tuple(it["box"])).save(os.path.join(d, "facade.png"))
         else:  # one shared copy of the sheet; many assets come from it
             shared = os.path.join(SRC, "_sheets")
             os.makedirs(shared, exist_ok=True)
             if not os.path.exists(os.path.join(shared, it["sheet"])):
-                shutil.copy(os.path.join(source_dir, it["sheet"]), os.path.join(shared, it["sheet"]))
+                shutil.copy(os.path.join(
+                    source_dir, it["sheet"]), os.path.join(shared, it["sheet"]))
         with open(os.path.join(d, "SOURCE.md"), "w") as f:
-            f.write("From Jared's painted sheet %s (%s).\n" % (it["sheet"], os.path.basename(spec_path)))
+            f.write("From Jared's painted sheet %s (%s).\n" %
+                    (it["sheet"], os.path.basename(spec_path)))
         order = dict(it)
         order.update({"name": name, "category": category, "line": line, "source": it["sheet"],
                       "class": it.get("class", cat.get("class")), "views_folder": name, "status": "pending",
                       "assumptions": [], "notes": it.get("notes", "")})
         if line == "facade":
             order.setdefault("facade", dict(cat.get("facade", {})))
-            order["assumptions"].append("storey height 3.4 m (lower Manhattan loft/tenement)")
+            order["assumptions"].append(
+                "storey height 3.4 m (lower Manhattan loft/tenement)")
         else:
             order.setdefault("height_m", cat["height_m"])
             if cat.get("depth_m"):
                 order.setdefault("cat_depth_m", cat["depth_m"])
-            order["assumptions"].append("height %.2f m from category '%s'" % (order["height_m"], category))
+            order["assumptions"].append(
+                "height %.2f m from category '%s'" % (order["height_m"], category))
         save_order(order)
         out.append(name)
     print("ORDERS", out)
@@ -242,12 +217,14 @@ def intake_set(manifest, category=None, name=None):
     src = os.path.dirname(os.path.abspath(manifest))
     for k in ("painted_sheet", "depth_map", "part_map", "section"):
         if k in m:
-            shutil.copy(os.path.join(src, m[k]["filename"]), os.path.join(d, m[k]["filename"]))
+            shutil.copy(os.path.join(
+                src, m[k]["filename"]), os.path.join(d, m[k]["filename"]))
     shutil.copy(manifest, os.path.join(d, "manifest.json"))
     dims = m.get("dimensions_cm", {})
     category = category or m.get("object_type")
     order = {"name": name, "category": category, "line": "sheetset", "source": os.path.basename(manifest),
-             "class": None, "views_folder": name, "status": "pending",   # size class from the real size
+             # size class from the real size
+             "class": None, "views_folder": name, "status": "pending",
              "height_m": dims.get("height", 100) / 100, "depth_m": dims.get("depth", 60) / 100,
              "object_type": m.get("object_type"), "notes": m.get("display_name", ""),
              "assumptions": ["size from the manifest (%s)" % ("approximate" if dims.get("approximate") else "given")]}
@@ -298,7 +275,8 @@ def run_line(order):
     if line == "hull":
         from propkit.hull import hull_prop
         d = os.path.join(SRC, order["views_folder"])
-        views = {k: os.path.join(d, "v_%s.png" % k) for k in order.get("views", [])}
+        views = {k: os.path.join(d, "v_%s.png" % k)
+                 for k in order.get("views", [])}
         hp = dict(order.get("hull", {}))
         # "paint": "project" blends every view by how squarely each face sees it (texturing.project, as
         # hull_parts does). The default paints each face from one view only, which streaks slanted faces
@@ -315,16 +293,19 @@ def run_line(order):
             bp = os.path.join(d, "v_bottom.png")
             if os.path.exists(bp):
                 allv["bottom"] = bp
-            fixed, size, po, rrep = reconcile.run(allv, order.get("sheet_dims_mm"), tmp=os.path.join(tempfile.gettempdir(), "_rec_" + order["name"]))
+            fixed, size, po, rrep = reconcile.run(allv, order.get(
+                "sheet_dims_mm"), tmp=os.path.join(tempfile.gettempdir(), "_rec_" + order["name"]))
             views = {k: fixed[k] for k in views}
             if size:
                 height = size["height_m"]
                 hp["width_m"], hp["depth_m"] = size["width_m"], size["depth_m"]
-            hp["paint_only"] = sorted(set(hp.get("paint_only", [])) | {k for k in po if k in views})
+            hp["paint_only"] = sorted(set(hp.get("paint_only", [])) | {
+                                      k for k in po if k in views})
             order.setdefault("measured", {})["reconcile"] = rrep
             od = os.path.join(ROOT, "docs", "inference", order["name"])
             os.makedirs(od, exist_ok=True)
-            json.dump(rrep, open(os.path.join(od, "reconcile.json"), "w"), indent=1)
+            json.dump(rrep, open(os.path.join(
+                od, "reconcile.json"), "w"), indent=1)
         if not height and order.get("handbook"):
             # human scale: the views give proportions, the handbook's contacts give the size
             height, order["measured"] = human_scale_height(order, views)
@@ -347,7 +328,8 @@ def run_line(order):
             order.setdefault("measured", {})["relief"] = rrep = {}
             if order.get('automatic_depth'):
                 from propkit.depth_inference import body_hook
-                hp["mesh_hook"] = body_hook(views,W_,D_,height,rrep)
+                hp["mesh_hook"] = body_hook(
+                    views, W_, D_, height, rrep, keep_high=True)
             else:
                 hp["mesh_hook"] = relief.hook(views, W_, D_, height, rrep)
         from propkit.hull import HULL_REPORT
@@ -366,8 +348,21 @@ def run_line(order):
             os.makedirs(od, exist_ok=True)
             for k, vp in views.items():
                 if k in ("front", "back", "left", "right"):
-                    _sec.overlay(vp, srep["bands"], os.path.join(od, "sections_%s.png" % k))
-            json.dump(srep, open(os.path.join(od, "sections.json"), "w"), indent=1, default=str)
+                    _sec.overlay(vp, srep["bands"], os.path.join(
+                        od, "sections_%s.png" % k))
+            json.dump(srep, open(os.path.join(od, "sections.json"),
+                      "w"), indent=1, default=str)
+        if blended and (order.get("automatic_depth") or order.get("budget") == "screen"):
+            from propkit.simplification import screen_tolerance, decimate_to_error, refresh_normals
+            tolerance = screen_tolerance(
+                STANDARDS, order.get("kind", "static"))
+            if tolerance:
+                triangles, error = decimate_to_error(obj, tolerance)
+                refresh_normals(obj)
+                order.setdefault("measured", {})["simplification"] = {
+                    "triangles": triangles, "tolerance_m": tolerance, "surface_error_m": error,
+                    "stage": "before projection and baking",
+                }
         if blended:
             from propkit import texturing
             from propkit.hull_assembly import paint_views
@@ -389,19 +384,22 @@ def run_line(order):
     elif line == "atlas":
         from propkit.atlas import appliance
         d = os.path.join(SRC, order["views_folder"])
-        order["measured"] = appliance(os.path.join(SRC, "_sheets", order["sheet"]), order, d, order["height_m"])
+        order["measured"] = appliance(os.path.join(
+            SRC, "_sheets", order["sheet"]), order, d, order["height_m"])
     elif line == "extrude":
         from propkit import extrude
         d = os.path.join(SRC, order["views_folder"])
         sheet = os.path.join(SRC, "_sheets", order["sheet"])
         if order["category"] == "moulding":
             order["measured"] = extrude.moulding(sheet, order["strip"], order.get("profile"), order["kind"],
-                                                 order["height_m"], d, order.get("strip_frac"), order["name"],
-                                                  order.get("section_tolerance", 1.0))
+                                                 order["height_m"], d, order.get(
+                                                     "strip_frac"), order["name"],
+                                                 order.get("section_tolerance", 1.0))
         else:
             order["measured"] = extrude.frame(sheet, order["panel"], order["height_m"], d,
-                                              order.get("depth_m", 0.022), order["name"],
-                                               order.get("opening_mode", "strict"))
+                                              order.get(
+                                                  "depth_m", 0.022), order["name"],
+                                              order.get("opening_mode", "strict"))
     elif line == "sheetset":
         from propkit.sheetset import build_set
         d = os.path.join(SRC, order["views_folder"])
@@ -410,7 +408,8 @@ def run_line(order):
     elif line == "kit":
         from propkit.kit import build as kit_build
         d = os.path.join(SRC, order["views_folder"])
-        order["measured"] = kit_build(os.path.join(SRC, "_sheets", order["sheet"]), order, d)
+        order["measured"] = kit_build(os.path.join(
+            SRC, "_sheets", order["sheet"]), order, d)
     elif line == "recipe":
         propkit.PROPS[order["name"]]["fn"]()
     else:
@@ -426,7 +425,8 @@ def correct(order, result):
         h = order.setdefault("hull", {})
         for v in ("back", "left", "right", "top"):
             if (v + " outline") in fails and v not in h.get("paint_only", []):
-                h.setdefault("paint_only", []).append(v)  # unreliable view: paint, don't carve
+                # unreliable view: paint, don't carve
+                h.setdefault("paint_only", []).append(v)
                 changed = True
         if "holes" in fails and not h.get("convex"):
             h["convex"] = True
@@ -437,7 +437,8 @@ def correct(order, result):
     if order["line"] == "extrude":
         if "trim section differs" in fails and order.get("profile") is not None:
             if order.get("section_tolerance", 1.0) > 0.31:
-                order["section_tolerance"] = 0.3  # follow the drawing more closely
+                # follow the drawing more closely
+                order["section_tolerance"] = 0.3
                 changed = True
         if "frame reference opening not found" in fails or "frame opening is blocked" in fails:
             if order.get("opening_mode", "strict") != "interior":
@@ -464,7 +465,8 @@ def render_trim_preview(name):
                            "-P", script, "--", name], text=True, capture_output=True,
                           timeout=180)
     if proc.returncode:
-        raise RuntimeError("preview Blender failed: " + (proc.stderr or proc.stdout)[-1200:])
+        raise RuntimeError("preview Blender failed: " +
+                           (proc.stderr or proc.stdout)[-1200:])
     out = os.path.join(LIB, name, "_preview.png")
     if not os.path.exists(out):
         raise RuntimeError("render completed but preview PNG is missing")
@@ -483,21 +485,25 @@ def build(order, samples=16):
             run_line(order)
             stages = {"geometry_and_paint": round(time.time() - ts, 1)}
             ts = time.time()
-            mount_tags = ["wall"] if order.get("mount") == "wall" else []      # standards.json mounting: by tag
-            info = bake.finish(order["name"], LIB, tex_for(order), samples, tags=[order["category"]] + mount_tags)
+            # standards.json mounting: by tag
+            mount_tags = ["wall"] if order.get("mount") == "wall" else []
+            info = bake.finish(order["name"], LIB, tex_for(
+                order), samples, tags=[order["category"]] + mount_tags)
             stages["bake_and_export"] = round(time.time() - ts, 1)
             ts = time.time()
             info.update({"tags": [order["category"], "factory"], "desc": order.get("notes") or order["name"],
                          "kind": order.get("kind", "static")})
-            bake.update_manifest(os.path.join(LIB, "library.json"), order["name"], info)
+            bake.update_manifest(os.path.join(
+                LIB, "library.json"), order["name"], info)
             vd = reference_views(order)
             result = qa.check(order["name"], vd, order.get("class"), tuple(order.get("hull", {}).get("paint_only", ())),
                               solid=order["line"] in STANDARDS["solid_lines"], mount=order.get("mount", "floor"),
-                               trim_order=order)
+                              trim_order=order)
             stages["qa"] = round(time.time() - ts, 1)
         except Exception as e:
             traceback.print_exc()
-            result = {"pass": False, "fails": ["build error: %s" % e], "metrics": {}}
+            result = {"pass": False, "fails": [
+                "build error: %s" % e], "metrics": {}}
         if result["pass"] or attempt > STANDARDS["minimum_acceptable"]["max_retries"] or not correct(order, result):
             break
     if result["pass"] and order["line"] == "extrude":
@@ -510,7 +516,8 @@ def build(order, samples=16):
     order["status"] = "shipped" if result["pass"] else "needs_person"
     order["attempts"] = attempt
     save_order(order)
-    srcs = glob.glob(os.path.join(SRC, order.get("views_folder", "-"), "*.png"))
+    srcs = glob.glob(os.path.join(
+        SRC, order.get("views_folder", "-"), "*.png"))
     ledger({"op": "build", "name": order["name"], "line": order["line"], "pass": result["pass"],
             "attempts": attempt, "auto": result["pass"] and attempt == 1, "seconds": round(time.time() - t0, 1),
             "stage_seconds": stages,
@@ -520,9 +527,10 @@ def build(order, samples=16):
             # Reproducibility is judged on the gauges, not bytes: Blender's UV packer is not
             # deterministic, so GLB bytes differ run to run while the product is the same.
             "gauge_hash": hashlib.sha1(json.dumps([result["metrics"].get(k) for k in ("tris", "size_m", "silhouette_iou", "geometry_signature", "texture_signature",
-                                                              "trim_section_iou", "frame_opening_occlusion", "trim_colour_difference")],
+                                                                                      "trim_section_iou", "frame_opening_occlusion", "trim_colour_difference")],
                                                   sort_keys=True).encode()).hexdigest()[:12]})
-    print("BUILT" if result["pass"] else "FLAGGED", order["name"], result["fails"])
+    print("BUILT" if result["pass"] else "FLAGGED",
+          order["name"], result["fails"])
     return result
 
 
@@ -530,7 +538,8 @@ def mount_of(name):
     mt = STANDARDS["mounting"]
     if name in mt["by_name"]:
         return mt["by_name"][name]
-    tags = json.load(open(os.path.join(LIB, "library.json"))).get(name, {}).get("tags", [])
+    tags = json.load(open(os.path.join(LIB, "library.json"))
+                     ).get(name, {}).get("tags", [])
     for t, m in mt["by_tag"].items():
         if t in tags:
             return m
@@ -542,7 +551,8 @@ def gate(names):
         t0 = time.time()
         o = load_order(n) or {}
         vd = reference_views(o)
-        line = o.get("line") or ("painted" if n.startswith(("car_coupe", "can_", "tv_painted", "range_")) else "recipe")
+        line = o.get("line") or ("painted" if n.startswith(
+            ("car_coupe", "can_", "tv_painted", "range_")) else "recipe")
         try:
             r = qa.check(n, vd, o.get("class"), tuple(o.get("hull", {}).get("paint_only", ())),
                          solid=line in STANDARDS["solid_lines"] and n not in STANDARDS["open_by_design"]["names"],
@@ -555,9 +565,11 @@ def gate(names):
 
 
 def report():
-    rows = [json.loads(l) for l in open(LEDGER)] if os.path.exists(LEDGER) else []
+    rows = [json.loads(l)
+            for l in open(LEDGER)] if os.path.exists(LEDGER) else []
     latest = {}
-    current = set(json.load(open(os.path.join(LIB, "library.json"))))   # deleted assets stay in the ledger's history only
+    # deleted assets stay in the ledger's history only
+    current = set(json.load(open(os.path.join(LIB, "library.json"))))
     for r in rows:
         if r["name"] in current:
             latest[(r["op"], r["name"])] = r
@@ -565,7 +577,8 @@ def report():
     reps = {}
     for r in rows:
         if r["op"] == "build" and r.get("gauge_hash"):
-            reps.setdefault((r["name"], r["input_hash"]), set()).add(r["gauge_hash"])
+            reps.setdefault((r["name"], r["input_hash"]),
+                            set()).add(r["gauge_hash"])
     repeated = [v for v in reps.values()]
     repro = sum(1 for v in repeated if len(v) == 1)
     qas = [r for (op, _), r in latest.items() if op == "qa"]
@@ -574,12 +587,14 @@ def report():
         assets[r["name"]] = r
     vals = list(assets.values())
     passed = [r for r in vals if r["pass"]]
-    tris = sorted(r["metrics"].get("tris", 0) for r in vals if r["metrics"].get("tris"))
+    tris = sorted(r["metrics"].get("tris", 0)
+                  for r in vals if r["metrics"].get("tris"))
     fail_kinds = {}
     for r in vals:
         for f in r["fails"]:
             k = f.split(":")[0].split(" (")[0]
-            k = " ".join(w for w in k.split() if not any(c.isdigit() for c in w))
+            k = " ".join(w for w in k.split() if not any(c.isdigit()
+                         for c in w))
             fail_kinds[k] = fail_kinds.get(k, 0) + 1
     by_line = {}
     for r in vals:
@@ -589,20 +604,30 @@ def report():
     lines = ["# Factory report", "", "Generated from `factory/ledger.jsonl` (latest result per asset).", "",
              "| Measure | Value |", "| --- | --- |",
              "| Assets measured | %d |" % len(vals),
-             "| Pass the minimum standard | %d (%.0f%%) |" % (len(passed), 100 * len(passed) / max(len(vals), 1)),
+             "| Pass the minimum standard | %d (%.0f%%) |" % (
+                 len(passed), 100 * len(passed) / max(len(vals), 1)),
              "| Factory builds | %d |" % len(builds),
-             "| Factory builds passing with no correction | %d |" % sum(1 for r in builds if r.get("auto")),
-             "| Factory builds needing a person | %d |" % sum(1 for r in builds if not r["pass"]),
-             "| Mean build time (s) | %.0f |" % (sum(r["seconds"] for r in builds) / max(len(builds), 1)),
-             "| Same inputs -> same gauges | %d of %d order/input pairs |" % (repro, len(repeated)),
-             "| Median triangles | %d |" % (tris[len(tris) // 2] if tris else 0),
+             "| Factory builds passing with no correction | %d |" % sum(
+                 1 for r in builds if r.get("auto")),
+             "| Factory builds needing a person | %d |" % sum(
+                 1 for r in builds if not r["pass"]),
+             "| Mean build time (s) | %.0f |" % (
+                 sum(r["seconds"] for r in builds) / max(len(builds), 1)),
+             "| Same inputs -> same gauges | %d of %d order/input pairs |" % (
+                 repro, len(repeated)),
+             "| Median triangles | %d |" % (
+                 tris[len(tris) // 2] if tris else 0),
              "| Max triangles | %d |" % (tris[-1] if tris else 0), "",
              "## By production line", "", "| Line | Assets | Passing |", "| --- | --- | --- |"]
-    lines += ["| %s | %d | %d |" % (k, v[0], v[1]) for k, v in sorted(by_line.items())]
-    lines += ["", "## Failure kinds", "", "| Failure | Count |", "| --- | --- |"]
-    lines += ["| %s | %d |" % (k, v) for k, v in sorted(fail_kinds.items(), key=lambda kv: -kv[1])]
+    lines += ["| %s | %d | %d |" % (k, v[0], v[1])
+              for k, v in sorted(by_line.items())]
+    lines += ["", "## Failure kinds", "",
+              "| Failure | Count |", "| --- | --- |"]
+    lines += ["| %s | %d |" %
+              (k, v) for k, v in sorted(fail_kinds.items(), key=lambda kv: -kv[1])]
     lines += ["", "## Failing assets", ""]
-    lines += ["- **%s** (%s): %s" % (r["name"], r.get("line", "?"), "; ".join(r["fails"])) for r in vals if not r["pass"]]
+    lines += ["- **%s** (%s): %s" % (r["name"], r.get("line", "?"),
+                                     "; ".join(r["fails"])) for r in vals if not r["pass"]]
     open(os.path.join(FACT, "REPORT.md"), "w").write("\n".join(lines) + "\n")
     print("\n".join(lines[:16]))
 
@@ -611,8 +636,8 @@ if __name__ == "__main__":
     a = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     cmd, rest = (a[0], a[1:]) if a else ("report", [])
     if cmd == 'auto':
-        result=automatic_build(rest[0],rest[rest.index('--output')+1])
-        sys.exit(0 if result['status']=='complete' else 2)
+        result = automatic_build(rest[0], rest[rest.index('--output')+1])
+        sys.exit(0 if result['status'] == 'complete' else 2)
     elif cmd == "intake":
         kw = {}
         if "--height" in rest:
@@ -625,9 +650,11 @@ if __name__ == "__main__":
         intake_sheet(rest[0], rest[rest.index("--source-dir") + 1])
     elif cmd == "build":
         if "--pending" in rest or "--all-orders" in rest:
-            names = [os.path.basename(p)[:-5] for p in sorted(glob.glob(os.path.join(ORDERS, "*.json")))]
+            names = [os.path.basename(
+                p)[:-5] for p in sorted(glob.glob(os.path.join(ORDERS, "*.json")))]
             if "--pending" in rest:
-                names = [n for n in names if load_order(n)["status"] == "pending"]
+                names = [n for n in names if load_order(
+                    n)["status"] == "pending"]
         else:
             names = rest
         for n in names:
@@ -637,7 +664,8 @@ if __name__ == "__main__":
         for n in rest:
             print("PREVIEW", render_trim_preview(n))
     elif cmd == "qa":
-        names = sorted(json.load(open(os.path.join(LIB, "library.json")))) if "--library" in rest else rest
+        names = sorted(json.load(open(os.path.join(LIB, "library.json")))
+                       ) if "--library" in rest else rest
         gate(names)
         report()
     else:
