@@ -1,9 +1,9 @@
 {
   "audit_date": "2026-11-11",
   "method": "Static parse and catalog; not proof of runtime correctness",
-  "local_head": "f675622cf29ca480cd16fdd70c3d9dfd9da83297",
+  "local_head": "40bf873263a8f3fbb570eecb417fde23fece9168",
   "canonical_dirac": "9d8df082dfbef7d5a508be3578d78d7c488561ab",
-  "tracked_files": 2873,
+  "tracked_files": 2879,
   "tracked_extensions": {
     ".yml": 3,
     "": 3,
@@ -16,7 +16,7 @@
     ".glb": 120,
     ".json": 164,
     ".jpg": 83,
-    ".py": 117,
+    ".py": 123,
     ".csv": 1,
     ".jsonl": 1,
     ".godot": 1,
@@ -29,8 +29,8 @@
     ".mjs": 1,
     ".css": 1
   },
-  "catalogued_files": 429,
-  "python_files": 117,
+  "catalogued_files": 435,
+  "python_files": 123,
   "parse_errors": [],
   "files": [
     {
@@ -41,8 +41,8 @@
     },
     {
       "path": ".github/workflows/hull-contracts.yml",
-      "lines": 39,
-      "sha256": "b7fbcee2935c397208cf6fb5ccd19173ea0e23a98c02dbf924f998614ea04dd1",
+      "lines": 41,
+      "sha256": "a30513f363202260229b10873a6f9c356fc427f4728c35a3f84f15332f2c2432",
       "definitions": []
     },
     {
@@ -61,8 +61,8 @@
     },
     {
       "path": "KNOWLEDGE_FILE.md",
-      "lines": 541,
-      "sha256": "9e5916308b9e862a196666bd680036799bef6ccd88c96681aeef8637712855b7",
+      "lines": 584,
+      "sha256": "a6aa0e6e762b6d1f396b1599a93a4a4248b7659242df7bfaa41400207ab1e0b8",
       "headings": [
         "Hull knowledge file\r",
         "Purpose and evidence level\r",
@@ -175,10 +175,10 @@
     },
     {
       "path": "long-lines/assets/props/library.json",
-      "lines": 3173,
-      "sha256": "1b6b952a9463deabefaec458cfb46d3236dc9d28ca02e648bfdaa21cf8666fb9",
+      "lines": 3228,
+      "sha256": "88dc38167da1be6487fc757649f2b51fed3c026cb27667cbed2d31f863a503ca",
       "root_type": "dict",
-      "item_count": 109,
+      "item_count": 110,
       "keys": [
         "access_panel_util",
         "armchair_vinyl",
@@ -970,8 +970,8 @@
     },
     {
       "path": "long-lines/docs/LESSONS.md",
-      "lines": 635,
-      "sha256": "6a5169709a6707f53773c29b5b07219a5d01e6d6a8480abb0a9c6437b33c6413",
+      "lines": 643,
+      "sha256": "499409b59a5b8430433b9efc39615e569b6a05d7981af48543612cc0032924fc",
       "headings": [
         "Lessons learned\r",
         "Automatic parts-sheet intake (Hull V2)\r",
@@ -2272,8 +2272,8 @@
     },
     {
       "path": "long-lines/factory/IMPLEMENTATION_PLAN.md",
-      "lines": 264,
-      "sha256": "7f25c4f74fe044ac8a8a1581f5e385a62ea7677a110d6d416681c7778c0270e8",
+      "lines": 283,
+      "sha256": "42769e5549136e546381997c864e4df5523f635a48f854c7be599f0c3af594e2",
       "headings": [
         "Hull audit implementation and acceptance plan",
         "Implemented: shared stages and readable code",
@@ -8223,6 +8223,56 @@
       "environment_keys": []
     },
     {
+      "path": "long-lines/tools/propkit/construction_fields.py",
+      "lines": 55,
+      "sha256": "b7b8064db5c6290fae4f10835265ff86a4364526ae61bb18f34e8944ed1a08ae",
+      "description": "Boolean removal/addition volumes derived from a fitted shared surface.\n\nOperations are implicit fields, not separately capped render meshes. This changes\nrepresentation; it does not supply missing depth evidence or exact distance values.",
+      "imports": [
+        "import numpy as np"
+      ],
+      "definitions": [
+        {
+          "name": "volumes",
+          "line": 9,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "compose",
+          "line": 13,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "reconstruct",
+          "line": 17,
+          "kind": "FunctionDef",
+          "description": "Compose in bounded-memory slabs and report resolution/representation limits."
+        }
+      ],
+      "calls": [
+        "RuntimeError",
+        "abs",
+        "compose",
+        "crossing.any",
+        "float",
+        "int",
+        "len",
+        "max",
+        "min",
+        "np.count_nonzero",
+        "np.empty_like",
+        "np.max",
+        "np.maximum",
+        "np.minimum",
+        "np.moveaxis",
+        "range",
+        "slice",
+        "volumes"
+      ],
+      "environment_keys": []
+    },
+    {
       "path": "long-lines/tools/propkit/cord.py",
       "lines": 97,
       "sha256": "260aee684e19f8587f13737ac3107c1466fcf19a7445196a2c909c61218fab81",
@@ -9216,10 +9266,11 @@
     },
     {
       "path": "long-lines/tools/propkit/feature_regions.py",
-      "lines": 106,
-      "sha256": "7f602d866be313ff5fe4d72121ea031a832ae040342fec1ce6db1ef11f7d42e1",
+      "lines": 111,
+      "sha256": "b41ab90f8c034279c6c736828ee897621a633f48a8af5357dc84d9bf62ea810d",
       "description": "Trace internal image boundaries and isolate candidate relief regions.\n\nRegions are observations, not physical parts or assertions of groove depth.\nNo object vocabulary or geometric templates are used.",
       "imports": [
+        "from .region_grouping import merge_weak_lines, crease_evidence",
         "from PIL import Image, ImageDraw",
         "from pathlib import Path",
         "from scipy import ndimage",
@@ -9238,7 +9289,7 @@
         },
         {
           "name": "export",
-          "line": 74,
+          "line": 79,
           "kind": "FunctionDef",
           "description": "Save exact-frame contours, region labels and an inspectable overlay."
         }
@@ -9253,6 +9304,7 @@
         "canny",
         "canvas.resize",
         "canvas.save",
+        "crease_evidence",
         "directory.mkdir",
         "draw.text",
         "enumerate",
@@ -9263,12 +9315,12 @@
         "int",
         "isinstance",
         "json.dumps",
-        "labels.max",
         "len",
         "list",
         "mask.astype",
         "mask.sum",
         "max",
+        "merge_weak_lines",
         "min",
         "ndimage.binary_closing",
         "ndimage.binary_dilation",
@@ -9289,6 +9341,7 @@
         "np.pad",
         "np.savez_compressed",
         "np.sqrt",
+        "np.unique",
         "np.zeros",
         "np.zeros_like",
         "peak_local_max",
@@ -10361,11 +10414,12 @@
     },
     {
       "path": "long-lines/tools/propkit/joint_shading.py",
-      "lines": 372,
-      "sha256": "edef0a793d4b9791a0109396c3ab76050a1469c5c8cd374a5d6455da61911424",
+      "lines": 386,
+      "sha256": "e19ec76e0c43a8a4d325b0bbe8362f3cdbf2102f71290c0846c69294d9cf6fbd",
       "description": "Coupled shape, diffuse illumination and reflectance estimation.\n\nHeight is represented by continuous B-spline controls, not geometric templates.\nLighting and reflectance are nuisance variables with explicit gauges. Unknown\nsingle-image lighting/material cannot silently become calibrated metric depth.",
       "imports": [
         "from .feature_regions import trace",
+        "from .regional_relief import refine",
         "from .shading import gradients, adjoint",
         "from .spline_surface import Basis, control_shape",
         "from PIL import Image",
@@ -10425,7 +10479,7 @@
         },
         {
           "name": "reconstruct",
-          "line": 207,
+          "line": 212,
           "kind": "FunctionDef",
           "description": "Alternate shape/light/material fits through actual resolution refinement."
         }
@@ -10434,6 +10488,7 @@
         "((data + prior_weight) * values + regularity * adjoint(wx * gx, wy * gy)).ravel",
         "Basis",
         "LinearOperator",
+        "ValueError",
         "abs",
         "adjoint",
         "basis.adjoint",
@@ -10513,6 +10568,7 @@
         "optimize.minimize",
         "prior.copy",
         "range",
+        "refine",
         "rgb.mean",
         "rhs.ravel",
         "round",
@@ -12651,12 +12707,156 @@
       "environment_keys": []
     },
     {
+      "path": "long-lines/tools/propkit/region_grouping.py",
+      "lines": 60,
+      "sha256": "68fdad077a4e050d873187e5cce73f8b63f1639e6583747a5d48db70998ba432",
+      "description": "Shared weak-crease merging extracted from the original relief engine.\n\nThis operates on image evidence only; it does not manufacture dome/dish shapes.",
+      "imports": [
+        "from scipy import ndimage",
+        "import numpy as np"
+      ],
+      "definitions": [
+        {
+          "name": "merge_weak_lines",
+          "line": 9,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "crease_evidence",
+          "line": 53,
+          "kind": "FunctionDef",
+          "description": "Original relief principle: darkness relative to a masked neighbourhood."
+        }
+      ],
+      "calls": [
+        "ValueError",
+        "any",
+        "enumerate",
+        "float",
+        "int",
+        "labels.max",
+        "len",
+        "mask.any",
+        "mask.astype",
+        "max",
+        "ndimage.distance_transform_edt",
+        "ndimage.gaussian_filter",
+        "np.any",
+        "np.arange",
+        "np.array",
+        "np.asarray",
+        "np.asarray(labels, np.int32).copy",
+        "np.clip",
+        "np.maximum",
+        "np.nonzero",
+        "np.percentile",
+        "np.unique",
+        "np.where",
+        "pairs.get",
+        "pairs.items",
+        "range",
+        "root",
+        "sorted",
+        "zip"
+      ],
+      "environment_keys": []
+    },
+    {
+      "path": "long-lines/tools/propkit/regional_relief.py",
+      "lines": 127,
+      "sha256": "b2891d8967f978547c8b7c61b964e31abbde9ef9e8af1ed84caa21b6dfe2960b",
+      "description": "Local reference surfaces and held-out paint/recess/raised comparisons.\n\nRegions propose computational patches, not physical parts. Geometry is fitted\nwith the existing spline solver; no dome, circle or channel template is selected.",
+      "imports": [
+        "from .joint_shading import fit_height, shade",
+        "from .spline_surface import Basis, control_shape",
+        "from scipy import ndimage",
+        "import numpy as np"
+      ],
+      "definitions": [
+        {
+          "name": "reference_surface",
+          "line": 10,
+          "kind": "FunctionDef",
+          "description": "Robust quadratic reference from surrounding coarse-surface samples."
+        },
+        {
+          "name": "refine",
+          "line": 46,
+          "kind": "FunctionDef",
+          "description": "Choose on validation; accept on independent tests. Preserve deferred regions."
+        }
+      ],
+      "calls": [
+        "Basis",
+        "abs",
+        "base.copy",
+        "bool",
+        "candidates.items",
+        "coef.tolist",
+        "control_shape",
+        "evaluate",
+        "fit_height",
+        "float",
+        "initial.copy",
+        "int",
+        "len",
+        "local.sum",
+        "material.copy",
+        "max",
+        "min",
+        "ndimage.distance_transform_edt",
+        "np.clip",
+        "np.count_nonzero",
+        "np.indices",
+        "np.isfinite",
+        "np.linalg.lstsq",
+        "np.log",
+        "np.maximum",
+        "np.mean",
+        "np.median",
+        "np.minimum",
+        "np.nonzero",
+        "np.ones",
+        "np.ones_like",
+        "np.percentile",
+        "np.ptp",
+        "np.sqrt",
+        "np.stack",
+        "np.unique",
+        "np.where",
+        "np.zeros",
+        "r.get",
+        "range",
+        "record.update",
+        "records.append",
+        "reference_surface",
+        "region.sum",
+        "ring.sum",
+        "shade",
+        "slice",
+        "sorted",
+        "sum",
+        "test.sum",
+        "train.sum",
+        "val.sum",
+        "x.max",
+        "x.min",
+        "xx.mean",
+        "y.max",
+        "y.min",
+        "yy.mean"
+      ],
+      "environment_keys": []
+    },
+    {
       "path": "long-lines/tools/propkit/relief.py",
-      "lines": 343,
-      "sha256": "26b9eeb2b26e30c9f982233e3114f3b92ecd1f0f967e50c6c63f1de432384489",
+      "lines": 332,
+      "sha256": "c2e32ae170fb9c038f28ae0f6403a909a58bf404d366256f8a690715c4551a0e",
       "description": "Relief: the surface inside an outline, read from the painting (2.5D carving: flutes, beads, leaves).\n\nA silhouette says nothing about what the surface does inside it. A painting does, but ambiguously:\ndarkness means either occlusion (a crease, a groove: light cannot get in) or a surface turned away from\nthe light (one side of a raised bead). This module separates the two:\n\n1. Outlines from occlusion. \"Cavity\" = how much darker a point is than its neighbourhood. It traces\n   every crease between carved parts, so the creases split the view into regions (a bead, a leaf, a\n   flute channel, the strip between two flutes).\n2. A shape per region from its outline: a dome (or dish) whose height grows with the distance from the\n   region's edge, up to a share of the region's own half width (a bead comes out near a hemisphere; a\n   long strip a rounded rib). The creases themselves become shallow V-grooves.\n3. Raised or sunk from the shading. A raised dome and a sunk dish have the same outline but opposite\n   shading: the dome is lit on the side facing the light, the dish on the side away from it. Each region's\n   painted shading is regressed on its dome's slopes; the regions agree on one light direction (taken as\n   coming from above, as painters light), and each region is raised if its shading matches the dome, sunk\n   if it matches the dish, and left flat (paint only) if the shading says neither clearly.\n4. The check: the finished relief, lit by that light, is compared with the painting's shading (correlation\n   over the carved area). A relief that contradicts the painting scores near zero or below.\n\nHeights are in the view's pixels until scaled by the view's metres per pixel; every relief is capped at a\nshare of the object's thinner side. hook(...) displaces a dense hull mesh along its smoothed normals, each\npoint blending the elevation views by how squarely it faces them (as texturing.project blends paint).",
       "imports": [
         "from .hull import silhouette",
+        "from .region_grouping import merge_weak_lines",
         "from .texturing import _uv",
         "from PIL import Image",
         "from scipy import ndimage",
@@ -12668,67 +12868,67 @@
       "definitions": [
         {
           "name": "_lum",
-          "line": 49,
+          "line": 54,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "_local_mean",
-          "line": 55,
+          "line": 60,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "_regions",
-          "line": 59,
+          "line": 64,
           "kind": "FunctionDef",
           "description": "Split the view into carved regions along crease ridges: watershed of the cavity map from markers at\nthe middles of the uncreased areas, so an outline need not be closed to separate two leaves."
         },
         {
           "name": "_region_votes",
-          "line": 106,
+          "line": 83,
           "kind": "FunctionDef",
           "description": "Per region: dome shape, its shading vector (regression on the dome's slopes) and boundary bands."
         },
         {
           "name": "light_of",
-          "line": 140,
+          "line": 121,
           "kind": "FunctionDef",
           "description": "One light direction (image x right, y down) from many regions' shading vectors: their principal\naxis, signed so the light comes from above (as painters light)."
         },
         {
           "name": "view_relief",
-          "line": 152,
+          "line": 133,
           "kind": "FunctionDef",
           "description": "Height map (px, + out of the surface) for one painted view, over its silhouette crop; and a report.\nlight: a shared light direction (image coords) from all the sheet's views, else this view's own."
         },
         {
           "name": "shared_light",
-          "line": 225,
+          "line": 208,
           "kind": "FunctionDef",
           "description": "The painter's light, from all elevation views' regions together."
         },
         {
           "name": "_smoothed_normals",
-          "line": 239,
+          "line": 222,
           "kind": "FunctionDef",
           "description": "Vertex normals from face areas, then averaged over neighbours (vectorised with bincount: a dense hull\nhas ~1M vertices)."
         },
         {
           "name": "_sample",
-          "line": 254,
+          "line": 239,
           "kind": "FunctionDef",
           "description": "Bilinear sample of a crop-sized map at (u, v) in [0,1], v measured up from the bottom."
         },
         {
           "name": "hook",
-          "line": 262,
+          "line": 247,
           "kind": "FunctionDef",
           "description": "A hull mesh_hook: displace the dense mesh by the views' relief. Fills report (per view and totals)."
         },
         {
           "name": "maps_preview",
-          "line": 328,
+          "line": 317,
           "kind": "FunctionDef",
           "description": "The relief maps side by side (grey = flat, light = raised, dark = sunk), for checking by eye."
         }
@@ -12761,14 +12961,12 @@
         "disp.min",
         "enumerate",
         "faces.reshape",
-        "find",
         "float",
         "hi.modifiers.new",
         "hi.select_set",
         "img.convert",
         "inside.sum",
         "int",
-        "lab.max",
         "len",
         "light_of",
         "m.astype",
@@ -12783,6 +12981,7 @@
         "me.update",
         "me.vertices.foreach_get",
         "me.vertices.foreach_set",
+        "merge_weak_lines",
         "min",
         "ndimage.binary_dilation",
         "ndimage.binary_erosion",
@@ -12818,15 +13017,12 @@
         "np.sort",
         "np.sqrt",
         "np.stack",
-        "np.unique",
         "np.vstack",
         "np.where",
         "np.zeros",
         "np.zeros_like",
         "obj.name.split",
         "out.append",
-        "pairs.get",
-        "pairs.items",
         "peak_local_max",
         "range",
         "region_masks.append",
@@ -12845,10 +13041,67 @@
         "view_relief",
         "views.items",
         "watershed",
-        "weak.any",
         "xx.mean",
-        "yy.mean",
-        "zip"
+        "yy.mean"
+      ],
+      "environment_keys": []
+    },
+    {
+      "path": "long-lines/tools/propkit/relief_consistency.py",
+      "lines": 70,
+      "sha256": "87f7ffe7abc911fb6bb76b1ae505bae46ccb582683d8b2b43b824c4178313660",
+      "description": "Reproject independently fitted surface regions between orthographic views.",
+      "imports": [
+        "from .surface_detail import chart_frame",
+        "from scipy import ndimage",
+        "import numpy as np"
+      ],
+      "definitions": [
+        {
+          "name": "project",
+          "line": 6,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "compare",
+          "line": 13,
+          "kind": "FunctionDef",
+          "description": ""
+        }
+      ],
+      "calls": [
+        "(uv <= 1).all",
+        "(uv >= 0).all",
+        "abs",
+        "active.items",
+        "any",
+        "bool",
+        "chart_frame",
+        "charts.items",
+        "data.get",
+        "dict",
+        "float",
+        "int",
+        "len",
+        "map",
+        "matches.append",
+        "max",
+        "min",
+        "ndimage.map_coordinates",
+        "np.array",
+        "np.asarray",
+        "np.count_nonzero",
+        "np.linspace",
+        "np.linspace(0, len(xx) - 1, min(samples, len(xx))).astype",
+        "np.median",
+        "np.nonzero",
+        "np.unique",
+        "project",
+        "records.append",
+        "sum",
+        "supported.append",
+        "target['mask'].astype"
       ],
       "environment_keys": []
     },
@@ -13991,19 +14244,21 @@
     },
     {
       "path": "long-lines/tools/propkit/surface_detail.py",
-      "lines": 537,
-      "sha256": "13a8009fd979331f598efa40d9983e1e09130e12afcdca620ee80621b64ca7ea",
+      "lines": 554,
+      "sha256": "338c6ba91d1d004c5958efbf5d629aefe25a1d81b40050971d88ed3f986ae86f",
       "description": "Object-independent surface evidence and continuous implicit detail.\n\nConstruction patches are computational regions of one physical surface. They\nnever become capped objects merely because width or curvature changes. All\nlengths passed to the field station are metres; source observations stay in\ntheir own image frame until sampling.",
       "imports": [
         "from . import feature_regions",
         "from . import relief",
         "from . import shading",
         "from . import spline_surface, cad_export",
+        "from .construction_fields import reconstruct",
         "from .core import select_only, apply_mods",
         "from .depth_measurement import estimate",
         "from .hull import silhouette",
         "from .implicit import pad_field",
         "from .local_features import check_surface_features",
+        "from .relief_consistency import compare",
         "from PIL import Image, ImageDraw",
         "from mathutils import Vector",
         "from mathutils.bvhtree import BVHTree",
@@ -14066,19 +14321,19 @@
         },
         {
           "name": "capture_high",
-          "line": 378,
+          "line": 394,
           "kind": "FunctionDef",
           "description": "Keep implicit detail for normal baking before any budget simplification."
         },
         {
           "name": "export_maps",
-          "line": 404,
+          "line": 420,
           "kind": "FunctionDef",
           "description": "Save numerical topography and contour diagnostics, including rejections."
         },
         {
           "name": "protected_samples",
-          "line": 466,
+          "line": 482,
           "kind": "FunctionDef",
           "description": "Protect detected features locally, without tightening every planar face."
         }
@@ -14102,6 +14357,7 @@
         "canvas.save",
         "chart_frame",
         "check_surface_features",
+        "compare",
         "curvature_probes",
         "dict",
         "directory.mkdir",
@@ -14130,6 +14386,7 @@
         "ndimage.gaussian_filter",
         "ndimage.label",
         "ndimage.map_coordinates",
+        "ndimage.zoom",
         "normal.tolist",
         "np.any",
         "np.arange",
@@ -14181,11 +14438,13 @@
         "plan['report']['probes'].append",
         "plan['report']['views'].get",
         "plan['report']['views'].get(view, {}).get",
+        "plan['report']['views'][view].get",
         "points.append",
         "print",
         "probe.get",
         "probe['depth_estimate'].get",
         "range",
+        "reconstruct",
         "reference.append",
         "relief.hook",
         "relief.hook({k: '' for k in maps}, *plan['dimensions'], {}, maps_override=maps, keep_high=False, cap_share=0.02, light_override=np.array([-0.7, -0.7]))",
@@ -17643,6 +17902,122 @@
         "triangle_samples",
         "unittest.main",
         "uv"
+      ],
+      "environment_keys": []
+    },
+    {
+      "path": "long-lines/tools/test_regional_relief.py",
+      "lines": 96,
+      "sha256": "63cd5ceef03520b70044626ae6f06aaadda5a71a9e9d2e925cca22a08a89b39c",
+      "description": "Reference surfaces and local relief measured against synthetic ground truth.",
+      "imports": [
+        "from propkit import regional_relief, region_grouping, joint_shading",
+        "from scipy import ndimage",
+        "import numpy as np",
+        "import unittest"
+      ],
+      "definitions": [
+        {
+          "name": "GroupingContracts",
+          "line": 8,
+          "kind": "ClassDef",
+          "description": ""
+        },
+        {
+          "name": "LocalReliefContracts",
+          "line": 54,
+          "kind": "ClassDef",
+          "description": ""
+        }
+      ],
+      "calls": [
+        "joint_shading.shade",
+        "ndimage.binary_erosion",
+        "np.array",
+        "np.clip",
+        "np.full",
+        "np.log",
+        "np.mean",
+        "np.ones",
+        "np.sin",
+        "np.sqrt",
+        "np.testing.assert_allclose",
+        "np.testing.assert_array_equal",
+        "np.zeros",
+        "np.zeros_like",
+        "region.astype",
+        "region_grouping.merge_weak_lines",
+        "regional_relief.reference_surface",
+        "regional_relief.refine",
+        "self.assertEqual",
+        "self.assertFalse",
+        "self.assertIsNone",
+        "self.assertLess",
+        "self.assertNotEqual",
+        "self.assertTrue",
+        "self.fixture",
+        "truth.copy",
+        "unittest.main"
+      ],
+      "environment_keys": []
+    },
+    {
+      "path": "long-lines/tools/test_relief_construction.py",
+      "lines": 74,
+      "sha256": "b59c8df63de53dc0f3b3435f1bf1dce7a59c7a7edb2f16a5b52b6c55103a9bc2",
+      "description": "Geometric cross-view support and reverse-mould set operations.",
+      "imports": [
+        "from propkit import construction_fields, relief_consistency",
+        "from scipy.spatial import cKDTree",
+        "from skimage.measure import marching_cubes",
+        "import numpy as np",
+        "import unittest"
+      ],
+      "definitions": [
+        {
+          "name": "ConstructionContracts",
+          "line": 9,
+          "kind": "ClassDef",
+          "description": ""
+        },
+        {
+          "name": "CrossViewContracts",
+          "line": 42,
+          "kind": "ClassDef",
+          "description": ""
+        }
+      ],
+      "calls": [
+        "(mask & (horizontal < -0.1)).astype",
+        "(mask & (horizontal > 0.1)).astype",
+        "abs",
+        "base.astype",
+        "cKDTree",
+        "cKDTree(a).query",
+        "construction_fields.reconstruct",
+        "dict",
+        "marching_cubes",
+        "np.array",
+        "np.linspace",
+        "np.maximum",
+        "np.maximum.reduce",
+        "np.meshgrid",
+        "np.minimum",
+        "np.minimum(np.maximum(base, -cutter), raised).astype",
+        "np.percentile",
+        "np.sin",
+        "np.sqrt",
+        "np.testing.assert_allclose",
+        "np.testing.assert_array_equal",
+        "np.zeros",
+        "relief_consistency.compare",
+        "self.assertEqual",
+        "self.assertFalse",
+        "self.assertGreater",
+        "self.assertLess",
+        "self.assertTrue",
+        "self.charts",
+        "unittest.main"
       ],
       "environment_keys": []
     },

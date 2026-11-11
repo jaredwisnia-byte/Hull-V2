@@ -44,10 +44,14 @@ def trace(rgb, mask):
         markers[y, x] = identifier
     labels = watershed(-distance, markers, mask=mask,
                        watershed_line=True) if len(peaks) else markers
+    from .region_grouping import merge_weak_lines, crease_evidence
+    fragment_count = len(np.unique(labels[labels > 0]))
+    cavity = crease_evidence(luminance, mask, scale * 6)
+    labels = merge_weak_lines(labels, mask, cavity, protect_strong=True)
     regions = []
     minimum = max(20, int(mask.sum() * .0005))
     cleaned = np.zeros_like(labels)
-    for identifier in range(1, int(labels.max()) + 1):
+    for identifier in np.unique(labels[labels > 0]):
         selected = labels == identifier
         if selected.sum() < minimum:
             continue
@@ -68,7 +72,8 @@ def trace(rgb, mask):
     return {'labels': cleaned, 'boundaries': persistent, 'relief_boundaries': relief_boundary,
             'appearance_boundaries': persistent & ~relief_boundary, 'regions': regions, 'edge_curves_xy': curves,
             'method': 'multiscale image edges / chromatic ambiguity / marker watershed',
-            'physical_parts_created': False}
+            'physical_parts_created': False, 'fragment_count': fragment_count,
+            'grouping': 'shared original weak-crease merging; no geometry templates'}
 
 
 def export(result, image, directory, name):

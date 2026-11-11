@@ -348,6 +348,22 @@ def apply_field(field, plan):
     plan['report']['field'] = {'mode': 'signed_field_detail_before_meshing', 'isovalue': 0.,
                                'depth_limit': '30% of observed local solid thickness; openings remain silhouette constraints',
                                'grid_shape': list(field.shape), 'spacing_m': [dimensions[i] / field.shape[i] for i in range(3)]}
+    if 'shading_inputs' in plan:
+        from .construction_fields import reconstruct
+        result, plan['report']['construction_volumes'] = reconstruct(
+            field, result)
+        from .relief_consistency import compare
+        charts = {}
+        for view, values in plan.get('diagnostics', {}).items():
+            if 'feature_labels' not in values:
+                continue
+            labels = ndimage.zoom(values['feature_labels'], np.asarray(
+                values['mask'].shape) / values['feature_labels'].shape, order=0)
+            charts[view] = {'labels': labels, 'mask': values['mask'],
+                            'root': -values['coarse_height_px'] * float(values['metres_per_pixel']),
+                            'height': plan['maps'][view], 'pixel_m': float(values['metres_per_pixel']),
+                            'accepted': plan['report']['views'][view].get('accepted', False)}
+        plan['report']['cross_view_relief'] = compare(charts, dimensions)
     # Fitting sparse validation points can introduce pinched dents. The pixel
     # solver already supplies a continuous integrable surface, so keep it whole.
     baseline_components = ndimage.label(field < 0)[1]
@@ -482,6 +498,7 @@ def protected_samples(obj, report, geometry_tolerance=None):
     from .local_features import check_surface_features
     baseline = check_surface_features([tuple(v.co) for v in obj.data.vertices],
                                       [tuple(p.vertices) for p in obj.data.polygons], report, tree=tree)
+    report['pre_reduction_validation'] = baseline
     conflicts = {probe['id']
                  for probe in baseline['probes'] if not probe['retained']}
     report['unmet_before_reduction'] = sorted(conflicts)

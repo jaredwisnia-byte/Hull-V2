@@ -9,6 +9,25 @@ operations; no conversational LLM supplies per-object corrections.
 
 ### Joint-fit continuation and remaining acceptance (2026-11-11)
 
+Current regional continuation adds shared original weak-crease merging with an
+active-path strong-boundary guard; surrounding-surface reference fits; held-out
+material/recess/raised spline comparisons; cross-view region depth checks; guarded
+aggregate subtract/add fields; and retained pre-reduction feature QA. 68 contracts
+pass, plus the Godot checks. The five legacy extraction checks preserve prior output.
+The revised leg front has 51 candidates rather than 219, but its front-view relief
+still fails final appearance validation. Do not claim complete carving recovery.
+Cross-view checking is diagnostic rather than full joint camera/shape fitting.
+CSG composition falls back when sampled zero crossings drift; individual reusable
+cutters and robust general reference surfaces remain acceptance work.
+Final leg: 3,262 triangles, one component, 114/157 depth failures and one normal
+disagreement failure. Before reduction, 75 probes already failed; 55 previously
+retained probes failed after export (16 previously failed probes passed).
+Only 4/203 cross-view regions had reciprocal support. CSG zero-crossing drift
+0.937 cells exceeded the 0.1-cell limit, so the fitted field was preserved.
+Priorities now have measurable targets: improve reference/depth recovery, retain
+resolved features during reduction, jointly reconcile view evidence, and safely
+reinitialize construction fields before reusable individual cutter export.
+
 Internal boundary tracing is now active before joint relief fitting. Persistent
 multiscale boundaries, chromatic ambiguity and watershed region masks are exported
 in the analysis-image frame. Boundaries guide continuous curvature regularization;

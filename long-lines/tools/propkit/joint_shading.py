@@ -176,10 +176,15 @@ def depth_information(height, base, lighting, observed, material, testing, chrom
             'assumptions': 'fitted height shape; declared lighting/material model; supplied physical scale'}
 
 
-def fit_height(base, initial, basis, material, observed, training, lighting, mask, bound, iterations, curvature_weight=None):
+def fit_height(base, initial, basis, material, observed, training, lighting, mask, bound, iterations, curvature_weight=None, bounds_mode='recess'):
     feather = np.clip(ndimage.distance_transform_edt(mask) / 2, 0, 1)
     coefficients, _ = basis.project(initial, mask)
-    coefficients = np.clip(coefficients, -bound, 0)
+    limits = {'recess': (-bound, 0.), 'raised': (0., bound),
+              'signed': (-bound, bound)}
+    if bounds_mode not in limits:
+        raise ValueError('Unknown relief hypothesis')
+    lower, upper = limits[bounds_mode]
+    coefficients = np.clip(coefficients, lower, upper)
     count = max(float(training.sum()), 1.)
     curvature_weight = np.ones(
         mask.shape) if curvature_weight is None else curvature_weight
@@ -197,7 +202,7 @@ def fit_height(base, initial, basis, material, observed, training, lighting, mas
                                                           ) / height.size + .0002 * height / height.size
         return loss, basis.adjoint(gradient * feather).ravel()
     fit = optimize.minimize(objective, coefficients.ravel(), jac=True, method='L-BFGS-B',
-                            bounds=[(-bound, 0)] * coefficients.size,
+                            bounds=[(lower, upper)] * coefficients.size,
                             options={'maxiter': iterations, 'ftol': 1e-7, 'gtol': 1e-7, 'maxcor': 12})
     height = basis.evaluate(fit.x) * feather
     return height, {'iterations': int(fit.nit), 'converged': bool(fit.success),
@@ -230,7 +235,8 @@ def reconstruct(image, mask, base, max_depth_px, light=None, albedo=None, iterat
         mask, np.asarray(finest_shape) / mask.shape, order=0)
     rows, cols = np.indices(finest_shape)
     reference_fold = (rows + 3 * cols) % 9
-    reference_training = reference_mask & (reference_fold >= 2)
+    reference_training = reference_mask & (reference_fold >= 3)
+    reference_acceptance = reference_mask & (reference_fold == 2)
     reference_validation = reference_mask & (reference_fold == 0)
     reference_testing = reference_mask & (reference_fold == 1)
     # Remove withheld intensities before making any lower-resolution image.
@@ -325,6 +331,10 @@ def reconstruct(image, mask, base, max_depth_px, light=None, albedo=None, iterat
         height, material, lighting = best['height'], best['material'], best['lighting']
         previous, previous_material, previous_scale = height, material, pixel_scale
         final_coefficients = best['coefficients']
+    from .regional_relief import refine
+    height, material, regional_report = refine(current_base, height, material, observed, reference_observed,
+                                               lighting, traced['labels'], current_mask, reference_training, reference_validation,
+                                               reference_acceptance, max_depth_px * pixel_scale)
     before = flat_material + \
         np.log(shade(current_base, flat_light)) - reference_observed
     after = material + \
@@ -333,6 +343,7 @@ def reconstruct(image, mask, base, max_depth_px, light=None, albedo=None, iterat
     error = float(np.mean(after[testing]**2))
     improvement = 1 - error / max(baseline, 1e-12)
     accepted = baseline > 1e-5 and improvement > .05
+    regional_report['applied_to_output'] = bool(accepted)
     depth = depth_information(height, current_base, lighting, reference_observed, material, testing, chroma,
                               fixed_light=fixed_light, fixed_material=fixed_material)
     result = ndimage.zoom(
@@ -345,10 +356,11 @@ def reconstruct(image, mask, base, max_depth_px, light=None, albedo=None, iterat
               'lighting_calibration': initial_identifiability, 'converged': bool(best['fit']['converged']),
               'iterations': int(sum(item['iterations'] for item in history)), 'history': history,
               'solve_resolution': list(shape), 'source_resolution': list(mask.shape), 'depth_bound_px': float(max_depth_px),
-              'validation_protocol': 'withheld finest-grid intensities removed before all pyramid, lighting and material fits',
+              'validation_protocol': 'training folds 3-8; selection fold 0; local acceptance fold 2; final test fold 1, removed before pyramid construction',
               'integrability': 'continuous spline height gradient',
               'absolute_depth_status': 'conditional_on_calibration' if fixed_light and fixed_material else 'not_identified',
               'depth_information': depth,
+              'regional_relief': regional_report,
               'uncertainty': 'single-image lighting/albedo (reflectance) ambiguity; physical scale must be independently established'}
     if diagnostics is not None:
         import json
@@ -369,4 +381,6 @@ def reconstruct(image, mask, base, max_depth_px, light=None, albedo=None, iterat
                            predicted_log_shading=ndimage.zoom(np.log(shade(
                                current_base + height, lighting)), 1 / ratio, order=1)[:mask.shape[0], :mask.shape[1]],
                            spline_controls_px=final_coefficients / pixel_scale, knots_u=best['basis'].u_knots, knots_v=best['basis'].v_knots)
+        diagnostics['spline_controls_scope'] = np.asarray(
+            'global initialization before local refinement; final numerical height map includes local fits')
     return (result if accepted else np.zeros_like(result)), report

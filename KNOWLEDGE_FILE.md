@@ -16,7 +16,7 @@ It is not a claim that every algorithm or asset was executed or proven correct.
 Binary textures/GLBs were counted, not exhaustively visually audited.
 
 The accompanying [machine-readable inventory](long-lines/docs/CODEBASE_INVENTORY.json)
-records 429 source/configuration/documentation files, all 117 tracked Python files,
+records 435 source/configuration/documentation files, all 123 tracked Python files,
 36 Godot scripts, module descriptions, definitions/line numbers, imports, static
 calls, JSON shapes, documentation headings and content hashes. All Python files
 parsed successfully; JSON parsing found no errors. Static calls are not a resolved
@@ -27,6 +27,49 @@ runtime call graph. Counts include the currently staged new reconstruction tools
 ### Superseding reconstruction path (2026-11-11)
 
 #### Joint-fit and CAD continuation (supersedes lighting claims below)
+
+Regional relief continuation: the original `relief._regions` already merged weak
+creases; earlier statements that Hull lacked any grouping were too broad. Its
+merge routine is now shared in `region_grouping.py`, retaining legacy output (five
+unchanged-output checks). The active tracer additionally prohibits transitive weak
+paths from bypassing strong creases. This merges fragments without dome templates.
+
+`regional_relief.py` fits a robust quadratic reference from surrounding coarse
+surface samples, with rank/condition/residual checks and explicit analysis frames.
+It compares existing relief, material-only, recessed and raised spline hypotheses.
+Insufficient references and compute-budget deferrals remain explicit. The active
+joint solver uses folds 3-8 for fitting, 0 for selection, 2 for local acceptance,
+and 1 for final testing. All withheld intensities are removed before the pyramid.
+Accepted local proposals can still be rejected by the final whole-view check.
+This is local reference/hypothesis fitting, not solved general intrinsic recovery.
+
+`relief_consistency.py` checks independently fitted region depths by orthographic
+reprojection and reciprocal region support. It is an active quality report, NOT
+joint camera/shape optimization or a hard geometry gate for every proposal.
+`construction_fields.py` derives aggregate removal/addition fields from the fitted
+shared surface and tests Boolean recomposition. It checks solid membership AND
+subvoxel zero-crossing drift. If drift exceeds 0.1 cells, the fitted field is kept;
+reinitialization is needed before replacing it with sampled CSG. Individual editable
+or reusable feature cutters are not exported. Boolean operations do not establish
+depth truth. Pre-reduction local feature results are now retained separately from
+the existing final exported-mesh QA, exposing loss before versus during reduction.
+
+Verification: 68 reconstruction tests passed, including known raised/recessed
+relief, surrounding-surface recovery, flat rejection, strong-boundary protection,
+cross-view agreement/conflict and CSG zero-crossing safeguards. Godot passed 39
+unit and 45 smoke checks. The first leg trial over-merged regions and produced an
+excessively dense CSG result; it was stopped, not accepted. The revised trial's
+front has 51 candidates (previously 219), 12 local reference fits tested and no
+accepted front relief. Two raised proposals and one material-only proposal passed
+local checks in other views; these are not independently verified physical details.
+The original preset was reused; this is not a fresh image-only intake test.
+Final revised leg: 3,262 triangles, one component, 114/157 local depth failures
+plus a 2.9% normal-facing disagreement failure. There were 75 failures before
+reduction; 55 previously retained probes failed after export and 16 previously
+failed probes passed. Cross-view support was 4/203 regions. Boolean recomposition
+was not adopted: its maximum zero-crossing drift was 0.937 cells, exceeding 0.1.
+The original fitted field was preserved. These results expose depth-estimation
+AND reduction problems; they do not establish a successful carving reconstruction.
 
 Internal feature tracing continuation: `feature_regions.py` now extracts persistent
 multiscale internal edges, records chromatic ambiguity, and isolates watershed

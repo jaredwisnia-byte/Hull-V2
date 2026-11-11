@@ -633,3 +633,11 @@ library, ledger and REPORT are restored afterwards (git checkout + delete the ex
 - Boundary extraction must use training-only intensities to preserve holdout
   isolation. Export integer masks and declare pixel frames; contour coordinates
   need the padding offset removed in pixel-centre convention.
+- Weak-edge union can bypass a strong crease through a third region. Protect
+  strong adjacency during merging rather than trusting pairwise weak edges alone.
+- Original relief already contained weak-crease merging. Share that machinery;
+  do not describe a missing call in the active path as absence from the codebase.
+- Equal occupied voxel signs do not guarantee equal interpolated surfaces.
+  Check zero-crossing drift before adopting sampled Boolean recomposition.
+- Reserve separate local-acceptance pixels so regional hypothesis selection
+  cannot consume the final test pixels used to judge the full surface.
