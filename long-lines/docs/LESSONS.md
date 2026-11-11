@@ -628,3 +628,8 @@ library, ledger and REPORT are restored afterwards (git checkout + delete the ex
   file and verify units/trim holes; sewing and assembly frames need separate checks.
 - A class-independent identity graph does not automatically replace a role-based
   manufacturing grammar. Record which downstream stages actually consume it.
+- Trace internal boundaries before relief fitting, but keep segmentation separate
+  from depth truth. Painted facets and shadows can form closed regions too.
+- Boundary extraction must use training-only intensities to preserve holdout
+  isolation. Export integer masks and declare pixel frames; contour coordinates
+  need the padding offset removed in pixel-centre convention.

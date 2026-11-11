@@ -412,6 +412,15 @@ def export_maps(plan, directory):
         if 'mask' not in values or not values['mask'].any():
             continue
         np.savez_compressed(directory / (view + '.npz'), **values)
+        if 'feature_region_json' in values:
+            import json
+            from . import feature_regions
+            traced = json.loads(str(values['feature_region_json']))
+            for key in ('labels', 'boundaries', 'relief_boundaries', 'appearance_boundaries'):
+                traced[key] = values['feature_' + key]
+            source = plan['shading_inputs'][view]['image']
+            plan['report'].setdefault('feature_regions', {})[
+                view] = feature_regions.export(traced, source, directory, view)
         mask = values['mask']
         height = values['hypothesis_height_px']
         low, high = np.percentile(height[mask], [1, 99])

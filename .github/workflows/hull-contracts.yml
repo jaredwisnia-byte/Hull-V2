@@ -31,6 +31,7 @@ jobs:
           python long-lines/tools/test_surface_detail.py
           python long-lines/tools/test_shading.py
           python long-lines/tools/test_joint_shading.py
+          python long-lines/tools/test_feature_regions.py
           python long-lines/tools/test_spline_surface.py
           python long-lines/tools/test_part_graph.py
           python long-lines/tools/test_cad_export.py

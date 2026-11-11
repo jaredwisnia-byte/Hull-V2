@@ -1,9 +1,9 @@
 {
   "audit_date": "2026-11-11",
   "method": "Static parse and catalog; not proof of runtime correctness",
-  "local_head": "267c0ac0a8e2667a0d9f4fd8bb74d56b5f6f7ab9",
+  "local_head": "f675622cf29ca480cd16fdd70c3d9dfd9da83297",
   "canonical_dirac": "9d8df082dfbef7d5a508be3578d78d7c488561ab",
-  "tracked_files": 2871,
+  "tracked_files": 2873,
   "tracked_extensions": {
     ".yml": 3,
     "": 3,
@@ -16,7 +16,7 @@
     ".glb": 120,
     ".json": 164,
     ".jpg": 83,
-    ".py": 115,
+    ".py": 117,
     ".csv": 1,
     ".jsonl": 1,
     ".godot": 1,
@@ -29,8 +29,8 @@
     ".mjs": 1,
     ".css": 1
   },
-  "catalogued_files": 427,
-  "python_files": 115,
+  "catalogued_files": 429,
+  "python_files": 117,
   "parse_errors": [],
   "files": [
     {
@@ -41,8 +41,8 @@
     },
     {
       "path": ".github/workflows/hull-contracts.yml",
-      "lines": 38,
-      "sha256": "60e56265dff8ff1b47bf9b06e1d3752555432f332f2a84d784efd0317b0a60ad",
+      "lines": 39,
+      "sha256": "b7fbcee2935c397208cf6fb5ccd19173ea0e23a98c02dbf924f998614ea04dd1",
       "definitions": []
     },
     {
@@ -61,8 +61,8 @@
     },
     {
       "path": "KNOWLEDGE_FILE.md",
-      "lines": 517,
-      "sha256": "e8dc509ccbc1129ace3cec4f51237612ab6a502ddf5f4a6b46df6d4a7cd3dbec",
+      "lines": 541,
+      "sha256": "9e5916308b9e862a196666bd680036799bef6ccd88c96681aeef8637712855b7",
       "headings": [
         "Hull knowledge file\r",
         "Purpose and evidence level\r",
@@ -175,10 +175,10 @@
     },
     {
       "path": "long-lines/assets/props/library.json",
-      "lines": 3118,
-      "sha256": "a11bc8cb9cee0191f6a7bdc40dc2cfff0e18dd19f0d6f360dd8c429cf674bc7f",
+      "lines": 3173,
+      "sha256": "1b6b952a9463deabefaec458cfb46d3236dc9d28ca02e648bfdaa21cf8666fb9",
       "root_type": "dict",
-      "item_count": 108,
+      "item_count": 109,
       "keys": [
         "access_panel_util",
         "armchair_vinyl",
@@ -970,8 +970,8 @@
     },
     {
       "path": "long-lines/docs/LESSONS.md",
-      "lines": 630,
-      "sha256": "0997538ca12883f65a22e79615c7c70862777a731faff5b38bc630422b820fab",
+      "lines": 635,
+      "sha256": "6a5169709a6707f53773c29b5b07219a5d01e6d6a8480abb0a9c6437b33c6413",
       "headings": [
         "Lessons learned\r",
         "Automatic parts-sheet intake (Hull V2)\r",
@@ -2272,8 +2272,8 @@
     },
     {
       "path": "long-lines/factory/IMPLEMENTATION_PLAN.md",
-      "lines": 254,
-      "sha256": "ee53643da82e9eafe3470f999557a0f729af078c8369303f9b45f45e1515b646",
+      "lines": 264,
+      "sha256": "7f25c4f74fe044ac8a8a1581f5e385a62ea7677a110d6d416681c7778c0270e8",
       "headings": [
         "Hull audit implementation and acceptance plan",
         "Implemented: shared stages and readable code",
@@ -9215,6 +9215,101 @@
       "environment_keys": []
     },
     {
+      "path": "long-lines/tools/propkit/feature_regions.py",
+      "lines": 106,
+      "sha256": "7f602d866be313ff5fe4d72121ea031a832ae040342fec1ce6db1ef11f7d42e1",
+      "description": "Trace internal image boundaries and isolate candidate relief regions.\n\nRegions are observations, not physical parts or assertions of groove depth.\nNo object vocabulary or geometric templates are used.",
+      "imports": [
+        "from PIL import Image, ImageDraw",
+        "from pathlib import Path",
+        "from scipy import ndimage",
+        "from skimage.feature import canny, peak_local_max",
+        "from skimage.measure import find_contours",
+        "from skimage.segmentation import watershed",
+        "import json",
+        "import numpy as np"
+      ],
+      "definitions": [
+        {
+          "name": "trace",
+          "line": 13,
+          "kind": "FunctionDef",
+          "description": "Accept linear RGB in the same pixel frame as the foreground mask."
+        },
+        {
+          "name": "export",
+          "line": 74,
+          "kind": "FunctionDef",
+          "description": "Save exact-frame contours, region labels and an inspectable overlay."
+        }
+      ],
+      "calls": [
+        "(directory / (name + '-feature-regions.json')).write_text",
+        "(ndimage.binary_dilation(persistent) & rim).sum",
+        "Image.fromarray",
+        "ImageDraw.Draw",
+        "Path",
+        "ValueError",
+        "canny",
+        "canvas.resize",
+        "canvas.save",
+        "directory.mkdir",
+        "draw.text",
+        "enumerate",
+        "find_contours",
+        "float",
+        "image.convert",
+        "image.convert('RGB').copy",
+        "int",
+        "isinstance",
+        "json.dumps",
+        "labels.max",
+        "len",
+        "list",
+        "mask.astype",
+        "mask.sum",
+        "max",
+        "min",
+        "ndimage.binary_closing",
+        "ndimage.binary_dilation",
+        "ndimage.binary_erosion",
+        "ndimage.distance_transform_edt",
+        "ndimage.gaussian_filter",
+        "np.asarray",
+        "np.asarray(canvas).copy",
+        "np.c_[c[:, 1] - 1, c[:, 0] - 1].tolist",
+        "np.c_[c[:, 1], c[:, 0]].tolist",
+        "np.gradient",
+        "np.isfinite",
+        "np.isfinite(rgb).all",
+        "np.log",
+        "np.maximum",
+        "np.median",
+        "np.nonzero",
+        "np.pad",
+        "np.savez_compressed",
+        "np.sqrt",
+        "np.zeros",
+        "np.zeros_like",
+        "peak_local_max",
+        "persistent.astype",
+        "range",
+        "regions.append",
+        "report.update",
+        "result.items",
+        "rgb.mean",
+        "rim.sum",
+        "round",
+        "selected.astype",
+        "selected.sum",
+        "sorted",
+        "str",
+        "sum",
+        "watershed"
+      ],
+      "environment_keys": []
+    },
+    {
       "path": "long-lines/tools/propkit/guides.py",
       "lines": 166,
       "sha256": "e2c0b285937a0fe2e05e1e16e8c6c9bcdad764fa18a165feb1c05138cbe54b23",
@@ -10266,15 +10361,17 @@
     },
     {
       "path": "long-lines/tools/propkit/joint_shading.py",
-      "lines": 355,
-      "sha256": "f661e974db851208516a940250f2a6f24fa98ec9cda7c93352dea10d3637aada",
+      "lines": 372,
+      "sha256": "edef0a793d4b9791a0109396c3ab76050a1469c5c8cd374a5d6455da61911424",
       "description": "Coupled shape, diffuse illumination and reflectance estimation.\n\nHeight is represented by continuous B-spline controls, not geometric templates.\nLighting and reflectance are nuisance variables with explicit gauges. Unknown\nsingle-image lighting/material cannot silently become calibrated metric depth.",
       "imports": [
+        "from .feature_regions import trace",
         "from .shading import gradients, adjoint",
         "from .spline_surface import Basis, control_shape",
         "from PIL import Image",
         "from scipy import ndimage, optimize",
         "from scipy.sparse.linalg import LinearOperator, cg",
+        "import json",
         "import numpy as np"
       ],
       "definitions": [
@@ -10328,7 +10425,7 @@
         },
         {
           "name": "reconstruct",
-          "line": 205,
+          "line": 207,
           "kind": "FunctionDef",
           "description": "Alternate shape/light/material fits through actual resolution refinement."
         }
@@ -10365,6 +10462,8 @@
         "infos.append",
         "initial.copy",
         "int",
+        "isinstance",
+        "json.dumps",
         "len",
         "lighting.copy",
         "lighting.tolist",
@@ -10378,6 +10477,7 @@
         "max",
         "min",
         "ndimage.distance_transform_edt",
+        "ndimage.gaussian_filter",
         "ndimage.zoom",
         "normals",
         "np.arange",
@@ -10421,6 +10521,10 @@
         "solution.reshape",
         "sorted",
         "sum",
+        "trace",
+        "traced.items",
+        "traced['boundaries'].sum",
+        "traced['relief_boundaries'].astype",
         "training.sum",
         "tuple",
         "values.reshape"
@@ -13887,10 +13991,11 @@
     },
     {
       "path": "long-lines/tools/propkit/surface_detail.py",
-      "lines": 528,
-      "sha256": "a69760c265c4f9cd4811abe3f93acf91d3640598f4101fc8c7c40920be4f10d0",
+      "lines": 537,
+      "sha256": "13a8009fd979331f598efa40d9983e1e09130e12afcdca620ee80621b64ca7ea",
       "description": "Object-independent surface evidence and continuous implicit detail.\n\nConstruction patches are computational regions of one physical surface. They\nnever become capped objects merely because width or curvature changes. All\nlengths passed to the field station are metres; source observations stay in\ntheir own image frame until sampling.",
       "imports": [
+        "from . import feature_regions",
         "from . import relief",
         "from . import shading",
         "from . import spline_surface, cad_export",
@@ -13973,7 +14078,7 @@
         },
         {
           "name": "protected_samples",
-          "line": 457,
+          "line": 466,
           "kind": "FunctionDef",
           "description": "Protect detected features locally, without tightening every planar face."
         }
@@ -14007,6 +14112,7 @@
         "expand",
         "export_maps",
         "feature.get",
+        "feature_regions.export",
         "find_contours",
         "float",
         "has_surface.astype",
@@ -14015,6 +14121,7 @@
         "index.reshape",
         "int",
         "json.dumps",
+        "json.loads",
         "len",
         "list",
         "max",
@@ -16936,6 +17043,71 @@
         "sys.path.insert",
         "unittest.main",
         "unittest.skipUnless"
+      ],
+      "environment_keys": []
+    },
+    {
+      "path": "long-lines/tools/test_feature_regions.py",
+      "lines": 71,
+      "sha256": "5a8ca75a65a665f5bdab95f7c62d8f2e0a7ea05769c75a25f9557eca2cc55e10",
+      "description": "Internal boundary evidence, appearance ambiguity and exact-frame exports.",
+      "imports": [
+        "from PIL import Image",
+        "from pathlib import Path",
+        "from propkit import feature_regions",
+        "from scipy import ndimage",
+        "import numpy as np",
+        "import tempfile",
+        "import unittest"
+      ],
+      "definitions": [
+        {
+          "name": "RegionTests",
+          "line": 11,
+          "kind": "ClassDef",
+          "description": ""
+        }
+      ],
+      "calls": [
+        "(a['boundaries'] & np.rot90(b['boundaries'], -1)).sum",
+        "(rim & ndimage.binary_dilation(result['boundaries'], iterations=3)).sum",
+        "Image.fromarray",
+        "Path",
+        "Path(report['overlay']).is_file",
+        "a['boundaries'].sum",
+        "a['boundaries'][~mask].any",
+        "all",
+        "feature_regions.export",
+        "feature_regions.trace",
+        "len",
+        "max",
+        "ndimage.binary_dilation",
+        "ndimage.binary_erosion",
+        "ndimage.gaussian_filter",
+        "np.concatenate",
+        "np.full",
+        "np.load",
+        "np.nonzero",
+        "np.ones",
+        "np.repeat",
+        "np.rot90",
+        "np.testing.assert_allclose",
+        "np.testing.assert_array_equal",
+        "np.uint8",
+        "outline.min",
+        "result['appearance_boundaries'].sum",
+        "result['boundaries'].any",
+        "rim.sum",
+        "self.assertEqual",
+        "self.assertFalse",
+        "self.assertGreater",
+        "self.assertTrue",
+        "self.fixture",
+        "shape.astype",
+        "tempfile.TemporaryDirectory",
+        "unittest.main",
+        "x.min",
+        "y.min"
       ],
       "environment_keys": []
     },

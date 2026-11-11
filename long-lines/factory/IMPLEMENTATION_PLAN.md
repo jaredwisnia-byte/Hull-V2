@@ -9,6 +9,16 @@ operations; no conversational LLM supplies per-object corrections.
 
 ### Joint-fit continuation and remaining acceptance (2026-11-11)
 
+Internal boundary tracing is now active before joint relief fitting. Persistent
+multiscale boundaries, chromatic ambiguity and watershed region masks are exported
+in the analysis-image frame. Boundaries guide continuous curvature regularization;
+they do not select a depth sign, instantiate cutting volumes or split physical parts.
+Five new boundary contracts pass, bringing the reconstruction suite to 55 tests.
+The leg front has 219 candidates including painted facets, so coherent carving
+grouping and cross-view validation remain explicit acceptance work.
+The region-guided leg produced 3,384 triangles and one component but failed 121/163
+depth checks. Different probes prevent treating this as a measured accuracy gain.
+
 Added continuous B-spline shape/light/reflectance alternation, conditional metric
 depth reports, adaptive NURBS-subset chart fitting and optional native STEP export.
 Final shared-field charts avoid exporting contradictory independent view surfaces.

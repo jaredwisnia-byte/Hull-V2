@@ -176,11 +176,13 @@ def depth_information(height, base, lighting, observed, material, testing, chrom
             'assumptions': 'fitted height shape; declared lighting/material model; supplied physical scale'}
 
 
-def fit_height(base, initial, basis, material, observed, training, lighting, mask, bound, iterations):
+def fit_height(base, initial, basis, material, observed, training, lighting, mask, bound, iterations, curvature_weight=None):
     feather = np.clip(ndimage.distance_transform_edt(mask) / 2, 0, 1)
     coefficients, _ = basis.project(initial, mask)
     coefficients = np.clip(coefficients, -bound, 0)
     count = max(float(training.sum()), 1.)
+    curvature_weight = np.ones(
+        mask.shape) if curvature_weight is None else curvature_weight
 
     def objective(values):
         height = basis.evaluate(values) * feather
@@ -190,8 +192,8 @@ def fit_height(base, initial, basis, material, observed, training, lighting, mas
         g = training * residual / robust / count
         laplace = adjoint(*gradients(height))
         loss = float(np.sum(training * robust) / count + .35 *
-                     np.mean(laplace**2) + .0001 * np.mean(height**2))
-        gradient = adjoint(g * dp, g * dq) + .7 * adjoint(*gradients(laplace)
+                     np.mean(curvature_weight * laplace**2) + .0001 * np.mean(height**2))
+        gradient = adjoint(g * dp, g * dq) + .7 * adjoint(*gradients(curvature_weight * laplace)
                                                           ) / height.size + .0002 * height / height.size
         return loss, basis.adjoint(gradient * feather).ravel()
     fit = optimize.minimize(objective, coefficients.ravel(), jac=True, method='L-BFGS-B',
@@ -236,6 +238,12 @@ def reconstruct(image, mask, base, max_depth_px, light=None, albedo=None, iterat
     nearest = ndimage.distance_transform_edt(
         ~reference_training, return_distances=False, return_indices=True)
     fitting_rgb = reference_rgb[nearest[0], nearest[1]]
+    from .feature_regions import trace
+    traced = trace(fitting_rgb, reference_mask)
+    # Preserve observed internal boundaries within one continuous surface;
+    # segmentation does not split/cap the mesh or prescribe a depth sign.
+    curvature_weight = 1 - .5 * \
+        ndimage.gaussian_filter(traced['relief_boundaries'].astype(float), 1)
     reference_observed = np.log(reference_rgb @ [.2126, .7152, .0722])
     reference_base = ndimage.zoom(base, np.asarray(
         finest_shape) / mask.shape, order=1) * finest_shape[1] / mask.shape[1]
@@ -289,7 +297,8 @@ def reconstruct(image, mask, base, max_depth_px, light=None, albedo=None, iterat
             basis = Basis(shape, control_shape(
                 shape, 12 if outer < 2 else 6, maximum=128))
             height, fit, coefficients = fit_height(current_base, height, basis, material, observed,
-                                                   training, lighting, current_mask, max_depth_px * pixel_scale, iterations)
+                                                   training, lighting, current_mask, max_depth_px * pixel_scale, iterations,
+                                                   ndimage.zoom(curvature_weight, np.asarray(shape) / finest_shape, order=1))
             if not fixed_light:
                 lighting, calibration = fit_light(
                     observed, material, current_base + height, training, lighting)
@@ -342,6 +351,14 @@ def reconstruct(image, mask, base, max_depth_px, light=None, albedo=None, iterat
               'depth_information': depth,
               'uncertainty': 'single-image lighting/albedo (reflectance) ambiguity; physical scale must be independently established'}
     if diagnostics is not None:
+        import json
+        diagnostics['feature_region_json'] = np.asarray(json.dumps(
+            {k: v for k, v in traced.items() if not isinstance(v, np.ndarray)}))
+        for key in ('labels', 'boundaries', 'relief_boundaries', 'appearance_boundaries'):
+            diagnostics['feature_' + key] = traced[key]
+        report['feature_regions'] = {'candidate_regions': len(traced['regions']),
+                                     'boundary_pixels': int(traced['boundaries'].sum()),
+                                     'geometry_interpretation': 'unresolved; boundaries guide regularization only'}
         diagnostics.update(mask=mask, coarse_height_px=base, hypothesis_height_px=result,
                            accepted_height_px=result if accepted else np.zeros_like(
                                result),

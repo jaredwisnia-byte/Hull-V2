@@ -16,7 +16,7 @@ It is not a claim that every algorithm or asset was executed or proven correct.
 Binary textures/GLBs were counted, not exhaustively visually audited.
 
 The accompanying [machine-readable inventory](long-lines/docs/CODEBASE_INVENTORY.json)
-records 427 source/configuration/documentation files, all 115 tracked Python files,
+records 429 source/configuration/documentation files, all 117 tracked Python files,
 36 Godot scripts, module descriptions, definitions/line numbers, imports, static
 calls, JSON shapes, documentation headings and content hashes. All Python files
 parsed successfully; JSON parsing found no errors. Static calls are not a resolved
@@ -27,6 +27,30 @@ runtime call graph. Counts include the currently staged new reconstruction tools
 ### Superseding reconstruction path (2026-11-11)
 
 #### Joint-fit and CAD continuation (supersedes lighting claims below)
+
+Internal feature tracing continuation: `feature_regions.py` now extracts persistent
+multiscale internal edges, records chromatic ambiguity, and isolates watershed
+candidate regions with integer masks and closed contour loops. The automatic joint
+solver runs it on training-only image data BEFORE fitting relief. Supported intensity
+boundaries modestly reduce curvature smoothing; the surface remains continuous and
+no regions are capped or assigned a recess/protrusion sign. `surface_detail.export_maps`
+saves exact analysis-frame masks, JSON contours and inspectable colour overlays.
+Green denotes an intensity boundary, not verified geometry; orange marks chromatic
+ambiguity. Labelled overlays show only the 32 largest candidates for readability.
+
+Controlled tests cover an arbitrary internal outline, flat rejection, colour
+ambiguity, foreground/rotation consistency, contour pixel coordinates and exports.
+The complete reconstruction suite passed 55 tests; Godot passed 39 unit/45 smoke
+checks. The holdout isolation regression still passes with tracing active.
+The leg front yielded 219 candidates: actual carving edges are visible, but painted
+facets also fragment the segmentation. These are NOT 219 recognized physical
+carvings. Coherent feature grouping, paint/shadow discrimination, multi-view boundary
+association, feature-depth validation and cutting-volume manufacture remain open.
+Do not describe this boundary stage as solved carving reconstruction.
+The resulting leg had 3,384 triangles, one component and failed 121/163 local
+depth checks, versus 127/164 previously. Probe locations changed; this is not a
+controlled demonstration of improved real carving accuracy. No cutting-volume
+feature manufacture was added in this step.
 
 `shading.reconstruct` now dispatches unknown-light fits to `joint_shading.py`.
 It alternates continuous B-spline height controls, bounded diffuse illumination
