@@ -641,3 +641,11 @@ library, ledger and REPORT are restored afterwards (git checkout + delete the ex
   Check zero-crossing drift before adopting sampled Boolean recomposition.
 - Reserve separate local-acceptance pixels so regional hypothesis selection
   cannot consume the final test pixels used to judge the full surface.
+- A reference failure should exhaust a bounded family of models/support regions
+  and record its attempts before stopping. Keep the validation limits unchanged.
+- Checkpoint identities must exclude final test intensities. A cache hit should
+  never convert a rejected/uncertain estimate into verified physical geometry.
+- Budget NEW work, not replayed checkpoints, or a resume loop can starve the same
+  deferred regions forever. Distinguish compute deferral from missing evidence.
+- Use retrieval to suggest attempts, not to transplant another object's geometry.
+  Keep final build failures separate from local numerical fitting experience.

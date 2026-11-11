@@ -1,9 +1,9 @@
 {
   "audit_date": "2026-11-11",
   "method": "Static parse and catalog; not proof of runtime correctness",
-  "local_head": "40bf873263a8f3fbb570eecb417fde23fece9168",
+  "local_head": "60a9d0533d8e35bee1ddad575714affa3f838c11",
   "canonical_dirac": "9d8df082dfbef7d5a508be3578d78d7c488561ab",
-  "tracked_files": 2879,
+  "tracked_files": 2885,
   "tracked_extensions": {
     ".yml": 3,
     "": 3,
@@ -16,7 +16,7 @@
     ".glb": 120,
     ".json": 164,
     ".jpg": 83,
-    ".py": 123,
+    ".py": 129,
     ".csv": 1,
     ".jsonl": 1,
     ".godot": 1,
@@ -29,8 +29,8 @@
     ".mjs": 1,
     ".css": 1
   },
-  "catalogued_files": 435,
-  "python_files": 123,
+  "catalogued_files": 441,
+  "python_files": 129,
   "parse_errors": [],
   "files": [
     {
@@ -41,8 +41,8 @@
     },
     {
       "path": ".github/workflows/hull-contracts.yml",
-      "lines": 41,
-      "sha256": "a30513f363202260229b10873a6f9c356fc427f4728c35a3f84f15332f2c2432",
+      "lines": 43,
+      "sha256": "edf55da1d7bc4980e0e77308edfc363dd1721b78963478147141cbf85a3560c6",
       "definitions": []
     },
     {
@@ -61,8 +61,8 @@
     },
     {
       "path": "KNOWLEDGE_FILE.md",
-      "lines": 584,
-      "sha256": "a6aa0e6e762b6d1f396b1599a93a4a4248b7659242df7bfaa41400207ab1e0b8",
+      "lines": 625,
+      "sha256": "cf6bb8b1136cf00c2b9c61f5fc4eeecfa59d7caa32012d9e7303818bfefea8e0",
       "headings": [
         "Hull knowledge file\r",
         "Purpose and evidence level\r",
@@ -175,10 +175,10 @@
     },
     {
       "path": "long-lines/assets/props/library.json",
-      "lines": 3228,
-      "sha256": "88dc38167da1be6487fc757649f2b51fed3c026cb27667cbed2d31f863a503ca",
+      "lines": 3283,
+      "sha256": "de67c04d2b218caadb64bf7e55845675ffea4db2d998ccb3ee4db76d798d414d",
       "root_type": "dict",
-      "item_count": 110,
+      "item_count": 111,
       "keys": [
         "access_panel_util",
         "armchair_vinyl",
@@ -970,8 +970,8 @@
     },
     {
       "path": "long-lines/docs/LESSONS.md",
-      "lines": 643,
-      "sha256": "499409b59a5b8430433b9efc39615e569b6a05d7981af48543612cc0032924fc",
+      "lines": 651,
+      "sha256": "d233adefd3ac6ef63152ff642e9769cd114781fe4db0cf25860a9ffedd31b648",
       "headings": [
         "Lessons learned\r",
         "Automatic parts-sheet intake (Hull V2)\r",
@@ -2272,8 +2272,8 @@
     },
     {
       "path": "long-lines/factory/IMPLEMENTATION_PLAN.md",
-      "lines": 283,
-      "sha256": "42769e5549136e546381997c864e4df5523f635a48f854c7be599f0c3af594e2",
+      "lines": 302,
+      "sha256": "8df773a3fc8d2e52bb3c2db95634a8b5de6980ab02e91487ae57ecc5f7579d69",
       "headings": [
         "Hull audit implementation and acceptance plan",
         "Implemented: shared stages and readable code",
@@ -6531,8 +6531,8 @@
     },
     {
       "path": "long-lines/tools/factory.py",
-      "lines": 724,
-      "sha256": "4463b6fa73b12a1fdadc3fd35c67e7d381938bfe4ce32bca31d06e98980e8e82",
+      "lines": 729,
+      "sha256": "176736a4de92ec922cc702e29845c2ef261dbdcf0f8b2c24a7dffae73af0c2cf",
       "description": "The asset factory: work orders in, game-ready assets out, every run measured.\n\nRun under Blender (all stations share one process):\n    blender -b --factory-startup -P tools/factory.py -- intake IMAGE NAME --category tv [--height 0.5]\n    blender -b --factory-startup -P tools/factory.py -- intake_sheet SHEET_SPEC.json --source-dir DIR\n    blender -b --factory-startup -P tools/factory.py -- intake_set MANIFEST.json [--category fridge] [--name N]\n    blender -b --factory-startup -P tools/factory.py -- build NAME... | --pending | --all-orders\n    blender -b --factory-startup -P tools/factory.py -- qa NAME... | --library\n    blender -b --factory-startup -P tools/factory.py -- report\n\nStations: intake (classify the reference, split views, size from the category table,\nwrite a work order) -> build (the order's production line) -> bake/export (propkit.bake)\n-> gate (propkit.qa against factory/standards.json, one codified automatic correction,\nthen flag for a person) -> ledger (factory/ledger.jsonl) -> report (factory/REPORT.md).\nWork orders live in factory/orders/<name>.json; lines read them, so a new asset needs\nno code. See factory/README.md.",
       "imports": [
         "from PIL import Image",
@@ -6555,6 +6555,7 @@
         "from propkit.hull_assembly import build as hull_parts_build",
         "from propkit.hull_assembly import paint_views",
         "from propkit.kit import build as kit_build",
+        "from propkit.memory_outcomes import record",
         "from propkit.pipeline import build_image",
         "from propkit.sheetset import build_set",
         "from propkit.simplification import screen_tolerance, decimate_to_error, refresh_normals",
@@ -6677,19 +6678,19 @@
         },
         {
           "name": "mount_of",
-          "line": 589,
+          "line": 594,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "gate",
-          "line": 601,
+          "line": 606,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "report",
-          "line": 619,
+          "line": 624,
           "kind": "FunctionDef",
           "description": ""
         }
@@ -6815,6 +6816,7 @@
         "order.get('hull', {}).get",
         "order.get('measured', {}).get",
         "order.get('measured', {}).get('relief', {}).get",
+        "order.get('measured', {}).get('relief', {}).get('views', {}).values",
         "order.setdefault",
         "order.setdefault('corrections', []).append",
         "order.update",
@@ -6841,8 +6843,10 @@
         "r.get",
         "r['metrics'].get",
         "reconcile.run",
+        "record",
         "reference_views",
         "refresh_normals",
+        "region.get",
         "relief.hook",
         "render_trim_preview",
         "report",
@@ -6864,6 +6868,7 @@
         "spec.get",
         "spec['items'].items",
         "split_views",
+        "str",
         "subprocess.run",
         "sum",
         "surface_detail.analyse",
@@ -6881,6 +6886,8 @@
         "totals.values",
         "traceback.print_exc",
         "tuple",
+        "view.get",
+        "view.get('regional_relief', {}).get",
         "views.get",
         "views.items",
         "zip",
@@ -7952,6 +7959,92 @@
         "xs[np.nonzero(col_lab == i)[0]].min",
         "ys[np.nonzero(col_lab == i)[1]].max",
         "ys[np.nonzero(col_lab == i)[1]].min"
+      ],
+      "environment_keys": []
+    },
+    {
+      "path": "long-lines/tools/propkit/build_memory.py",
+      "lines": 119,
+      "sha256": "6c811f8cb3f90210fb5cc92c08bf176b774ff03b0cd32c0df521dddcafbd9c9e",
+      "description": "Versioned reconstruction experience and resumable, integrity-checked patches.\n\nAn accepted numerical fit is never labelled verified physical geometry.",
+      "imports": [
+        "from pathlib import Path",
+        "import hashlib",
+        "import json",
+        "import numpy as np",
+        "import scipy",
+        "import sqlite3",
+        "import tempfile",
+        "import time"
+      ],
+      "definitions": [
+        {
+          "name": "fingerprint",
+          "line": 14,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "solver_version",
+          "line": 28,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "BuildMemory",
+          "line": 35,
+          "kind": "ClassDef",
+          "description": ""
+        }
+      ],
+      "calls": [
+        "(directory / name).read_text",
+        "Path",
+        "Path(path).resolve",
+        "ValueError",
+        "array.tobytes",
+        "data['height'].copy",
+        "data['material'].copy",
+        "dict",
+        "digest.hexdigest",
+        "digest.update",
+        "fingerprint",
+        "float",
+        "hashlib.sha256",
+        "hashlib.sha256(path.read_bytes()).hexdigest",
+        "hashlib.sha256(temporary.read_bytes()).hexdigest",
+        "isinstance",
+        "json.dumps",
+        "json.dumps(value, sort_keys=True, allow_nan=False).encode",
+        "json.loads",
+        "matches.append",
+        "np.asarray",
+        "np.ascontiguousarray",
+        "np.linalg.norm",
+        "np.load",
+        "np.savez_compressed",
+        "path.read_bytes",
+        "record.get",
+        "record.get('reference', {}).get",
+        "self.artifacts.mkdir",
+        "self.db.close",
+        "self.db.execute",
+        "self.db.execute('SELECT count(*) FROM events').fetchone",
+        "self.db.execute('SELECT record,artifact,digest FROM patches WHERE key=? AND version=?', (key, version)).fetchone",
+        "self.db.executescript",
+        "self.event",
+        "self.path.parent.mkdir",
+        "sorted",
+        "sqlite3.connect",
+        "statuses.get",
+        "statuses.values",
+        "str",
+        "str((array.shape, array.dtype.str)).encode",
+        "sum",
+        "tempfile.NamedTemporaryFile",
+        "temporary.read_bytes",
+        "temporary.replace",
+        "time.time"
       ],
       "environment_keys": []
     },
@@ -10415,7 +10508,7 @@
     {
       "path": "long-lines/tools/propkit/joint_shading.py",
       "lines": 386,
-      "sha256": "e19ec76e0c43a8a4d325b0bbe8362f3cdbf2102f71290c0846c69294d9cf6fbd",
+      "sha256": "25b4fa60e6ccc6858382f3ed5e6d9aeb05225126449bc5b8743fb6212b9bc484",
       "description": "Coupled shape, diffuse illumination and reflectance estimation.\n\nHeight is represented by continuous B-spline controls, not geometric templates.\nLighting and reflectance are nuisance variables with explicit gauges. Unknown\nsingle-image lighting/material cannot silently become calibrated metric depth.",
       "imports": [
         "from .feature_regions import trace",
@@ -11226,6 +11319,38 @@
       "environment_keys": []
     },
     {
+      "path": "long-lines/tools/propkit/memory_outcomes.py",
+      "lines": 20,
+      "sha256": "d73aff880a1fef41289ae20a714287277c681fa35cf7510d4cd6e61274a926ca",
+      "description": "Record final QA separately from local-fit experience and physical verification.",
+      "imports": [
+        "from .build_memory import BuildMemory, fingerprint",
+        "from contextlib import closing",
+        "from pathlib import Path",
+        "import sqlite3"
+      ],
+      "definitions": [
+        {
+          "name": "record",
+          "line": 8,
+          "kind": "FunctionDef",
+          "description": ""
+        }
+      ],
+      "calls": [
+        "BuildMemory",
+        "Path",
+        "Path(__file__).resolve",
+        "closing",
+        "context.get",
+        "fingerprint",
+        "memory.event",
+        "outcome.get",
+        "str"
+      ],
+      "environment_keys": []
+    },
+    {
       "path": "long-lines/tools/propkit/ownership.py",
       "lines": 181,
       "sha256": "af5719d9d27cd2d10c650efeda6561393e3db405725b63ac59964efdfd160c95",
@@ -11925,11 +12050,12 @@
     },
     {
       "path": "long-lines/tools/propkit/pipeline.py",
-      "lines": 121,
-      "sha256": "8c63886991a62a95648dd789e0c04e232ca3766579748eeda6dd7207e22f560d",
+      "lines": 125,
+      "sha256": "511a15a4d32f69afc4fcefb32cdf6d217796ba9d6b759b6c18d6cfff9a1722c7",
       "description": "Image-only orchestration. Geometry stays in the existing factory engines.\n\nCallbacks keep this station testable without importing or duplicating factory\ndispatch. All file freshness checks belong here, before packaging or reporting.",
       "imports": [
         "from . import engineering",
+        "from .memory_outcomes import record",
         "from .preflight import inspect_order",
         "from pathlib import Path",
         "from sheet_blobs import automatic",
@@ -11967,7 +12093,7 @@
         },
         {
           "name": "build_image",
-          "line": 98,
+          "line": 100,
           "kind": "FunctionDef",
           "description": "Persist a reviewable failure report even if a station raises unexpectedly."
         }
@@ -12005,6 +12131,7 @@
         "path.read_bytes",
         "path.stat",
         "print",
+        "record",
         "render_asset",
         "result.update",
         "result['qa'].get",
@@ -12707,6 +12834,78 @@
       "environment_keys": []
     },
     {
+      "path": "long-lines/tools/propkit/reference_fitting.py",
+      "lines": 95,
+      "sha256": "b533885d2fe4588c7e3d169364b4a2286e13dbf422148ccb8c36803ec1a06082",
+      "description": "Bounded reference retries, selected on reserved surrounding-surface samples.",
+      "imports": [
+        "from scipy import ndimage",
+        "from scipy.interpolate import RBFInterpolator",
+        "import numpy as np"
+      ],
+      "definitions": [
+        {
+          "name": "fit",
+          "line": 7,
+          "kind": "FunctionDef",
+          "description": ""
+        }
+      ],
+      "calls": [
+        "RBFInterpolator",
+        "ValueError",
+        "abs",
+        "attempts.append",
+        "base.copy",
+        "base[train].max",
+        "base[train].min",
+        "bool",
+        "check.sum",
+        "coef.tolist",
+        "design",
+        "dict",
+        "float",
+        "int",
+        "len",
+        "max",
+        "min",
+        "model",
+        "ndimage.distance_transform_edt",
+        "np.array",
+        "np.clip",
+        "np.indices",
+        "np.isfinite",
+        "np.isfinite(predicted).all",
+        "np.linalg.lstsq",
+        "np.linspace",
+        "np.linspace(0, len(xy) - 1, min(192, len(xy))).astype",
+        "np.maximum",
+        "np.median",
+        "np.minimum",
+        "np.nonzero",
+        "np.ones",
+        "np.percentile",
+        "np.ptp",
+        "np.sqrt",
+        "np.stack",
+        "origin.tolist",
+        "plans.sort",
+        "predicted.copy",
+        "predicted.max",
+        "predicted.min",
+        "prediction",
+        "preferred.index",
+        "range",
+        "record.copy",
+        "record.update",
+        "str",
+        "train.sum",
+        "xx.mean",
+        "yy.mean"
+      ],
+      "environment_keys": []
+    },
+    {
       "path": "long-lines/tools/propkit/region_grouping.py",
       "lines": 60,
       "sha256": "68fdad077a4e050d873187e5cce73f8b63f1639e6583747a5d48db70998ba432",
@@ -12764,12 +12963,16 @@
     },
     {
       "path": "long-lines/tools/propkit/regional_relief.py",
-      "lines": 127,
-      "sha256": "b2891d8967f978547c8b7c61b964e31abbde9ef9e8af1ed84caa21b6dfe2960b",
+      "lines": 150,
+      "sha256": "40e85949dc7a10afbd346b2c449dcb2444d270a1af6560ffc96caa48da48053d",
       "description": "Local reference surfaces and held-out paint/recess/raised comparisons.\n\nRegions propose computational patches, not physical parts. Geometry is fitted\nwith the existing spline solver; no dome, circle or channel template is selected.",
       "imports": [
+        "from .build_memory import BuildMemory",
+        "from .build_memory import fingerprint, solver_version",
         "from .joint_shading import fit_height, shade",
+        "from .reference_fitting import fit",
         "from .spline_surface import Basis, control_shape",
+        "from contextlib import closing",
         "from scipy import ndimage",
         "import numpy as np"
       ],
@@ -12778,63 +12981,67 @@
           "name": "reference_surface",
           "line": 10,
           "kind": "FunctionDef",
-          "description": "Robust quadratic reference from surrounding coarse-surface samples."
+          "description": "Try bounded reference models without treating extrapolation as depth truth."
+        },
+        {
+          "name": "_refine",
+          "line": 16,
+          "kind": "FunctionDef",
+          "description": "Choose on validation; accept on independent tests. Preserve deferred regions."
         },
         {
           "name": "refine",
-          "line": 46,
+          "line": 141,
           "kind": "FunctionDef",
-          "description": "Choose on validation; accept on independent tests. Preserve deferred regions."
+          "description": "Optional local experience storage; the geometry solver remains authoritative."
         }
       ],
       "calls": [
         "Basis",
-        "abs",
-        "base.copy",
+        "BuildMemory",
+        "_refine",
         "bool",
         "candidates.items",
-        "coef.tolist",
+        "closing",
         "control_shape",
+        "dict",
         "evaluate",
+        "fingerprint",
+        "fit",
+        "fit_attempts.append",
         "fit_height",
         "float",
         "initial.copy",
         "int",
-        "len",
         "local.sum",
         "material.copy",
         "max",
+        "memory.load",
+        "memory.save",
+        "memory.suggest",
+        "memory.summary",
         "min",
-        "ndimage.distance_transform_edt",
         "np.clip",
         "np.count_nonzero",
-        "np.indices",
-        "np.isfinite",
-        "np.linalg.lstsq",
         "np.log",
-        "np.maximum",
+        "np.log1p",
         "np.mean",
         "np.median",
         "np.minimum",
         "np.nonzero",
-        "np.ones",
-        "np.ones_like",
-        "np.percentile",
-        "np.ptp",
-        "np.sqrt",
-        "np.stack",
+        "np.std",
         "np.unique",
         "np.where",
         "np.zeros",
         "r.get",
-        "range",
         "record.update",
         "records.append",
         "reference_surface",
         "region.sum",
-        "ring.sum",
+        "save",
         "shade",
         "slice",
+        "solver_version",
         "sorted",
         "sum",
         "test.sum",
@@ -12842,10 +13049,8 @@
         "val.sum",
         "x.max",
         "x.min",
-        "xx.mean",
         "y.max",
-        "y.min",
-        "yy.mean"
+        "y.min"
       ],
       "environment_keys": []
     },
@@ -13481,7 +13686,7 @@
     {
       "path": "long-lines/tools/propkit/shading.py",
       "lines": 184,
-      "sha256": "f11ab954a4038bc5cb37f7e4d672a600a237b7550cce7884867ae1673c6cf656",
+      "sha256": "afaa3c69912ff7f571d034d4ab65d14d4f6a8231cb877c08f6aaa15c8178a516",
       "description": "Continuous shape-from-shading, with explicit reflectance and depth ambiguity.\n\nThe unknown is a height at every valid pixel, never a sphere/groove template.\nDifferentiating that height gives an integrable normal field. A coarse surface,\nmaterial-colour model, smoothness and silhouette boundaries constrain the inverse\nproblem; brightness itself is never treated as height.",
       "imports": [
         "from . import joint_shading",
@@ -14244,8 +14449,8 @@
     },
     {
       "path": "long-lines/tools/propkit/surface_detail.py",
-      "lines": 554,
-      "sha256": "338c6ba91d1d004c5958efbf5d629aefe25a1d81b40050971d88ed3f986ae86f",
+      "lines": 556,
+      "sha256": "31c236f50dca1e7a8b64731a7aae2a94d0ddd0cb0557356145ed346f37eec3e4",
       "description": "Object-independent surface evidence and continuous implicit detail.\n\nConstruction patches are computational regions of one physical surface. They\nnever become capped objects merely because width or curvature changes. All\nlengths passed to the field station are metres; source observations stay in\ntheir own image frame until sampling.",
       "imports": [
         "from . import feature_regions",
@@ -14303,37 +14508,37 @@
         },
         {
           "name": "curvature_probes",
-          "line": 121,
+          "line": 123,
           "kind": "FunctionDef",
           "description": "Sample continuous curvature for validation, without classifying its shape."
         },
         {
           "name": "_mapping",
-          "line": 159,
+          "line": 161,
           "kind": "FunctionDef",
           "description": "Image-normalized coordinates on the field's two transverse grid axes."
         },
         {
           "name": "apply_field",
-          "line": 178,
+          "line": 180,
           "kind": "FunctionDef",
           "description": "Local signed-field offsets on the visible skin, before isosurface extraction.\n\nUses metric root positions and directional derivatives. Opposite skins are\nprotected by compact depth support; computational patches share vertices\nin the one extracted surface, with no cut caps or region normal seams."
         },
         {
           "name": "capture_high",
-          "line": 394,
+          "line": 396,
           "kind": "FunctionDef",
           "description": "Keep implicit detail for normal baking before any budget simplification."
         },
         {
           "name": "export_maps",
-          "line": 420,
+          "line": 422,
           "kind": "FunctionDef",
           "description": "Save numerical topography and contour diagnostics, including rejections."
         },
         {
           "name": "protected_samples",
-          "line": 482,
+          "line": 484,
           "kind": "FunctionDef",
           "description": "Protect detected features locally, without tightening every planar face."
         }
@@ -14344,6 +14549,7 @@
         "Image.fromarray",
         "ImageDraw.Draw",
         "Path",
+        "Path(__file__).resolve",
         "Vector",
         "_mapping",
         "abs",
@@ -16556,6 +16762,43 @@
       "environment_keys": []
     },
     {
+      "path": "long-lines/tools/reconstruction_memory.py",
+      "lines": 23,
+      "sha256": "da05039116de1609f45df89426b74d37bc5d1717880726a0601e9e416224d68b",
+      "description": "Inspect local reconstruction experience; rerunning a build resumes deferred patches.",
+      "imports": [
+        "from contextlib import closing",
+        "from pathlib import Path",
+        "from propkit.build_memory import BuildMemory",
+        "import argparse",
+        "import json"
+      ],
+      "definitions": [
+        {
+          "name": "main",
+          "line": 9,
+          "kind": "FunctionDef",
+          "description": ""
+        }
+      ],
+      "calls": [
+        "BuildMemory",
+        "Path",
+        "Path(__file__).resolve",
+        "argparse.ArgumentParser",
+        "args.database.is_file",
+        "closing",
+        "json.dumps",
+        "main",
+        "memory.summary",
+        "parser.add_argument",
+        "parser.parse_args",
+        "print",
+        "str"
+      ],
+      "environment_keys": []
+    },
+    {
       "path": "long-lines/tools/render_turnaround.py",
       "lines": 147,
       "sha256": "5d756649c59853dcfb697fac3a1b244b81fbda0203660ee0dd9bc8d3949dd3fe",
@@ -17139,6 +17382,68 @@
         "unittest.main",
         "visual_match",
         "visual_regions"
+      ],
+      "environment_keys": []
+    },
+    {
+      "path": "long-lines/tools/test_build_memory.py",
+      "lines": 89,
+      "sha256": "31f464dab7bd7976e85d901d110b0a97cc49d78d72f71d43a994b38b3e8736cd",
+      "description": "Resume, provenance, cache isolation and corrupted-checkpoint recovery.",
+      "imports": [
+        "from contextlib import closing",
+        "from pathlib import Path",
+        "from propkit import regional_relief",
+        "from propkit.build_memory import BuildMemory",
+        "from propkit.memory_outcomes import record",
+        "from unittest.mock import patch",
+        "import json",
+        "import numpy as np",
+        "import tempfile",
+        "import test_regional_relief as fixtures",
+        "import unittest"
+      ],
+      "definitions": [
+        {
+          "name": "MemoryContracts",
+          "line": 13,
+          "kind": "ClassDef",
+          "description": ""
+        }
+      ],
+      "calls": [
+        "AssertionError",
+        "BuildMemory",
+        "Path",
+        "args[3].copy",
+        "args[4].copy",
+        "closing",
+        "fixtures.LocalReliefContracts",
+        "fixtures.LocalReliefContracts().fixture",
+        "json.loads",
+        "list",
+        "memory.artifacts.glob",
+        "memory.db.execute",
+        "memory.db.execute(\"SELECT detail FROM events WHERE state='build_outcome'\").fetchone",
+        "memory.db.execute('SELECT state FROM events ORDER BY id DESC LIMIT 1').fetchone",
+        "memory.load",
+        "memory.save",
+        "memory.suggest",
+        "memory.summary",
+        "next",
+        "np.indices",
+        "np.ones",
+        "np.testing.assert_array_equal",
+        "np.zeros",
+        "patch.object",
+        "path.write_bytes",
+        "record",
+        "regional_relief.refine",
+        "self.assertEqual",
+        "self.assertFalse",
+        "self.assertIsNone",
+        "tempfile.TemporaryDirectory",
+        "unittest.main"
       ],
       "environment_keys": []
     },
@@ -17902,6 +18207,44 @@
         "triangle_samples",
         "unittest.main",
         "uv"
+      ],
+      "environment_keys": []
+    },
+    {
+      "path": "long-lines/tools/test_reference_retries.py",
+      "lines": 50,
+      "sha256": "f23d148e0a1e7e7eb0bc378c2b296133946aec68bfbf17b07beb766854606502",
+      "description": "Adaptive surrounding-surface fits and bounded strategy attempts.",
+      "imports": [
+        "from propkit.reference_fitting import fit",
+        "import numpy as np",
+        "import unittest"
+      ],
+      "definitions": [
+        {
+          "name": "RetryContracts",
+          "line": 7,
+          "kind": "ClassDef",
+          "description": ""
+        }
+      ],
+      "calls": [
+        "any",
+        "fit",
+        "len",
+        "np.cos",
+        "np.ones",
+        "np.sin",
+        "np.testing.assert_allclose",
+        "np.zeros",
+        "self.assertEqual",
+        "self.assertFalse",
+        "self.assertIsNone",
+        "self.assertLess",
+        "self.assertLessEqual",
+        "self.assertTrue",
+        "self.fixture",
+        "unittest.main"
       ],
       "environment_keys": []
     },

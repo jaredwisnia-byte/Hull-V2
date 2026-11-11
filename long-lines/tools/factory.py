@@ -564,6 +564,11 @@ def build(order, samples=16):
     inferred = order.get('measured', {}).get('relief', {}).get('features', [])
     result['inference_warnings'] = [
         'surface depths are inverse-shading estimates; lighting and material ambiguity remain'] if inferred else []
+    if order.get('automatic_depth'):
+        from propkit.memory_outcomes import record
+        result['build_memory']=record(result,{'asset':order['name'],'source':str(order.get('source','')),
+            'region_keys':[region.get('memory_key') for view in order.get('measured',{}).get('relief',{}).get('views',{}).values()
+                           for region in view.get('regional_relief',{}).get('regions',[]) if region.get('memory_key')]})
     order["status"] = "shipped" if result["pass"] and not result['inference_warnings'] else "needs_person"
     order["attempts"] = attempt
     save_order(order)

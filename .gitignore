@@ -2,3 +2,4 @@ node_modules/
 .notify-state/
 long-lines/.godot/
 __pycache__/
+.hull-memory/

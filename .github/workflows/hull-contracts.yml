@@ -33,6 +33,8 @@ jobs:
           python long-lines/tools/test_joint_shading.py
           python long-lines/tools/test_feature_regions.py
           python long-lines/tools/test_regional_relief.py
+          python long-lines/tools/test_build_memory.py
+          python long-lines/tools/test_reference_retries.py
           python long-lines/tools/test_relief_construction.py
           python long-lines/tools/test_spline_surface.py
           python long-lines/tools/test_part_graph.py

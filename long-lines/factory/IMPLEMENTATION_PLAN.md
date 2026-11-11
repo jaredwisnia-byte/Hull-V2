@@ -9,6 +9,25 @@ operations; no conversational LLM supplies per-object corrections.
 
 ### Joint-fit continuation and remaining acceptance (2026-11-11)
 
+Memory/retry pass adds local versioned SQLite/NPZ patch checkpoints and separate
+final-build QA records. Plane/quadratic/thin-plate references over three support
+radii and two relief spline resolutions replace the single-attempt path. Retry
+selection never consumes final test intensities. Nearby reference strategies may
+reorder attempts; they do not bypass tests or constitute a trained ML predictor.
+Rerunning a build replays matching completed patches and advances compute-deferred
+regions. Unsupported geometry remains unverified; corrupt checkpoints are refitted.
+
+77 reconstruction tests and Godot's 39/45 checks pass. The real front continuation
+reused 24 and processed 24 more regions; a third call reused 48 and left three with
+insufficient independent data. First-batch leg: 3,260 triangles, 113/155 depth
+failures plus the normal-facing failure. Front relief remains rejected. The resume
+demonstration ran the solver stage only, not a new validated full export.
+
+Next acceptance work: coherent adaptive subdivision, patch-level acceptance across
+whole-view failures, detail retention during reduction/export, verified training
+data and a held-out trained strategy selector. Do not label memory retrieval as
+trained perception, or successful reconstruction tests as accepted physical depth.
+
 Current regional continuation adds shared original weak-crease merging with an
 active-path strong-boundary guard; surrounding-surface reference fits; held-out
 material/recess/raised spline comparisons; cross-view region depth checks; guarded

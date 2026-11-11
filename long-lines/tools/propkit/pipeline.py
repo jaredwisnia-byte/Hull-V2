@@ -90,6 +90,8 @@ def _build_image(image, output, *, build_order, library_root, render_script, exp
         else:
             result["export_failure"] = "Current build did not produce a fresh model"
     result["seconds"] = round(time.monotonic() - started, 2)
+    from .memory_outcomes import record
+    result['build_memory']=record(result,{'source':str(image),'station':'image_pipeline'})
     (destination / "result.json").write_text(json.dumps(result, indent=2))
     print("AUTOMATIC_RESULT", json.dumps(result))
     return result
@@ -116,6 +118,8 @@ def build_image(image, output, **stations):
             "error_log": str(log),
             "seconds": round(time.monotonic() - started, 2),
         }
+        from .memory_outcomes import record
+        result['build_memory']=record(result,{'source':str(source),'station':'image_pipeline_failure'})
         (destination / "result.json").write_text(json.dumps(result, indent=2))
         print("AUTOMATIC_RESULT", json.dumps(result))
         return result

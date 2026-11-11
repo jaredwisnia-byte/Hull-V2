@@ -16,7 +16,7 @@ It is not a claim that every algorithm or asset was executed or proven correct.
 Binary textures/GLBs were counted, not exhaustively visually audited.
 
 The accompanying [machine-readable inventory](long-lines/docs/CODEBASE_INVENTORY.json)
-records 435 source/configuration/documentation files, all 123 tracked Python files,
+records 441 source/configuration/documentation files, all 129 tracked Python files,
 36 Godot scripts, module descriptions, definitions/line numbers, imports, static
 calls, JSON shapes, documentation headings and content hashes. All Python files
 parsed successfully; JSON parsing found no errors. Static calls are not a resolved
@@ -27,6 +27,47 @@ runtime call graph. Counts include the currently staged new reconstruction tools
 ### Superseding reconstruction path (2026-11-11)
 
 #### Joint-fit and CAD continuation (supersedes lighting claims below)
+
+Memory/retry continuation: `build_memory.py` records versioned region checkpoints,
+fit attempts/statuses and numerical provenance in local `.hull-memory/` (gitignored).
+NPZ artifacts are written before transactional SQLite metadata, checked by SHA256,
+and loaded without pickle. Code and NumPy/SciPy versions invalidate incompatible
+checkpoints. Cached patches replay only in matching numerical contexts. The cache
+key includes training, selection and local acceptance data, but excludes final test
+intensities. Nothing self-certifies physical geometry. Corruption causes refitting.
+
+`reference_fitting.py` now retries plane, quadratic and thin-plate smooth references
+over three support radii (maximum nine attempts), checked against reserved surrounding
+geometry samples. Model complexity breaks ties. Thin-plate extrapolation remains
+uncertain inside regions even when surrounding samples pass. Region hypotheses get
+two bounded spline resolutions/initializations. A per-call budget counts NEW regions,
+including reference failures; completed checkpoints are skipped and deferred regions
+advance on later calls. Regions lacking independent pixels are distinguished from
+compute deferrals. Failed exhausted references remain uncertain; automatic coherent
+subdivision and a general retry scheduler are not implemented yet.
+
+Nearby recorded reference strategies may reorder attempts, never skip validation
+or transplant geometry into another input. This is retrieval, not a newly trained
+ML predictor. `memory_outcomes.py` records final build QA/failures separately from
+local reference/relief outcomes. Those final measurements are not used by the retry
+selector. `reconstruction_memory.py` reports local memory status. The database and
+patches are local experience, not committed training data or a portable model.
+
+Verification: 77 reconstruction tests, 39 Godot unit and 45 smoke checks passed.
+Tests cover deferral/resume, exact replay, corrupt artifacts, code-version misses,
+final-test isolation, provenance and retrieval without bypassing validation.
+The real front-view second batch resumed 24 regions and processed 24 more; the
+third resumed 48, processed zero new regions, and recorded three regions as lacking
+independent evidence. The first-batch model had 3,260 triangles, one component,
+113/155 depth failures plus the existing normal-facing failure. Its front still
+failed whole-view relief validation. Numerical regression improved search coverage;
+it did not demonstrate recovered front carvings. Resume-only trials produced
+diagnostic maps, not a new validated full model. All trials reused the original preset.
+
+Remaining combined-plan work: adaptive computational subdivision with continuity;
+patch-level recovery from a failed whole view; resolved-feature retention through
+reduction/export; verified synthetic/real training examples; a trained and held-out
+strategy selector; learned grouping/normal/relief proposals; safe individual cutters.
 
 Regional relief continuation: the original `relief._regions` already merged weak
 creases; earlier statements that Hull lacked any grouping were too broad. Its

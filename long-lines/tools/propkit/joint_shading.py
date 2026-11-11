@@ -209,7 +209,7 @@ def fit_height(base, initial, basis, material, observed, training, lighting, mas
                     'objective': float(fit.fun), 'controls': list(basis.controls)}, fit.x.reshape(basis.controls)
 
 
-def reconstruct(image, mask, base, max_depth_px, light=None, albedo=None, iterations=160, diagnostics=None):
+def reconstruct(image, mask, base, max_depth_px, light=None, albedo=None, iterations=160, diagnostics=None, memory_path=None):
     """Alternate shape/light/material fits through actual resolution refinement."""
     from PIL import Image
     mask = np.asarray(mask, bool)
@@ -334,7 +334,7 @@ def reconstruct(image, mask, base, max_depth_px, light=None, albedo=None, iterat
     from .regional_relief import refine
     height, material, regional_report = refine(current_base, height, material, observed, reference_observed,
                                                lighting, traced['labels'], current_mask, reference_training, reference_validation,
-                                               reference_acceptance, max_depth_px * pixel_scale)
+                                               reference_acceptance, max_depth_px * pixel_scale,memory_path=memory_path)
     before = flat_material + \
         np.log(shade(current_base, flat_light)) - reference_observed
     after = material + \

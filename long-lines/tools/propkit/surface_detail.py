@@ -97,8 +97,10 @@ def shading_view(root, view, plan, shape):
     # A physical safety bound is not a measured depth. The solver reports it.
     bound = min(plan['dimensions']) * .04 / pixel
     diagnostics = {}
+    from pathlib import Path
+    memory_path=Path(__file__).resolve().parents[3]/'.hull-memory'/'reconstruction.sqlite3'
     height, evidence = shading.reconstruct(
-        observation['image'], mask, base, bound, diagnostics=diagnostics)
+        observation['image'], mask, base, bound, diagnostics=diagnostics,memory_path=memory_path)
     diagnostics['metres_per_pixel'] = np.asarray(pixel)
     plan.setdefault('diagnostics', {})[view] = diagnostics
     plan['report']['views'][view] = evidence
