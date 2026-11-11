@@ -195,7 +195,7 @@ def recess_hook(front_path, depth_m, report, min_share=None):
     return hook
 
 
-def build_part(views, w, d, h, name, tmp, res=110, rough=0.5, cut_holes=True, defer=None, automatic_depth=False):
+def build_part(views, w, d, h, name, tmp, res=110, rough=0.5, cut_holes=True, defer=None, automatic_depth=False, cad_export=False):
     """A part from its own views at size w x d x h (m), painted from its own views. Background seen
     through its front view (split's h_ mask: a hook frame's opening, a dial's finger holes) is an opening
     along that view and is cut through; a part with only a front view is a plate of depth d."""
@@ -229,6 +229,8 @@ def build_part(views, w, d, h, name, tmp, res=110, rough=0.5, cut_holes=True, de
         observed = {k: v for k, v in views.items(
         ) if not v.endswith('_side.png')}
         plan = surface_detail.analyse(observed, (w, d, h), detail)
+        plan['cad_export'] = cad_export
+        plan['diagnostic_folder'] = os.path.join(tmp, name + '_surface')
         options = {'field_hook': lambda field: surface_detail.apply_field(field, plan),
                    'mesh_hook': lambda obj: surface_detail.capture_high(obj, plan),
                    'smooth_iters': 0, 'decimate': 1.}
@@ -647,6 +649,8 @@ def build_parts(order, src_root):
         report = rep.setdefault('surface_details', {}).setdefault('body', {})
         body_surface_plan = surface_detail.analyse(
             body_views, (bx1 - bx0, by1 - by0, bz1 - bz0), report, exclusions)
+        body_surface_plan['cad_export'] = bool(order.get('cad_export'))
+        body_surface_plan['diagnostic_folder'] = os.path.join(tmp, 'body_surface')
         field_options = {'field_hook': lambda field: surface_detail.apply_field(field, body_surface_plan),
                          'mesh_hook': lambda obj: surface_detail.capture_high(obj, body_surface_plan),
                          'smooth_iters': 0, 'decimate': 1.}
@@ -665,7 +669,7 @@ def build_parts(order, src_root):
             w, dd, h = x1 - x0, y1 - y0, z1 - z0
         obj, notes, rev = build_part(pv, w, dd, h, "%s_%s" % (
             order["name"], name), tmp, rough=order.get("rough", 0.5), defer=pending,
-            automatic_depth=bool(order.get('automatic_depth')))
+            automatic_depth=bool(order.get('automatic_depth')), cad_export=bool(order.get('cad_export')))
         obj["finish"] = list(finish_of(name, spec)[:2])
         if how == "side":
             obj.rotation_euler = (

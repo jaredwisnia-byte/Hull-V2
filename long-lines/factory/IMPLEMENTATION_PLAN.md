@@ -7,6 +7,41 @@ operations; no conversational LLM supplies per-object corrections.
 
 ## Implemented: shared stages and readable code
 
+### Joint-fit continuation and remaining acceptance (2026-11-11)
+
+Added continuous B-spline shape/light/reflectance alternation, conditional metric
+depth reports, adaptive NURBS-subset chart fitting and optional native STEP export.
+Final shared-field charts avoid exporting contradictory independent view surfaces.
+STEP outputs remain local open faces; assembly transforms, chart sewing and solid
+validation are not complete. The optional backend has a native readback/area test.
+
+Class-independent correspondence graphs now track physical identity and ambiguity
+across views, and export source-pixel masks in declared assembly-image frames.
+They enter work orders and unresolved identities require review. The legacy
+manufacturing grammar and texture projector have NOT been replaced by this graph.
+Next: bind confidently resolved physical IDs to manufacturing and source-camera
+ownership, then remove role grammar only after held-out assembly tests pass.
+
+Unverified shading depths no longer freeze reduction; their probes remain in
+exported-mesh QA. A first joint leg run used 3,384 triangles and one component but
+failed 122 local depth checks. This is a budget improvement, not accepted detail.
+The stricter follow-up with withheld intensities removed before pyramid creation
+must be assessed separately. A new regression ensures withheld test intensities
+cannot change the fitted geometry. No silhouette/depth/contact limits were relaxed.
+
+Follow-up observed: 3,644 triangles, one component, 127/164 local depth failures.
+All five CAD charts rejected approximation; none were exported as accepted STEP.
+The cached blender correspondence trial left all three candidate identities
+spatially underconstrained and required review. Two source ownership maps were
+exported, not consumed by the texture projector. These are unresolved acceptance
+results, not a successful universal reconstruction demonstration.
+
+Acceptance order: verify known-depth fixtures with varying reflectance/light;
+confirm interior relief across calibrated views; generalize camera/shape fitting;
+complete evidence-based physical ownership/manufacturing; apply ownership to final
+texture sources; adapt/merge CAD charts with quantified seams and closed-solid
+checks. Do not merge into main on the strength of controlled fixtures alone.
+
 ### Current acceptance work: continuous implicit detail (2026-11-11)
 
 The active automatic-depth path supersedes the capped construction-band prototype.

@@ -13,6 +13,47 @@ VIEWS = {'front': (1, False), 'back': (1, True),
          'top': (2, True), 'bottom': (2, False)}
 
 
+def visible_root(field, axis, reverse, span):
+    stack = np.moveaxis(field, axis, 0)
+    if reverse:
+        stack = stack[::-1]
+    occupied = stack < 0
+    first = occupied.argmax(0)
+    previous = np.maximum(0, first - 1)
+    a = np.take_along_axis(stack, previous[None], axis=0)[0]
+    b = np.take_along_axis(stack, first[None], axis=0)[0]
+    step = span / field.shape[axis]
+    fraction = np.clip(a / np.maximum(a - b, 1e-12), 0, 1)
+    root = np.where(first == 0, 0, (previous + fraction + .5) * step)
+    slope = np.where(first == 0, (stack[0] - stack[1]) / step, (a - b) / step)
+    last = len(stack) - 1 - occupied[::-1].argmax(0)
+    return root, slope, (last - first + 1) * step, occupied.any(0)
+
+
+def root_image(root, view, dimensions, field_shape, image_shape):
+    hh, ww = image_shape
+    yy, xx = np.mgrid[:hh, :ww]
+    u, v = (xx + .5) / ww, (yy + .5) / hh
+    if view in ('back', 'left'):
+        u = 1 - u
+    axis, _ = VIEWS[view]
+    transverse = [i for i in range(3) if i != axis]
+    other = v if view == 'bottom' else 1 - v
+    indices = np.array([u * field_shape[transverse[0]] - .5,
+                       other * field_shape[transverse[1]] - .5])
+    return ndimage.map_coordinates(root, indices, order=1, mode='nearest')
+
+
+def chart_frame(view, dimensions):
+    w, d, h = dimensions
+    return {'front': ([-w / 2, -d / 2, h], [w, 0, 0], [0, 0, -h], [0, -1, 0]),
+            'back': ([w / 2, d / 2, h], [-w, 0, 0], [0, 0, -h], [0, 1, 0]),
+            'right': ([w / 2, -d / 2, h], [0, d, 0], [0, 0, -h], [1, 0, 0]),
+            'left': ([-w / 2, d / 2, h], [0, -d, 0], [0, 0, -h], [-1, 0, 0]),
+            'top': ([-w / 2, d / 2, h], [w, 0, 0], [0, -d, 0], [0, 0, 1]),
+            'bottom': ([-w / 2, -d / 2, 0], [w, 0, 0], [0, d, 0], [0, 0, -1])}[view]
+
+
 def analyse(views, dimensions, report, exclusions=()):
     """Prepare pixel observations. Geometry is inferred after the base field exists.
 
@@ -24,7 +65,7 @@ def analyse(views, dimensions, report, exclusions=()):
     for view, path in views.items():
         if view not in VIEWS:
             continue
-        mask, image = silhouette(path)
+        mask, image, box = silhouette(path, with_box=True)
         valid = ndimage.binary_erosion(mask, iterations=3)
         for excluded_view, box in exclusions:
             if view == excluded_view:
@@ -33,7 +74,8 @@ def analyse(views, dimensions, report, exclusions=()):
                 valid[max(0, int(b * hh) - 2):min(hh, int(np.ceil(d * hh)) + 2),
                       max(0, int(a * ww) - 2):min(ww, int(np.ceil(c * ww)) + 2)] = False
         maps[view] = np.zeros(mask.shape)
-        inputs[view] = {'image': image, 'valid': valid}
+        inputs[view] = {'image': image, 'valid': valid,
+                        'path': path, 'crop_box': box}
     report.update(features=[], views={}, method='continuous pixel shading/height inference',
                   physical_separation='physical ownership only; shading contours do not create parts')
     return {'maps': maps, 'fine_maps': {}, 'shading_inputs': inputs,
@@ -46,16 +88,9 @@ def shading_view(root, view, plan, shape):
     observation = plan['shading_inputs'][view]
     mask = observation['valid']
     hh, ww = mask.shape
-    yy, xx = np.mgrid[:hh, :ww]
-    u, v = (xx + .5) / ww, (yy + .5) / hh
-    if view in ('back', 'left'):
-        u = 1 - u
     axis, _ = VIEWS[view]
     transverse = [i for i in range(3) if i != axis]
-    other = v if view == 'bottom' else 1 - v
-    indices = np.array([u * shape[transverse[0]] - .5,
-                        other * shape[transverse[1]] - .5])
-    depth = ndimage.map_coordinates(root, indices, order=1, mode='nearest')
+    depth = root_image(root, view, plan['dimensions'], shape, mask.shape)
     span = plan['dimensions'][transverse[0]]
     pixel = span / ww
     base = -depth / pixel
@@ -68,7 +103,18 @@ def shading_view(root, view, plan, shape):
     plan.setdefault('diagnostics', {})[view] = diagnostics
     plan['report']['views'][view] = evidence
     print('SHADING_VIEW', view, evidence, flush=True)
+    before = len(plan['report']['features'])
     curvature_probes(height, mask, view, plan['report'])
+    from .depth_measurement import estimate
+    for feature in plan['report']['features'][before:]:
+        for probe in feature['probes']:
+            center = np.asarray(probe['center_px'])
+            normal = np.asarray(probe['normal_px'])
+            span = probe['sample_span_px']
+            probe['depth_estimate'] = estimate(height,
+                                               [center, center - normal * span,
+                                                   center + normal * span], pixel, evidence,
+                                               scale_status=plan.get('physical_scale_status', 'estimated'))
     return height * pixel
 
 
@@ -242,6 +288,7 @@ def apply_field(field, plan):
                 plan['report']['probes'].append({'id': feature['id'] + f'_{number}', 'kind': feature['kind'],
                                                  'view': view, 'axis': axis, 'outward': 1 if reverse else -1,
                                                  'anchors_m': anchors, 'target_offsets_m': targets,
+                                                 'depth_estimate': probe.get('depth_estimate'),
                                                  'tolerance_m': max(spacing * .15, abs(targets[0] - np.mean(targets[1:])) * .2)})
         observations.append({'axis': axis, 'reverse': reverse, 'height': sampled, 'root': root,
                              'slope': slope, 'facing': np.clip(raw_slope, 0, 1), 'spacing': spacing})
@@ -316,6 +363,15 @@ def apply_field(field, plan):
         candidate = field
     plan['report']['topology'] = {'baseline_solid_components': int(baseline_components),
                                   'detail_scale': scale, 'method': 'protect thin cores; back off conflicting relief before extraction'}
+    for view, values in plan.get('diagnostics', {}).items():
+        if 'mask' not in values:
+            continue
+        axis, reverse = VIEWS[view]
+        final_root, _, _, _ = visible_root(
+            candidate, axis, reverse, dimensions[axis])
+        pixel = float(values['metres_per_pixel'])
+        values['final_shared_height_px'] = -root_image(
+            final_root, view, dimensions, candidate.shape, values['mask'].shape) / pixel
     return candidate
 
 
@@ -371,6 +427,30 @@ def export_maps(plan, directory):
                     draw.line([(float(x), float(y))
                               for y, x in contour], fill=(30, 30, 30))
         canvas.save(directory / (view + '-hypothesis-contours.png'))
+        if plan.get('cad_export') and 'final_shared_height_px' in values:
+            from . import spline_surface, cad_export
+            import json
+            pixel = float(values['metres_per_pixel'])
+            fit = spline_surface.fit_height(
+                values['final_shared_height_px'] * pixel, mask, max(pixel * .5, 1e-5))
+            document = spline_surface.document(
+                fit, *chart_frame(view, plan['dimensions']))
+            document['source_uncertainty'] = plan['report']['views'].get(
+                view, {}).get('absolute_depth_status', 'unverified')
+            path = directory / (view + '.nurbs.json')
+            path.write_text(json.dumps(document, indent=2))
+            result = dict(fit['report'], document=str(
+                path), closed_solid=False)
+            result['native_backend_available'] = cad_export.available()
+            if not result['native_backend_available']:
+                result['step_failure'] = 'Optional Open CASCADE backend unavailable; numerical chart only'
+            if fit['report']['accepted'] and result['native_backend_available']:
+                try:
+                    result['step'] = cad_export.export_step(
+                        [document], directory / (view + '.step'))
+                except (ValueError, RuntimeError) as error:
+                    result['step_failure'] = str(error)
+            plan['report'].setdefault('cad_surfaces', {})[view] = result
     plan['report']['diagnostic_folder'] = str(directory)
 
 
@@ -396,13 +476,22 @@ def protected_samples(obj, report, geometry_tolerance=None):
     conflicts = {probe['id']
                  for probe in baseline['probes'] if not probe['retained']}
     report['unmet_before_reduction'] = sorted(conflicts)
+    # A single image with unknown lighting/material cannot establish absolute
+    # relief. Keep its probes in final QA, but do not freeze millions of faces
+    # to an uncalibrated hypothesis. Legacy/calibrated probes remain protected.
+    uncertain = {probe['id'] for probe in report.get('probes', [])
+                 if probe.get('depth_estimate') is not None
+                 and not probe['depth_estimate'].get('absolute_depth_supported_under_model', False)}
+    report['unverified_depth_probes'] = sorted(uncertain)
+    report['depth_review_required'] = bool(uncertain)
+    excluded = conflicts | uncertain
     reach = max(obj.dimensions) * 2
     points = []
     tolerances = []
     identifiers = []
     supports = []
     for probe in report.get('probes', []):
-        if probe['id'] in conflicts:
+        if probe['id'] in excluded:
             continue
         direction = np.zeros(3)
         direction[probe['axis']] = probe['outward']
@@ -418,7 +507,7 @@ def protected_samples(obj, report, geometry_tolerance=None):
     report['protected_samples'] = len(points)
     reference = []
     for probe in report.get('probes', []):
-        if probe['id'] in conflicts:
+        if probe['id'] in excluded:
             continue
         direction = np.zeros(3)
         direction[probe['axis']] = probe['outward']
@@ -435,5 +524,5 @@ def protected_samples(obj, report, geometry_tolerance=None):
             'support_m': np.asarray(supports),
             # Conflicting input fits remain in final QA. They cannot be repaired
             # by retaining millions of triangles during reduction.
-            'source_report': {'probes': [probe for probe in report.get('probes', []) if probe['id'] not in conflicts]},
+            'source_report': {'probes': [probe for probe in report.get('probes', []) if probe['id'] not in excluded]},
             'contrast_report': {'probes': reference}} if points else None

@@ -140,11 +140,11 @@ def intake(image, name, category, height=None, notes=""):
     return order
 
 
-def automatic_build(image, output):
+def automatic_build(image, output, cad_export=False):
     """Compatibility entry point for the image-only orchestration station."""
     from propkit.pipeline import build_image
     return build_image(
-        image, output, build_order=build, library_root=LIB,
+        image, output, cad_export=cad_export, build_order=build, library_root=LIB,
         render_script=os.path.join(HERE, "render_turnaround.py"),
         export_model=bake.export_textured,
     )
@@ -330,6 +330,7 @@ def run_line(order):
                 from propkit import surface_detail
                 detail_plan = surface_detail.analyse(
                     views, (W_, D_, height), rrep)
+                detail_plan['cad_export'] = bool(order.get('cad_export'))
                 detail_plan['diagnostic_folder'] = os.path.join(
                     ROOT, 'docs', 'inference', order['name'], 'shading')
                 hp['field_hook'] = lambda field: surface_detail.apply_field(
@@ -687,7 +688,7 @@ if __name__ == "__main__":
     a = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     cmd, rest = (a[0], a[1:]) if a else ("report", [])
     if cmd == 'auto':
-        result = automatic_build(rest[0], rest[rest.index('--output') + 1])
+        result = automatic_build(rest[0], rest[rest.index('--output') + 1], cad_export='--cad' in rest)
         sys.exit(0 if result['status'] == 'complete' else 2)
     elif cmd == "intake":
         kw = {}

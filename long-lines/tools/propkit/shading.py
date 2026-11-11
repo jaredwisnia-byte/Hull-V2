@@ -79,13 +79,17 @@ def appearance(image, mask, base, light):
     return observed, material, confidence
 
 
-def reconstruct(image, mask, base, max_depth_px, light=None, iterations=150, diagnostics=None):
+def reconstruct(image, mask, base, max_depth_px, light=None, iterations=150, diagnostics=None, engine='joint'):
     """Estimate a continuous, silhouette-bounded height correction in pixels.
 
     A competing material-only prediction and held-out pixels keep fitting error
     separate from evidence of generalization. Depth scale/light gauge remain
     priors when the image does not determine them.
     """
+    if light is None and engine == 'joint':
+        from . import joint_shading
+        return joint_shading.reconstruct(image,mask,base,max_depth_px,
+            iterations=iterations,diagnostics=diagnostics)
     mask = np.asarray(mask, bool)
     base = np.asarray(base, float)
     if mask.shape != base.shape or mask.sum() < 25:

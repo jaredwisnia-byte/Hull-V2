@@ -160,6 +160,21 @@ class SurfaceMeshContracts(unittest.TestCase):
         self.assertLessEqual(triangles, 60)
         self.assertLessEqual(error, .0005)
 
+    def test_uncalibrated_depth_stays_in_qa_without_freezing_reduction(self):
+        bpy.ops.mesh.primitive_cube_add(size=1, location=(0, 0, .5))
+        obj = bpy.context.object
+        bpy.ops.object.transform_apply(
+            location=True, rotation=False, scale=False)
+        probe = {'id': 'uncertain', 'view': 'front', 'kind': 'channel', 'axis': 1, 'outward': -1,
+                 'anchors_m': [[0, -.5, .5], [-.1, -.5, .5], [.1, -.5, .5]],
+                 'target_offsets_m': [-.01, 0, 0], 'tolerance_m': .001,
+                 'depth_estimate': {'absolute_depth_supported_under_model': False}}
+        report = {'probes': [probe]}
+        self.assertIsNone(surface_detail.protected_samples(obj, report))
+        self.assertEqual(report['probes'], [probe])
+        self.assertTrue(report['depth_review_required'])
+        self.assertEqual(report['unverified_depth_probes'], ['uncertain'])
+
     def test_complete_dense_source_tracks_translated_and_rotated_parts(self):
         from propkit.bake import combine_high_sources
         parts = []

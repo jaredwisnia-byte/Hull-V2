@@ -16,7 +16,7 @@ It is not a claim that every algorithm or asset was executed or proven correct.
 Binary textures/GLBs were counted, not exhaustively visually audited.
 
 The accompanying [machine-readable inventory](long-lines/docs/CODEBASE_INVENTORY.json)
-records 418 source/configuration/documentation files, all 106 tracked Python files,
+records 427 source/configuration/documentation files, all 115 tracked Python files,
 36 Godot scripts, module descriptions, definitions/line numbers, imports, static
 calls, JSON shapes, documentation headings and content hashes. All Python files
 parsed successfully; JSON parsing found no errors. Static calls are not a resolved
@@ -25,6 +25,72 @@ runtime call graph. Counts include the currently staged new reconstruction tools
 ## Current implementation update (2026-11-10)
 
 ### Superseding reconstruction path (2026-11-11)
+
+#### Joint-fit and CAD continuation (supersedes lighting claims below)
+
+`shading.reconstruct` now dispatches unknown-light fits to `joint_shading.py`.
+It alternates continuous B-spline height controls, bounded diffuse illumination
+and edge-aware reflectance. Known-light legacy calls retain their calibrated
+solver. Lighting rank/condition, conditional depth intervals and calibration
+status are recorded. Unknown light/material/scale is never called an absolute
+depth measurement. `depth_measurement.py` reports signed metric contrasts with
+those assumptions. A fitted light is still not independently calibrated light.
+
+The joint solver removes validation/test intensities before constructing its
+image pyramid. Validation selects candidates; independent test pixels judge the
+result. A regression test changes only test intensities and verifies identical
+fitted geometry through multiple pyramid levels. Optimizer convergence refers
+to the selected height subproblem, not proof of globally converged inverse rendering.
+
+`spline_surface.py` fits adaptive trimmed tensor B-spline charts with measured
+approximation error and explicit 3D control nets. `cad_export.py` optionally uses
+Open CASCADE (`requirements-cad.txt`) to export kernel-checked STEP surface faces,
+including trim holes. Automatic builds accept `--cad` / `cad_export=True`.
+Charts use the FINAL shared signed-field surface, not independent view hypotheses.
+These are part-local open surfaces, not assembled, sewn watertight CAD solids.
+Native STEP readback tests verify area, holes and metre-to-millimetre conversion.
+No claim of universal CAD/NURBS solid reconstruction is justified.
+
+`part_graph.py` associates existing dense correspondences without an object-role
+vocabulary. It handles repeated instances, anonymous drawings, assignment ambiguity
+and per-pixel ownership conflicts. `sheet_blobs.automatic` now exports exact-frame
+warped companion ownership maps and includes the graph in work orders. Unresolved
+identity propagates to pipeline review. IMPORTANT: the old `vision_order.generate`
+manufacturing grammar still restricts supported roles. The new source ownership
+maps are evidence exports; they do NOT yet gate final texture projection. Existing
+native geometric ownership remains active. Do not claim universal recognition or
+ghost-free texture ownership is implemented.
+
+Uncalibrated shading probes remain in final QA but no longer impose exact local
+depth constraints on mesh simplification. This prevents an uncertain hypothesis
+from locking over a million triangles. They are explicitly listed under
+`unverified_depth_probes` and `depth_review_required`; missing depths still fail.
+The first joint leg trial reached 3,384 triangles, one component, but FAILED 122
+of 157 local depth checks. Its clay render still lacks the painted ornament.
+This was before the stricter pyramid holdout correction; subsequent results must
+be recorded separately. The run reused the exact original preset by source SHA;
+it was not a fresh image-only intake demonstration.
+
+The stricter follow-up produced 3,644 triangles, one component and FAILED 127 of
+164 local depth probes. All five whole-view CAD fits exceeded their approximation
+limits (some solves hit their iteration cap); no STEP surface was falsely accepted.
+They need valid chart-domain segmentation/refinement, then seam validation.
+Cached blender correspondences produced three candidate nodes (two incompatible
+jar hypotheses and one lid), only two bounded axes each, three ambiguous matches,
+100 rejected observations and two source ownership maps. It correctly requires
+review; this does not establish successful part recognition. Association support
+scores are heuristics, not calibrated probabilities.
+
+Verification for this continuation: 50 Blender/Python reconstruction tests passed,
+including native STEP round-trip, multi-resolution holdout isolation and uncertain
+depth reduction policy; 39 Godot unit checks and 45 smoke checks passed. After the
+final association-support score adjustment, all six graph tests passed again.
+
+Remaining acceptance: calibrated/confirmed multi-view groove depth; joint camera
+and shape fitting; complete ornaments in geometry; automatic general-purpose
+physical decomposition and manufacturing; source ownership applied in the exact
+texture camera frame; stitched closed CAD with seam/solid validation. Do not
+describe successful controlled fixtures as completion of these remaining tasks.
 
 Read this section before the historical implementation notes below. Automatic-depth
 builds now use `surface_detail.py` with `implicit.py`, through the existing hull

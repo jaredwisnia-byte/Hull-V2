@@ -182,8 +182,14 @@ def automatic(sheet, output):
             'limitations':['Caption vocabulary supplies semantic part names.',
                            'Absolute size is inferred from physical priors and is not a measurement.',
                            'Hidden-face orientation uses recorded geometric hypotheses.']}
+    from propkit.part_graph import from_report, export_ownership
+    report['physical_part_graph']=from_report(report)
+    report['source_pixel_ownership']=export_ownership(report,image,background,output/'ownership')
     try:
         order=generate(report,image,background,output/'manufacture')
+        order['physical_part_graph']=report['physical_part_graph']
+        order['source_pixel_ownership']=report['source_pixel_ownership']
+        (output/'manufacture'/'work-order.json').write_text(json.dumps(order,indent=2))
         report['work_order']=str(output/'manufacture'/'work-order.json')
         report['status']='ready_to_build'
         evidence=json.loads((output/'manufacture'/'vision-report.json').read_text())

@@ -1,9 +1,9 @@
 {
   "audit_date": "2026-11-11",
   "method": "Static parse and catalog; not proof of runtime correctness",
-  "local_head": "8efaca42525cf00ab714ba6a89be195f82e8c927",
+  "local_head": "267c0ac0a8e2667a0d9f4fd8bb74d56b5f6f7ab9",
   "canonical_dirac": "9d8df082dfbef7d5a508be3578d78d7c488561ab",
-  "tracked_files": 2861,
+  "tracked_files": 2871,
   "tracked_extensions": {
     ".yml": 3,
     "": 3,
@@ -16,7 +16,7 @@
     ".glb": 120,
     ".json": 164,
     ".jpg": 83,
-    ".py": 106,
+    ".py": 115,
     ".csv": 1,
     ".jsonl": 1,
     ".godot": 1,
@@ -25,12 +25,12 @@
     ".uid": 39,
     ".gdshader": 3,
     ".webmanifest": 1,
-    ".txt": 1,
+    ".txt": 2,
     ".mjs": 1,
     ".css": 1
   },
-  "catalogued_files": 418,
-  "python_files": 106,
+  "catalogued_files": 427,
+  "python_files": 115,
   "parse_errors": [],
   "files": [
     {
@@ -41,8 +41,8 @@
     },
     {
       "path": ".github/workflows/hull-contracts.yml",
-      "lines": 34,
-      "sha256": "1b181fddc9b1bab8f548e65e45fa38a34217c11872d4c28c16ee3e0bc73e2cb5",
+      "lines": 38,
+      "sha256": "60e56265dff8ff1b47bf9b06e1d3752555432f332f2a84d784efd0317b0a60ad",
       "definitions": []
     },
     {
@@ -61,13 +61,14 @@
     },
     {
       "path": "KNOWLEDGE_FILE.md",
-      "lines": 451,
-      "sha256": "9d429360ee11dcf2f7cd0fb6a6c0d00bec681ea0104ed98542f042f3d13c885c",
+      "lines": 517,
+      "sha256": "e8dc509ccbc1129ace3cec4f51237612ab6a502ddf5f4a6b46df6d4a7cd3dbec",
       "headings": [
         "Hull knowledge file\r",
         "Purpose and evidence level\r",
         "Current implementation update (2026-11-10)\r",
         "Superseding reconstruction path (2026-11-11)\r",
+        "Joint-fit and CAD continuation (supersedes lighting claims below)\r",
         "Profile, feature and ownership implementation (2026-11-11)\r",
         "Repository identity and boundaries\r",
         "High-level data flow and entry points\r",
@@ -174,10 +175,10 @@
     },
     {
       "path": "long-lines/assets/props/library.json",
-      "lines": 3063,
-      "sha256": "0aeb684fff78a2ad945587011e3cd41f8618b65cab578003933d71428027fefd",
+      "lines": 3118,
+      "sha256": "a11bc8cb9cee0191f6a7bdc40dc2cfff0e18dd19f0d6f360dd8c429cf674bc7f",
       "root_type": "dict",
-      "item_count": 107,
+      "item_count": 108,
       "keys": [
         "access_panel_util",
         "armchair_vinyl",
@@ -969,8 +970,8 @@
     },
     {
       "path": "long-lines/docs/LESSONS.md",
-      "lines": 622,
-      "sha256": "070c8c3550f7ab700e6e8ec3a60cac246a8cb0d17341ca10109d9c27f806b5a7",
+      "lines": 630,
+      "sha256": "0997538ca12883f65a22e79615c7c70862777a731faff5b38bc630422b820fab",
       "headings": [
         "Lessons learned\r",
         "Automatic parts-sheet intake (Hull V2)\r",
@@ -2271,11 +2272,12 @@
     },
     {
       "path": "long-lines/factory/IMPLEMENTATION_PLAN.md",
-      "lines": 219,
-      "sha256": "5942dbe60d7fac887ee93b579516e06c8b9e669f96cd60690c4234ec8d4ab219",
+      "lines": 254,
+      "sha256": "ee53643da82e9eafe3470f999557a0f729af078c8369303f9b45f45e1515b646",
       "headings": [
         "Hull audit implementation and acceptance plan",
         "Implemented: shared stages and readable code",
+        "Joint-fit continuation and remaining acceptance (2026-11-11)",
         "Current acceptance work: continuous implicit detail (2026-11-11)",
         "Implemented: local depth decisions and honest validation",
         "Implemented: section and cutaway inspection",
@@ -6529,8 +6531,8 @@
     },
     {
       "path": "long-lines/tools/factory.py",
-      "lines": 723,
-      "sha256": "d1817a4e0c6eb5a4df1d8aa7dc4db60613eb4b09439ff46d8f586c18a289f4bb",
+      "lines": 724,
+      "sha256": "4463b6fa73b12a1fdadc3fd35c67e7d381938bfe4ce32bca31d06e98980e8e82",
       "description": "The asset factory: work orders in, game-ready assets out, every run measured.\n\nRun under Blender (all stations share one process):\n    blender -b --factory-startup -P tools/factory.py -- intake IMAGE NAME --category tv [--height 0.5]\n    blender -b --factory-startup -P tools/factory.py -- intake_sheet SHEET_SPEC.json --source-dir DIR\n    blender -b --factory-startup -P tools/factory.py -- intake_set MANIFEST.json [--category fridge] [--name N]\n    blender -b --factory-startup -P tools/factory.py -- build NAME... | --pending | --all-orders\n    blender -b --factory-startup -P tools/factory.py -- qa NAME... | --library\n    blender -b --factory-startup -P tools/factory.py -- report\n\nStations: intake (classify the reference, split views, size from the category table,\nwrite a work order) -> build (the order's production line) -> bake/export (propkit.bake)\n-> gate (propkit.qa against factory/standards.json, one codified automatic correction,\nthen flag for a person) -> ledger (factory/ledger.jsonl) -> report (factory/REPORT.md).\nWork orders live in factory/orders/<name>.json; lines read them, so a new asset needs\nno code. See factory/README.md.",
       "imports": [
         "from PIL import Image",
@@ -6651,43 +6653,43 @@
         },
         {
           "name": "correct",
-          "line": 461,
+          "line": 462,
           "kind": "FunctionDef",
           "description": "Codified corrections for known failure modes (docs/LESSONS.md). Returns True if\nthe order was changed and is worth one more attempt."
         },
         {
           "name": "tex_for",
-          "line": 498,
+          "line": 499,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "render_trim_preview",
-          "line": 505,
+          "line": 506,
           "kind": "FunctionDef",
           "description": "Always make a PNG turnaround of a shipped extruded asset. No source sheets."
         },
         {
           "name": "build",
-          "line": 522,
+          "line": 523,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "mount_of",
-          "line": 588,
+          "line": 589,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "gate",
-          "line": 600,
+          "line": 601,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "report",
-          "line": 618,
+          "line": 619,
           "kind": "FunctionDef",
           "description": ""
         }
@@ -7954,6 +7956,142 @@
       "environment_keys": []
     },
     {
+      "path": "long-lines/tools/propkit/cad_export.py",
+      "lines": 139,
+      "sha256": "63056f3e27903ebbe104299e6448996d31cdf8e55d7e917b41feaaa292a222e1",
+      "description": "Native Open CASCADE trimmed-surface export; no fabricated watertight solids.",
+      "imports": [
+        "from OCP.BRep import BRep_Builder",
+        "from OCP.BRepBuilderAPI import BRepBuilderAPI_MakeEdge, BRepBuilderAPI_MakeWire",
+        "from OCP.BRepBuilderAPI import BRepBuilderAPI_MakeFace",
+        "from OCP.BRepCheck import BRepCheck_Analyzer",
+        "from OCP.BRepLib import BRepLib",
+        "from OCP.Geom import Geom_BSplineSurface",
+        "from OCP.Geom2d import Geom2d_BSplineCurve",
+        "from OCP.IFSelect import IFSelect_RetDone",
+        "from OCP.STEPControl import STEPControl_Writer, STEPControl_AsIs",
+        "from OCP.TopoDS import TopoDS_Compound",
+        "from OCP.collections import Array1_gp_Pnt2d, Array1_double, Array1_int",
+        "from OCP.collections import Array2_gp_Pnt, Array2_double, Array1_double, Array1_int",
+        "from OCP.gp import gp_Pnt",
+        "from OCP.gp import gp_Pnt2d",
+        "from pathlib import Path",
+        "import OCP",
+        "import numpy as np"
+      ],
+      "definitions": [
+        {
+          "name": "available",
+          "line": 5,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "contains",
+          "line": 13,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "loop_groups",
+          "line": 21,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "native_surface",
+          "line": 29,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "wire_on_surface",
+          "line": 65,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "export_step",
+          "line": 98,
+          "kind": "FunctionDef",
+          "description": "Export validated trimmed NURBS faces. Open charts remain open charts."
+        }
+      ],
+      "calls": [
+        "Array1_double",
+        "Array1_gp_Pnt2d",
+        "Array1_int",
+        "Array2_double",
+        "Array2_gp_Pnt",
+        "BRepBuilderAPI_MakeEdge",
+        "BRepBuilderAPI_MakeFace",
+        "BRepBuilderAPI_MakeWire",
+        "BRepCheck_Analyzer",
+        "BRepCheck_Analyzer(shape).IsValid",
+        "BRepLib.BuildCurves3d_s",
+        "BRep_Builder",
+        "Geom2d_BSplineCurve",
+        "Geom_BSplineSurface",
+        "Path",
+        "RuntimeError",
+        "STEPControl_Writer",
+        "TopoDS_Compound",
+        "ValueError",
+        "abs",
+        "bool",
+        "builder.Add",
+        "builder.MakeCompound",
+        "contains",
+        "destination.parent.mkdir",
+        "document.get",
+        "document.get('fit', {}).get",
+        "edge.Edge",
+        "edge.IsDone",
+        "enumerate",
+        "face.Add",
+        "face.Face",
+        "face.IsDone",
+        "float",
+        "gp_Pnt",
+        "gp_Pnt2d",
+        "int",
+        "integer.SetValue",
+        "knot_arrays",
+        "knots.SetValue",
+        "len",
+        "loop_groups",
+        "multiplicity.SetValue",
+        "native_surface",
+        "np.allclose",
+        "np.any",
+        "np.asarray",
+        "np.count_nonzero",
+        "np.diff",
+        "np.isfinite",
+        "np.isfinite(points).all",
+        "np.isfinite(weights).all",
+        "np.linalg.norm",
+        "np.roll",
+        "np.sum",
+        "np.unique",
+        "np.where",
+        "poles.SetValue",
+        "range",
+        "rational.SetValue",
+        "real.SetValue",
+        "str",
+        "sum",
+        "wire.IsDone",
+        "wire.Wire",
+        "wire_on_surface",
+        "writer.Transfer",
+        "writer.Write",
+        "zip",
+        "{'metres': 1000.0, 'millimetres': 1.0}.get"
+      ],
+      "environment_keys": []
+    },
+    {
       "path": "long-lines/tools/propkit/construction.py",
       "lines": 217,
       "sha256": "03e6d605d6feea125ec412f9262ff08839ad94d803b0b5821e8df8fc8f3cf669",
@@ -8522,6 +8660,39 @@
         "xs.min",
         "ys.max",
         "ys.min"
+      ],
+      "environment_keys": []
+    },
+    {
+      "path": "long-lines/tools/propkit/depth_measurement.py",
+      "lines": 30,
+      "sha256": "66e294297f0369ce57ed3f8e672fc655772b4bc3e942ad613b135aad8dbec80a",
+      "description": "Metric curvature-contrast estimates with explicit calibration uncertainty.",
+      "imports": [
+        "from scipy import ndimage",
+        "import numpy as np"
+      ],
+      "definitions": [
+        {
+          "name": "estimate",
+          "line": 6,
+          "kind": "FunctionDef",
+          "description": ""
+        }
+      ],
+      "calls": [
+        "ValueError",
+        "abs",
+        "bool",
+        "evidence.get",
+        "float",
+        "information.get",
+        "len",
+        "ndimage.map_coordinates",
+        "np.asarray",
+        "np.isfinite",
+        "np.mean",
+        "sorted"
       ],
       "environment_keys": []
     },
@@ -10094,6 +10265,169 @@
       "environment_keys": []
     },
     {
+      "path": "long-lines/tools/propkit/joint_shading.py",
+      "lines": 355,
+      "sha256": "f661e974db851208516a940250f2a6f24fa98ec9cda7c93352dea10d3637aada",
+      "description": "Coupled shape, diffuse illumination and reflectance estimation.\n\nHeight is represented by continuous B-spline controls, not geometric templates.\nLighting and reflectance are nuisance variables with explicit gauges. Unknown\nsingle-image lighting/material cannot silently become calibrated metric depth.",
+      "imports": [
+        "from .shading import gradients, adjoint",
+        "from .spline_surface import Basis, control_shape",
+        "from PIL import Image",
+        "from scipy import ndimage, optimize",
+        "from scipy.sparse.linalg import LinearOperator, cg",
+        "import numpy as np"
+      ],
+      "definitions": [
+        {
+          "name": "linear_image",
+          "line": 14,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "normals",
+          "line": 19,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "shade",
+          "line": 25,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "fit_light",
+          "line": 39,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "material_prior",
+          "line": 72,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "fit_material",
+          "line": 81,
+          "kind": "FunctionDef",
+          "description": "Edge-aware, robust reflectance solve; held-out intensities are excluded."
+        },
+        {
+          "name": "depth_information",
+          "line": 126,
+          "kind": "FunctionDef",
+          "description": "Profile linearized depth scale against competing appearance variables.\n\nThe interval is conditional on the fitted surface and material regularity.\nArbitrary unknown per-pixel reflectance is intrinsically unidentifiable;\na narrow prior-conditioned interval must not conceal that fact."
+        },
+        {
+          "name": "fit_height",
+          "line": 179,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "reconstruct",
+          "line": 205,
+          "kind": "FunctionDef",
+          "description": "Alternate shape/light/material fits through actual resolution refinement."
+        }
+      ],
+      "calls": [
+        "((data + prior_weight) * values + regularity * adjoint(wx * gx, wy * gy)).ravel",
+        "Basis",
+        "LinearOperator",
+        "abs",
+        "adjoint",
+        "basis.adjoint",
+        "basis.adjoint(gradient * feather).ravel",
+        "basis.evaluate",
+        "basis.project",
+        "bool",
+        "cg",
+        "coefficients.copy",
+        "coefficients.ravel",
+        "control_shape",
+        "current.ravel",
+        "depth_information",
+        "diagnostics.update",
+        "diagonal.ravel",
+        "dict",
+        "fit.x.reshape",
+        "fit_height",
+        "fit_light",
+        "fit_material",
+        "float",
+        "gradients",
+        "height.copy",
+        "history.append",
+        "image.resize",
+        "infos.append",
+        "initial.copy",
+        "int",
+        "len",
+        "lighting.copy",
+        "lighting.tolist",
+        "lighting[:3].tolist",
+        "linear_image",
+        "list",
+        "mask.copy",
+        "mask.sum",
+        "material.copy",
+        "material_prior",
+        "max",
+        "min",
+        "ndimage.distance_transform_edt",
+        "ndimage.zoom",
+        "normals",
+        "np.arange",
+        "np.array",
+        "np.asarray",
+        "np.asarray(prior).copy",
+        "np.broadcast_to",
+        "np.clip",
+        "np.concatenate",
+        "np.exp",
+        "np.eye",
+        "np.indices",
+        "np.linalg.lstsq",
+        "np.linalg.norm",
+        "np.linalg.svd",
+        "np.linspace",
+        "np.linspace(0, len(keep) - 1, 10000).astype",
+        "np.linspace(0, len(target) - 1, 16000).astype",
+        "np.log",
+        "np.maximum",
+        "np.mean",
+        "np.median",
+        "np.minimum",
+        "np.ones",
+        "np.sqrt",
+        "np.stack",
+        "np.sum",
+        "np.where",
+        "np.zeros",
+        "np.zeros_like",
+        "nuisance.extend",
+        "optimize.lsq_linear",
+        "optimize.minimize",
+        "prior.copy",
+        "range",
+        "rgb.mean",
+        "rhs.ravel",
+        "round",
+        "set",
+        "shade",
+        "solution.reshape",
+        "sorted",
+        "sum",
+        "training.sum",
+        "tuple",
+        "values.reshape"
+      ],
+      "environment_keys": []
+    },
+    {
       "path": "long-lines/tools/propkit/kit.py",
       "lines": 184,
       "sha256": "287b55577eab351219cc4c9f5fc334a9c8e5cc3cc6728e68ef5695549a22e0da",
@@ -10866,6 +11200,157 @@
       "environment_keys": []
     },
     {
+      "path": "long-lines/tools/propkit/part_graph.py",
+      "lines": 244,
+      "sha256": "42ab40940f558d1be7a3314033b953a059b7e8cab83549d32dbf6b7af4f0aaa3",
+      "description": "Class-independent physical-instance association across orthographic views.\n\nCaptions are optional identifiers, not a fixed vocabulary of object roles.\nCorrespondences, projection consistency and assignment margins own identity.\nAmbiguous observations stay unresolved rather than manufacturing extra parts.",
+      "imports": [
+        "from pathlib import Path",
+        "from scipy.optimize import linear_sum_assignment",
+        "import cv2",
+        "import numpy as np",
+        "import re"
+      ],
+      "definitions": [
+        {
+          "name": "label",
+          "line": 16,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "volume",
+          "line": 21,
+          "kind": "FunctionDef",
+          "description": "Lift image rectangle fractions into a bounded orthographic ray volume."
+        },
+        {
+          "name": "overlap",
+          "line": 32,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "compatibility",
+          "line": 40,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "associate",
+          "line": 55,
+          "kind": "FunctionDef",
+          "description": "Global per-view assignment, with explicit ambiguity and no role grammar."
+        },
+        {
+          "name": "ownership",
+          "line": 147,
+          "kind": "FunctionDef",
+          "description": "Per-pixel physical ownership; conflicts remain unknown, never body paint."
+        },
+        {
+          "name": "from_report",
+          "line": 166,
+          "kind": "FunctionDef",
+          "description": "Reuse existing dense visual correspondences for any caption vocabulary."
+        },
+        {
+          "name": "export_ownership",
+          "line": 196,
+          "kind": "FunctionDef",
+          "description": "Warp observed companion masks into their exact assembly-image frames.\n\nUnclaimed pixels are unknown, not automatically the body. These maps are\nevidence for downstream source selection, not new manufactured geometry."
+        }
+      ],
+      "calls": [
+        "(foreground & (best == 0)).sum",
+        "(np.asarray(match['box']) / [width, height, width, height]).clip",
+        "(np.asarray(match['box']) / [width, height, width, height]).clip(0, 1).tolist",
+        "(owners >= 0).sum",
+        "Path",
+        "ValueError",
+        "ambiguous.append",
+        "anonymous.items",
+        "anonymous.setdefault",
+        "anonymous.setdefault(item.get('source_region', item['id']), []).append",
+        "any",
+        "assembly.get",
+        "assigned.add",
+        "associate",
+        "bool",
+        "claims.items",
+        "claims.setdefault",
+        "claims.setdefault(target['id'], []).append",
+        "compatibility",
+        "competitors.max",
+        "conflict.sum",
+        "current.append",
+        "cv2.warpAffine",
+        "destination.mkdir",
+        "dict",
+        "duplicate['duplicate_observations'].append",
+        "enumerate",
+        "float",
+        "foreground.astype",
+        "groups.items",
+        "groups.setdefault",
+        "groups.setdefault(label(observation.get('label'), observation['id']), []).append",
+        "image.crop",
+        "image.crop(source['box']).convert",
+        "image.crop(target['box']).convert",
+        "int",
+        "item.get",
+        "label",
+        "len",
+        "linear_sum_assignment",
+        "list",
+        "match.get",
+        "max",
+        "min",
+        "next",
+        "node.pop",
+        "node.pop('_bounds').tolist",
+        "node['observations'].append",
+        "nodes.extend",
+        "np.abs",
+        "np.abs(pixels - np.asarray(background)).sum",
+        "np.array",
+        "np.asarray",
+        "np.delete",
+        "np.full",
+        "np.isfinite",
+        "np.isfinite(matrix).all",
+        "np.maximum",
+        "np.savez_compressed",
+        "np.sqrt",
+        "np.where",
+        "np.zeros",
+        "np.zeros_like",
+        "observation.get",
+        "observations.append",
+        "overlap",
+        "ownership",
+        "peers.append",
+        "re.sub",
+        "region.get",
+        "rejected.append",
+        "root",
+        "set",
+        "sorted",
+        "str",
+        "str(item['label']).casefold",
+        "str(value or '').strip",
+        "str(value or '').strip().casefold",
+        "sum",
+        "views.items",
+        "views.setdefault",
+        "volume",
+        "x.get",
+        "y.get",
+        "zip"
+      ],
+      "environment_keys": []
+    },
+    {
       "path": "long-lines/tools/propkit/part_rules.py",
       "lines": 34,
       "sha256": "dcc8c20008d758a30ec5dad36e8ad3fe793eb145aa71b6d6ab4d8f1cde8ea347",
@@ -10949,8 +11434,8 @@
     },
     {
       "path": "long-lines/tools/propkit/parts_layout.py",
-      "lines": 991,
-      "sha256": "d78ebcaa236e03c1f8accb9da5745f9679b3b5c71fdf93abae8949072f18ee92",
+      "lines": 995,
+      "sha256": "54219232fe9dfdc04fdf7a0b561fc2292203cc901254425ae2dcacc2a9f78d98",
       "description": "Layout \"parts\": every part manufactured from its own views, then assembled like the photo shows.\n\nA parts sheet gives the whole object (the \"photo\": front, sides, back, top) and each part with its own\nviews. Each part is built separately (a hull from its views; round parts as lathes; thin parts with their\ndrawn holes cut through) and painted from its own views, then placed and seated on what it attaches to.\nThe order is a declarative plan, one entry per part; nothing here knows what the object is:\n\n    \"layout\": \"parts\", \"assembly\": \"<folder>\", \"body_width_m\": 0.14, \"parts\": [\n      {\"name\": \"body\", \"views\": \"body\", \"root\": true},\n      {\"name\": \"plate\", \"views\": \"plate\", \"attach\": {\"to\": \"body\", \"face\": \"back\", \"fit\": \"inside\"}},\n      {\"name\": \"dial_face\", \"views\": \"dial_face\", \"locate\": \"match\", \"attach\": {\"to\": \"body\", \"face\": \"front\"}},\n      {\"name\": \"dial_wheel\", \"views\": \"dial_wheel\", \"locate\": \"concentric\", \"attach\": {\"to\": \"dial_face\", \"face\": \"front\"}},\n      {\"name\": \"hooks\", \"views\": \"hooks\", \"locate\": \"protrusion\", \"attach\": {\"to\": \"body\", \"face\": \"top\"}},\n      {\"name\": \"handset\", \"views\": \"handset\", \"locate\": \"residual\", \"attach\": {\"to\": \"body\", \"face\": \"left\"}},\n      {\"name\": \"earpiece\", \"views\": \"cap\", \"attach\": {\"to\": \"handset\", \"face\": \"right\", \"at\": \"top\"}},\n      {\"name\": \"mouthpiece\", \"views\": \"cap\", \"attach\": {\"to\": \"handset\", \"face\": \"right\", \"at\": \"bottom\"}},\n      {\"name\": \"cord\", \"locate\": \"leftover\", \"attach\": {\"to\": \"handset\", \"face\": \"bottom\"}}]\n\nHow a part is located (where in the object, and how big):\n  root        the body's own outline fitted into the photo (hull_assembly.match_into). Every part is\n              located in drawing units first; then the scale comes from human scale (the handbook's\n              contacts measured in the drawing, propkit/human_scale.py) or from a given body_width_m\n  residual    the part sticks out of the body's outline: the region the body leaves over in the photo,\n              each box edge from a view where it is visible (hull_assembly.locate_by_subtraction)\n  match       the part lies on the body: its painting matched into the photo (propkit.locate)\n  concentric  centred on its parent; size from the sheet's drawing scale relative to the parent's own\n              drawing\n  protrusion  drawn as part of the parent's own view, sticking out of its outline (cradle hooks on a\n              shell's top edge): position and size from that protrusion\n  attach      on the parent's face (\"at\": top / bottom / centre), sized to fit that face\n  inset       set into an opening of its parent's front (a CRT in its cabinet): found like match, its face\n              just behind the front surface; the body spec's \"recess\" recesses the openings its own front\n              drawing shows\n  leftover    whatever the photo shows that no part explains (a coiled cord): a hull of those regions,\n              painted from the photo\nThen every part is seated on its parent along the face it attaches to and gap-checked.",
       "imports": [
         "from . import handbook as HB",
@@ -11025,25 +11510,25 @@
         },
         {
           "name": "_longest_path",
-          "line": 252,
+          "line": 254,
           "kind": "FunctionDef",
           "description": "Pixels of a skeleton's longest path (two breadth-first sweeps), in order."
         },
         {
           "name": "centreline",
-          "line": 281,
+          "line": 283,
           "kind": "FunctionDef",
           "description": "The 3D centreline of an elongated region seen in the front and side views, in the part's own\nframe (x, y centred, z from 0): the front view's skeleton gives x and z, the side view's region y."
         },
         {
           "name": "sweep_tube",
-          "line": 310,
+          "line": 312,
           "kind": "FunctionDef",
           "description": "A tube swept along an elongated region's centreline, radius its half width (no handbook entry)."
         },
         {
           "name": "build_parts",
-          "line": 322,
+          "line": 324,
           "kind": "FunctionDef",
           "description": ""
         }
@@ -11280,8 +11765,8 @@
     },
     {
       "path": "long-lines/tools/propkit/pipeline.py",
-      "lines": 118,
-      "sha256": "1ff3a505472a1e97122ea145f9bd89a2474ce3c6483a6299386deef2e6a24c36",
+      "lines": 121,
+      "sha256": "8c63886991a62a95648dd789e0c04e232ca3766579748eeda6dd7207e22f560d",
       "description": "Image-only orchestration. Geometry stays in the existing factory engines.\n\nCallbacks keep this station testable without importing or duplicating factory\ndispatch. All file freshness checks belong here, before packaging or reporting.",
       "imports": [
         "from . import engineering",
@@ -11322,7 +11807,7 @@
         },
         {
           "name": "build_image",
-          "line": 95,
+          "line": 98,
           "kind": "FunctionDef",
           "description": "Persist a reviewable failure report even if a station raises unexpectedly."
         }
@@ -11337,6 +11822,7 @@
         "_build_image",
         "automatic",
         "available_digest",
+        "bool",
         "build_order",
         "destination.mkdir",
         "engineering.export",
@@ -11352,6 +11838,7 @@
         "json.loads",
         "log.write_text",
         "order.get",
+        "order.get('physical_part_graph', {}).get",
         "part.get",
         "part.get('depth_inference', {}).get",
         "path.is_file",
@@ -12636,10 +13123,11 @@
     },
     {
       "path": "long-lines/tools/propkit/shading.py",
-      "lines": 180,
-      "sha256": "9f4a6b4be496c9c09ebc87068b0d1c3559106ecb1ad3a6bc413aad1293223d4d",
+      "lines": 184,
+      "sha256": "f11ab954a4038bc5cb37f7e4d672a600a237b7550cce7884867ae1673c6cf656",
       "description": "Continuous shape-from-shading, with explicit reflectance and depth ambiguity.\n\nThe unknown is a height at every valid pixel, never a sphere/groove template.\nDifferentiating that height gives an integrable normal field. A coarse surface,\nmaterial-colour model, smoothness and silhouette boundaries constrain the inverse\nproblem; brightness itself is never treated as height.",
       "imports": [
+        "from . import joint_shading",
         "from PIL import Image",
         "from scipy import ndimage, optimize",
         "import numpy as np"
@@ -12694,6 +13182,7 @@
         "illumination",
         "image.resize",
         "int",
+        "joint_shading.reconstruct",
         "len",
         "light.tolist",
         "list",
@@ -13290,14 +13779,123 @@
       "environment_keys": []
     },
     {
+      "path": "long-lines/tools/propkit/spline_surface.py",
+      "lines": 123,
+      "sha256": "0ce9d71132f4040e0fbe479eefbaea80a59a401bcd201d0b0ce6e0c7ecb22de1",
+      "description": "Error-bounded B-spline height charts and explicit trimmed NURBS documents.\n\nCharts are mathematical surface patches, not separately capped physical parts.\nUnit rational weights make these B-splines a subset of NURBS. Fitting a chart\ndoes not establish that the inferred input geometry is physically correct.",
+      "imports": [
+        "from scipy import sparse",
+        "from scipy.interpolate import BSpline",
+        "from scipy.sparse.linalg import lsmr",
+        "from skimage.measure import find_contours",
+        "import numpy as np"
+      ],
+      "definitions": [
+        {
+          "name": "knots",
+          "line": 13,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "Basis",
+          "line": 20,
+          "kind": "ClassDef",
+          "description": "Sparse tensor-product basis at image pixel centres; exact transpose."
+        },
+        {
+          "name": "control_shape",
+          "line": 60,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "fit_height",
+          "line": 64,
+          "kind": "FunctionDef",
+          "description": "Refine mathematical charts until measured error passes, or report failure."
+        },
+        {
+          "name": "document",
+          "line": 88,
+          "kind": "FunctionDef",
+          "description": "An explicit control net, knot vectors and trim loops in a declared frame."
+        },
+        {
+          "name": "evaluate_document",
+          "line": 112,
+          "kind": "FunctionDef",
+          "description": "Evaluate the rational surface independently of image resolution."
+        }
+      ],
+      "calls": [
+        "BSpline.design_matrix",
+        "Basis",
+        "ValueError",
+        "abs",
+        "all",
+        "basis.evaluate",
+        "basis.project",
+        "basis.u_knots.tolist",
+        "basis.u_knots[i + 1:i + degree + 1].mean",
+        "basis.v_knots.tolist",
+        "basis.v_knots[i + 1:i + degree + 1].mean",
+        "bool",
+        "control_shape",
+        "dict",
+        "errors.max",
+        "find_contours",
+        "fit['mask'].astype",
+        "float",
+        "history.append",
+        "int",
+        "knots",
+        "list",
+        "lsmr",
+        "matrix.multiply",
+        "max",
+        "min",
+        "net.tolist",
+        "np.arange",
+        "np.array",
+        "np.asarray",
+        "np.asarray(coefficients).reshape",
+        "np.ceil",
+        "np.clip",
+        "np.clip(uv, 0, 1).tolist",
+        "np.isfinite",
+        "np.linspace",
+        "np.maximum",
+        "np.mean",
+        "np.ones",
+        "np.ones(basis.controls).tolist",
+        "np.pad",
+        "np.percentile",
+        "np.sqrt",
+        "np.stack",
+        "np.zeros",
+        "range",
+        "self.matrix",
+        "solution[0].reshape",
+        "sparse.kron",
+        "trims.append",
+        "tuple",
+        "valid.any",
+        "valid.ravel"
+      ],
+      "environment_keys": []
+    },
+    {
       "path": "long-lines/tools/propkit/surface_detail.py",
-      "lines": 439,
-      "sha256": "f1ae0be9a4d5be28328a7cf34889025ddeffcc4354ab9823e679441b0af4929d",
+      "lines": 528,
+      "sha256": "a69760c265c4f9cd4811abe3f93acf91d3640598f4101fc8c7c40920be4f10d0",
       "description": "Object-independent surface evidence and continuous implicit detail.\n\nConstruction patches are computational regions of one physical surface. They\nnever become capped objects merely because width or curvature changes. All\nlengths passed to the field station are metres; source observations stay in\ntheir own image frame until sampling.",
       "imports": [
         "from . import relief",
         "from . import shading",
+        "from . import spline_surface, cad_export",
         "from .core import select_only, apply_mods",
+        "from .depth_measurement import estimate",
         "from .hull import silhouette",
         "from .implicit import pad_field",
         "from .local_features import check_surface_features",
@@ -13309,54 +13907,73 @@
         "from skimage.feature import peak_local_max",
         "from skimage.measure import find_contours",
         "import bpy",
+        "import json",
         "import numpy as np"
       ],
       "definitions": [
         {
-          "name": "analyse",
+          "name": "visible_root",
           "line": 16,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "root_image",
+          "line": 33,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "chart_frame",
+          "line": 47,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "analyse",
+          "line": 57,
           "kind": "FunctionDef",
           "description": "Prepare pixel observations. Geometry is inferred after the base field exists.\n\nNo circle recognition, primitive selection or fixed groove profiles run here.\nThe visible field supplies the initial surface and boundary conditions."
         },
         {
           "name": "shading_view",
-          "line": 43,
+          "line": 85,
           "kind": "FunctionDef",
           "description": "Map the visible coarse surface to image pixels and solve its relief."
         },
         {
           "name": "curvature_probes",
-          "line": 75,
+          "line": 121,
           "kind": "FunctionDef",
           "description": "Sample continuous curvature for validation, without classifying its shape."
         },
         {
           "name": "_mapping",
-          "line": 113,
+          "line": 159,
           "kind": "FunctionDef",
           "description": "Image-normalized coordinates on the field's two transverse grid axes."
         },
         {
           "name": "apply_field",
-          "line": 132,
+          "line": 178,
           "kind": "FunctionDef",
           "description": "Local signed-field offsets on the visible skin, before isosurface extraction.\n\nUses metric root positions and directional derivatives. Opposite skins are\nprotected by compact depth support; computational patches share vertices\nin the one extracted surface, with no cut caps or region normal seams."
         },
         {
           "name": "capture_high",
-          "line": 322,
+          "line": 378,
           "kind": "FunctionDef",
           "description": "Keep implicit detail for normal baking before any budget simplification."
         },
         {
           "name": "export_maps",
-          "line": 348,
+          "line": 404,
           "kind": "FunctionDef",
           "description": "Save numerical topography and contour diagnostics, including rejections."
         },
         {
           "name": "protected_samples",
-          "line": 377,
+          "line": 457,
           "kind": "FunctionDef",
           "description": "Protect detected features locally, without tightening every planar face."
         }
@@ -13372,9 +13989,13 @@
         "abs",
         "anchors.append",
         "apply_mods",
+        "bool",
         "bpy.context.scene.collection.objects.link",
         "bpy.data.objects.new",
+        "cad_export.available",
+        "cad_export.export_step",
         "canvas.save",
+        "chart_frame",
         "check_surface_features",
         "curvature_probes",
         "dict",
@@ -13382,6 +14003,7 @@
         "distance.reshape",
         "draw.line",
         "enumerate",
+        "estimate",
         "expand",
         "export_maps",
         "feature.get",
@@ -13392,6 +14014,7 @@
         "identifiers.append",
         "index.reshape",
         "int",
+        "json.dumps",
         "len",
         "list",
         "max",
@@ -13439,6 +14062,7 @@
         "occupied[::-1].argmax",
         "offsets.append",
         "pad_field",
+        "path.write_text",
         "peak_local_max",
         "plan.get",
         "plan.get('diagnostics', {}).items",
@@ -13448,9 +14072,12 @@
         "plan['report'].get",
         "plan['report'].setdefault",
         "plan['report']['probes'].append",
+        "plan['report']['views'].get",
+        "plan['report']['views'].get(view, {}).get",
         "points.append",
         "print",
         "probe.get",
+        "probe['depth_estimate'].get",
         "range",
         "reference.append",
         "relief.hook",
@@ -13458,11 +14085,14 @@
         "report.get",
         "report.update",
         "report['features'].append",
+        "root_image",
         "select_only",
         "shading.reconstruct",
         "shading_view",
         "silhouette",
         "sorted",
+        "spline_surface.document",
+        "spline_surface.fit_height",
         "str",
         "sum",
         "supports.append",
@@ -13471,7 +14101,8 @@
         "tree.ray_cast",
         "tuple",
         "values['mask'].any",
-        "views.items"
+        "views.items",
+        "visible_root"
       ],
       "environment_keys": []
     },
@@ -15658,12 +16289,13 @@
     },
     {
       "path": "long-lines/tools/sheet_blobs.py",
-      "lines": 325,
-      "sha256": "4ccdb5f15faad965892f9b654b50ea8f963b56ace4e34363fa9b33e063c420b8",
+      "lines": 331,
+      "sha256": "192ff42ac4ef74c001d641e27b5366e2a1692a1b471fe0ee3c1640c8efd818a0",
       "description": "Find every drawn object on a parts sheet, then crop the ones a spec names into part views.\n\n    blender -b --factory-startup -P tools/sheet_blobs.py -- list SHEET.png OUT_overlay.png\n    blender -b --factory-startup -P tools/sheet_blobs.py -- crop SHEET.png SPEC.json NAME\n    python tools/sheet_blobs.py auto SHEET.png OUT_DIR\n\nlist: objects are the sheet's coloured drawings; section labels (grey tags with text), titles and divider\nlines are left out (low colour saturation, or thin). Prints \"id x0 y0 x1 y1\" per object, numbered left to\nright, top to bottom, and writes an overlay with the numbers, so a person (or Claude) only has to say\nwhich number is which part's view.\n\ncrop: SPEC is {\"part\": {\"view\": id, ...}, ...} with ids from list (or [x0, y0, x1, y1] boxes). Writes\nassets/source_textures/NAME/<part>/v_<view>.png on black, plus h_<view>.png for background-coloured holes\n(carved solid, never painted; cut through in a part of the \"parts\" layout), as split_parts_sheet does.",
       "imports": [
         "from PIL import Image, ImageDraw",
         "from pathlib import Path",
+        "from propkit.part_graph import from_report, export_ownership",
         "from propkit.vision import DenseVision, compact_parts",
         "from propkit.vision_order import generate",
         "from rapidocr import RapidOCR",
@@ -15702,25 +16334,25 @@
         },
         {
           "name": "load",
-          "line": 220,
+          "line": 226,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "objects",
-          "line": 228,
+          "line": 234,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "crop",
-          "line": 271,
+          "line": 277,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "main",
-          "line": 289,
+          "line": 295,
           "kind": "FunctionDef",
           "description": ""
         }
@@ -15729,6 +16361,7 @@
         "(components[sl] == index).sum",
         "(output / 'intake-report.json').write_text",
         "(output / 'manufacture' / 'vision-report.json').read_text",
+        "(output / 'manufacture' / 'work-order.json').write_text",
         "(output / 'sheet-spec.partial.json').write_text",
         "DenseVision",
         "Image.fromarray",
@@ -15775,7 +16408,9 @@
         "engine.match",
         "enumerate",
         "evidence['records'].items",
+        "export_ownership",
         "float",
+        "from_report",
         "generate",
         "heading['text'].lower",
         "holes.astype",
@@ -16142,6 +16777,70 @@
       "environment_keys": []
     },
     {
+      "path": "long-lines/tools/test_cad_export.py",
+      "lines": 54,
+      "sha256": "6270344470e86b83e36fa2b013e0c9813dcd8ffb2dc04cacd581b3b6c6047c3c",
+      "description": "Native exchange round-trip: trim holes, units, and rejection of bad fits.",
+      "imports": [
+        "from OCP.BRepCheck import BRepCheck_Analyzer",
+        "from OCP.BRepGProp import BRepGProp",
+        "from OCP.GProp import GProp_GProps",
+        "from OCP.IFSelect import IFSelect_RetDone",
+        "from OCP.STEPControl import STEPControl_Reader",
+        "from pathlib import Path",
+        "from propkit import cad_export, spline_surface",
+        "import numpy as np",
+        "import tempfile",
+        "import unittest"
+      ],
+      "definitions": [
+        {
+          "name": "CadExportTests",
+          "line": 10,
+          "kind": "ClassDef",
+          "description": ""
+        }
+      ],
+      "calls": [
+        "BRepCheck_Analyzer",
+        "BRepCheck_Analyzer(shape).IsValid",
+        "BRepGProp.SurfaceProperties_s",
+        "GProp_GProps",
+        "Path",
+        "STEPControl_Reader",
+        "abs",
+        "area",
+        "cad_export.available",
+        "cad_export.export_step",
+        "cad_export.loop_groups",
+        "float",
+        "np.asarray",
+        "np.ones",
+        "np.roll",
+        "np.sum",
+        "np.zeros",
+        "properties.Mass",
+        "reader.OneShape",
+        "reader.ReadFile",
+        "reader.TransferRoots",
+        "self.assertAlmostEqual",
+        "self.assertEqual",
+        "self.assertFalse",
+        "self.assertLess",
+        "self.assertRaisesRegex",
+        "self.assertTrue",
+        "self.document",
+        "spline_surface.document",
+        "spline_surface.fit_height",
+        "str",
+        "sum",
+        "tempfile.TemporaryDirectory",
+        "unittest.main",
+        "unittest.skipUnless"
+      ],
+      "environment_keys": []
+    },
+    {
       "path": "long-lines/tools/test_cutaway_export.py",
       "lines": 25,
       "sha256": "1a77b5e55b675d43342bc45369133ffd5276977e86406d56c48367a5a7f1d23a",
@@ -16477,6 +17176,73 @@
       "environment_keys": []
     },
     {
+      "path": "long-lines/tools/test_joint_shading.py",
+      "lines": 87,
+      "sha256": "b9107f43606c44aaea6ff0c0f5a31c5ea647ca67e08cf99df749ef2f93a9ccce",
+      "description": "Coupled fitting and depth-identifiability tests with known synthetic truth.",
+      "imports": [
+        "from PIL import Image",
+        "from propkit import shading, joint_shading, depth_measurement",
+        "from scipy import ndimage",
+        "import numpy as np",
+        "import unittest"
+      ],
+      "definitions": [
+        {
+          "name": "fixture",
+          "line": 8,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "JointTests",
+          "line": 24,
+          "kind": "ClassDef",
+          "description": ""
+        }
+      ],
+      "calls": [
+        "Image.fromarray",
+        "abs",
+        "depth_measurement.estimate",
+        "fixture",
+        "image.resize",
+        "joint_shading.fit_light",
+        "joint_shading.reconstruct",
+        "ndimage.zoom",
+        "np.array",
+        "np.asarray",
+        "np.asarray(image).copy",
+        "np.clip",
+        "np.corrcoef",
+        "np.exp",
+        "np.full",
+        "np.indices",
+        "np.linalg.norm",
+        "np.log",
+        "np.maximum",
+        "np.mean",
+        "np.ones_like",
+        "np.repeat",
+        "np.sin",
+        "np.sqrt",
+        "np.testing.assert_allclose",
+        "np.uint8",
+        "np.where",
+        "np.zeros",
+        "np.zeros_like",
+        "pixels.copy",
+        "self.assertEqual",
+        "self.assertFalse",
+        "self.assertGreater",
+        "self.assertLess",
+        "self.assertTrue",
+        "shading.illumination",
+        "unittest.main"
+      ],
+      "environment_keys": []
+    },
+    {
       "path": "long-lines/tools/test_ownership_blender.py",
       "lines": 106,
       "sha256": "bc1c2fd550af1992951fa759ec0793ca67f445d15060b7c9f24c644a9268b5ca",
@@ -16552,6 +17318,57 @@
         "str",
         "sum",
         "sys.path.insert",
+        "tempfile.TemporaryDirectory",
+        "unittest.main"
+      ],
+      "environment_keys": []
+    },
+    {
+      "path": "long-lines/tools/test_part_graph.py",
+      "lines": 86,
+      "sha256": "697ddeb5bb9b617f97a2cc5386c7b8a98257d0acad7a50292e7ad0a17300a217",
+      "description": "Physical identity from projections, without an object-role vocabulary.",
+      "imports": [
+        "from PIL import Image",
+        "from pathlib import Path",
+        "from propkit.part_graph import associate, ownership, export_ownership",
+        "import numpy as np",
+        "import tempfile",
+        "import unittest"
+      ],
+      "definitions": [
+        {
+          "name": "observation",
+          "line": 10,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "PartGraphTests",
+          "line": 15,
+          "kind": "ClassDef",
+          "description": ""
+        }
+      ],
+      "calls": [
+        "(data['owners'][7:11, 4:8] == 0).all",
+        "(pixels == 4).all",
+        "Image.fromarray",
+        "all",
+        "associate",
+        "export_ownership",
+        "len",
+        "np.load",
+        "np.ones",
+        "np.testing.assert_array_equal",
+        "np.zeros",
+        "np.zeros_like",
+        "observation",
+        "ownership",
+        "self.assertEqual",
+        "self.assertFalse",
+        "self.assertGreater",
+        "self.assertTrue",
         "tempfile.TemporaryDirectory",
         "unittest.main"
       ],
@@ -16927,6 +17744,55 @@
       "environment_keys": []
     },
     {
+      "path": "long-lines/tools/test_spline_surface.py",
+      "lines": 48,
+      "sha256": "534a8c9bcd9c6616e478c69fff189d88dc05b925d690e597445bb9b8103e12a2",
+      "description": "Numerical CAD-chart contracts, independent of object identity.",
+      "imports": [
+        "from propkit import spline_surface as surfaces",
+        "import numpy as np",
+        "import unittest"
+      ],
+      "definitions": [
+        {
+          "name": "SurfaceTests",
+          "line": 7,
+          "kind": "ClassDef",
+          "description": ""
+        }
+      ],
+      "calls": [
+        "abs",
+        "abs(restored[:, :, 2][mask] - height[mask]).max",
+        "basis.adjoint",
+        "basis.evaluate",
+        "float",
+        "len",
+        "np.arange",
+        "np.array",
+        "np.broadcast_to",
+        "np.linalg.norm",
+        "np.linspace",
+        "np.random.default_rng",
+        "np.sqrt",
+        "np.stack",
+        "np.sum",
+        "np.testing.assert_allclose",
+        "points.tolist",
+        "rng.normal",
+        "self.assertAlmostEqual",
+        "self.assertGreaterEqual",
+        "self.assertLess",
+        "self.assertTrue",
+        "surfaces.Basis",
+        "surfaces.document",
+        "surfaces.evaluate_document",
+        "surfaces.fit_height",
+        "unittest.main"
+      ],
+      "environment_keys": []
+    },
+    {
       "path": "long-lines/tools/test_surface_detail.py",
       "lines": 88,
       "sha256": "df21d42334169004a0c01788a0a45af563f9a9b0845d158deaa59341e27ac6e4",
@@ -16985,8 +17851,8 @@
     },
     {
       "path": "long-lines/tools/test_surface_mesh.py",
-      "lines": 192,
-      "sha256": "12b4b406c9ec776605554c2837736bf63b56a0ea8b2e5fba4eb0cd65a46da350",
+      "lines": 207,
+      "sha256": "d9fa44e384de45359c96bf2a10c2aa0cba6e3857dff68a3b715339beee2fa15f",
       "description": "Blender contracts and clay fixtures for object-independent implicit detail.\n\nRun with Blender, optionally -- OUTPUT_DIRECTORY to keep the geometry renders.\nThe detector receives rendered test images, not annotated locations/counts.",
       "imports": [
         "from PIL import Image",
@@ -17063,6 +17929,7 @@
         "bpy.data.objects.remove",
         "bpy.data.worlds.new",
         "bpy.ops.mesh.primitive_cube_add",
+        "bpy.ops.object.transform_apply",
         "bpy.ops.render.render",
         "bpy.ops.wm.read_factory_settings",
         "combine_high_sources",
@@ -17104,8 +17971,10 @@
         "scene.collection.objects.link",
         "self.assertEqual",
         "self.assertGreater",
+        "self.assertIsNone",
         "self.assertLess",
         "self.assertLessEqual",
+        "self.assertTrue",
         "self.case",
         "shading.illumination",
         "shading.reconstruct",

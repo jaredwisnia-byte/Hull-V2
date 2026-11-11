@@ -38,7 +38,7 @@ def render_asset(name, destination, render_script):
     return None
 
 
-def _build_image(image, output, *, build_order, library_root, render_script, export_model):
+def _build_image(image, output, *, build_order, library_root, render_script, export_model, cad_export=False):
     """Intake -> native work order -> build/QA -> fresh exports -> diagnostics."""
     from sheet_blobs import automatic
     from . import engineering
@@ -59,10 +59,13 @@ def _build_image(image, output, *, build_order, library_root, render_script, exp
             "failure", "unresolved visual assignments")
     else:
         order = json.loads(Path(intake["work_order"]).read_text())
+        order['cad_export'] = bool(cad_export)
         name = order["name"]
         result["assumptions"] = order["assumptions"]
         warnings = [part["name"] for part in order.get("parts", [])
                     if part.get("depth_inference", {}).get("needs_review")]
+        if order.get('physical_part_graph',{}).get('needs_review'):
+            warnings.append('unresolved_physical_part_ownership')
         if order.get("automatic_depth"):
             from .preflight import inspect_order
             order["view_consistency"] = inspect_order(

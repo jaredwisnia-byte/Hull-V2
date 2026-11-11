@@ -620,3 +620,11 @@ library, ledger and REPORT are restored afterwards (git checkout + delete the ex
   is fragile when exporter triangulation or normal splits change.
 - QA feature frames must include floor/wall seating translations. Check each part
   against its own geometry so another assembled part cannot intercept its rays.
+- Withhold validation/test intensities before building any image pyramid. A coarse
+  initialization can otherwise leak the very pixels used to judge the final fit.
+- Unknown lighting/material makes inferred groove depth conditional. Keep its QA
+  evidence, but do not freeze dense meshes to unsupported sub-voxel depth targets.
+- Kernel-valid STEP faces are not watertight CAD solids. Read back the exchange
+  file and verify units/trim holes; sewing and assembly frames need separate checks.
+- A class-independent identity graph does not automatically replace a role-based
+  manufacturing grammar. Record which downstream stages actually consume it.
