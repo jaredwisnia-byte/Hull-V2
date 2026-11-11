@@ -93,11 +93,20 @@ def check(name, views_dir=None, category_class=None, paint_only=(), solid=False,
         return {"pass": False, "fails": ["GLB does not load: %s" % e], "metrics": m}
     dg = bpy.context.evaluated_depsgraph_get()
     verts, polys, area, uv_area = [], [], 0.0, 0.0
+    face_owners = []
+    identity_path = os.path.join(d, name + '_parts.json')
+    identities = json.load(open(identity_path)).get(
+        'owners', []) if os.path.isfile(identity_path) else []
     for o in objs:
         me = o.evaluated_get(dg).to_mesh()
         base = len(verts)
         verts += [o.matrix_world @ v.co for v in me.vertices]
         polys += [[base + i for i in p.vertices] for p in me.polygons]
+        native = me.attributes.get('_HULL_OWNER')
+        for polygon in me.polygons:
+            values = {round(native.data[i].value)
+                      for i in polygon.vertices} if native else set()
+            face_owners.append(next(iter(values)) if len(values) == 1 else -1)
         uv = me.uv_layers.active
         for p in me.polygons:
             area += p.area
@@ -106,6 +115,12 @@ def check(name, views_dir=None, category_class=None, paint_only=(), solid=False,
                 uv_area += 0.5 * abs(sum(pts[i].x * pts[(i + 1) % len(pts)].y - pts[(i + 1) % len(pts)].x * pts[i].y
                                          for i in range(len(pts))))
     tris = sum(len(p) - 2 for p in polys)
+    if trim_order and trim_order.get('automatic_depth'):
+        from .local_features import geometry_components
+        m['geometric_components'] = geometry_components(verts, polys)
+        if trim_order.get('line') == 'hull' and m['geometric_components'] != 1:
+            fails.append(
+                'single physical surface contains disconnected geometric islands')
     library_path = os.path.join(LIB, 'library.json')
     if trim_order and trim_order.get('automatic_depth') and os.path.isfile(library_path):
         projection = json.load(open(library_path)).get(
@@ -115,7 +130,42 @@ def check(name, views_dir=None, category_class=None, paint_only=(), solid=False,
             fails.append(
                 'projected surfaces have no valid texture source for their physical owner')
     construction = (trim_order or {}).get('measured', {}).get('construction')
-    if construction:
+    detail = (trim_order or {}).get('measured', {}).get('relief', {})
+    library_entry = json.load(open(library_path)).get(
+        name, {}) if os.path.isfile(library_path) else {}
+    shift = np.asarray(library_entry.get(
+        'manufacturing_translation_m', [0, 0, 0]))
+
+    def placed_report(report):
+        matrix = np.asarray(report.get('matrix_world', np.eye(4))).copy()
+        matrix[:3, 3] += shift
+        return dict(report, matrix_world=matrix.tolist())
+    m['reconstruction_field'] = (trim_order or {}).get(
+        'measured', {}).get('field', {})
+    if detail.get('probes'):
+        from .local_features import check_surface_features
+        local_surface = check_surface_features(
+            verts, polys, placed_report(detail))
+        m['surface_features'] = local_surface
+        fails.extend(local_surface['fails'])
+    for part, part_detail in (trim_order or {}).get('measured', {}).get('surface_details', {}).items():
+        from .local_features import check_surface_features
+        owner = part_detail.get('physical_owner')
+        if owner in identities:
+            owner_id = identities.index(owner)
+            owned_polys = [face for face, identifier in zip(
+                polys, face_owners) if identifier == owner_id]
+            if not owned_polys:
+                fails.append(part + ': physical owner geometry is missing')
+                continue
+        else:
+            owned_polys = polys
+        local_surface = check_surface_features(
+            verts, owned_polys, placed_report(part_detail))
+        m.setdefault('part_surface_features', {})[part] = local_surface
+        fails.extend(
+            part + ': ' + failure for failure in local_surface['fails'])
+    if construction and construction.get('spline_profile'):
         from .local_features import check_channels
         local = check_channels(verts, polys, construction)
         m['local_features'] = local

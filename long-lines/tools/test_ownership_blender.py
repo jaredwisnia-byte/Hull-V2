@@ -58,11 +58,13 @@ class OwnershipContracts(unittest.TestCase):
             folder = Path(folder)
             document = ownership.save_mesh_ownership(
                 obj, owners, folder / 'parts.json')
+            ownership.prepare_export_ownership(obj)
             bpy.ops.export_scene.gltf(filepath=str(
-                folder / 'test.glb'), export_format='GLB', use_selection=True)
+                folder / 'test.glb'), export_format='GLB', use_selection=True, export_attributes=True)
             bpy.ops.object.delete(use_global=False)
             bpy.ops.import_scene.gltf(filepath=str(folder / 'test.glb'))
             obj = next(o for o in bpy.context.scene.objects if o.type == 'MESH')
+            self.assertIsNotNone(obj.data.attributes.get('_HULL_OWNER'))
             restored = ownership.split_standalone(obj, document)
             self.assertEqual({p['physical_part_id']
                              for p in restored}, set(owners))

@@ -1,9 +1,10 @@
 """Physical part identity through joining/baking and standalone export.
 
-Integer face ownership is captured before joining; triangle centroids bridge the
-library GLB round trip without assuming exporter vertex/triangle ordering.
+Integer ownership is captured before joining and carried by native glTF attributes.
+Legacy sidecars retain an oriented-centroid fallback for old assets.
 """
 import json
+import hashlib
 from pathlib import Path
 import numpy as np
 from scipy.spatial import cKDTree
@@ -48,7 +49,31 @@ def reject_duplicate_geometry(parts, tolerance=1e-6):
                                  parts[i].name + ' and ' + parts[j].name)
 
 
-def save_mesh_ownership(obj, owners, path):
+def prepare_export_ownership(obj):
+    """Native glTF physical IDs, independent of normals and triangle ordering."""
+    mesh = obj.data
+    attribute = mesh.attributes['hull_owner']
+    identifiers = np.full(len(mesh.vertices), -1, np.int32)
+    for face in mesh.polygons:
+        owner = attribute.data[face.index].value
+        indices = np.asarray(face.vertices)
+        if np.any((identifiers[indices] >= 0) & (identifiers[indices] != owner)):
+            raise ValueError('Physical owners share welded geometry')
+        identifiers[indices] = owner
+    native = mesh.attributes.get('_HULL_OWNER')
+    if native:
+        mesh.attributes.remove(native)
+    native = mesh.attributes.new('_HULL_OWNER', 'FLOAT', 'POINT')
+    native.data.foreach_set('value', identifiers.astype(np.float32))
+
+
+def save_mesh_ownership(obj, owners, path, source_glb=None):
+    if source_glb:
+        document = {'version': 2, 'owners': owners, 'attribute': '_HULL_OWNER',
+                    'glb_sha256': hashlib.sha256(Path(source_glb).read_bytes()).hexdigest(),
+                    'identity_source': 'native glTF physical IDs; no geometric nearest-neighbour relabelling'}
+        Path(path).write_text(json.dumps(document))
+        return document
     mesh = obj.data
     mesh.calc_loop_triangles()
     attribute = mesh.attributes.get('hull_owner')
@@ -68,6 +93,9 @@ def save_mesh_ownership(obj, owners, path):
         assignments.append(attribute.data[triangle.polygon_index].value)
     document = {'owners': owners, 'triangle_centroids_m': centers, 'triangle_normals': normals, 'triangle_owners': assignments,
                 'identity_source': 'manufactured physical parts; no runtime semantic relabelling'}
+    if source_glb:
+        document['glb_sha256'] = hashlib.sha256(
+            Path(source_glb).read_bytes()).hexdigest()
     Path(path).write_text(json.dumps(document))
     return document
 
@@ -82,7 +110,26 @@ def split_standalone(obj, document, tolerance=3e-6):
     ).transposed() @ face.normal) for face in mesh.polygons])
     normals /= np.maximum(np.linalg.norm(normals,
                           axis=1, keepdims=True), 1e-12)
-    assignment = match_ownership(document, centers, normals, tolerance)
+    native = mesh.attributes.get('_HULL_OWNER')
+    if native is not None:
+        values = np.empty(len(mesh.vertices), np.float32)
+        native.data.foreach_get('value', values)
+        if not np.isfinite(values).all() or np.any(abs(values - np.rint(values)) > 1e-5):
+            raise ValueError('Invalid native physical ownership')
+        identifiers = np.rint(values).astype(int)
+        assignment = []
+        for face in mesh.polygons:
+            owners = np.unique(identifiers[list(face.vertices)])
+            if len(owners) != 1 or not 0 <= owners[0] < len(document['owners']):
+                raise ValueError(
+                    'Exported face has ambiguous native ownership')
+            assignment.append(owners[0])
+        assignment = np.asarray(assignment)
+    else:
+        if document.get('version') == 2:
+            raise ValueError(
+                'Native physical ownership attribute missing from GLB')
+        assignment = match_ownership(document, centers, normals, tolerance)
     parts = []
     for index, name in enumerate(document['owners']):
         if not (assignment == index).any():

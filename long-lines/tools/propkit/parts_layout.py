@@ -195,7 +195,7 @@ def recess_hook(front_path, depth_m, report, min_share=None):
     return hook
 
 
-def build_part(views, w, d, h, name, tmp, res=110, rough=0.5, cut_holes=True, defer=None):
+def build_part(views, w, d, h, name, tmp, res=110, rough=0.5, cut_holes=True, defer=None, automatic_depth=False):
     """A part from its own views at size w x d x h (m), painted from its own views. Background seen
     through its front view (split's h_ mask: a hook frame's opening, a dial's finger holes) is an opening
     along that view and is cut through; a part with only a front view is a plate of depth d."""
@@ -222,8 +222,21 @@ def build_part(views, w, d, h, name, tmp, res=110, rough=0.5, cut_holes=True, de
                                holes[:, ::-1], sil["back"][1])
             notes.append(
                 "%d px of background seen through its front view cut through" % int(holes.sum()))
+    options = {}
+    detail = {}
+    if automatic_depth:
+        from . import surface_detail
+        observed = {k: v for k, v in views.items(
+        ) if not v.endswith('_side.png')}
+        plan = surface_detail.analyse(observed, (w, d, h), detail)
+        options = {'field_hook': lambda field: surface_detail.apply_field(field, plan),
+                   'mesh_hook': lambda obj: surface_detail.capture_high(obj, plan),
+                   'smooth_iters': 0, 'decimate': 1.}
     obj = hull_prop(views, h, res=res, name=name, width_m=w, depth_m=d, features=False, paint=False, rough=rough,
-                    sil_override=sil)
+                    sil_override=sil, **options)
+    if detail:
+        import json
+        obj['surface_detail_report'] = json.dumps(detail)
     rev = HULL_REPORT.get("revolve")
     paint = ({k: v for k, v in views.items()
              if not v.endswith("_side.png")}, w, d, h)
@@ -487,10 +500,10 @@ def build_parts(order, src_root):
             # frame as the assembly views. Manufacturing/seating stay unchanged.
             candidate = spec.get('vision_box')
             if not isinstance(candidate, list) or len(candidate) != 6 or not np.isfinite(candidate).all():
-                raise ValueError(name+': invalid visual measurement box')
+                raise ValueError(name + ': invalid visual measurement box')
             x0, x1, y0, y1, z0, z1 = map(float, candidate)
-            if min(x1-x0, y1-y0, z1-z0) <= 0:
-                raise ValueError(name+': degenerate visual measurement box')
+            if min(x1 - x0, y1 - y0, z1 - z0) <= 0:
+                raise ValueError(name + ': degenerate visual measurement box')
             box = [x0, x1, y0, y1, z0, z1]
             entry['located'] = 'automatic visual correspondence in the assembly reference'
         elif loc == "match":
@@ -622,20 +635,24 @@ def build_parts(order, src_root):
             body_spec["recess"], dict) else None
         rhook = recess_hook(body_views["front"],
                             rd or RECESS_SHARE * (by1 - by0), rrep)
-    depth_hook = None
+    field_options = {}
     if order.get('automatic_depth'):
-        from .depth_inference import body_hook
         exclusions = []
         for spec in plan:
             if spec.get('attach', {}).get('to') == 'body' and spec.get('attach', {}).get('face') == 'front' and spec['name'] in boxes:
                 a, b, _, _, c, d = boxes[spec['name']]
-                exclusions.append(('front', [(a-bx0)/(bx1-bx0), (bz1-d)/(bz1-bz0),
-                                             (b-bx0)/(bx1-bx0), (bz1-c)/(bz1-bz0)]))
-        depth_hook = body_hook(body_views, bx1-bx0, by1-by0, bz1-bz0,
-                               rep.setdefault('automatic_depth', {}), exclusions)
+                exclusions.append(('front', [(a - bx0) / (bx1 - bx0), (bz1 - d) / (bz1 - bz0),
+                                             (b - bx0) / (bx1 - bx0), (bz1 - c) / (bz1 - bz0)]))
+        from . import surface_detail
+        report = rep.setdefault('surface_details', {}).setdefault('body', {})
+        body_surface_plan = surface_detail.analyse(
+            body_views, (bx1 - bx0, by1 - by0, bz1 - bz0), report, exclusions)
+        field_options = {'field_hook': lambda field: surface_detail.apply_field(field, body_surface_plan),
+                         'mesh_hook': lambda obj: surface_detail.capture_high(obj, body_surface_plan),
+                         'smooth_iters': 0, 'decimate': 1.}
     body = hull_prop(body_views, bz1 - bz0, res=order.get("res", 150), name=order["name"] + "_body",
                      width_m=bx1 - bx0, depth_m=by1 - by0, features=False, paint=False, rough=order.get("rough", 0.5),
-                     paint_only=paint_only, voxel_hook=rhook, mesh_hook=depth_hook)
+                     paint_only=paint_only, voxel_hook=rhook, **field_options)
     body.location = ((bx0 + bx1) / 2, (by0 + by1) / 2, bz0)
     built["body"] = body
     rep["parts"]["body"] = {"box_m": [
@@ -647,7 +664,8 @@ def build_parts(order, src_root):
         else:
             w, dd, h = x1 - x0, y1 - y0, z1 - z0
         obj, notes, rev = build_part(pv, w, dd, h, "%s_%s" % (
-            order["name"], name), tmp, rough=order.get("rough", 0.5), defer=pending)
+            order["name"], name), tmp, rough=order.get("rough", 0.5), defer=pending,
+            automatic_depth=bool(order.get('automatic_depth')))
         obj["finish"] = list(finish_of(name, spec)[:2])
         if how == "side":
             obj.rotation_euler = (
@@ -800,7 +818,8 @@ def build_parts(order, src_root):
                 pending.append((obj, (crops, x1 - x0, y1 - y0, z1 - z0)))
         if obj is None:
             obj, notes, rev = build_part(crops, x1 - x0, y1 - y0, z1 - z0, "%s_%s" % (order["name"], name), tmp,
-                                         rough=order.get("rough", 0.5), defer=pending)
+                                         rough=order.get("rough", 0.5), defer=pending,
+                                         automatic_depth=bool(order.get('automatic_depth')))
         obj.location = ((x0 + x1) / 2, (y0 + y1) / 2, z0)
         bpy.context.view_layer.update()
         built[name] = obj
@@ -850,7 +869,8 @@ def build_parts(order, src_root):
     fixed = {n: sum(len(p_.vertices) - 2 for p_ in o.data.polygons)
              for n, o in built.items() if o.get("procedural")}
     budget -= sum(fixed.values())
-    mode = order.get("budget", "screen" if hb else "share")
+    mode = order.get("budget", "screen" if hb or order.get(
+        'automatic_depth') else "share")
     tol = screen_tolerance(STANDARDS, order.get("kind", "fixture" if order.get(
         "mount") == "wall" else "static")) if mode == "screen" else None
     dense = {n: sum(len(p_.vertices) - 2 for p_ in o.data.polygons)
@@ -858,6 +878,17 @@ def build_parts(order, src_root):
     total = sum(dense.values())
     rep["triangles"] = dict(fixed)
     if tol:
+        from . import surface_detail
+        import json
+        protected = {}
+        for name, obj in built.items():
+            report = rep.setdefault('surface_details', {}).get(name)
+            if report is None and obj.get('surface_detail_report'):
+                report = json.loads(obj['surface_detail_report'])
+                rep['surface_details'][name] = report
+            protected[name] = surface_detail.protected_samples(
+                obj, report, geometry_tolerance=tol) if report else None
+            obj['protected_surface_features'] = protected[name] is not None
         # simplify every part to the screen error; if the total still exceeds the size class ceiling,
         # loosen the tolerance until it fits
         rep["budget"] = {"mode": "screen error", "tolerance_mm": round(
@@ -871,7 +902,7 @@ def build_parts(order, src_root):
                     continue
                 o.data = copies[n].copy()
                 got[n] = decimate_to_error(
-                    o, tol * (1.6 ** attempt), PART_MIN_TRIS)
+                    o, tol * (1.6 ** attempt), PART_MIN_TRIS, protected=protected.get(n))
             if sum(t for t, _ in got.values()) <= budget:
                 break
         rep["budget"]["tolerance_used_mm"] = round(
@@ -890,10 +921,10 @@ def build_parts(order, src_root):
             apply_mods(o)
         rep["triangles"][n] = sum(
             len(p_.vertices) - 2 for p_ in o.data.polygons)
-    if order.get('vision_generated'):
+    if order.get('vision_generated') or order.get('automatic_depth'):
         from .simplification import refresh_normals
         for obj in built.values():
-            refresh_normals(obj)
+            refresh_normals(obj, planar=True)
     for o, (views_, w_, d_, h_) in pending:
         loc, rot = o.location.copy(), o.rotation_euler.copy()
         o.location, o.rotation_euler = (0, 0, 0), (0, 0, 0)
@@ -948,4 +979,13 @@ def build_parts(order, src_root):
         print("PARTS report", json.dumps(rep, default=str))
         raise RuntimeError("parts not seated: " + "; ".join("%s on %s (%s): gap %s mm, touching %s" % (
             g["part"], g["on"], g["towards"], g["gap_mm"], g["touching"]) for g in bad))
+    for name, report in rep.get('surface_details', {}).items():
+        report['physical_owner'] = built[name].get(
+            'physical_region_id', built[name].name)
+        report['matrix_world'] = [list(row)
+                                  for row in built[name].matrix_world]
+    for obj in built.values():
+        high = bpy.data.objects.get(obj.get('dense_source_name', ''))
+        if high:
+            high.matrix_world = obj.matrix_world.copy()
     return rep

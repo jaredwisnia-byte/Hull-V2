@@ -327,14 +327,28 @@ def run_line(order):
             D_ = hp.get("depth_m") or height * sm_.shape[1] / sm_.shape[0]
             order.setdefault("measured", {})["relief"] = rrep = {}
             if order.get('automatic_depth'):
-                from propkit.depth_inference import body_hook
-                hp["mesh_hook"] = body_hook(
-                    views, W_, D_, height, rrep, keep_high=True)
+                from propkit import surface_detail
+                detail_plan = surface_detail.analyse(
+                    views, (W_, D_, height), rrep)
+                detail_plan['diagnostic_folder'] = os.path.join(
+                    ROOT, 'docs', 'inference', order['name'], 'shading')
+                hp['field_hook'] = lambda field: surface_detail.apply_field(
+                    field, detail_plan)
+                hp['mesh_hook'] = lambda obj: surface_detail.capture_high(
+                    obj, detail_plan)
+                # Detail is already part of the shared zero surface. Do not
+                # smooth/decimate it away before feature-aware simplification.
+                hp['smooth_iters'] = 0
+                hp['decimate'] = 1.
             else:
                 hp["mesh_hook"] = relief.hook(views, W_, D_, height, rrep)
         from propkit.hull import HULL_REPORT
         HULL_REPORT.pop("sections", None)
         obj = hull_prop(views, height, name=order["name"], **hp)
+        order.setdefault('measured', {})['field'] = dict(
+            HULL_REPORT.get('field', {}))
+        print('RECONSTRUCTION_FIELD',
+              order['name'], order['measured']['field'], flush=True)
         if HULL_REPORT.get("sections"):
             # inferred cross-sections: summary in the order, overlays (the fitted sections drawn in each view's
             # pixels, transparent) in docs/inference/<name>/ for switching on over the painting
@@ -354,20 +368,11 @@ def run_line(order):
                       "w"), indent=1, default=str)
         manufactured = [obj]
         if blended and order.get("automatic_depth"):
-            from propkit import construction
-            order.setdefault('measured', {}).pop('construction', None)
-            guide = order.get("measured", {}).get(
-                "guides", {}).get("round_band")
-            guide_band = (guide["v_top"], guide["v_bottom"]) if guide else None
-            model = construction.infer(views, height, guide_band)
-            if model is not None:
-                import bpy
-                high = bpy.data.objects.get(order["name"] + "__high")
-                construction.refine_dense_shaft(high, model)
-                manufactured = construction.manufacture(
-                    obj, model, order["name"])
-                order.setdefault("measured", {})[
-                    "construction"] = model["report"]
+            order.setdefault('measured', {})['construction'] = {
+                'physical_regions': 1,
+                'computational_features': len(order['measured'].get('relief', {}).get('features', [])),
+                'selection': 'one continuous implicit surface; no physical joint evidence',
+                'policy': 'explicit physical parts or disconnected solids may separate; curvature bands do not'}
         if blended and (order.get("automatic_depth") or order.get("budget") == "screen"):
             from propkit.simplification import screen_tolerance, decimate_to_error, refresh_normals
             tolerance = screen_tolerance(
@@ -375,18 +380,27 @@ def run_line(order):
             totals = {}
             if tolerance:
                 for part in manufactured:
+                    detail = order.get('measured', {}).get('relief', {})
+                    from propkit import surface_detail
+                    protected = surface_detail.protected_samples(
+                        part, detail, geometry_tolerance=tolerance) if detail.get('probes') else None
+                    part['protected_surface_features'] = protected is not None
                     if part.get("preserve_profile_features"):
                         triangles = sum(len(face.vertices) -
                                         2 for face in part.data.polygons)
                         error = 0.0
                     else:
-                        triangles, error = decimate_to_error(part, tolerance)
-                    refresh_normals(part)
+                        triangles, error = decimate_to_error(
+                            part, tolerance, protected=protected)
+                    refresh_normals(part, planar=bool(
+                        order.get('automatic_depth')))
                     totals[part.name] = {
                         "triangles": triangles, "surface_error_m": error}
                 order.setdefault("measured", {})["simplification"] = {
                     "parts": totals, "triangles": sum(p["triangles"] for p in totals.values()),
                     "tolerance_m": tolerance, "stage": "independent regions before projection and baking"}
+                print('SIMPLIFIED_SURFACE',
+                      order['name'], order['measured']['simplification'], flush=True)
         if blended:
             from propkit import texturing
             from propkit.hull_assembly import paint_views
@@ -397,7 +411,7 @@ def run_line(order):
                                   others=[
                                       other for other in manufactured if other != part],
                                   name=part.name, rough=hp.get("rough", .5),
-                                  camera_fit=order.get('measured', {}).get('construction', {}).get('camera_axis_fit'))
+                                  camera_fit=None)
     elif line == "car":
         from props.cars_painted import painted_car
         painted_car(order["name"], order.get("body", "car_coupe"))
@@ -449,6 +463,10 @@ def correct(order, result):
     the order was changed and is worth one more attempt."""
     changed = False
     fails = " ".join(result["fails"])
+    if order.get('automatic_depth') and 'triangle budget' in fails:
+        # The implicit path intentionally preserves detected geometry. The
+        # legacy decimation-ratio retry is overridden there and does no work.
+        return False
     if order["line"] == "hull":
         h = order.setdefault("hull", {})
         for v in ("back", "left", "right", "top"):
@@ -542,10 +560,9 @@ def build(order, samples=16):
         except Exception as e:
             result["pass"] = False
             result["fails"].append("preview generation failed: %s" % e)
-    inferred = order.get('measured', {}).get(
-        'construction', {}).get('features', [])
-    result['inference_warnings'] = ['uncertain groove depth: ' + f['id']
-                                    for f in inferred if f['uncertain']]
+    inferred = order.get('measured', {}).get('relief', {}).get('features', [])
+    result['inference_warnings'] = [
+        'surface depths are inverse-shading estimates; lighting and material ambiguity remain'] if inferred else []
     order["status"] = "shipped" if result["pass"] and not result['inference_warnings'] else "needs_person"
     order["attempts"] = attempt
     save_order(order)

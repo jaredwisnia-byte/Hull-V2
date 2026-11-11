@@ -7,6 +7,62 @@ operations; no conversational LLM supplies per-object corrections.
 
 ## Implemented: shared stages and readable code
 
+### Current acceptance work: continuous implicit detail (2026-11-11)
+
+The active automatic-depth path supersedes the capped construction-band prototype.
+It extracts one continuous signed-field surface, using pixel shading fall-off and
+integrable height gradients in six orthographic views. It does not select table-leg
+geometry by object name or accept assistant-supplied feature positions. Explicit
+physical parts still go through the original parts-layout engine.
+
+Implemented supporting fixes: metric field boundaries; continuous inverse shading
+with material correction and held-out pixel tests; local curvature-aware reduction;
+soft scale-aware detail protection;
+native physical IDs through glTF; complete posed high-resolution bake sources;
+planar shading refresh; manufacturing translations in exported-feature checks.
+Tests exercise continuous curved relief, an organic curved skin, undulating terrain,
+flat false positives, connectedness and dense planar-grid reduction.
+
+Acceptance remains open until real builds and renders have been reviewed. The
+circle/channel template prototype reached 17,602 triangles and passed its geometry
+probes, but close-ups exposed pinching and the user rejected the template-driven
+approach. That implementation was removed before publication. The active solver
+estimates a continuous height field rather than selecting a primitive per feature.
+Its first low-regularization trial overfit training pixels and was rejected by
+held-out pixels. Increasing curvature regularization improves held-out prediction;
+this is evidence of shading fit, not proof of correct metric depth. The software
+records unresolved fitting conflicts and explicit lighting/material assumptions.
+The blender is a held-out image-only assembly test;
+its inconsistent top reference must retain review status rather than have its
+threshold relaxed. Record final observed results here before publishing.
+
+Still research work: reliable generic physical semantics, perspective/shape
+calibration, ambiguity-aware inverse lighting/material recovery, and complete
+ornamental reconstruction. The common operator is object-independent; that does
+not establish solved perception for every possible image.
+
+Controlled validation passes: four shading contracts (continuous curved relief,
+exact gradient integration, chromatic material rejection and flat-image rejection),
+five field contracts including a thin structural bridge, and five Blender surface
+contracts including organic/machined skins, undulating terrain and flat impostors.
+The existing ownership/export and orchestration guards pass. Godot has 39 unit
+checks and 45 smoke checks passing. The real-image trials still produce fitting
+conflicts and can exceed the triangle ceiling; no real asset is accepted on the
+basis of these controlled tests. The lighting gauge is assumed, not learned or
+uniquely estimated, and joint camera/shape/reflectance recovery is not complete.
+
+The latest held-out blender run also rejects assembly seating: the jar/housing
+joint reports a 10 mm gap and only 18% contact after inferred geometry changes.
+The pipeline reports this failure and refuses to package a stale prior model.
+Do not repair this with an object-specific offset or relaxed contact threshold.
+Mounting constraints and recovered surfaces must be reconciled generically.
+
+Research basis: [Horn, Height and Gradient from Shading](https://dspace.mit.edu/entities/publication/459ecc14-2067-4c01-983b-22d98156e780)
+describes height/gradient integration with reflectance and regularization.
+[CMU's photometric measurement report](https://publications.ri.cmu.edu/illumination-planning-for-photometric-measurements)
+distinguishes photometric stereo: a fixed viewpoint under changing illumination,
+which an ordinary front/side reference sheet does not supply.
+
 - `propkit/pipeline.py` owns image-only intake/build/export/render orchestration,
   freshness checks, persistent failure reports and review status. Factory's public
   entry point remains compatible. Unexpected station errors write a traceback and

@@ -595,3 +595,28 @@ library, ledger and REPORT are restored afterwards (git checkout + delete the ex
   control panel plastic) as see-through, and paint_views repainted them from neighbours: that smeared the
   first new TV's frame ("jagged"). A see-through hole must also show from the opposite view (mirrored);
   with no opposite view the old behaviour stays (hull_assembly.confirmed_holes).
+## Continuous reconstruction and detail checks (Nov 11)
+
+- The active experiment solves continuous height/gradient fields from shading.
+  Circle detection and fixed dome/channel templates were rejected and removed.
+  Brightness is not height: material colour, illumination and cast shadows can
+  imitate relief. A successful image fit alone does not prove metric geometry.
+- Do not use validation probes to manufacture local point dents. Validate the
+  continuous solution independently. Unmet dense-fit constraints stay QA failures
+  but must not lock the simplifier at source-grid density.
+- Protect thin cores and check solid connectivity when combining view corrections:
+  independent recesses can cut through the same support from opposite sides.
+- A computational curvature region is not a physical component. Independent caps
+  create visible joints; share one implicit surface unless physical separation has evidence.
+- Cell-centred signed fields need metric ghost cells. Arbitrary positive padding
+  moves the zero crossing and can flatten shallow crowns at the sampling box.
+- Checking a bead only at its centre admits pyramids. Check several angular and
+  radial crown/rim contrasts on the exported mesh, without textures or normal maps.
+- Keep small features with local contrast bounds and sampling uncertainty, rather
+  than demanding micrometre absolute positions across an entire dense source grid.
+- Blender decimation weights of exactly zero lock edges. Soft protection must
+  remain nonzero after inversion; its influence also needs physical scale.
+- Preserve native physical IDs through export. Matching tiny triangle centroids
+  is fragile when exporter triangulation or normal splits change.
+- QA feature frames must include floor/wall seating translations. Check each part
+  against its own geometry so another assembled part cannot intercept its rays.

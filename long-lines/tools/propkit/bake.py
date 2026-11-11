@@ -51,7 +51,10 @@ def standardize(obj, name, tex, tags=()):
         dims) <= v["max_dim_m"]), "building")
     budget = STANDARDS["size_classes"][cls]["tri_budget"]
     tris = sum(len(p.vertices) - 2 for p in me.polygons)
-    if tris > budget:
+    if tris > budget and obj.get('protected_surface_features'):
+        notes.append(
+            'feature constraints exceed triangle budget; QA must flag instead of erasing detail')
+    elif tris > budget:
         d = obj.modifiers.new("budget", "DECIMATE")
         d.ratio = budget / tris * 0.95
         core.apply_mods(obj)
@@ -83,6 +86,33 @@ def fit_texture(me, tex):
     return tex, notes
 
 
+def combine_high_sources(parts, name):
+    """One complete dense bake source, aligned to all finished physical parts."""
+    high_sources = [o for o in bpy.data.objects if o.type ==
+                    'MESH' and o.name.endswith('__high')]
+    if not high_sources:
+        return None
+    for part in parts:
+        source = bpy.data.objects.get(part.get('dense_source_name', '')) or \
+            bpy.data.objects.get(part.name.split('.')[0] + '__high')
+        if source is None:
+            source = part.copy()
+            source.data = part.data.copy()
+            source.name = part.name + '__high'
+            bpy.context.scene.collection.objects.link(source)
+            high_sources.append(source)
+        source.matrix_world = part.matrix_world.copy()
+    bpy.ops.object.select_all(action='DESELECT')
+    for source in high_sources:
+        source.select_set(True)
+    bpy.context.view_layer.objects.active = high_sources[0]
+    if len(high_sources) > 1:
+        bpy.ops.object.join()
+    combined = bpy.context.view_layer.objects.active
+    combined.name = name + '__high'
+    return combined
+
+
 def finish(name, out_root, tex=1024, samples=24, tags=(), owned_projection=False):
     """Bakes albedo / normal / ORM maps for everything built since core.reset()
     and writes <out_root>/<name>/<name>.glb plus textures. Returns manifest info."""
@@ -92,7 +122,11 @@ def finish(name, out_root, tex=1024, samples=24, tags=(), owned_projection=False
     from . import pixel_bake, texturing
     projection_sources = pixel_bake.bind_sources(
         texturing.PROJECTIONS) if owned_projection else {}
-    from .ownership import tag_parts, save_mesh_ownership
+    # A parts assembly needs a complete dense source, with every source moved
+    # by its own finished part pose. Baking from the first child's high mesh
+    # silently erases normal detail on all the other children.
+    combine_high_sources(parts, name)
+    from .ownership import tag_parts, save_mesh_ownership, prepare_export_ownership
     bpy.ops.object.select_all(action="DESELECT")
     for p in parts:
         p.select_set(True)
@@ -101,13 +135,18 @@ def finish(name, out_root, tex=1024, samples=24, tags=(), owned_projection=False
     bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
     parts = list(bpy.context.selected_objects)
     physical_owners = tag_parts(parts)
+    preserve_features = any(p.get('protected_surface_features') for p in parts)
+    fields = [json.loads(p['reconstruction_field'])
+              for p in parts if p.get('reconstruction_field')]
     # repair invalid meshes before joining: one invalid part (a thin plate with holes, decimated hard)
     # makes the glTF exporter misalign its arrays, garbling the normals of every part written after it
     repaired = [p_.name for p_ in parts if p_.data.validate(
         verbose=False, clean_customdata=False)]
-    bpy.ops.object.join()
+    if len(parts) > 1:
+        bpy.ops.object.join()
     obj = bpy.context.view_layer.objects.active
     obj.name = name
+    obj['protected_surface_features'] = preserve_features
     bpy.context.scene.cursor.location = (0, 0, 0)
     bpy.ops.object.origin_set(type="ORIGIN_CURSOR")
     high = bpy.data.objects.get(
@@ -136,6 +175,9 @@ def finish(name, out_root, tex=1024, samples=24, tags=(), owned_projection=False
         triangles.to_mesh(obj.data)
     finally:
         triangles.free()
+    if owned_projection:
+        from .simplification import refresh_normals
+        refresh_normals(obj, planar=True)
     me = obj.data
     for uv in list(me.uv_layers):
         me.uv_layers.remove(uv)
@@ -241,22 +283,24 @@ def finish(name, out_root, tex=1024, samples=24, tags=(), owned_projection=False
         poly.material_index = 0
     me.materials.clear()
     me.materials.append(bpy.data.materials.new(name))
+    prepare_export_ownership(obj)
     core.select_only(obj)
     bpy.ops.export_scene.gltf(filepath=os.path.join(out, name + ".glb"), export_format="GLB",
-                              use_selection=True, export_materials="PLACEHOLDER", export_yup=True)
+                              use_selection=True, export_materials="PLACEHOLDER", export_yup=True, export_attributes=True)
     dims = obj.dimensions
     bb = [obj.matrix_world @ v.co for v in me.vertices]
     lo = [min(v[i] for v in bb) for i in range(3)]
     hi = [max(v[i] for v in bb) for i in range(3)]
     tris = sum(len(p.vertices) - 2 for p in me.polygons)
     save_mesh_ownership(obj, physical_owners,
-                        os.path.join(out, name + '_parts.json'))
+                        os.path.join(out, name + '_parts.json'), source_glb=os.path.join(out, name + '.glb'))
     # Godot axes: x = x, y = z, z = -y
     return {"size": [round(dims.x, 4), round(dims.z, 4), round(dims.y, 4)],
             "min": [round(lo[0], 4), round(lo[2], 4), round(-hi[1], 4)],
             "max": [round(hi[0], 4), round(hi[2], 4), round(-lo[1], 4)],
             "tris": tris, "tex": tex, "standardized": std_notes,
-            "texture_ownership": projection_report}
+            "texture_ownership": projection_report, "reconstruction_fields": fields,
+            "manufacturing_translation_m": list(obj['projection_translation'])}
 
 
 def export_textured(name, out_root, destination):
@@ -272,6 +316,11 @@ def export_textured(name, out_root, destination):
     if identity_path.exists():
         from .ownership import split_standalone
         identity = json.loads(identity_path.read_text())
+        if identity.get('glb_sha256'):
+            import hashlib
+            if hashlib.sha256(base.with_suffix('.glb').read_bytes()).hexdigest() != identity['glb_sha256']:
+                raise ValueError(
+                    'Physical ownership sidecar does not match the exported GLB')
         objects = [
             part for obj in objects for part in split_standalone(obj, identity)]
     material = bpy.data.materials.new(name + '_baked')

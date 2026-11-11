@@ -2,6 +2,69 @@
 import numpy as np
 
 
+def geometry_components(vertices, polygons, tolerance=1e-6):
+    """Count geometric islands after welding exporter-only UV/normal splits."""
+    from scipy.sparse import coo_matrix
+    from scipy.sparse.csgraph import connected_components
+    coordinates = np.rint(np.asarray(vertices) / tolerance).astype(np.int64)
+    unique, index = np.unique(coordinates, axis=0, return_inverse=True)
+    edges = []
+    for face in polygons:
+        values = index[list(face)]
+        edges.extend(zip(values, np.roll(values, -1)))
+    edges = np.asarray(edges)
+    graph = coo_matrix((np.ones(len(edges)), (edges[:, 0], edges[:, 1])), shape=(
+        len(unique), len(unique)))
+    return int(connected_components(graph, directed=False, return_labels=False))
+
+
+def check_surface_features(vertices, polygons, report, minimum_fraction=.5, maximum_fraction=None, tree=None, sampling_tolerance=False):
+    """Test source-derived crowns/rims and valleys/shoulders on exported triangles.
+
+    Subtract the original envelope at each probe so macro curvature cannot
+    masquerade as detail. Texture and normal maps cannot make this check pass.
+    """
+    from mathutils import Vector
+    from mathutils.bvhtree import BVHTree
+    tree = tree or BVHTree.FromPolygons(
+        [Vector(p) for p in vertices], polygons)
+    reach = float(np.ptp(np.asarray(vertices), axis=0).max() * 2)
+    records = []
+    fails = []
+    for probe in report.get('probes', []):
+        direction = np.zeros(3)
+        direction[probe['axis']] = probe['outward']
+        matrix = np.asarray(report.get('matrix_world', np.eye(4)))
+        direction = matrix[:3, :3] @ direction
+        direction /= max(np.linalg.norm(direction), 1e-9)
+        offsets = []
+        for anchor in probe['anchors_m']:
+            anchor = matrix[:3, :3] @ np.asarray(anchor) + matrix[:3, 3]
+            location, _, _, _ = tree.ray_cast(
+                Vector(np.asarray(anchor) + direction * reach), Vector(-direction), reach * 2)
+            offsets.append(None if location is None else float(
+                (np.asarray(location) - anchor) @ direction))
+        target = np.asarray(probe['target_offsets_m'])
+        expected = float(target[0] - np.mean(target[1:]))
+        measured = None if None in offsets else float(
+            offsets[0] - np.mean(offsets[1:]))
+        uncertainty = probe.get(
+            'tolerance_m', 0.) if sampling_tolerance else 0.
+        lower = max(abs(expected) * .5, abs(expected)
+                    * minimum_fraction - uncertainty)
+        retained = measured is not None and measured * \
+            expected > 0 and abs(measured) >= lower
+        if maximum_fraction is not None and measured is not None:
+            retained &= abs(measured) <= abs(expected) * \
+                maximum_fraction + uncertainty
+        records.append({'id': probe['id'], 'kind': probe['kind'], 'view': probe['view'],
+                        'expected_contrast_m': expected, 'measured_contrast_m': measured, 'retained': bool(retained)})
+        if not retained:
+            fails.append('missing ' + probe['kind'] + ' depth: ' + probe['id'])
+    return {'status': 'pass' if not fails else 'fail', 'probes': records, 'fails': fails,
+            'method': 'exported geometric crown/rim and valley/shoulder contrasts; source-derived locations'}
+
+
 def check_channels(vertices, polygons, construction):
     """Measure recesses by rays through actual exported triangles, not normals.
 

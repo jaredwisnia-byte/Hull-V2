@@ -16,13 +16,64 @@ It is not a claim that every algorithm or asset was executed or proven correct.
 Binary textures/GLBs were counted, not exhaustively visually audited.
 
 The accompanying [machine-readable inventory](long-lines/docs/CODEBASE_INVENTORY.json)
-records 412 source/configuration/documentation files, all 100 tracked Python files,
+records 418 source/configuration/documentation files, all 106 tracked Python files,
 36 Godot scripts, module descriptions, definitions/line numbers, imports, static
 calls, JSON shapes, documentation headings and content hashes. All Python files
 parsed successfully; JSON parsing found no errors. Static calls are not a resolved
 runtime call graph. Counts include the currently staged new reconstruction tools.
 
 ## Current implementation update (2026-11-10)
+
+### Superseding reconstruction path (2026-11-11)
+
+Read this section before the historical implementation notes below. Automatic-depth
+builds now use `surface_detail.py` with `implicit.py`, through the existing hull
+and parts-layout engines. `construction.manufacture` is no longer on this path:
+curvature bands are computational regions, not independently capped physical parts.
+The table-leg trial therefore uses one continuous surface. Explicit companion
+parts still use the original assembly/placement/sizing machinery.
+
+Hull already contained a silhouette signed-distance CSG field. It was not a neural
+SDF, and CSG does not preserve exact Euclidean distance everywhere. Interior detail
+now modifies that field before zero-isosurface extraction, instead of relying on
+mesh displacement that later smoothing/reduction can erase. Cell-centred metric
+boundary padding fixes a half-voxel flattening/shrinkage error.
+
+The active path uses `shading.py`: continuous pixel height/gradient optimization,
+chromatic reflectance correction, broad exposure separation, a diffuse-light
+gauge, curvature regularization and held-out pixel validation. The coarse visible
+field supplies its starting surface. A bounded image pyramid suppresses brush
+noise before the inferred corrections are fused across six orthographic directions.
+No circle detector, dome template, fixed channel profile or object name generates
+detail. The old relief engine itself uses dome/dish hypotheses; it remains available
+for legacy orders, not silently substituted for the new pixel solver.
+
+Curvature samples validate a continuous inferred map; they never manufacture
+spheres or feed sparse point dents back into it. Numerical maps and contour PNGs
+record accepted and rejected hypotheses. Unknown illumination, achromatic paint,
+specularity and inconsistent views remain genuine ambiguities. A supplied light
+can be used in controlled tests; production currently records an explicit light
+gauge prior, not a proven jointly recovered light. No conversational LLM runs
+inside this process. Do not describe the depth bound as a measured groove depth.
+
+Reduction checks bidirectional surface error and local continuous-curvature
+contrasts. It must account for grid uncertainty and use soft
+detail weights: zero influence can lock dense vertices permanently. Export QA
+checks the actual triangles, applies manufacturing translations, and limits part
+checks to native physical-owner IDs. Native `_HULL_OWNER` attributes plus a GLB
+hash replace fragile nearest-centroid relabelling for new exports. A complete,
+posed dense assembly supplies the normal bake rather than only one child. Targets
+already unmet by the dense fit stay final QA failures; they must not freeze the
+simplifier at millions of triangles trying to repair a fitting conflict.
+
+Verification: controlled continuous shaded relief, flat material transitions,
+flat images and exact gradient integration are tested. Flat, curved organic and
+machined test surfaces use the same field operator; flat painted impostors fail
+geometry checks. The original Dirac checkout
+remains separate. Current real-asset outcomes and outstanding acceptance failures
+belong in `factory/IMPLEMENTATION_PLAN.md`; passing fixtures alone do not establish
+arbitrary-object reconstruction. General semantic intake, arbitrary perspective
+calibration and uniquely determined lighting/material/depth remain unresolved.
 
 The implemented cleanup is documented in
 [IMPLEMENTATION_PLAN.md](long-lines/factory/IMPLEMENTATION_PLAN.md).

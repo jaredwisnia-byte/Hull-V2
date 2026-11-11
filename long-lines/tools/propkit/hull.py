@@ -59,7 +59,8 @@ def silhouette(path, thresh=30, convex=False, with_box=False):
     for i, sl in enumerate(ndimage.find_objects(lab), 1):
         if i == main or sizes[i - 1] < 0.002 * sizes[main - 1]:
             continue
-        y0_, y1_, x0_, x1_ = sl[0].start, sl[0].stop - 1, sl[1].start, sl[1].stop - 1
+        y0_, y1_, x0_, x1_ = sl[0].start, sl[0].stop - \
+            1, sl[1].start, sl[1].stop - 1
         near_y = y0_ <= my1 + gap and y1_ >= my0 - gap
         near_x = x0_ <= mx1 + gap and x1_ >= mx0 - gap
         if near_x and near_y:
@@ -96,8 +97,10 @@ def detect_circles(img, min_score=0.5):
     w = g.shape[1]
     radii = np.arange(max(4, int(w * 0.025)), max(8, int(w * 0.09)))
     acc = hough_circle(e, radii)
-    sc, cx, cy, r = hough_circle_peaks(acc, radii, total_num_peaks=16, min_xdistance=6, min_ydistance=6)
-    cands = [(int(x), int(y), int(rr)) for s_, x, y, rr in zip(sc, cx, cy, r) if s_ >= min_score]
+    sc, cx, cy, r = hough_circle_peaks(
+        acc, radii, total_num_peaks=16, min_xdistance=6, min_ydistance=6)
+    cands = [(int(x), int(y), int(rr))
+             for s_, x, y, rr in zip(sc, cx, cy, r) if s_ >= min_score]
     cands.sort(key=lambda c: -c[2])
     out = []
     for x, y, rr in cands:
@@ -116,8 +119,10 @@ def _sample(mask, u, v):
 
 
 OUTLINE_SCALE = 4       # the fitted outline is rasterised this much finer than the view
-OUTLINE_SIGMA_PX = 4.0  # smoothing along the outline: pixel staircases go, curves wider than ~this stay
-CORNER_DEG = 40         # turning more than this over +-CORNER_SPAN_PX is a real corner (kept sharp)
+# smoothing along the outline: pixel staircases go, curves wider than ~this stay
+OUTLINE_SIGMA_PX = 4.0
+# turning more than this over +-CORNER_SPAN_PX is a real corner (kept sharp)
+CORNER_DEG = 40
 CORNER_SPAN_PX = 4.0
 
 
@@ -144,16 +149,19 @@ def _smooth_contour(c, sigma_px=OUTLINE_SIGMA_PX, corner_deg=CORNER_DEG, span_px
     k = max(2, int(span_px / step))
     v1 = q - np.roll(q, k, 0)
     v2 = np.roll(q, -k, 0) - q
-    cosang = (v1 * v2).sum(1) / np.maximum(1e-9, np.linalg.norm(v1, axis=1) * np.linalg.norm(v2, axis=1))
+    cosang = (v1 * v2).sum(1) / np.maximum(1e-9,
+                                           np.linalg.norm(v1, axis=1) * np.linalg.norm(v2, axis=1))
     ang = np.degrees(np.arccos(np.clip(cosang, -1, 1)))
-    corner = (ang > corner_deg) & (ang >= ndimage.maximum_filter1d(ang, 2 * k + 1, mode="wrap"))
+    corner = (ang > corner_deg) & (
+        ang >= ndimage.maximum_filter1d(ang, 2 * k + 1, mode="wrap"))
     sig = sigma_px / step
     idx = np.nonzero(corner)[0]
     if not len(idx):
         return np.c_[ndimage.gaussian_filter1d(q[:, 0], sig, mode="wrap"),
                      ndimage.gaussian_filter1d(q[:, 1], sig, mode="wrap")]
     out = q.copy()
-    for a_, b_ in zip(idx, np.r_[idx[1:], idx[0] + n]):     # each run between corners, ends pinned
+    # each run between corners, ends pinned
+    for a_, b_ in zip(idx, np.r_[idx[1:], idx[0] + n]):
         ii = np.arange(a_, b_ + 1) % n
         run = q[ii]
         if len(run) < 4:
@@ -184,7 +192,8 @@ def fit_outline(mask, scale=OUTLINE_SCALE, curves=False):
         if len(c) < 3:
             continue
         kept.append(c)
-        pts = [((x + 0.5) * scale - 0.5, (y + 0.5) * scale - 0.5) for y, x in c]
+        pts = [((x + 0.5) * scale - 0.5, (y + 0.5) * scale - 0.5)
+               for y, x in c]
         im = Image.new("1", (w * scale, h * scale), 0)
         ImageDraw.Draw(im).polygon(pts, fill=1)
         out ^= np.asarray(im, dtype=bool)
@@ -200,7 +209,8 @@ def view_distance(mask, span_u, span_v, us, vs):
     from scipy.spatial import cKDTree
     h, w = mask.shape
     P = 4
-    m = np.pad(mask.astype(bool), P)                     # tight crops: the object touches the edge
+    # tight crops: the object touches the edge
+    m = np.pad(mask.astype(bool), P)
     k = OUTLINE_SCALE
     hr, curves = fit_outline(m, scale=k, curves=True)
     su, sv = span_u / max(1, w - 1), span_v / max(1, h - 1)
@@ -210,14 +220,17 @@ def view_distance(mask, span_u, span_v, us, vs):
         seg = np.linalg.norm(np.diff(cl, axis=0), axis=1)
         t = np.r_[0, np.cumsum(seg)]
         ts = np.arange(0, t[-1], 0.2)
-        xy = np.c_[np.interp(ts, t, cl[:, 1]) * su, np.interp(ts, t, cl[:, 0]) * sv]     # (x, y) metres
+        xy = np.c_[np.interp(ts, t, cl[:, 1]) * su,
+                   np.interp(ts, t, cl[:, 0]) * sv]     # (x, y) metres
         tan = np.roll(xy, -1, 0) - np.roll(xy, 1, 0)
         nn = np.c_[tan[:, 1], -tan[:, 0]]
         nn /= np.maximum(1e-12, np.linalg.norm(nn, axis=1))[:, None]
         # orient each curve's normals outward: a step along them must land outside (raster majority)
         probe = xy + nn * 1.5 * max(su, sv)
-        jx = np.clip(np.round(probe[:, 0] / su * k + (k - 1) / 2).astype(int), 0, hr.shape[1] - 1)
-        jy = np.clip(np.round(probe[:, 1] / sv * k + (k - 1) / 2).astype(int), 0, hr.shape[0] - 1)
+        jx = np.clip(np.round(probe[:, 0] / su * k +
+                     (k - 1) / 2).astype(int), 0, hr.shape[1] - 1)
+        jy = np.clip(np.round(probe[:, 1] / sv * k +
+                     (k - 1) / 2).astype(int), 0, hr.shape[0] - 1)
         if hr[jy, jx].mean() > 0.5:
             nn = -nn
         pts.append(xy)
@@ -236,8 +249,10 @@ def view_distance(mask, span_u, span_v, us, vs):
     # near the curve: the signed distance along the nearest point's normal (exact for the curve's
     # local line; the distance to the nearest sample point is off by up to half the sample spacing)
     along = ((q - pts[idx]) * nrm[idx]).sum(1)
-    ix = np.clip(np.round(PX * k + (k - 1) / 2).astype(int), 0, hr.shape[1] - 1).ravel()
-    iy = np.clip(np.round(PY * k + (k - 1) / 2).astype(int), 0, hr.shape[0] - 1).ravel()
+    ix = np.clip(np.round(PX * k + (k - 1) / 2).astype(int),
+                 0, hr.shape[1] - 1).ravel()
+    iy = np.clip(np.round(PY * k + (k - 1) / 2).astype(int),
+                 0, hr.shape[0] - 1).ravel()
     far = np.where(hr[iy, ix], -1.0, 1.0) * d
     return np.where(d < 1.0 * max(su, sv), along, far).reshape(PX.shape)
 
@@ -249,19 +264,23 @@ def hull_field(carve, X, Yy, Z, W, D, H):
     F = None
     for k, (msk, _) in carve.items():
         if k == "front":
-            f = view_distance(msk, W, H, x, 1 - z).T[:, None, :]          # [x, 1, z]
+            f = view_distance(msk, W, H, x, 1 -
+                              z).T[:, None, :]          # [x, 1, z]
         elif k == "back":
             f = view_distance(msk, W, H, 1 - x, 1 - z).T[:, None, :]
         elif k == "right":
-            f = view_distance(msk, D, H, y, 1 - z).T[None, :, :]          # [1, y, z]
+            f = view_distance(msk, D, H, y, 1 -
+                              z).T[None, :, :]          # [1, y, z]
         elif k == "left":
             f = view_distance(msk, D, H, 1 - y, 1 - z).T[None, :, :]
         elif k == "top":
-            f = view_distance(msk, W, D, x, 1 - y).T[:, :, None]          # [x, y, 1]
+            f = view_distance(msk, W, D, x, 1 -
+                              y).T[:, :, None]          # [x, y, 1]
         else:
             continue
         F = np.broadcast_to(f, X.shape) if F is None else np.maximum(F, f)
     return np.array(F)
+
 
 HULL_REPORT = {}     # what the last hull_prop call carved with blades
 
@@ -269,7 +288,7 @@ HULL_REPORT = {}     # what the last hull_prop call carved with blades
 def hull_prop(views, height, res=110, smooth_iters=4, decimate=0.35, rough=0.5, name="hull",
               convex=False, paint_only=(), features=True, sil_override=None, depth_m=None, grime=0.25,
               paint=True, width_m=None, blades=False, voxel_hook=None, mesh_hook=None, revolve=True, blur=0.7,
-              field=None, sections=None):
+              field=None, sections=None, field_hook=None):
     """convex: fill each outline to its convex shape (boxy objects; dark areas can't
     punch holes). paint_only: views used for texture but not trusted to carve (e.g. a
     dark back panel on a dark sheet). width_m: the real width (views painted out of
@@ -284,7 +303,8 @@ def hull_prop(views, height, res=110, smooth_iters=4, decimate=0.35, rough=0.5, 
     revolve: a part whose top view is round (an ellipse once handles/spouts are set aside) is built
     as a lathe shape, every slice an ellipse sized by the front and side outlines (propkit/revolve.py)."""
     # sil_override: {view: (mask, image)} from a part map, when the sheet set provides exact outlines.
-    sil = dict(sil_override) if sil_override else {k: silhouette(p, convex=convex) for k, p in views.items()}
+    sil = dict(sil_override) if sil_override else {
+        k: silhouette(p, convex=convex) for k, p in views.items()}
     # Raw (non-convex) side outlines keep small bumps such as knobs seen side-on.
     raw_sides = {k: v for k, v in sil.items() if k in ("right", "left")} if sil_override else \
         {k: silhouette(p) for k, p in views.items() if k in ("right", "left")}
@@ -312,8 +332,10 @@ def hull_prop(views, height, res=110, smooth_iters=4, decimate=0.35, rough=0.5, 
     if "top" in carve:
         keep &= _sample(carve["top"][0], X, 1 - Yy)
     import os as _os
-    field = field or _os.environ.get("HULL_FIELD", "sdf")   # HULL_FIELD=binary: the original meshing (A/B tests)
-    keep0 = keep.copy()                                 # the plain hull, before any carving step
+    # HULL_FIELD=binary: the original meshing (A/B tests)
+    field = field or _os.environ.get("HULL_FIELD", "sdf")
+    # the plain hull, before any carving step
+    keep0 = keep.copy()
     if blades:
         from . import blades as _blades
         HULL_REPORT.clear()
@@ -325,7 +347,8 @@ def hull_prop(views, height, res=110, smooth_iters=4, decimate=0.35, rough=0.5, 
     # sections: how round each height band is, inferred from the painting (propkit/sections.py). On by
     # default (it rounds only with two witnesses, or an end view); "sections": false in an order or
     # HULL_SECTIONS=0 turns it off. Not for parts already turned as lathes.
-    sections = sections if sections is not None else _os.environ.get("HULL_SECTIONS", "1") != "0"
+    sections = sections if sections is not None else _os.environ.get(
+        "HULL_SECTIONS", "1") != "0"
     if sections and not (HULL_REPORT.get("revolve") or {}).get("round") and "front" in views and \
             ({"right", "left"} & set(views)) and all(isinstance(v, str) for v in views.values()):
         from . import sections as _sections
@@ -343,28 +366,44 @@ def hull_prop(views, height, res=110, smooth_iters=4, decimate=0.35, rough=0.5, 
     if field == "sdf":
         vox = min(W / nx, D / ny, H / nz)
         F = hull_field(carve, X, Yy, Z, W, D, H)
-        removed = keep0 & ~keep                         # carved by blades / lathe / hooks (always subtractive)
+        from .implicit import bounded_field, pad_field
+        F = bounded_field(F, (W, D, H))
+        # carved by blades / lathe / hooks (always subtractive)
+        removed = keep0 & ~keep
         if removed.any():
             # Carving steps work on voxels. Near what they removed, the surface is the carved solid's
             # own smoothed signed distance (a removed sliver's distance is noise where it is a voxel
             # thin, e.g. a lathe's shell near tangency, and crinkles the surface); elsewhere it stays
             # the fitted hull field.
-            G = ndimage.distance_transform_edt(~keep) - ndimage.distance_transform_edt(keep)
+            G = ndimage.distance_transform_edt(
+                ~keep) - ndimage.distance_transform_edt(keep)
             G = ndimage.gaussian_filter((G - np.sign(G) * 0.5) * vox, 1.0)
             zone = ndimage.binary_dilation(removed, iterations=3)
             F = np.where(zone, np.maximum(F, G), F)
-        HULL_REPORT["field"] = {"removed_voxels": int(removed.sum()), "vox_m": round(float(vox), 4)}
-        vol = np.pad(F.astype(np.float32), 1, constant_values=float(np.abs(F).max()))
+        if field_hook is not None:
+            F = field_hook(F)
+        HULL_REPORT["field"] = {"mode": "projected_signed_distance_csg", "isovalue": 0.,
+                                "boundary_padding": "metric half-voxel exterior cells",
+                                "interior_detail": field_hook is not None,
+                                "removed_voxels": int(removed.sum()), "vox_m": round(float(vox), 6)}
+        vol = pad_field(F, (W, D, H))
         verts, faces, _, _ = marching_cubes(vol, 0.0)
     else:
+        if field_hook is not None:
+            raise ValueError(
+                'Implicit interior detail requires the SDF field, not binary meshing')
+        HULL_REPORT['field'] = {'mode': 'binary_voxel',
+                                'isovalue': .5, 'interior_detail': False}
         vol = np.pad(keep.astype(np.float32), 1)
         vol = ndimage.gaussian_filter(vol, blur)
         verts, faces, _, _ = marching_cubes(vol, 0.5)
     verts -= 1.0
-    HULL_REPORT.setdefault("timing", {})["field_and_mesh_s"] = round(_time.time() - _t, 2)
+    HULL_REPORT.setdefault("timing", {})[
+        "field_and_mesh_s"] = round(_time.time() - _t, 2)
     sx, sy, sz = W / nx, D / ny, H / nz
     bm = bmesh.new()
-    bv = [bm.verts.new(((vx + 0.5) * sx - W / 2, (vy + 0.5) * sy - D / 2, (vz + 0.5) * sz)) for vx, vy, vz in verts]
+    bv = [bm.verts.new(((vx + 0.5) * sx - W / 2, (vy + 0.5)
+                       * sy - D / 2, (vz + 0.5) * sz)) for vx, vy, vz in verts]
     for a, b, c in faces:
         try:
             bm.faces.new((bv[a], bv[c], bv[b]))
@@ -375,6 +414,8 @@ def hull_prop(views, height, res=110, smooth_iters=4, decimate=0.35, rough=0.5, 
     bm.to_mesh(me)
     bm.free()
     obj = link(bpy.data.objects.new(name, me))
+    import json
+    obj['reconstruction_field'] = json.dumps(HULL_REPORT['field'])
     if mesh_hook is not None:
         mesh_hook(obj)
     sm_mod = obj.modifiers.new("smooth", "SMOOTH")
@@ -392,16 +433,19 @@ def hull_prop(views, height, res=110, smooth_iters=4, decimate=0.35, rough=0.5, 
     mats_ = {}
     for k in order:
         if k in sil:
-            path = os.path.join(tempfile.gettempdir(), "_hull_%s_%s.png" % (name, k))
+            path = os.path.join(tempfile.gettempdir(),
+                                "_hull_%s_%s.png" % (name, k))
             sil[k][1].save(path)
-            mats_[k] = M.image(path, rough, grime, 0.05, name="%s_%s" % (name, k))
+            mats_[k] = M.image(path, rough, grime, 0.05,
+                               name="%s_%s" % (name, k))
             obj.data.materials.append(mats_[k])
     slot = {k: i for i, k in enumerate([k for k in order if k in mats_])}
     attr = obj.data.color_attributes.new("label_uv", "FLOAT_COLOR", "CORNER")
     me = obj.data
     for poly in me.polygons:
         n = poly.normal
-        cands = {"front": -n.y, "back": n.y, "right": n.x, "left": -n.x, "top": n.z}
+        cands = {"front": -n.y, "back": n.y,
+                 "right": n.x, "left": -n.x, "top": n.z}
         k = max((c for c in cands if c in slot), key=lambda c: cands[c])
         poly.material_index = slot[k]
         for li in poly.loop_indices:
@@ -414,7 +458,8 @@ def hull_prop(views, height, res=110, smooth_iters=4, decimate=0.35, rough=0.5, 
             elif k == "left":
                 u_ = 1 - (v.y + D / 2) / D
             elif k == "top":
-                w_ = (v.y + D / 2) / D  # top view: front at the image bottom (v = 0)
+                # top view: front at the image bottom (v = 0)
+                w_ = (v.y + D / 2) / D
             attr.data[li].color = (u_, w_, 0, 1)
     smooth(obj, 50)
     if features:
@@ -431,6 +476,7 @@ def side_evidence(sil, v, D):
             continue
         m = sil[key][0]
         h, w = m.shape
+
         def front_col(row):
             xs = np.nonzero(m[row])[0]
             if len(xs) == 0:
@@ -469,7 +515,8 @@ def add_features(sil, keep, W, D, H, front_mat, name, raw_sides=None):
         depth = part_rules.depth_for(part, d)
         source = "rule"
         seen = side_evidence(raw_sides or sil, cy / fh, D)
-        if seen is not None and seen >= rule["min_depth"]:  # a distinct bump, not edge noise
+        # a distinct bump, not edge noise
+        if seen is not None and seen >= rule["min_depth"]:
             # The drawing shows how far it sticks out: trust it, within reason.
             depth = min(max(seen, rule["min_depth"]), rule["max_depth"])
             source = "drawing"
@@ -485,7 +532,8 @@ def add_features(sil, keep, W, D, H, front_mat, name, raw_sides=None):
                 (math.radians(90), 0, 0), bevel=d * 0.08, flutes=rule["flutes"])
         attr = k.data.color_attributes.new("label_uv", "FLOAT_COLOR", "CORNER")
         for li, loop in enumerate(k.data.loops):
-            v = k.data.vertices[loop.vertex_index].co  # local: cylinder axis is Z
+            # local: cylinder axis is Z
+            v = k.data.vertices[loop.vertex_index].co
             u_ = (cx + v.x / (d / 2) * r) / fw
             w_ = 1 - (cy - v.y / (d / 2) * r) / fh
             attr.data[li].color = (u_, w_, 0, 1)
@@ -560,18 +608,24 @@ def polygon_hull(masks, W, D, H, name="phull", bevel_frac=0.015, tolerance=1.0):
         cs = [c for c in cs if len(c) >= 3]
         if not cs:
             continue
-        area = lambda c: 0.5 * abs(sum(c[i][0] * c[(i + 1) % len(c)][1] - c[(i + 1) % len(c)][0] * c[i][1] for i in range(len(c))))
+
+        def area(c): return 0.5 * abs(sum(c[i][0] * c[(i + 1) % len(c)]
+                                          [1] - c[(i + 1) % len(c)][0] * c[i][1] for i in range(len(c))))
         cs.sort(key=area, reverse=True)
-        outer = prism(view, [to2d(view, r - 1, c - 1, h, w) for r, c in cs[0]], "%s_%s" % (name, view))
-        for hole in cs[1:]:                                   # see-through gaps (a handset arch)
+        outer = prism(view, [to2d(view, r - 1, c - 1, h, w)
+                      for r, c in cs[0]], "%s_%s" % (name, view))
+        # see-through gaps (a handset arch)
+        for hole in cs[1:]:
             if area(hole) > 0.002 * h * w:
-                boolean(outer, prism(view, [to2d(view, r - 1, c - 1, h, w) for r, c in hole], "hole"), "DIFFERENCE")
+                boolean(outer, prism(
+                    view, [to2d(view, r - 1, c - 1, h, w) for r, c in hole], "hole"), "DIFFERENCE")
         if result is None:
             result = outer
         else:
             boolean(result, outer, "INTERSECT")
     result.name = name
-    core_link = __import__("propkit.core", fromlist=["link"]) if False else None
+    core_link = __import__("propkit.core", fromlist=[
+                           "link"]) if False else None
     from .core import PARTS
     PARTS.append(result)
     bv = result.modifiers.new("bevel", "BEVEL")
@@ -606,9 +660,12 @@ def loft_from_views(front, top, W, D, H, name="loft", stations=64, sides=28, exp
         if not len(rows) or not len(trow):
             continue
         x = (c / wf - 0.5) * W
-        z_top, z_bot = (1 - rows.min() / hf) * H, (1 - (rows.max() + 1) / hf) * H
-        y_back, y_front = (0.5 - trow.min() / ht) * D, (0.5 - (trow.max() + 1) / ht) * D
-        yc, zc, ry, rz = (y_back + y_front) / 2, (z_top + z_bot) / 2, (y_back - y_front) / 2, (z_top - z_bot) / 2
+        z_top, z_bot = (1 - rows.min() / hf) * \
+            H, (1 - (rows.max() + 1) / hf) * H
+        y_back, y_front = (0.5 - trow.min() / ht) * \
+            D, (0.5 - (trow.max() + 1) / ht) * D
+        yc, zc, ry, rz = (y_back + y_front) / 2, (z_top + z_bot) / \
+            2, (y_back - y_front) / 2, (z_top - z_bot) / 2
         ring = []
         for k in range(sides):
             t = 2 * math.pi * k / sides
@@ -624,7 +681,8 @@ def loft_from_views(front, top, W, D, H, name="loft", stations=64, sides=28, exp
         for k in range(sides):
             bm.faces.new((a[k], a[(k + 1) % sides], b[(k + 1) % sides], b[k]))
     for ring, rev in ((vr[0], True), (vr[-1], False)):          # rounded end caps
-        c = bm.verts.new(tuple(sum(v.co[i] for v in ring) / sides for i in range(3)))
+        c = bm.verts.new(
+            tuple(sum(v.co[i] for v in ring) / sides for i in range(3)))
         for k in range(sides):
             f = (ring[k], ring[(k + 1) % sides], c)
             bm.faces.new(tuple(reversed(f)) if rev else f)

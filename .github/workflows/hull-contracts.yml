@@ -20,7 +20,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: python -m pip install numpy scipy Pillow
+      - run: python -m pip install numpy scipy Pillow scikit-image
       - name: Check all tool syntax without importing Blender
         run: python -m compileall -q long-lines/tools
       - name: Test section topology and depth evidence
@@ -28,5 +28,7 @@ jobs:
           python long-lines/tools/test_sectioning.py
           python long-lines/tools/test_depth_engineering.py
           python long-lines/tools/test_profile_pipeline.py
+          python long-lines/tools/test_surface_detail.py
+          python long-lines/tools/test_shading.py
           python long-lines/tools/test_sizing.py
           python long-lines/tools/test_human_scale.py
