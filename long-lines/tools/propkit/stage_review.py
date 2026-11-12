@@ -103,6 +103,11 @@ def inspect(result, measured, diagnostics=None):
             findings.append(
                 dict(finding, part=name, summary=name + ': ' + finding['summary']))
     failures = result.get('fails', [])
+    folds = result.get('metrics', {}).get('extreme_folds', {})
+    if folds.get('per_1k', 0) > folds.get('limit_per_1k', float('inf')):
+        flag('extreme_local_folds', 14, 'error',
+             'Exported surface contains many abrupt local folds', folds,
+             'Inspect clay and wire views at the recorded fold locations; compare with source views before revising the field or reduction.')
     if failures:
         flag('final_quality_failed', 14, 'error', 'The exported asset failed its existing quality gate',
              {'failure_count': len(failures), 'normal_failures': [

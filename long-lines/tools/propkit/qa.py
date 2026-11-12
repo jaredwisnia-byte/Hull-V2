@@ -119,6 +119,13 @@ def check(name, views_dir=None, category_class=None, paint_only=(), solid=False,
                                          for i in range(len(pts))))
     tris = sum(len(p) - 2 for p in polys)
     if trim_order and trim_order.get('automatic_depth'):
+        from .mesh_health import folded_edges
+        m['extreme_folds'] = folded_edges(verts, polys)
+        m['extreme_folds']['limit_per_1k'] = MIN['max_extreme_folds_per_1k']
+        if m['extreme_folds']['per_1k'] > MIN['max_extreme_folds_per_1k']:
+            fails.append('extreme local surface folds: %.1f per 1000 triangles' %
+                         m['extreme_folds']['per_1k'])
+    if trim_order and trim_order.get('automatic_depth'):
         from .local_features import geometry_components
         m['geometric_components'] = geometry_components(verts, polys)
         if trim_order.get('line') == 'hull' and m['geometric_components'] != 1:
