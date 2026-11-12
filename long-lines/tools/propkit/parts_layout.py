@@ -873,10 +873,13 @@ def build_parts(order, src_root):
     fixed = {n: sum(len(p_.vertices) - 2 for p_ in o.data.polygons)
              for n, o in built.items() if o.get("procedural")}
     budget -= sum(fixed.values())
-    mode = order.get("budget", "screen" if hb or order.get(
-        'automatic_depth') else "share")
+    mode = order.get("budget", "screen")
+    if mode not in ("screen", "share"):
+        raise ValueError("Unknown reduction policy: " + str(mode))
     tol = screen_tolerance(STANDARDS, order.get("kind", "fixture" if order.get(
         "mount") == "wall" else "static")) if mode == "screen" else None
+    if mode == 'screen' and (tol is None or not np.isfinite(tol) or tol <= 0):
+        raise ValueError('Screen reduction requires a positive finite error budget')
     dense = {n: sum(len(p_.vertices) - 2 for p_ in o.data.polygons)
              for n, o in built.items() if not o.get("procedural")}
     total = sum(dense.values())
@@ -893,24 +896,17 @@ def build_parts(order, src_root):
             protected[name] = surface_detail.protected_samples(
                 obj, report, geometry_tolerance=tol) if report else None
             obj['protected_surface_features'] = protected[name] is not None
-        # simplify every part to the screen error; if the total still exceeds the size class ceiling,
-        # loosen the tolerance until it fits
+        # The ceiling must never silently increase the allowed surface error.
         rep["budget"] = {"mode": "screen error", "tolerance_mm": round(
             tol * 1000, 2), "ceiling": int(budget + sum(fixed.values()))}
-        copies = {n: o.data.copy() for n, o in built.items()
-                  if not o.get("procedural")}
-        for attempt in range(4):
-            got = {}
-            for n, o in built.items():
-                if o.get("procedural"):
-                    continue
-                o.data = copies[n].copy()
-                got[n] = decimate_to_error(
-                    o, tol * (1.6 ** attempt), PART_MIN_TRIS, protected=protected.get(n))
-            if sum(t for t, _ in got.values()) <= budget:
-                break
-        rep["budget"]["tolerance_used_mm"] = round(
-            tol * (1.6 ** attempt) * 1000, 2)
+        got = {}
+        for n, o in built.items():
+            if o.get("procedural"):
+                continue
+            got[n] = decimate_to_error(o, tol, PART_MIN_TRIS, protected=protected.get(n))
+            o['bounded_surface_error'] = True
+        rep["budget"]["tolerance_used_mm"] = round(tol * 1000, 2)
+        rep["budget"]["ceiling_conflict"] = sum(t for t, _ in got.values()) > budget
         rep["budget"]["error_mm"] = {
             n: round(e * 1000, 2) for n, (t, e) in got.items()}
         rep["triangles"].update({n: t for n, (t, e) in got.items()})

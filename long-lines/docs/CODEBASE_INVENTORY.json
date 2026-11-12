@@ -1,22 +1,25 @@
 {
-  "audit_date": "2026-11-11",
+  "audit_date": "2026-11-12",
   "method": "Static parse and catalog; not proof of runtime correctness",
-  "local_head": "899e4430ea3dd1f2a5b5c9be0793c0181a01d3f7",
+  "local_head": "676b51caef44004a37de34758ccb775341768428",
   "canonical_dirac": "9d8df082dfbef7d5a508be3578d78d7c488561ab",
-  "tracked_files": 2926,
+  "tracked_files": 2930,
   "tracked_extensions": {
     "": 4,
     ".yml": 5,
-    ".md": 109,
+    ".md": 113,
     ".cmd": 1,
     ".js": 3,
     ".png": 1116,
-    ".py": 154,
     ".svg": 1,
     ".html": 1,
+    ".webmanifest": 1,
+    ".json": 165,
+    ".mjs": 1,
+    ".css": 1,
+    ".py": 154,
     ".import": 1076,
     ".glb": 120,
-    ".json": 165,
     ".jpg": 83,
     ".csv": 1,
     ".jsonl": 1,
@@ -25,12 +28,9 @@
     ".gd": 36,
     ".uid": 39,
     ".gdshader": 3,
-    ".webmanifest": 1,
-    ".txt": 3,
-    ".mjs": 1,
-    ".css": 1
+    ".txt": 3
   },
-  "catalogued_files": 479,
+  "catalogued_files": 483,
   "python_files": 154,
   "parse_errors": [],
   "files": [
@@ -56,12 +56,6 @@
       ]
     },
     {
-      "path": ".github/workflows/collect.yml",
-      "lines": 62,
-      "sha256": "7f6907cde4885fd008bc13c7d05b74b7ff4dd636091a82af4610ae78888e2faf",
-      "definitions": []
-    },
-    {
       "path": ".github/workflows/hull-contracts.yml",
       "lines": 41,
       "sha256": "83bb61588b70e738cfb7f8e4b7d22a10d9a204e729665ed2c0d1718259df6a4e",
@@ -75,10 +69,10 @@
     },
     {
       "path": "CLAUDE.md",
-      "lines": 10,
-      "sha256": "553f1e3b4cfc165e3b0737f7a79bb9f5ef4904a9bf69d3aba98bd90399726255",
+      "lines": 6,
+      "sha256": "c2974dfcf9da6806445a8b41f915b3983881d5ec82befa9e6c7a1a281b79a906",
       "headings": [
-        "Repository notes for Claude\r"
+        "Hull V2 repository notes\r"
       ]
     },
     {
@@ -91,9 +85,17 @@
       ]
     },
     {
+      "path": "DESCRIPTION.md",
+      "lines": 8,
+      "sha256": "b5a2dbc635cf3d9817cf7339f0d0a071206834d9f2fd1e0dca573cf2ba87c782",
+      "headings": [
+        "Hull V2\r"
+      ]
+    },
+    {
       "path": "KNOWLEDGE_FILE.md",
-      "lines": 849,
-      "sha256": "80b209c584f7bc2c20e5f91863965e39baeafca7dddc21aeba15f6a9e6a12db4",
+      "lines": 863,
+      "sha256": "0fc573273a11dba5e549f5df213b4a2f7bfa63da418b9c08f03b95cb061d8c65",
       "headings": [
         "Hull knowledge file\r",
         "Purpose and evidence level\r",
@@ -117,13 +119,14 @@
         "Known quality limitations, backed by observed trials\r",
         "Root web application and Godot game boundaries\r",
         "Runtime, reproducibility and working safely\r",
-        "Next-work rules and maintenance\r"
+        "Next-work rules and maintenance\r",
+        "Fixed-error parts budgeting and archive (2026-11-12)\r"
       ]
     },
     {
       "path": "README.md",
-      "lines": 62,
-      "sha256": "cd39d56c7ebd6537f13de9f8711898c0abcffa0c2ec56342c4d7431cec612248",
+      "lines": 60,
+      "sha256": "558eb36a6b2a1a086dce937f9829b64a09d173403f2535b64cc8e131048d55de",
       "headings": [
         "Hull V2\r",
         "Start here\r",
@@ -140,16 +143,145 @@
       ]
     },
     {
-      "path": "app.js",
+      "path": "deprecated/README.md",
+      "lines": 11,
+      "sha256": "19449f3dbce4c29c9112d27b401c69c797ba7eb6d794aed7edc712eab780d6cd",
+      "headings": [
+        "Deprecated and archived components\r"
+      ]
+    },
+    {
+      "path": "deprecated/midnight-watch/.github/workflows/collect.yml",
+      "lines": 62,
+      "sha256": "7f6907cde4885fd008bc13c7d05b74b7ff4dd636091a82af4610ae78888e2faf",
+      "definitions": []
+    },
+    {
+      "path": "deprecated/midnight-watch/README.md",
+      "lines": 5,
+      "sha256": "e4628ae08086f159cfdce4896c695dc53af98675fdc66f04c155c0e4ca1205f1",
+      "headings": [
+        "Archived unrelated application\r"
+      ]
+    },
+    {
+      "path": "deprecated/midnight-watch/app.js",
       "lines": 475,
       "sha256": "e88f17fd9638a079f750871e3b1945c7c7e41e74d0085e0a184130f68250cc9a",
       "definitions": []
     },
     {
-      "path": "config.js",
+      "path": "deprecated/midnight-watch/config.js",
       "lines": 130,
       "sha256": "eba56e6e8d582c3827d136225761919aa3a01573e5965e0c228ed2a164f71dbc",
       "definitions": []
+    },
+    {
+      "path": "deprecated/midnight-watch/docs/legacy/MIDNIGHT_WATCH.md",
+      "lines": 40,
+      "sha256": "5698c50956fe699b66c590f3ff97fd427818a6aa778f76a74dd5d4587b568812",
+      "headings": [
+        "Midnight Watch",
+        "Install on iPhone",
+        "Notifications while the app is closed",
+        "Run locally",
+        "open http://localhost:8000"
+      ]
+    },
+    {
+      "path": "deprecated/midnight-watch/index.html",
+      "lines": 71,
+      "sha256": "a97469fdb627a3c642afaa8886d9d7e89b3acbe2b3f828bd33df0ce49fed4fc6",
+      "definitions": []
+    },
+    {
+      "path": "deprecated/midnight-watch/package-lock.json",
+      "lines": 222,
+      "sha256": "995c5b5c959e9c628379518ada692a3fc9716d38704d9d1700e3ff7d92961195",
+      "root_type": "dict",
+      "item_count": 4,
+      "keys": [
+        "name",
+        "lockfileVersion",
+        "requires",
+        "packages"
+      ]
+    },
+    {
+      "path": "deprecated/midnight-watch/package.json",
+      "lines": 12,
+      "sha256": "e4db209cec747d0c51cb6b96b69c7ca2e4db68de7741ef06903655cbb09f4e07",
+      "root_type": "dict",
+      "item_count": 5,
+      "keys": [
+        "name",
+        "private",
+        "description",
+        "scripts",
+        "dependencies"
+      ]
+    },
+    {
+      "path": "deprecated/midnight-watch/scripts/collect.mjs",
+      "lines": 187,
+      "sha256": "1164dc51a36f6f5ae196bc192f4ee4a90eb7139d4315b2a81d332e494214f1b5",
+      "definitions": [
+        [
+          "linkOf",
+          ""
+        ],
+        [
+          "readFeed",
+          ""
+        ],
+        [
+          "itemsOf",
+          ""
+        ],
+        [
+          "collect",
+          ""
+        ],
+        [
+          "readJson",
+          ""
+        ],
+        [
+          "messagesFor",
+          ""
+        ],
+        [
+          "sendPushes",
+          ""
+        ],
+        [
+          "main",
+          ""
+        ]
+      ]
+    },
+    {
+      "path": "deprecated/midnight-watch/style.css",
+      "lines": 178,
+      "sha256": "648d92f2a5657088e4ee76bc5a9b238f439dcc5293de06d5237671e5d8174e71",
+      "definitions": []
+    },
+    {
+      "path": "deprecated/midnight-watch/sw.js",
+      "lines": 54,
+      "sha256": "6fd3c1feded7e7b585938ef2cb9dd1d7e6e14cba30e1fe50ecf7117e8e23ad6a",
+      "definitions": []
+    },
+    {
+      "path": "docs/ADAPTIVE_REDUCTION.md",
+      "lines": 61,
+      "sha256": "e3026618263bae0be918dc01306d764a9a2700696db519a0e050d79b744c45e6",
+      "headings": [
+        "Adaptive parts reduction and deprecation audit — 2026-11-12\r",
+        "Exploratory sofa comparison\r",
+        "Archive audit\r",
+        "Final verification\r"
+      ]
     },
     {
       "path": "docs/MAINTENANCE_VALIDATION.md",
@@ -163,26 +295,15 @@
     },
     {
       "path": "docs/REPOSITORY_MAINTENANCE.md",
-      "lines": 62,
-      "sha256": "f0452ce5276f1fd1e02caa3cba9cfff819bc62196507461d7b3ad641bb8853d9",
+      "lines": 76,
+      "sha256": "9aed538b97595066e033e745fab2bef1ec1af72689999e02d9a534216ff42241",
       "headings": [
         "Repository maintenance audit — 2026-11-11\r",
         "Findings and countermeasures\r",
         "Hosted audit and settings still requiring action\r",
         "Continuing work\r",
-        "Sources and rationale\r"
-      ]
-    },
-    {
-      "path": "docs/legacy/MIDNIGHT_WATCH.md",
-      "lines": 40,
-      "sha256": "5698c50956fe699b66c590f3ff97fd427818a6aa778f76a74dd5d4587b568812",
-      "headings": [
-        "Midnight Watch",
-        "Install on iPhone",
-        "Notifications while the app is closed",
-        "Run locally",
-        "open http://localhost:8000"
+        "Sources and rationale\r",
+        "Follow-up archive audit — 2026-11-12\r"
       ]
     },
     {
@@ -222,12 +343,6 @@
         "sys.path.insert"
       ],
       "environment_keys": []
-    },
-    {
-      "path": "index.html",
-      "lines": 71,
-      "sha256": "a97469fdb627a3c642afaa8886d9d7e89b3acbe2b3f828bd33df0ce49fed4fc6",
-      "definitions": []
     },
     {
       "path": "long-lines/CLAUDE.md",
@@ -1085,8 +1200,8 @@
     },
     {
       "path": "long-lines/docs/LESSONS.md",
-      "lines": 729,
-      "sha256": "e55df92caa414078d9edc1d7707d820e5ee46f697ddf871d1cb753764341d448",
+      "lines": 741,
+      "sha256": "7badb08ccc24febe706c146433b1a376beef59081e2e868af0bf6db59f95c187",
       "headings": [
         "Lessons learned\r",
         "Automatic parts-sheet intake (Hull V2)\r",
@@ -1130,7 +1245,8 @@
         "2026-11-11 — Uncertain does not mean flat; preserving does not mean verified\r",
         "2026-11-11 — Trace structural evidence separately from fine paint-sensitive curves\r",
         "2026-11-11 — Local numerical defects do not authorize global attenuation\r",
-        "Publication is a boundary, not a status string (2026-11-11)\r"
+        "Publication is a boundary, not a status string (2026-11-11)\r",
+        "Follow the actual dispatcher before changing budgets (2026-11-12)\r"
       ]
     },
     {
@@ -2413,15 +2529,16 @@
     },
     {
       "path": "long-lines/factory/OPERATIONS.md",
-      "lines": 96,
-      "sha256": "e604e676beea948adabb29d5179d2d255b2b5849b043663b3dbeb1f69165bbe9",
+      "lines": 106,
+      "sha256": "9b83d94992851014d8851ccd93c57d448165886a4c76d0db6a12b949666c10dc",
       "headings": [
         "Hull factory operations\r",
         "Standard work and containment\r",
         "Repair protocol\r",
         "Recovery\r",
         "Maintenance cadence\r",
-        "Qualification limits\r"
+        "Qualification limits\r",
+        "Measured parts budgets\r"
       ]
     },
     {
@@ -6496,8 +6613,8 @@
     },
     {
       "path": "long-lines/tools/diag/regress_assets.py",
-      "lines": 217,
-      "sha256": "b123da006ed1493cce16eae32627c31b7a78a0df6b371806df2eaf3cf9a1b7e9",
+      "lines": 220,
+      "sha256": "70ca6961cd19022c5b4103ca6cb44149ab269b9a4de8ae6bd05c52642dbbab32",
       "description": "Retained, isolated asset regression; never edits the real library or baseline.\n\n--update-baseline writes an OBSERVATION PROPOSAL in --output, not a golden file.\nA baseline comparison is not release approval; inherited fixtures may be defective.",
       "imports": [
         "from pathlib import Path",
@@ -6549,6 +6666,7 @@
         "current.get",
         "current.get('artifact_audit', {}).get",
         "dict",
+        "environment.update",
         "failures.append",
         "isinstance",
         "json.dumps",
@@ -6575,6 +6693,7 @@
         "str",
         "subprocess.run",
         "sys.path.insert",
+        "temporary.mkdir",
         "time.monotonic",
         "uuid.uuid4",
         "warehouse.asset_directory",
@@ -8081,8 +8200,8 @@
     },
     {
       "path": "long-lines/tools/propkit/bake.py",
-      "lines": 368,
-      "sha256": "e4d6c5b0b0eae44e3c6286964c77674aff4da7e64e95d5e78ab87b24bacbd1a5",
+      "lines": 370,
+      "sha256": "766202fcd6cd34ad3d1c61699c566d5f2a05aecf2a807e736baf7af9acc7cd69",
       "description": "Joins a recipe's parts, unwraps, bakes and exports one prop.",
       "imports": [
         "from . import core, mats",
@@ -8128,13 +8247,13 @@
         },
         {
           "name": "export_textured",
-          "line": 306,
+          "line": 308,
           "kind": "FunctionDef",
           "description": "Package existing baked maps for standalone viewing; geometry is unchanged."
         },
         {
           "name": "update_manifest",
-          "line": 361,
+          "line": 363,
           "kind": "FunctionDef",
           "description": ""
         }
@@ -10478,14 +10597,15 @@
     },
     {
       "path": "long-lines/tools/propkit/hull_assembly.py",
-      "lines": 1181,
-      "sha256": "927b0682ecebe1bd22ade0d5a62559297157ecf13a63be5b638d507b2abc242b",
+      "lines": 1203,
+      "sha256": "5e539a4de43d7d2eeb16fc85776981dc2d21b0c73b952f3016273871f4868cd5",
       "description": "Hull assembly line: an object built from its parts, each part a soft hull from its own views.\n\nA parts sheet gives the whole object in five views plus every part on its own (seat cushion,\nback cushion, arm, leg...). Each part's own views are larger and cleaner, so each part is\nbuilt as its own hull (soft shapes, its own paint); the whole-object views say where each part\ngoes and how big it is:\n\n- the whole-object front view's top outline has a flat stretch at each end: the side parts (arms),\n  giving their width and height;\n- the painted seams in the band above the seat split the middle into the repeated parts (cushions);\n- a back part's depth comes from its own side view; it stands on the seat deck, a few cm in front of\n  the back (the frame keeps a back panel there); a seat part's top is where the blade rule met the\n  front-view edge, its thickness from its own front view;\n- feet: shapes under the body in the front and side views; each foot's top goes 1.5 cm into the\n  body above it, so it is attached by construction. Feet painted on a part's own views are trimmed\n  off when the sheet has separate foot views;\n- the frame is the whole-object hull kept only under and behind the parts (base, back panel).\n\nNo object names: parts are found and placed by those rules, and the order only says which folder\nholds which part's views.",
       "imports": [
         "from . import blades, edge_guide, texturing",
         "from . import core",
         "from .hull import HULL_REPORT, hull_prop, silhouette",
         "from .parts_layout import build_parts",
+        "from .simplification import reduce_assembly_part",
         "from PIL import Image",
         "from mathutils import Vector",
         "from mathutils.bvhtree import BVHTree",
@@ -10550,71 +10670,71 @@
           "name": "check_gaps",
           "line": 201,
           "kind": "FunctionDef",
-          "description": "For each contact, sample the first part's surface facing the second (away from the rounded\nedges) and measure how far it is from the second part (0 where it is inside it). Also each\nseat/back part against the frame below/behind it."
+          "description": ""
         },
         {
           "name": "part_views",
-          "line": 279,
+          "line": 289,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "aspect",
-          "line": 283,
+          "line": 293,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "build",
-          "line": 288,
+          "line": 298,
           "kind": "FunctionDef",
           "description": "Builds the assembly into the scene; returns a report dict."
         },
         {
           "name": "colour_model",
-          "line": 711,
+          "line": 729,
           "kind": "FunctionDef",
           "description": "Colour histogram of a part's own views (non-background pixels)."
         },
         {
           "name": "locate_by_colour",
-          "line": 723,
+          "line": 741,
           "kind": "FunctionDef",
           "description": "Assign every pixel of a whole-object view to the part whose own views' colours explain it best;\nreturns {part: (u0, u1, v0, v1)} as fractions of the view's object box (v from the top), or nothing\nfor a part that isn't visible."
         },
         {
           "name": "colour_overlap",
-          "line": 753,
+          "line": 771,
           "kind": "FunctionDef",
           "description": "Shared share of two colour histograms (1 = identical palettes). Parts painted like the body\n(a harvest-gold handset on a harvest-gold phone) can't be found by colour."
         },
         {
           "name": "match_into",
-          "line": 759,
+          "line": 777,
           "kind": "FunctionDef",
           "description": "Where the outline `small` sits inside the outline `big` (both masks): the scale and offset\nthat put the most of it on `big` and the least outside it (FFT correlation over scales).\nReturns (scale, x0, y0, placed mask in big's pixels)."
         },
         {
           "name": "locate_by_subtraction",
-          "line": 789,
+          "line": 807,
           "kind": "FunctionDef",
           "description": "The body's own view fitted into the whole-object view (match_into); what the body doesn't\nexplain is the attached parts. Returns (body box, [part regions largest first]) with boxes as\nfractions of the view's object box (u0, u1, v0, v1; v from the top) and each region's mask."
         },
         {
           "name": "orient_like",
-          "line": 829,
+          "line": 847,
           "kind": "FunctionDef",
           "description": "Turn/flip a part's view (0, 180 degrees, mirrored) to best match the same view of the whole\nobject (outline IoU at the reference's size): sheets draw a part's top view upside down."
         },
         {
           "name": "body_front_rule",
-          "line": 849,
+          "line": 867,
           "kind": "FunctionDef",
           "description": "A body's front view much narrower (for its height) than its back view is a partial view (the\nsheet drew only what is left behind the attached parts): carve with the back's outline instead."
         },
         {
           "name": "build_attached",
-          "line": 866,
+          "line": 884,
           "kind": "FunctionDef",
           "description": ""
         }
@@ -10687,6 +10807,7 @@
         "build_attached",
         "build_parts",
         "bv.get",
+        "candidate_trees[obj.name].find_nearest",
         "carves.values",
         "check_gaps",
         "co[:, k].max",
@@ -10814,6 +10935,7 @@
         "np.zeros",
         "np.zeros_like",
         "o.data.update",
+        "obj.data.copy",
         "obj.data.update",
         "obj_.matrix_world.to_3x3",
         "occ_x.max",
@@ -10833,6 +10955,7 @@
         "os.path.join",
         "out.append",
         "overlaps.values",
+        "own_distance",
         "paint_views",
         "part_views",
         "part_views(os.path.join(root, f)).items",
@@ -10849,6 +10972,7 @@
         "r.sum",
         "range",
         "red[:, c0:c1].sum",
+        "reduce_assembly_part",
         "regions.append",
         "regions.sort",
         "regs.append",
@@ -10860,6 +10984,7 @@
         "rep['parts'].append",
         "round",
         "rows.max",
+        "sampling_meshes.get",
         "see.astype",
         "seg.max",
         "sel.sum",
@@ -12481,8 +12606,8 @@
     },
     {
       "path": "long-lines/tools/propkit/parts_layout.py",
-      "lines": 995,
-      "sha256": "54219232fe9dfdc04fdf7a0b561fc2292203cc901254425ae2dcacc2a9f78d98",
+      "lines": 991,
+      "sha256": "58309e66444b72df0d7fbb70da88e646aec6663232dd47fde72e80cb1b979dac",
       "description": "Layout \"parts\": every part manufactured from its own views, then assembled like the photo shows.\n\nA parts sheet gives the whole object (the \"photo\": front, sides, back, top) and each part with its own\nviews. Each part is built separately (a hull from its views; round parts as lathes; thin parts with their\ndrawn holes cut through) and painted from its own views, then placed and seated on what it attaches to.\nThe order is a declarative plan, one entry per part; nothing here knows what the object is:\n\n    \"layout\": \"parts\", \"assembly\": \"<folder>\", \"body_width_m\": 0.14, \"parts\": [\n      {\"name\": \"body\", \"views\": \"body\", \"root\": true},\n      {\"name\": \"plate\", \"views\": \"plate\", \"attach\": {\"to\": \"body\", \"face\": \"back\", \"fit\": \"inside\"}},\n      {\"name\": \"dial_face\", \"views\": \"dial_face\", \"locate\": \"match\", \"attach\": {\"to\": \"body\", \"face\": \"front\"}},\n      {\"name\": \"dial_wheel\", \"views\": \"dial_wheel\", \"locate\": \"concentric\", \"attach\": {\"to\": \"dial_face\", \"face\": \"front\"}},\n      {\"name\": \"hooks\", \"views\": \"hooks\", \"locate\": \"protrusion\", \"attach\": {\"to\": \"body\", \"face\": \"top\"}},\n      {\"name\": \"handset\", \"views\": \"handset\", \"locate\": \"residual\", \"attach\": {\"to\": \"body\", \"face\": \"left\"}},\n      {\"name\": \"earpiece\", \"views\": \"cap\", \"attach\": {\"to\": \"handset\", \"face\": \"right\", \"at\": \"top\"}},\n      {\"name\": \"mouthpiece\", \"views\": \"cap\", \"attach\": {\"to\": \"handset\", \"face\": \"right\", \"at\": \"bottom\"}},\n      {\"name\": \"cord\", \"locate\": \"leftover\", \"attach\": {\"to\": \"handset\", \"face\": \"bottom\"}}]\n\nHow a part is located (where in the object, and how big):\n  root        the body's own outline fitted into the photo (hull_assembly.match_into). Every part is\n              located in drawing units first; then the scale comes from human scale (the handbook's\n              contacts measured in the drawing, propkit/human_scale.py) or from a given body_width_m\n  residual    the part sticks out of the body's outline: the region the body leaves over in the photo,\n              each box edge from a view where it is visible (hull_assembly.locate_by_subtraction)\n  match       the part lies on the body: its painting matched into the photo (propkit.locate)\n  concentric  centred on its parent; size from the sheet's drawing scale relative to the parent's own\n              drawing\n  protrusion  drawn as part of the parent's own view, sticking out of its outline (cradle hooks on a\n              shell's top edge): position and size from that protrusion\n  attach      on the parent's face (\"at\": top / bottom / centre), sized to fit that face\n  inset       set into an opening of its parent's front (a CRT in its cabinet): found like match, its face\n              just behind the front surface; the body spec's \"recess\" recesses the openings its own front\n              drawing shows\n  leftover    whatever the photo shows that no part explains (a coiled cord): a hull of those regions,\n              painted from the photo\nThen every part is seated on its parent along the face it attaches to and gap-checked.",
       "imports": [
         "from . import handbook as HB",
@@ -12642,7 +12767,6 @@
         "cols.mean",
         "contact_measure",
         "convex_hull_image",
-        "copies[n].copy",
         "decimate_to_error",
         "defer.append",
         "dense.values",
@@ -12720,7 +12844,6 @@
         "np.vstack",
         "np.where",
         "np.zeros_like",
-        "o.data.copy",
         "o.data.update",
         "o.get",
         "o.location.copy",
@@ -12781,6 +12904,7 @@
         "spec.get",
         "spec.get('attach', {}).get",
         "spec_.get",
+        "str",
         "sub.items",
         "sum",
         "surface_detail.analyse",
@@ -15022,10 +15146,11 @@
     },
     {
       "path": "long-lines/tools/propkit/simplification.py",
-      "lines": 286,
-      "sha256": "c534ad996763a12402814ce68a54d8ba2a94bad8d322f8f45084e4abd979b593",
+      "lines": 305,
+      "sha256": "998338425d53b96dec2aadf4a7bebaa34a3c93682b77ad1b68c6601f4e6ac354",
       "description": "Shared screen-space error budgets and pre-paint mesh simplification.",
       "imports": [
+        "from .bake import STANDARDS",
         "from .core import apply_mods",
         "from .core import smooth",
         "from .correction_review import assess",
@@ -15056,10 +15181,17 @@
           "line": 52,
           "kind": "FunctionDef",
           "description": "Simplify a mesh as far as it can go while its surface stays within tol (metres) of the dense\nmesh (99th percentile, both ways: detail lost and corners cut). Binary search on\nthe decimation ratio; returns (triangles, error)."
+        },
+        {
+          "name": "reduce_assembly_part",
+          "line": 289,
+          "kind": "FunctionDef",
+          "description": "Legacy assemblers share the same fixed error bound before texture projection."
         }
       ],
       "calls": [
         "BVHTree.FromPolygons",
+        "ValueError",
         "Vector",
         "adjacency_edges[touches].ravel",
         "apply_mods",
@@ -15072,6 +15204,7 @@
         "cKDTree(points).query",
         "cKDTree(protected['points']).query",
         "check_surface_features",
+        "decimate_to_error",
         "dense_tree.find_nearest",
         "detail_group.add",
         "enumerate",
@@ -15103,6 +15236,7 @@
         "np.flatnonzero",
         "np.flatnonzero(levels == level).tolist",
         "np.flatnonzero(quantized == level).tolist",
+        "np.isfinite",
         "np.isin",
         "np.linalg.svd",
         "np.max",
@@ -15124,14 +15258,19 @@
         "obj.vertex_groups.get",
         "obj.vertex_groups.new",
         "obj.vertex_groups.remove",
+        "order.get",
         "positions.mean",
         "print",
         "protected.get",
         "range",
+        "refresh_normals",
         "repair_witnesses.append",
+        "report.setdefault",
+        "report.setdefault('reduction', []).append",
         "review.update",
         "reviews.append",
         "sb['near_m'].get",
+        "screen_tolerance",
         "set",
         "smooth",
         "sorted",
@@ -20120,12 +20259,16 @@
     },
     {
       "path": "long-lines/tools/test_relief_preservation_blender.py",
-      "lines": 82,
-      "sha256": "e310ec0872f08e1b46e374642e50ebef5db7f620b779c6c4cf75e361dd6510eb",
+      "lines": 133,
+      "sha256": "1d2e1bf774f43e5f43f903adc03deca8bebb20bb5744efc46ec1c767a85c7af0",
       "description": "Blender regression: uncertainty must not erase a real dense groove.",
       "imports": [
+        "from copy import deepcopy",
         "from pathlib import Path",
+        "from propkit import bake, core",
+        "from propkit import core",
         "from propkit import surface_detail, simplification, local_features",
+        "from propkit.hull_assembly import check_gaps",
         "from unittest.mock import patch",
         "import bpy",
         "import copy",
@@ -20141,6 +20284,12 @@
           "line": 11,
           "kind": "ClassDef",
           "description": ""
+        },
+        {
+          "name": "BudgetContracts",
+          "line": 82,
+          "kind": "ClassDef",
+          "description": ""
         }
       ],
       "calls": [
@@ -20149,18 +20298,27 @@
         "Path(__file__).resolve",
         "a.ravel",
         "all",
+        "any",
         "b.ravel",
+        "bake.standardize",
         "bpy.context.collection.objects.link",
+        "bpy.context.view_layer.update",
         "bpy.data.meshes.new",
         "bpy.data.objects.new",
         "bpy.data.objects.remove",
         "bpy.ops.mesh.primitive_uv_sphere_add",
         "bpy.ops.wm.read_factory_settings",
         "c.ravel",
+        "check_gaps",
         "copy.deepcopy",
+        "core.box",
+        "core.reset",
         "d.ravel",
+        "deepcopy",
         "enumerate",
         "factory.correct",
+        "foot.data.copy",
+        "foot.data.update",
         "json.loads",
         "len",
         "local_features.check_surface_features",
@@ -20179,11 +20337,14 @@
         "probes.append",
         "self.assertEqual",
         "self.assertFalse",
+        "self.assertGreater",
         "self.assertIsNotNone",
         "self.assertLess",
         "self.assertLessEqual",
         "self.assertTrue",
         "simplification.decimate_to_error",
+        "simplification.reduce_assembly_part",
+        "standards['size_classes'].values",
         "str",
         "sum",
         "surface_detail.protected_samples",
@@ -21080,84 +21241,6 @@
         "source_dir",
         "surfaces"
       ]
-    },
-    {
-      "path": "package-lock.json",
-      "lines": 222,
-      "sha256": "995c5b5c959e9c628379518ada692a3fc9716d38704d9d1700e3ff7d92961195",
-      "root_type": "dict",
-      "item_count": 4,
-      "keys": [
-        "name",
-        "lockfileVersion",
-        "requires",
-        "packages"
-      ]
-    },
-    {
-      "path": "package.json",
-      "lines": 12,
-      "sha256": "e4db209cec747d0c51cb6b96b69c7ca2e4db68de7741ef06903655cbb09f4e07",
-      "root_type": "dict",
-      "item_count": 5,
-      "keys": [
-        "name",
-        "private",
-        "description",
-        "scripts",
-        "dependencies"
-      ]
-    },
-    {
-      "path": "scripts/collect.mjs",
-      "lines": 187,
-      "sha256": "1164dc51a36f6f5ae196bc192f4ee4a90eb7139d4315b2a81d332e494214f1b5",
-      "definitions": [
-        [
-          "linkOf",
-          ""
-        ],
-        [
-          "readFeed",
-          ""
-        ],
-        [
-          "itemsOf",
-          ""
-        ],
-        [
-          "collect",
-          ""
-        ],
-        [
-          "readJson",
-          ""
-        ],
-        [
-          "messagesFor",
-          ""
-        ],
-        [
-          "sendPushes",
-          ""
-        ],
-        [
-          "main",
-          ""
-        ]
-      ]
-    },
-    {
-      "path": "style.css",
-      "lines": 178,
-      "sha256": "648d92f2a5657088e4ee76bc5a9b238f439dcc5293de06d5237671e5d8174e71",
-      "definitions": []
-    },
-    {
-      "path": "sw.js",
-      "lines": 54,
-      "sha256": "6fd3c1feded7e7b585938ef2cb9dd1d7e6e14cba30e1fe50ecf7117e8e23ad6a",
-      "definitions": []
     }
   ]
 }

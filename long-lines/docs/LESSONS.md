@@ -727,3 +727,15 @@ failed test. Explicit capabilities prevent a successful pure suite from implying
 Blender/CAD/OCR passed. Keep a native-only test in its native profile instead of
 normalizing hidden skips. Documentation and CODEOWNERS do not enforce hosted
 GitHub rules; inspect the actual settings separately.
+
+## Follow the actual dispatcher before changing budgets (2026-11-12)
+
+The sofa uses the legacy dictionary-parts assembler, not parts_layout. A first
+experiment remaining at exactly 38,000 triangles exposed the missed route.
+Connect retained assemblers to the shared reducer rather than deleting them as
+legacy. Preserve fixed tolerances through final baking; a ceiling conflict is
+a QA issue, not permission to loosen error limits.
+
+Parallel benchmark copies also shared tempfile names derived only from asset
+name. Give each worker its own TMP/TEMP/TMPDIR; reject collided experiments
+rather than compare their output. Preserve those failure records.

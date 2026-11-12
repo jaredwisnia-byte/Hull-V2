@@ -284,3 +284,22 @@ def decimate_to_error(obj, tol, min_tris=120, samples=2500, protected=None):
     obj['simplification_correction_reviews'] = json.dumps(reviews)
     err = best_error if best < 1.0 else 0.0
     return sum(len(p_.vertices) - 2 for p_ in obj.data.polygons), err
+
+
+def reduce_assembly_part(obj, order, report):
+    """Legacy assemblers share the same fixed error bound before texture projection."""
+    if order.get('budget') == 'share':
+        return
+    if order.get('budget', 'screen') != 'screen':
+        raise ValueError('Unknown reduction policy')
+    from .bake import STANDARDS
+    tolerance = screen_tolerance(STANDARDS, order.get('kind', 'static'))
+    if tolerance is None or not np.isfinite(tolerance) or tolerance <= 0:
+        raise ValueError('Screen reduction requires a positive finite error budget')
+    before = sum(len(p.vertices)-2 for p in obj.data.polygons)
+    triangles, error = decimate_to_error(obj, tolerance)
+    obj['bounded_surface_error'] = True
+    refresh_normals(obj)
+    report.setdefault('reduction', []).append({'part': obj.name,
+        'before': before, 'triangles': triangles, 'sampled_error_m': error,
+        'tolerance_m': tolerance, 'stage': 'before texture projection'})

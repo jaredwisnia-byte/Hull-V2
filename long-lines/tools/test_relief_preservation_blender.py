@@ -78,5 +78,56 @@ class PreservationContracts(unittest.TestCase):
         bpy.data.objects.remove(obj, do_unlink=True)
 
 
+# Budget enforcement must not destroy a surface already reduced within an error bound.
+class BudgetContracts(unittest.TestCase):
+    def test_legacy_assembly_reduction_records_fixed_error_before_projection(self):
+        from propkit import core
+        core.reset()
+        bpy.ops.mesh.primitive_uv_sphere_add(segments=32, ring_count=16)
+        obj = bpy.context.object
+        report = {}
+        simplification.reduce_assembly_part(obj, {}, report)
+        record = report['reduction'][0]
+        self.assertTrue(obj['bounded_surface_error'])
+        self.assertLessEqual(record['sampled_error_m'], record['tolerance_m'])
+        self.assertEqual(record['stage'], 'before texture projection')
+        self.assertLessEqual(record['triangles'], record['before'])
+
+    def test_contact_witnesses_detect_lost_support_after_reduction(self):
+        from propkit import core
+        from propkit.hull_assembly import check_gaps
+        core.reset()
+        frame = core.box((1, 1, 1), loc=(0, 0, 1), bevel=0)
+        foot = core.box((.2, .2, .5), loc=(0, 0, .25), bevel=0)
+        bpy.context.view_layer.update()
+        foot.data.update()
+        witnesses = {foot.name: foot.data.copy()}
+        boxes = [{'kind': 'foot', 'obj': foot, 'z': [0, .5]}]
+        passing = check_gaps(boxes, [], frame, {}, witnesses)
+        self.assertLessEqual(passing[0]['p90_mm'], .01)
+        for vertex in foot.data.vertices:
+            vertex.co.z -= .04
+        foot.data.update()
+        failing = check_gaps(boxes, [], frame, {}, witnesses)
+        self.assertGreater(failing[0]['p90_mm'], 30)
+
+    def test_final_baker_preserves_error_bounded_mesh_over_ceiling(self):
+        from copy import deepcopy
+        from unittest.mock import patch
+        from propkit import bake, core
+        core.reset()
+        bpy.ops.mesh.primitive_uv_sphere_add(segments=32, ring_count=16)
+        obj = bpy.context.object
+        obj['bounded_surface_error'] = True
+        before = sum(len(p.vertices)-2 for p in obj.data.polygons)
+        standards = deepcopy(bake.STANDARDS)
+        for value in standards['size_classes'].values():
+            value['tri_budget'] = 20
+        with patch.object(bake, 'STANDARDS', standards):
+            _, notes = bake.standardize(obj, 'bounded_fixture', 256)
+        self.assertEqual(before, sum(len(p.vertices)-2 for p in obj.data.polygons))
+        self.assertTrue(any('QA must flag' in note for note in notes))
+
+
 if __name__ == '__main__':
     unittest.main(argv=[sys.argv[0]])

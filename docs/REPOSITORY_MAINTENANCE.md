@@ -60,3 +60,17 @@ validation practices; none justifies adding another runtime management hierarchy
 
 The [full factory research record](research/FACTORY_PRACTICES.md) preserves the
 company-specific sources, dates and limits behind these recommendations.
+
+## Follow-up archive audit — 2026-11-12
+
+The unrelated web application, npm manifests, icons, service worker, collector
+and workflow are preserved under deprecated/midnight-watch. Search of active
+Hull/Godot code and workflows found no consumers; only the archived collector
+used those app files. Its workflow is outside GitHub's active workflow directory.
+DESCRIPTION.md explains the current software. Hosted About metadata is separate:
+the connector has no repository-settings mutation and the browser is signed out.
+No claim is made that hosted About/default-branch content changed.
+
+Dynamic reconstruction modules, sizing tools and fixtures remain active. The
+old proportional budget policy is deprecated but retained for explicit older
+orders; unused-looking imports alone do not justify deleting dynamic engines.

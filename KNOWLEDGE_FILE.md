@@ -16,7 +16,7 @@ It is not a claim that every algorithm or asset was executed or proven correct.
 Binary textures/GLBs were counted, not exhaustively visually audited.
 
 The accompanying [machine-readable inventory](long-lines/docs/CODEBASE_INVENTORY.json)
-records 479 source/configuration/documentation files, all 154 tracked Python files,
+records 483 source/configuration/documentation files, all 154 tracked Python files,
 36 Godot scripts, module descriptions, definitions/line numbers, imports, static
 calls, JSON shapes, documentation headings and content hashes. All Python files
 parsed successfully; JSON parsing found no errors. Static calls are not a resolved
@@ -847,3 +847,17 @@ Update this file and the inventory when code contracts change. The original 391/
 and failures must retain their actual input assistance and limitations.
 This file records knowledge; it does not authorize destructive operations, broad
 rewrites or changes to the untouched original repository.
+
+## Fixed-error parts budgeting and archive (2026-11-12)
+
+Parts orders now default to existing screen-error reduction. Tolerance is not
+automatically increased to meet the size ceiling. Each measured part carries
+bounded_surface_error through joining; final baking preserves its geometry
+and leaves any over-budget result for QA. Explicit budget: share remains a
+deprecated compatibility setting. The 99th-percentile sampled surface gauge
+is approximate, not an exact maximum-error or semantic-feature guarantee.
+
+The unrelated web app and collector workflow moved under deprecated/midnight-watch
+after a runtime reference search. Dynamic recipe modules, existing sizing tools,
+fixtures and optional backends were retained rather than declared unused.
+See DESCRIPTION.md for the current project description.

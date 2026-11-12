@@ -101,6 +101,9 @@ def main():
         HULL_RUN_ROOT=str(output / "runs"),
         OPENBLAS_NUM_THREADS="1",
     )
+    temporary = output / 'temporary'
+    temporary.mkdir()
+    environment.update(TMP=str(temporary), TEMP=str(temporary), TMPDIR=str(temporary))
     base = json.loads(BASE.read_text())
     results = {}
 

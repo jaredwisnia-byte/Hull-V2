@@ -51,7 +51,7 @@ def standardize(obj, name, tex, tags=()):
         dims) <= v["max_dim_m"]), "building")
     budget = STANDARDS["size_classes"][cls]["tri_budget"]
     tris = sum(len(p.vertices) - 2 for p in me.polygons)
-    if tris > budget and obj.get('protected_surface_features'):
+    if tris > budget and (obj.get('protected_surface_features') or obj.get('bounded_surface_error')):
         notes.append(
             'feature constraints exceed triangle budget; QA must flag instead of erasing detail')
     elif tris > budget:
@@ -136,6 +136,7 @@ def finish(name, out_root, tex=1024, samples=24, tags=(), owned_projection=False
     parts = list(bpy.context.selected_objects)
     physical_owners = tag_parts(parts)
     preserve_features = any(p.get('protected_surface_features') for p in parts)
+    bounded_error = any(p.get('bounded_surface_error') for p in parts)
     fields = [json.loads(p['reconstruction_field'])
               for p in parts if p.get('reconstruction_field')]
     # repair invalid meshes before joining: one invalid part (a thin plate with holes, decimated hard)
@@ -147,6 +148,7 @@ def finish(name, out_root, tex=1024, samples=24, tags=(), owned_projection=False
     obj = bpy.context.view_layer.objects.active
     obj.name = name
     obj['protected_surface_features'] = preserve_features
+    obj['bounded_surface_error'] = bounded_error
     bpy.context.scene.cursor.location = (0, 0, 0)
     bpy.ops.object.origin_set(type="ORIGIN_CURSOR")
     high = bpy.data.objects.get(

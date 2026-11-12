@@ -94,3 +94,13 @@ arbitrary-object depth. Current reference fixtures include known defects; a
 baseline means a measured comparison, not a golden quality approval. Photo
 brightness and a good-looking height map remain ambiguous about shape, lighting
 and material. No administrative layer resolves that ambiguity by itself.
+
+## Measured parts budgets
+
+Both the current parts layout engine and older dictionary/attached assemblers
+use shared measured surface-error reduction by default, before projection.
+The limit remains fixed even if the model exceeds the triangle ceiling. Final
+baking preserves a bounded result and leaves excess triangles for QA to flag.
+The gauge is a bidirectional sampled 99th-percentile distance, not an exact
+maximum or universal feature-recognition proof. Explicit budget: share remains
+a compatibility option. Compare exported silhouettes and local features as well.

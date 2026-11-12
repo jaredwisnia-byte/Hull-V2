@@ -53,10 +53,8 @@ Promotion cannot override failed QA or unresolved inference warnings.
 - [Factory manual and sizing](long-lines/factory/README.md)
 - [Security reporting](SECURITY.md)
 - [Long Lines game](long-lines/README.md)
-- [Preserved Midnight Watch project](docs/legacy/MIDNIGHT_WATCH.md)
+- [Archived unrelated components](deprecated/README.md)
 
-The root web files belong to the older Midnight Watch project. Its collector is
-manual and explicitly opt-in in this repository. No historical branches were removed.
 A code-only ZIP is a reproducible source handoff, not a standalone installer: model
 assets, trained weights, dependencies, generated outputs and private run records are excluded.
 No project-wide license grant is inferred; dependency and image rights remain separate.
