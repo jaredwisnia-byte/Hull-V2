@@ -9,6 +9,37 @@ from propkit import surface_detail, simplification, local_features  # noqa: E402
 
 
 class PreservationContracts(unittest.TestCase):
+    def test_rejected_reduction_candidates_leave_original_geometry_untouched(self):
+        import json
+        from unittest.mock import patch
+        bpy.ops.wm.read_factory_settings(use_empty=True)
+        bpy.ops.mesh.primitive_uv_sphere_add(segments=32, ring_count=16)
+        obj = bpy.context.object
+        vertices = np.asarray([tuple(v.co) for v in obj.data.vertices])
+        triangles = sum(len(p.vertices)-2 for p in obj.data.polygons)
+        guard = {'points': np.asarray([[0.,0.,1.]]), 'tolerance_m': np.asarray([.001]),
+                 'contrast_report': {'probes': []}}
+        failed = {'fails': ['missing groove depth: synthetic'], 'probes': []}
+        with patch.object(local_features, 'check_surface_features', return_value=failed):
+            count, error = simplification.decimate_to_error(obj,.01,protected=guard)
+        self.assertEqual(count,triangles)
+        self.assertEqual(error,0.)
+        np.testing.assert_array_equal(vertices,np.asarray([tuple(v.co) for v in obj.data.vertices]))
+        reviews=json.loads(obj['simplification_correction_reviews'])
+        self.assertTrue(reviews)
+        self.assertTrue(all(not r['accepted'] for r in reviews))
+        self.assertFalse(obj.vertex_groups.get('__hull_detail_guard'))
+
+    def test_automatic_build_does_not_drop_a_view_to_hide_outline_failure(self):
+        import factory
+        import copy
+        order = {'automatic_depth': True, 'line': 'hull', 'hull': {}}
+        before = copy.deepcopy(order)
+        result = {'fails': ['back outline mismatch', 'holes in mesh'], 'metrics': {}}
+        self.assertFalse(factory.correct(order, result))
+        self.assertEqual(order, before)
+        self.assertEqual(result['correction_reviews'][0]['decision'], 'reject_and_rollback')
+
     def test_uncalibrated_groove_survives_bounded_reduction(self):
         x = np.linspace(-.1, .1, 81)
         z = np.linspace(0, .5, 161)

@@ -8,6 +8,27 @@ from propkit.stage_review import inspect
 
 
 class ReviewContracts(unittest.TestCase):
+    def test_half_strength_field_and_bound_clipping_are_exposed(self):
+        with tempfile.TemporaryDirectory() as folder:
+            height = np.full((20, 20), -2.)
+            np.savez_compressed(Path(folder) / 'front.npz', mask=np.ones((20,20),bool),
+                                hypothesis_height_px=height, accepted_height_px=height,
+                                coarse_height_px=np.zeros((20,20)), final_shared_height_px=height*.5,
+                                spline_controls_px=np.full((6,6),-2.))
+            report = inspect({}, {'relief': {'views': {'front': {'depth_bound_px': 2.}}}}, folder)
+            codes = {f['code'] for f in report['findings']}
+            self.assertIn('depth_bound_saturated', codes)
+            self.assertIn('relief_attenuated_in_shared_field', codes)
+            gauge = next(g for g in report['diagnostic_gauges'] if g['gauge']=='proposal_to_shared_field')
+            self.assertAlmostEqual(gauge['least_squares_gain'], .5)
+
+    def test_correction_gate_failure_remains_visible(self):
+        report = {'accepted': False, 'decision': 'reject_and_rollback',
+                  'reasons': ['detail_retention exceeded budget']}
+        review = inspect({'correction_review_failure': report}, {})
+        self.assertEqual(review['correction_reviews'], [report])
+        self.assertTrue(any(f['code'] == 'unsafe_correction_blocked' for f in review['findings']))
+
     def test_loss_between_dense_and_exported_geometry_is_identified(self):
         measured = {'relief': {'pre_reduction_validation': {'probes': [
             {'id': 'a', 'retained': True}, {'id': 'b', 'retained': True}]}}}

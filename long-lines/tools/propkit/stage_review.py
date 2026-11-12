@@ -10,6 +10,7 @@ import numpy as np
 
 def inspect(result, measured, diagnostics=None):
     findings = []
+    diagnostic_gauges = []
 
     def flag(code, station, severity, summary, evidence, next_check):
         findings.append(dict(code=code, station=station, severity=severity, summary=summary,
@@ -50,6 +51,28 @@ def inspect(result, measured, diagnostics=None):
                                  {'proposal_range_px': float(
                                      np.ptp(proposal))},
                                  'Render the unvalidated proposal as clay and inspect regional error maps.')
+                        bound = report.get('depth_bound_px')
+                        if bound and 'spline_controls_px' in arrays.files:
+                            controls = arrays['spline_controls_px']
+                            saturation = float(np.mean(abs(controls) >= .98 * bound))
+                            diagnostic_gauges.append({'view': view, 'gauge': 'depth_bound_saturation',
+                                                      'control_fraction': saturation, 'depth_bound_px': bound})
+                            if saturation > .05:
+                                flag('depth_bound_saturated', 9, 'review', view + ': the depth safety bound is actively clipping spline controls',
+                                     {'control_fraction': saturation, 'depth_bound_px': bound},
+                                     'Test bounded continuation on selection/acceptance folds with geometry safeguards; never tune on final test pixels.')
+                        if {'coarse_height_px', 'final_shared_height_px'} <= set(arrays.files):
+                            shared = (arrays['final_shared_height_px'] - arrays['coarse_height_px'])[mask]
+                            energy = float(applied @ applied)
+                            if energy > 1e-8:
+                                transfer = float(applied @ shared / energy)
+                                diagnostic_gauges.append({'view': view, 'gauge': 'proposal_to_shared_field',
+                                                          'least_squares_gain': transfer,
+                                                          'interpretation': 'representation transfer, not physical depth truth'})
+                                if transfer < .8:
+                                    flag('relief_attenuated_in_shared_field', 10, 'review', view + ': applied relief loses strength before mesh reduction',
+                                         {'least_squares_gain': transfer},
+                                         'Inspect component repair and view fusion separately; do not compensate by painting darker textures.')
     pre = {r['id']: r for r in relief.get(
         'pre_reduction_validation', {}).get('probes', [])}
     post = result.get('metrics', {}).get(
@@ -85,7 +108,17 @@ def inspect(result, measured, diagnostics=None):
              {'failure_count': len(failures), 'normal_failures': [
                  s for s in failures if 'normal' in s.lower()]},
              'Retain review status; inspect the recorded failures rather than the textured appearance alone.')
+    corrections = list(relief.get('topology', {}).get('correction_reviews', []))
+    corrections.extend(result.get('correction_reviews', []))
+    for part in measured.get('simplification', {}).get('parts', {}).values():
+        corrections.extend(part.get('correction_reviews', []))
+    if result.get('correction_review_failure'):
+        corrections.append(result['correction_review_failure'])
+        flag('unsafe_correction_blocked', 10, 'error', 'A correction exceeded its preservation budget',
+             result['correction_review_failure'], 'Resolve the triggering problem locally; do not weaken preservation checks.')
     return {'status': 'needs_review' if findings else 'no_flagged_issue',
+            'correction_reviews': corrections,
+            'diagnostic_gauges': diagnostic_gauges,
             'method': 'deterministic stage-evidence audit', 'uses_llm': False, 'inspects_render_pixels': False,
             'physical_geometry_verified': False, 'findings': findings,
             'limits': 'Checks structured stage evidence behind the slideshow; not human-like visual judgement or ground truth.'}

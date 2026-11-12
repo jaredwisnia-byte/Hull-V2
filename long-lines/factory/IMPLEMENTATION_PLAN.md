@@ -359,3 +359,26 @@ on independent objects. A cleaner learned boundary is not itself a depth estimat
 Paint-only phase responses must remain provisional. Do not solve triangle growth
 by weakening local preservation QA. Full hidden-line/dimensioned technical drafting
 and image-to-engineering construction inference remain separate outstanding work.
+
+
+## In-process correction supervisor and adaptive reduction — 2026-11-11
+
+Implemented the shared correction contract, local solid/air speck repairs, bounded
+full-relief retention, local feature/ray-witness QEM retries, blocked unsupported
+view/hole assumption changes and recorded before/after decisions. Stage review now
+also exposes bound saturation and proposal-to-shared-field transfer. See
+SUPERVISION.md for exact coverage and limits.
+
+Fixed-input full run: 16,756 triangles, one surface, zero normal disagreement,
+13/206 own source failures versus 109/206; older common probes improve 111/200 to
+21/200. QA thresholds and source targets are unchanged. The old global half-depth
+guard was triggered by 28 detached solid cells plus four one-cell air pockets.
+The 27,928-triangle full-strength reducer baseline falls to 16,756 while passing
+all protected dense contrasts. This supersedes the earlier blocked-promotion
+geometry result; physical depth and general model promotion remain unproven.
+
+Next: bounded depth continuation evaluated only on selection/acceptance folds,
+with local geometry/visibility safeguards; right-view fusion transfer; broad-base
+shape and narrow groove recovery; supervision contracts for remaining stations;
+independent assets. Preserve the final test fold as report-only. Never replace
+these unresolved questions with silent deeper cuts or relaxed QA thresholds.

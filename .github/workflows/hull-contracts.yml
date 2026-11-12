@@ -29,6 +29,7 @@ jobs:
           python long-lines/tools/test_depth_engineering.py
           python long-lines/tools/test_profile_pipeline.py
           python long-lines/tools/test_surface_detail.py
+          python long-lines/tools/test_correction_review.py
           python long-lines/tools/test_shading.py
           python long-lines/tools/test_joint_shading.py
           python long-lines/tools/test_feature_regions.py

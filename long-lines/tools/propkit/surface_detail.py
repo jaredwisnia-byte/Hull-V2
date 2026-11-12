@@ -368,19 +368,8 @@ def apply_field(field, plan):
         plan['report']['cross_view_relief'] = compare(charts, dimensions)
     # Fitting sparse validation points can introduce pinched dents. The pixel
     # solver already supplies a continuous integrable surface, so keep it whole.
-    baseline_components = ndimage.label(field < 0)[1]
-    scale = 1.
-    candidate = result
-    for _ in range(5):
-        if ndimage.label(candidate < 0)[1] == baseline_components:
-            break
-        scale *= .5
-        candidate = field + (result - field) * scale
-    else:
-        scale = 0.
-        candidate = field
-    plan['report']['topology'] = {'baseline_solid_components': int(baseline_components),
-                                  'detail_scale': scale, 'method': 'protect thin cores; back off conflicting relief before extraction'}
+    from .implicit import preserve_components
+    candidate, plan['report']['topology'] = preserve_components(field, result)
     for view, values in plan.get('diagnostics', {}).items():
         if 'mask' not in values:
             continue

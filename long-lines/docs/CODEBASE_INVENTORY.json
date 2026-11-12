@@ -1,13 +1,13 @@
 {
   "audit_date": "2026-11-11",
   "method": "Static parse and catalog; not proof of runtime correctness",
-  "local_head": "b1324c893edc4f20df3a7e6915ae6b61257bd921",
+  "local_head": "e3debd803de28846654f0ebb1773641d98ab6520",
   "canonical_dirac": "9d8df082dfbef7d5a508be3578d78d7c488561ab",
-  "tracked_files": 2902,
+  "tracked_files": 2905,
   "tracked_extensions": {
     ".yml": 3,
     "": 3,
-    ".md": 100,
+    ".md": 101,
     ".js": 3,
     ".png": 1116,
     ".svg": 1,
@@ -16,7 +16,7 @@
     ".glb": 120,
     ".json": 164,
     ".jpg": 83,
-    ".py": 145,
+    ".py": 147,
     ".csv": 1,
     ".jsonl": 1,
     ".godot": 1,
@@ -29,8 +29,8 @@
     ".mjs": 1,
     ".css": 1
   },
-  "catalogued_files": 458,
-  "python_files": 145,
+  "catalogued_files": 461,
+  "python_files": 147,
   "parse_errors": [],
   "files": [
     {
@@ -41,8 +41,8 @@
     },
     {
       "path": ".github/workflows/hull-contracts.yml",
-      "lines": 48,
-      "sha256": "e5323ea8d1002beaefd6b4671ef61dedd9ef3e016e61556bc683a5878a7bb8e6",
+      "lines": 49,
+      "sha256": "c197fe070d26d9401fc150c5076725bddf6b9d42d5456ab23b0aa6c5e61c0f6e",
       "definitions": []
     },
     {
@@ -61,11 +61,12 @@
     },
     {
       "path": "KNOWLEDGE_FILE.md",
-      "lines": 757,
-      "sha256": "f2ac4c6af88603cd530b1d581aaca004c04d4564af5cba4c60d2c588602424e8",
+      "lines": 810,
+      "sha256": "6c2cf2551054e48ec983e5f8dcbbec73a7e95c3ed8146ff7a7da596b90b6ed06",
       "headings": [
         "Hull knowledge file\r",
         "Purpose and evidence level\r",
+        "Supervised corrections and adaptive reduction (2026-11-11)\r",
         "Structural tracing integration (2026-11-11)\r",
         "Current implementation update (2026-11-10)\r",
         "Superseding reconstruction path (2026-11-11)\r",
@@ -973,8 +974,8 @@
     },
     {
       "path": "long-lines/docs/LESSONS.md",
-      "lines": 696,
-      "sha256": "7ecc3f189c11432e106b4c24c72130603236a0964cb25a922a6aadd17ee2154f",
+      "lines": 713,
+      "sha256": "144edac0b287455977af84398a563cf63a80f66b358fc1809136f5ebaed41c85",
       "headings": [
         "Lessons learned\r",
         "Automatic parts-sheet intake (Hull V2)\r",
@@ -1016,7 +1017,8 @@
         "Continuous reconstruction and detail checks (Nov 11)\r",
         "2026-11-11 — Do not confuse absent relief with absent proposals\r",
         "2026-11-11 — Uncertain does not mean flat; preserving does not mean verified\r",
-        "2026-11-11 — Trace structural evidence separately from fine paint-sensitive curves\r"
+        "2026-11-11 — Trace structural evidence separately from fine paint-sensitive curves\r",
+        "2026-11-11 — Local numerical defects do not authorize global attenuation\r"
       ]
     },
     {
@@ -2278,8 +2280,8 @@
     },
     {
       "path": "long-lines/factory/IMPLEMENTATION_PLAN.md",
-      "lines": 361,
-      "sha256": "b35536d7f6e2105657f3b169fb9eab7049c3c69ebdd6d9bfb042968faeae43c3",
+      "lines": 384,
+      "sha256": "530bdaa41f2d9e837d2793744eca3d8d41993a3e35482cce2a5cbe232aaa714d",
       "headings": [
         "Hull audit implementation and acceptance plan\r",
         "Implemented: shared stages and readable code\r",
@@ -2292,7 +2294,8 @@
         "Remaining generalization and exit criteria\r",
         "Stage evidence continuation — 2026-11-11\r",
         "Detail-loss corrections — 2026-11-11\r",
-        "Structural tracing and connected curves — 2026-11-11\r"
+        "Structural tracing and connected curves — 2026-11-11\r",
+        "In-process correction supervisor and adaptive reduction — 2026-11-11\r"
       ]
     },
     {
@@ -2360,16 +2363,27 @@
       ]
     },
     {
-      "path": "long-lines/factory/TRACING.md",
-      "lines": 119,
-      "sha256": "2d5e6965b81d91de255990caaef71999da17d4eb6a62a9f609350f527f549e98",
+      "path": "long-lines/factory/SUPERVISION.md",
+      "lines": 70,
+      "sha256": "1297c08897dcc22eccf36b68d4ad6e734e3bf61bebb4bb6e689ebcb56e0f7a89",
       "headings": [
-        "Structural tracing and provisional fine curves",
-        "Existing pipeline, new boundary evidence",
-        "One-time local setup",
-        "Selection, failure and reuse",
-        "End-to-end promotion gate",
-        "Scope of the CAD drawings"
+        "Correction supervision",
+        "Current coverage",
+        "Verified failure that motivated this",
+        "Limits and further coverage"
+      ]
+    },
+    {
+      "path": "long-lines/factory/TRACING.md",
+      "lines": 127,
+      "sha256": "dc6d5c0e8c0bb87c22cb9553dc1a60fbef2922cdc7c21cd5d97d5855bb905559",
+      "headings": [
+        "Structural tracing and provisional fine curves\r",
+        "Existing pipeline, new boundary evidence\r",
+        "One-time local setup\r",
+        "Selection, failure and reuse\r",
+        "End-to-end promotion gate\r",
+        "Scope of the CAD drawings\r"
       ]
     },
     {
@@ -6606,8 +6620,8 @@
     },
     {
       "path": "long-lines/tools/factory.py",
-      "lines": 738,
-      "sha256": "4af5ba9923fb1efee3c40df5fe7a6938da422b1867c3bddcc11bfdbdf1a7a7eb",
+      "lines": 753,
+      "sha256": "bcf5f047bc8fb79069916d931f5536e5f8a9396e7a82597eae8479a055f76f24",
       "description": "The asset factory: work orders in, game-ready assets out, every run measured.\n\nRun under Blender (all stations share one process):\n    blender -b --factory-startup -P tools/factory.py -- intake IMAGE NAME --category tv [--height 0.5]\n    blender -b --factory-startup -P tools/factory.py -- intake_sheet SHEET_SPEC.json --source-dir DIR\n    blender -b --factory-startup -P tools/factory.py -- intake_set MANIFEST.json [--category fridge] [--name N]\n    blender -b --factory-startup -P tools/factory.py -- build NAME... | --pending | --all-orders\n    blender -b --factory-startup -P tools/factory.py -- qa NAME... | --library\n    blender -b --factory-startup -P tools/factory.py -- report\n\nStations: intake (classify the reference, split views, size from the category table,\nwrite a work order) -> build (the order's production line) -> bake/export (propkit.bake)\n-> gate (propkit.qa against factory/standards.json, one codified automatic correction,\nthen flag for a person) -> ledger (factory/ledger.jsonl) -> report (factory/REPORT.md).\nWork orders live in factory/orders/<name>.json; lines read them, so a new asset needs\nno code. See factory/README.md.",
       "imports": [
         "from PIL import Image",
@@ -6623,6 +6637,7 @@
         "from propkit import surface_detail",
         "from propkit import texturing",
         "from propkit.atlas import appliance",
+        "from propkit.correction_review import Rejected",
         "from propkit.facade import facade_prop",
         "from propkit.hull import HULL_REPORT",
         "from propkit.hull import hull_prop",
@@ -6730,43 +6745,43 @@
         },
         {
           "name": "correct",
-          "line": 462,
+          "line": 464,
           "kind": "FunctionDef",
           "description": "Codified corrections for known failure modes (docs/LESSONS.md). Returns True if\nthe order was changed and is worth one more attempt."
         },
         {
           "name": "tex_for",
-          "line": 499,
+          "line": 511,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "render_trim_preview",
-          "line": 506,
+          "line": 518,
           "kind": "FunctionDef",
           "description": "Always make a PNG turnaround of a shipped extruded asset. No source sheets."
         },
         {
           "name": "build",
-          "line": 523,
+          "line": 535,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "mount_of",
-          "line": 603,
+          "line": 618,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "gate",
-          "line": 615,
+          "line": 630,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "report",
-          "line": 633,
+          "line": 648,
           "kind": "FunctionDef",
           "description": ""
         }
@@ -6852,6 +6867,7 @@
         "intake",
         "intake_set",
         "intake_sheet",
+        "isinstance",
         "it.get",
         "json.dump",
         "json.dumps",
@@ -6930,6 +6946,9 @@
         "reps.setdefault((r['name'], r['input_hash']), set()).add",
         "reps.values",
         "rest.index",
+        "result.get",
+        "result.setdefault",
+        "result.setdefault('correction_reviews', []).append",
         "result['fails'].append",
         "result['inference_warnings'].append",
         "result['metrics'].get",
@@ -8821,6 +8840,42 @@
       "environment_keys": []
     },
     {
+      "path": "long-lines/tools/propkit/correction_review.py",
+      "lines": 49,
+      "sha256": "ae96aca250cb778aaf2aa7bf314eb51a71c35ddd1e9779f74683a8cf3d76c4d9",
+      "description": "Pre-application correction contracts: explain, measure, constrain, or roll back.\n\nThis supervises numerical decisions; it is not an LLM or a physical-truth oracle.\nCallers supply measurements in declared units and explicit preservation budgets.",
+      "imports": [
+        "import math"
+      ],
+      "definitions": [
+        {
+          "name": "Rejected",
+          "line": 9,
+          "kind": "ClassDef",
+          "description": ""
+        },
+        {
+          "name": "assess",
+          "line": 16,
+          "kind": "FunctionDef",
+          "description": "Require the named problem to improve without violating any safeguard.\n\n`improve` names lower-is-better measurements. `limits` maps every safeguarded\nafter-measurement to an inclusive (minimum, maximum), in the recorded units.\nMissing, invalid and non-finite evidence fails closed, rather than guessing."
+        }
+      ],
+      "calls": [
+        "'; '.join",
+        "after.get",
+        "before.get",
+        "checks.append",
+        "isinstance",
+        "limits.items",
+        "math.isfinite",
+        "reasons.append",
+        "super",
+        "super().__init__"
+      ],
+      "environment_keys": []
+    },
+    {
       "path": "long-lines/tools/propkit/cutaway.py",
       "lines": 53,
       "sha256": "eedeb25b9ea31501b0a67ccfaf2a93efaa06a1a2141b74185d19d1a67f8bacaf",
@@ -10693,36 +10748,68 @@
     },
     {
       "path": "long-lines/tools/propkit/implicit.py",
-      "lines": 33,
-      "sha256": "acc46ffa142608154eb439ce819cab779ddfd123d698f4f8612b29c613b84f26",
+      "lines": 132,
+      "sha256": "7d755b35a37d50bd2ddb691a4ebbcba440d982e6dac6d442559a4899e8fed71f",
       "description": "Metric boundary conditions for cell-centred signed fields (negative inside).",
       "imports": [
+        "from .correction_review import assess, Rejected",
+        "from scipy import ndimage",
         "import numpy as np"
       ],
       "definitions": [
         {
-          "name": "bounded_field",
+          "name": "preserve_components",
           "line": 5,
+          "kind": "FunctionDef",
+          "description": "Remove only unresolved detached specks before reducing relief strength.\n\nEvery original physical component keeps its dominant overlapping component,\nincluding originally tiny parts. Large splits, destroyed parts and merges\nstill require conservative backoff. An unrelated one-cell remnant must not\nhalve the detail of an entire object."
+        },
+        {
+          "name": "bounded_field",
+          "line": 104,
           "kind": "FunctionDef",
           "description": "Intersect with the physical sampling box before adding interior detail.\n\nSilhouette extrusions can be unbounded along a camera axis. Explicit box\ndistances give the boundary cells the same metric meaning as interior cells."
         },
         {
           "name": "pad_field",
-          "line": 20,
+          "line": 119,
           "kind": "FunctionDef",
           "description": "One exterior cell layer at metric half-voxel distances.\n\nA constant unrelated to voxel size shifts a zero crossing towards the first\ninterior cell, shrinking the shape and flattening shallow crowns."
         }
       ],
       "calls": [
+        "Rejected",
+        "abs",
+        "assess",
         "distance.reshape",
         "enumerate",
+        "int",
+        "labels.ravel",
+        "len",
+        "max",
+        "ndimage.binary_fill_holes",
+        "ndimage.label",
         "np.abs",
         "np.arange",
         "np.asarray",
         "np.asarray(field, dtype=np.float32).copy",
+        "np.bincount",
+        "np.count_nonzero",
+        "np.finfo",
         "np.maximum",
         "np.pad",
+        "np.unique",
+        "np.zeros",
+        "overlap.any",
+        "overlap.argmax",
+        "owners.append",
+        "pocket_sizes[fill_ids].sum",
+        "pockets.ravel",
+        "range",
+        "reviews.append",
+        "set",
+        "sizes[fragments].sum",
         "slice",
+        "target.copy",
         "tuple",
         "zip"
       ],
@@ -14483,16 +14570,19 @@
     },
     {
       "path": "long-lines/tools/propkit/simplification.py",
-      "lines": 168,
-      "sha256": "09018f243fdbd91ed99d75be40c54fafac256ae2f73b5733177d0b1aa5bd84a9",
+      "lines": 286,
+      "sha256": "c534ad996763a12402814ce68a54d8ba2a94bad8d322f8f45084e4abd979b593",
       "description": "Shared screen-space error budgets and pre-paint mesh simplification.",
       "imports": [
         "from .core import apply_mods",
         "from .core import smooth",
+        "from .correction_review import assess",
         "from .local_features import check_surface_features",
+        "from mathutils import Vector",
         "from mathutils.bvhtree import BVHTree",
         "from scipy.spatial import cKDTree",
         "import bpy",
+        "import json",
         "import math",
         "import numpy as np"
       ],
@@ -14518,20 +14608,34 @@
       ],
       "calls": [
         "BVHTree.FromPolygons",
+        "Vector",
+        "adjacency_edges[touches].ravel",
         "apply_mods",
         "areas.sum",
+        "assess",
         "bpy.context.scene.collection.objects.link",
         "bpy.data.meshes.remove",
         "bpy.data.objects.remove",
         "cKDTree",
+        "cKDTree(points).query",
         "cKDTree(protected['points']).query",
         "check_surface_features",
         "dense_tree.find_nearest",
         "detail_group.add",
+        "enumerate",
         "float",
+        "focus.update",
+        "focus_group",
+        "group.add",
+        "group.name.startswith",
         "int",
+        "item.split",
+        "json.dumps",
+        "key.rsplit",
         "len",
+        "list",
         "local['fails'].extend",
+        "locked.update",
         "math.radians",
         "math.tan",
         "max",
@@ -14545,18 +14649,24 @@
         "np.einsum",
         "np.exp",
         "np.flatnonzero",
+        "np.flatnonzero(levels == level).tolist",
         "np.flatnonzero(quantized == level).tolist",
+        "np.isin",
         "np.linalg.svd",
         "np.max",
         "np.maximum",
         "np.median",
         "np.percentile",
+        "np.ptp",
+        "np.ptp(np.asarray([tuple(v.co) for v in me.vertices]), axis=0).max",
         "np.random.default_rng",
         "np.random.default_rng(0).choice",
         "np.random.default_rng(1).choice",
         "np.rint",
+        "np.rint(np.exp(-(distance / radius) ** 2) * 32).astype",
         "np.rint(weight * 32).astype",
         "np.unique",
+        "np.zeros",
         "obj.copy",
         "obj.data.normals_split_custom_set",
         "obj.vertex_groups.get",
@@ -14566,12 +14676,19 @@
         "print",
         "protected.get",
         "range",
+        "repair_witnesses.append",
+        "review.update",
+        "reviews.append",
         "sb['near_m'].get",
+        "set",
         "smooth",
+        "sorted",
         "standards.get",
         "sum",
         "t.find_nearest",
+        "t.ray_cast",
         "target.modifiers.new",
+        "target.vertex_groups.new",
         "trial",
         "tuple"
       ],
@@ -14824,8 +14941,8 @@
     },
     {
       "path": "long-lines/tools/propkit/stage_review.py",
-      "lines": 98,
-      "sha256": "322f665350088bb8e052f089e0ed7cef7ae07b332816c8460dda08e031422d20",
+      "lines": 131,
+      "sha256": "5da0f64541e251e93e7f23d292314f796ccd5cbe54ef5d4a7506eb08ed570bde",
       "description": "Deterministic review of the evidence used by the factory presentation.\n\nThis reads stage data, not rendered pixels. It does not certify geometry,\nchange thresholds, edit code or silently accept a rejected proposal.",
       "imports": [
         "from pathlib import Path",
@@ -14841,7 +14958,7 @@
         },
         {
           "name": "write",
-          "line": 94,
+          "line": 127,
           "kind": "FunctionDef",
           "description": ""
         }
@@ -14850,7 +14967,10 @@
         "Path",
         "abs",
         "construction.get",
+        "corrections.append",
+        "corrections.extend",
         "cross.get",
+        "diagnostic_gauges.append",
         "dict",
         "findings.append",
         "flag",
@@ -14858,10 +14978,14 @@
         "inspect",
         "json.dumps",
         "len",
+        "list",
         "measured.get",
+        "measured.get('simplification', {}).get",
+        "measured.get('simplification', {}).get('parts', {}).values",
         "measured.get('surface_details', {}).items",
         "np.any",
         "np.load",
+        "np.mean",
         "np.ptp",
         "part.get",
         "path.is_file",
@@ -14872,6 +14996,7 @@
         "r.get",
         "relief.get",
         "relief.get('pre_reduction_validation', {}).get",
+        "relief.get('topology', {}).get",
         "relief.get('views', {}).items",
         "report.get",
         "result.get",
@@ -14887,8 +15012,8 @@
     },
     {
       "path": "long-lines/tools/propkit/surface_detail.py",
-      "lines": 561,
-      "sha256": "11b6dc208f44b3797d69c15deb828e1c48edef0decdc49efbd30be307fa3a945",
+      "lines": 550,
+      "sha256": "0e05a367b924bda77080c3a64459d38cd09ca3615fbd57b12cd2623399f5e149",
       "description": "Object-independent surface evidence and continuous implicit detail.\n\nConstruction patches are computational regions of one physical surface. They\nnever become capped objects merely because width or curvature changes. All\nlengths passed to the field station are metres; source observations stay in\ntheir own image frame until sampling.",
       "imports": [
         "from . import feature_regions",
@@ -14900,6 +15025,7 @@
         "from .depth_measurement import estimate",
         "from .hull import silhouette",
         "from .implicit import pad_field",
+        "from .implicit import preserve_components",
         "from .local_features import check_surface_features",
         "from .relief_consistency import compare",
         "from PIL import Image, ImageDraw",
@@ -14964,19 +15090,19 @@
         },
         {
           "name": "capture_high",
-          "line": 396,
+          "line": 385,
           "kind": "FunctionDef",
           "description": "Keep implicit detail for normal baking before any budget simplification."
         },
         {
           "name": "export_maps",
-          "line": 422,
+          "line": 411,
           "kind": "FunctionDef",
           "description": "Save numerical topography and contour diagnostics, including rejections."
         },
         {
           "name": "protected_samples",
-          "line": 486,
+          "line": 475,
           "kind": "FunctionDef",
           "description": "Protect detected features locally, without tightening every planar face."
         }
@@ -15028,7 +15154,6 @@
         "min",
         "ndimage.binary_erosion",
         "ndimage.gaussian_filter",
-        "ndimage.label",
         "ndimage.map_coordinates",
         "ndimage.zoom",
         "normal.tolist",
@@ -15084,6 +15209,7 @@
         "plan['report']['views'].get(view, {}).get",
         "plan['report']['views'][view].get",
         "points.append",
+        "preserve_components",
         "print",
         "probe.get",
         "probe['depth_estimate'].get",
@@ -18211,6 +18337,38 @@
       "environment_keys": []
     },
     {
+      "path": "long-lines/tools/test_correction_review.py",
+      "lines": 41,
+      "sha256": "733349ba4329d140272006c8393de9e99764b7984616dd02082c75901b32efcc",
+      "description": "A successful local fix must not authorize unrelated destructive changes.",
+      "imports": [
+        "from propkit.correction_review import assess",
+        "import unittest"
+      ],
+      "definitions": [
+        {
+          "name": "CorrectionContracts",
+          "line": 6,
+          "kind": "ClassDef",
+          "description": ""
+        }
+      ],
+      "calls": [
+        "' '.join",
+        "after.update",
+        "assess",
+        "dict",
+        "float",
+        "self.assertEqual",
+        "self.assertFalse",
+        "self.assertIn",
+        "self.assertTrue",
+        "self.review",
+        "unittest.main"
+      ],
+      "environment_keys": []
+    },
+    {
       "path": "long-lines/tools/test_cutaway_export.py",
       "lines": 25,
       "sha256": "1a77b5e55b675d43342bc45369133ffd5276977e86406d56c48367a5a7f1d23a",
@@ -19113,13 +19271,17 @@
     },
     {
       "path": "long-lines/tools/test_relief_preservation_blender.py",
-      "lines": 51,
-      "sha256": "2cd9c04801fcd7772ce2b06bb019fbaa2525a00ca411aafde7a01eebc1cf5d5a",
+      "lines": 82,
+      "sha256": "e310ec0872f08e1b46e374642e50ebef5db7f620b779c6c4cf75e361dd6510eb",
       "description": "Blender regression: uncertainty must not erase a real dense groove.",
       "imports": [
         "from pathlib import Path",
         "from propkit import surface_detail, simplification, local_features",
+        "from unittest.mock import patch",
         "import bpy",
+        "import copy",
+        "import factory",
+        "import json",
         "import numpy as np",
         "import sys",
         "import unittest"
@@ -19137,24 +19299,34 @@
         "Path",
         "Path(__file__).resolve",
         "a.ravel",
+        "all",
         "b.ravel",
         "bpy.context.collection.objects.link",
         "bpy.data.meshes.new",
         "bpy.data.objects.new",
         "bpy.data.objects.remove",
+        "bpy.ops.mesh.primitive_uv_sphere_add",
+        "bpy.ops.wm.read_factory_settings",
         "c.ravel",
+        "copy.deepcopy",
         "d.ravel",
         "enumerate",
+        "factory.correct",
+        "json.loads",
         "len",
         "local_features.check_surface_features",
         "mesh.from_pydata",
         "mesh.update",
         "np.arange",
         "np.arange(xx.size).reshape",
+        "np.asarray",
         "np.exp",
         "np.linspace",
         "np.meshgrid",
         "np.sin",
+        "np.testing.assert_array_equal",
+        "obj.vertex_groups.get",
+        "patch.object",
         "probes.append",
         "self.assertEqual",
         "self.assertFalse",
@@ -19164,6 +19336,7 @@
         "self.assertTrue",
         "simplification.decimate_to_error",
         "str",
+        "sum",
         "surface_detail.protected_samples",
         "sys.path.insert",
         "tuple",
@@ -19583,8 +19756,8 @@
     },
     {
       "path": "long-lines/tools/test_stage_review.py",
-      "lines": 64,
-      "sha256": "14ee0b99aad57cc2639cee41407afb17af76ada9d712d3b607c9d62fae803abc",
+      "lines": 85,
+      "sha256": "e0a3f8417eaf3e61b4731a3da76a706c16d9a2bf882f3ecb08648a079913a97a",
       "description": "The stage critic reports evidence and never grants itself geometry authority.",
       "imports": [
         "from pathlib import Path",
@@ -19608,12 +19781,15 @@
         "copy.deepcopy",
         "inspect",
         "next",
+        "np.full",
         "np.ones",
         "np.savez_compressed",
         "np.sin",
         "np.zeros",
+        "self.assertAlmostEqual",
         "self.assertEqual",
         "self.assertFalse",
+        "self.assertIn",
         "self.assertTrue",
         "tempfile.TemporaryDirectory",
         "unittest.main"
@@ -19622,12 +19798,14 @@
     },
     {
       "path": "long-lines/tools/test_surface_detail.py",
-      "lines": 88,
-      "sha256": "df21d42334169004a0c01788a0a45af563f9a9b0845d158deaa59341e27ac6e4",
+      "lines": 145,
+      "sha256": "9fcb2faab51ed02dd8035a3129863a7c6e5c0e1258553d7da87f1568a9a22e84",
       "description": "Cross-family contracts: planes, curved skins and continuous height maps.",
       "imports": [
         "from PIL import Image",
+        "from propkit.correction_review import Rejected",
         "from propkit.implicit import bounded_field, pad_field",
+        "from propkit.implicit import preserve_components",
         "from propkit.surface_detail import apply_field",
         "from scipy import ndimage",
         "from skimage.measure import marching_cubes",
@@ -19645,8 +19823,10 @@
       "calls": [
         "((original < 0) & (result >= 0)).sum",
         "(result < 0)[:, :, 23:25].any",
+        "(result[2:12, 15, 15] > 0).all",
         "abs",
         "apply_field",
+        "base.copy",
         "bounded_field",
         "dict",
         "int",
@@ -19661,16 +19841,20 @@
         "np.full",
         "np.maximum.reduce",
         "np.meshgrid",
+        "np.ones",
         "np.sqrt",
         "np.testing.assert_allclose",
+        "np.testing.assert_array_equal",
         "np.zeros",
         "pad_field",
         "physical.max",
         "physical.min",
+        "preserve_components",
         "self.assertEqual",
         "self.assertGreater",
         "self.assertIn",
         "self.assertLess",
+        "self.assertRaises",
         "self.assertTrue",
         "self.field",
         "unittest.main"

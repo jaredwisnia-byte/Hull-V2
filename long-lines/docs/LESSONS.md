@@ -694,3 +694,20 @@ permissions enabled by the installing owner before later worker sessions use the
 The full-build trial exposed a diagnostic handoff that reconstructed only the old
 four tracing arrays; update producer, restoration and export together, and retain
 legacy records. A new regression exercises that exact export path.
+
+
+### 2026-11-11 — Local numerical defects do not authorize global attenuation
+
+The full fitted leg had one main solid plus 25 detached pieces totalling 28 cells,
+and four newly enclosed one-cell air pockets. Counting only solid components and
+halving the whole field erased useful relief; counting only solids also missed
+inner mesh shells. Repair only new grid-scale defects, preserve original tiny
+parts/cavities and open grooves, and audit changed volume. Large unexplained changes
+must fail a correction contract rather than authorize a destructive fallback.
+Adaptive reduction also needs actual failed-ray witnesses: keeping a nearby groove
+triangle is insufficient when a new coarse neighbour occludes it. Protect original
+dense geometry locally, never sculpt points to hit probes. Continue useful retries
+within a budget and retain the prior passing candidate. Same-probe measurements,
+not prettier shading or a changed probe population, established the improvement.
+The current asset still fails 13/206 nominal source checks; bound clipping, weak
+side transfer and shading ambiguity remain visible to the reviewer.

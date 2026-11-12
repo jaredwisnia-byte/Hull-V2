@@ -67,8 +67,8 @@ performed during reconstruction.
 
 ## Selection, failure and reuse
 
-The default remains `HULL_TRACE_BACKEND=classical`: the end-to-end trial below
-does not justify replacing the existing production path. Explicit `auto` uses a
+The default remains `HULL_TRACE_BACKEND=classical`: independent-object and inverse-shading validation
+remain incomplete despite the correction described below. Explicit `auto` uses a
 configured model; a missing
 registry explicitly reports classical fallback with `reason=model_not_configured`.
 `matched` requires the model and fails if setup is missing. `classical` explicitly
@@ -92,17 +92,25 @@ worker detected the weak horizontal-curve control while returning no blank-image
 structure. A paint-only control returned two structural pixels but 2,976 fine
 candidate pixels: the latter must remain provisional.
 
-The fresh leg build completed without per-object assistant edits, using the existing
-sheet preset rather than demonstrating fresh automatic view recognition. It has
-20,964 triangles and one connected component. Its own source-depth checks fail
-109/206 probes. A controlled check using **the previous run's same 200 probes**,
-with each export's recorded manufacturing translation, reproduces the previous
-97 failures and finds 111 failures on the new model. The previous model had 18,064
-triangles. The new front's final reserved-pixel appearance gain is -6.619%, flagged
-for review; source-derived depths remain uncalibrated. A cleaner 2D trace has not
-yet improved 3D fidelity. Do not promote this backend by silently changing defaults
-or weakening geometry checks. The structural/region-fitting/mesh handoff needs
-further controlled work. Better edge-detection metrics alone are insufficient.
+The initial fresh leg trial had 20,964 triangles and failed 109/206 own source
+probes. On the previous common 200 probes it failed 111 versus the old classical
+model's 97. That was a real downstream regression despite cleaner tracing.
+
+The [supervised-correction update](SUPERVISION.md) traced the major attenuation to
+a global connectivity backoff triggered by tiny detached fragments and air pockets.
+The corrected full build has 16,756 triangles and one connected surface, with
+13/206 failures on exactly the same own source probes and 21/200 on the older common
+probes. The old 20,964-triangle model failed 109/206 and 111/200 respectively. Probe
+targets/tolerances and reconstruction proposals were unchanged. The source remained
+fixed during capture, and runtime needed no per-object assistant intervention.
+The existing sheet preset/estimated dimensions were used, rather than demonstrating
+fresh automatic view recognition.
+
+This corrects a representation/reduction regression, not the ambiguity of shading
+depth. Final asset QA still fails; front reserved-pixel appearance gain remains
+-6.619%. The new reviewer flags active depth clipping and right-view transfer loss.
+The tracer stays opt-in until broader comparisons support promotion. Better edge
+metrics or a single improved asset are insufficient evidence of universality.
 
 ## Scope of the CAD drawings
 

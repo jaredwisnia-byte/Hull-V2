@@ -397,6 +397,8 @@ def run_line(order):
                         order.get('automatic_depth')))
                     totals[part.name] = {
                         "triangles": triangles, "surface_error_m": error}
+                    if part.get('simplification_correction_reviews'):
+                        totals[part.name]['correction_reviews'] = json.loads(part['simplification_correction_reviews'])
                 order.setdefault("measured", {})["simplification"] = {
                     "parts": totals, "triangles": sum(p["triangles"] for p in totals.values()),
                     "tolerance_m": tolerance, "stage": "independent regions before projection and baking"}
@@ -464,6 +466,16 @@ def correct(order, result):
     the order was changed and is worth one more attempt."""
     changed = False
     fails = " ".join(result["fails"])
+    if order.get('automatic_depth') and (result.get('correction_review_failure') or
+                                        any(term in fails for term in (' outline', 'holes'))):
+        # Dropping a view or filling all holes changes construction assumptions.
+        # A failed gauge is not evidence authorizing either semantic correction.
+        result.setdefault('correction_reviews', []).append({
+            'problem': fails, 'action': 'drop view or fill holes', 'accepted': False,
+            'decision': 'reject_and_rollback',
+            'reasons': ['No independent evidence authorizes changing silhouette/opening constraints'],
+            'uses_llm': False, 'physical_geometry_verified': False})
+        return False
     if order.get('automatic_depth') and 'triangle budget' in fails:
         # The implicit path intentionally preserves detected geometry. The
         # legacy decimation-ratio retry is overridden there and does no work.
@@ -552,6 +564,9 @@ def build(order, samples=16):
             traceback.print_exc()
             result = {"pass": False, "fails": [
                 "build error: %s" % e], "metrics": {}}
+            from propkit.correction_review import Rejected
+            if isinstance(e, Rejected):
+                result['correction_review_failure'] = e.report
         if result["pass"] or attempt > STANDARDS["minimum_acceptable"]["max_retries"] or not correct(order, result):
             break
     if result["pass"] and order["line"] == "extrude":

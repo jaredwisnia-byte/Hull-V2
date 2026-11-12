@@ -85,11 +85,60 @@ def decimate_to_error(obj, tol, min_tris=120, samples=2500, protected=None):
                 # preference so source-grid density cannot become permanent.
                 detail_group.add(indices, min(level / 32, .95), 'REPLACE')
 
-    def modifier_for(target, name, ratio):
+    adjacency_edges = None
+    repair_witnesses = []
+
+    def focus_group(target, identifiers):
+        """Concentrate a retry on measured failed features, never object classes."""
+        if not identifiers or protected is None or 'ids' not in protected:
+            return None
+        selected = [i for i, key in enumerate(protected['ids'])
+                    if key.rsplit('/', 1)[0] in identifiers]
+        if not selected:
+            return None
+        from scipy.spatial import cKDTree
+        points = np.asarray(protected['points'])[selected]
+        distance, nearest = cKDTree(points).query(
+            np.asarray([tuple(v.co) for v in target.data.vertices]))
+        tolerances = np.asarray(protected['tolerance_m'])[selected]
+        radius = np.maximum(tolerances[nearest] * 8, 1e-6)
+        if 'support_m' in protected:
+            radius = np.maximum(radius, np.asarray(
+                protected['support_m'])[selected][nearest])
+        levels = np.rint(np.exp(-(distance / radius)**2) * 32).astype(int)
+        group = target.vertex_groups.new(name='__hull_local_retry')
+        for level in range(1, 33):
+            indices = np.flatnonzero(levels == level).tolist()
+            if indices:
+                group.add(indices, min(level / 32, .95), 'REPLACE')
+        # Keep the actual dense triangles hit by failed samples. This is a
+        # topology constraint on existing geometry, not a newly sculpted dent.
+        # A few local triangles may remain dense; the rest of the surface can
+        # still collapse according to its quadric error.
+        locked = set()
+        for point in list(points) + repair_witnesses:
+            _, _, face, _ = dense_tree.find_nearest(tuple(point))
+            if face is not None:
+                locked.update(me.polygons[face].vertices)
+        if locked:
+            nonlocal adjacency_edges
+            if adjacency_edges is None:
+                adjacency_edges = np.asarray(
+                    [tuple(e.vertices) for e in me.edges])
+            # Preserve the local fan too: a new coarse neighbouring triangle
+            # must not overhang and occlude an otherwise fixed probe triangle.
+            for _ in range(2):
+                touches = np.isin(adjacency_edges[:, 0], list(locked)) | np.isin(
+                    adjacency_edges[:, 1], list(locked))
+                locked.update(adjacency_edges[touches].ravel())
+            group.add([int(i) for i in sorted(locked)], 1., 'REPLACE')
+        return group
+
+    def modifier_for(target, name, ratio, group=None):
         modifier = target.modifiers.new(name, 'DECIMATE')
         modifier.ratio = ratio
-        if detail_group is not None:
-            modifier.vertex_group = detail_group.name
+        if group is not None:
+            modifier.vertex_group = group.name
             modifier.invert_vertex_group = True
             # Blender adds edge_length * factor to squared plane error. Its
             # factor therefore needs physical length units, like our tolerance.
@@ -97,11 +146,14 @@ def decimate_to_error(obj, tol, min_tris=120, samples=2500, protected=None):
                 1., tol / max(float(np.median(protected['tolerance_m'])), 1e-9))
         return modifier
 
-    def trial(ratio):
+    reviews = []
+
+    def trial(ratio, focus=None):
         o2 = obj.copy()
         o2.data = me.copy()
         bpy.context.scene.collection.objects.link(o2)
-        modifier_for(o2, 'd', ratio)
+        group = detail_group if focus is None else focus_group(o2, focus)
+        modifier_for(o2, 'd', ratio, group)
         apply_mods(o2)
         t = BVHTree.FromPolygons([v.co for v in o2.data.vertices], [
                                  p_.vertices for p_ in o2.data.polygons])
@@ -137,32 +189,98 @@ def decimate_to_error(obj, tol, min_tris=120, samples=2500, protected=None):
             feature_error = float(
                 np.max(distances / np.maximum(protected['tolerance_m'], 1e-9)))
         n = sum(len(p_.vertices) - 2 for p_ in o2.data.polygons)
+        failed = local['fails'] if protected is not None and protected.get(
+            'contrast_report') else []
+        if focus is not None and failed:
+            from mathutils import Vector
+            failing = {item.split(': ', 1)[-1] for item in failed}
+            reach = float(
+                np.ptp(np.asarray([tuple(v.co) for v in me.vertices]), axis=0).max() * 2)
+            for probe in protected['contrast_report']['probes']:
+                if probe['id'] not in failing:
+                    continue
+                direction = np.zeros(3)
+                direction[probe['axis']] = probe['outward']
+                for anchor in probe['anchors_m']:
+                    point, _, _, _ = t.ray_cast(
+                        Vector(np.asarray(anchor) + direction * reach), Vector(-direction), reach * 2)
+                    if point is not None:
+                        # A coarse face may occlude an intact groove. Protect
+                        # its dense counterpart as well as the intended hit.
+                        repair_witnesses.append(tuple(point))
+        from .correction_review import assess
+        review = assess('excess mesh complexity', 'local-feature-aware quadric reduction',
+                        {'triangles': tris0},
+                        {'triangles': n, 'surface_error_m': err,
+                            'feature_error': feature_error},
+                        improve=['triangles'], limits={'surface_error_m': (0., tol), 'feature_error': (0., 1.)})
+        review.update(focused_features=None if focus is None else sorted(focus),
+                      failed_features=failed[:16], occlusion_witnesses=len(repair_witnesses))
+        if protected is not None and protected.get('contrast_report'):
+            review['failed_measurements'] = [
+                p for p in local['probes'] if not p['retained']][:16]
+        reviews.append(review)
+        if not review['accepted']:
+            feature_error = max(feature_error, 2.)
         print('REDUCTION_TRIAL', {'triangles': n, 'surface_error_m': err,
               'feature_failures': local['fails'][:5] if protected is not None and protected.get('contrast_report') else [],
                                   'feature_error': feature_error}, flush=True)
         mesh2 = o2.data
         bpy.data.objects.remove(o2)
         bpy.data.meshes.remove(mesh2)
-        return err, n, feature_error
+        return err, n, feature_error, failed
 
     # Minimum complexity depends on geometry, not the density of its source grid.
     lo, hi = max(min_tris / tris0, 1e-6), 1.0
     best = 1.0
     best_error = 0.0
+    best_count = tris0
+    best_focus = None
     for _ in range(8):
         mid = (lo * hi) ** 0.5
-        err, n, feature_error = trial(mid)
+        err, n, feature_error, failed = trial(mid)
         if err <= tol and feature_error <= 1:
             best, hi = mid, mid
             best_error = err
+            best_count = n
         else:
             lo = mid
+    # Coarse retries protect only observed failures instead of retaining the
+    # source grid everywhere. All original hard checks remain in force.
+    if protected is not None and protected.get('contrast_report') and protected.get('ids'):
+        focus = set()
+        coarse = max(min_tris / tris0, best * .6)
+        ratio = coarse
+        previous_failures = float('inf')
+        for attempt in range(6):
+            err, n, feature_error, failed = trial(ratio, focus)
+            if err <= tol and feature_error <= 1 and n < best_count:
+                best, best_error, best_count, best_focus = ratio, err, n, set(
+                    focus)
+                break
+            if not failed and err <= tol:
+                break
+            failing_ids = {item.split(': ', 1)[-1] for item in failed}
+            stalled = failing_ids <= focus and len(failed) >= previous_failures
+            if err > tol or stalled:
+                if ratio > coarse:
+                    break
+                ratio = max(min_tris / tris0, best * .8)
+            focus.update(failing_ids)
+            previous_failures = len(failed)
     if best < 1.0:
-        modifier_for(obj, 'to_error', best)
+        group = detail_group if best_focus is None else focus_group(
+            obj, best_focus)
+        modifier_for(obj, 'to_error', best, group)
         apply_mods(obj)
     if detail_group is not None:
         stored_group = obj.vertex_groups.get('__hull_detail_guard')
         if stored_group is not None:
             obj.vertex_groups.remove(stored_group)
+    for group in list(obj.vertex_groups):
+        if group.name.startswith('__hull_local_retry'):
+            obj.vertex_groups.remove(group)
+    import json
+    obj['simplification_correction_reviews'] = json.dumps(reviews)
     err = best_error if best < 1.0 else 0.0
     return sum(len(p_.vertices) - 2 for p_ in obj.data.polygons), err

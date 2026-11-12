@@ -8,6 +8,63 @@ from propkit.implicit import bounded_field, pad_field
 
 
 class SurfaceContracts(unittest.TestCase):
+    def test_unobserved_original_cavity_cannot_be_filled_by_a_skin_correction(self):
+        from propkit.implicit import preserve_components
+        from propkit.correction_review import Rejected
+        base=np.full((20,20,20),-1.,np.float32)
+        base[10,10,10]=1.
+        target=base.copy();target[10,10,10]=-1.
+        with self.assertRaises(Rejected):
+            preserve_components(base,target)
+
+    def test_new_grid_cavity_is_repaired_but_original_cavity_and_open_groove_remain(self):
+        from propkit.implicit import preserve_components
+        base = np.ones((30,30,30), np.float32)
+        base[2:28,2:28,2:28] = -1
+        base[8,8,8] = 1
+        target=base.copy()
+        target[20,20,20] = 1
+        target[2:12,15,15] = 1
+        result, report = preserve_components(base,target)
+        self.assertLess(result[20,20,20],0)
+        self.assertGreater(result[8,8,8],0)
+        self.assertTrue((result[2:12,15,15] > 0).all())
+        self.assertEqual(report['filled_new_cavity_cells'],1)
+        self.assertEqual(report['detail_scale'],1.)
+
+    def test_detached_grid_speck_does_not_halve_remote_relief(self):
+        from propkit.implicit import preserve_components
+        base = np.ones((24, 24, 24), np.float32)
+        base[3:21, 3:21, 3:21] = -1
+        target = base.copy()
+        target[3:5, 3:21, 3:21] = 1
+        target[1, 12, 12] = -.2
+        target[10:14, 10:14, 3:7] = 1
+        result, report = preserve_components(base, target)
+        self.assertEqual(report['detail_scale'], 1.)
+        self.assertEqual(report['removed_fragment_cells'], 1)
+        np.testing.assert_array_equal(result[10:14, 10:14, 3:7], target[10:14, 10:14, 3:7])
+        self.assertGreater(result[1, 12, 12], 0)
+
+    def test_original_tiny_physical_part_is_preserved(self):
+        from propkit.implicit import preserve_components
+        base = np.ones((24, 24, 24), np.float32)
+        base[3:18, 3:18, 3:18] = -1
+        base[22, 22, 22] = -.1
+        result, report = preserve_components(base, base.copy())
+        self.assertEqual(report['baseline_solid_components'], 2)
+        self.assertLess(result[22, 22, 22], 0)
+        self.assertEqual(report['detail_scale'], 1.)
+
+    def test_large_structural_split_still_backs_off(self):
+        from propkit.implicit import preserve_components
+        base = np.full((20, 20, 20), -1., np.float32)
+        target = base.copy(); target[9:11] = 3.
+        from propkit.correction_review import Rejected
+        with self.assertRaises(Rejected) as caught:
+            preserve_components(base, target)
+        self.assertEqual(caught.exception.report['decision'], 'reject_and_rollback')
+
     def test_metric_padding_preserves_exact_sampling_box_boundaries(self):
         from skimage.measure import marching_cubes
         dimensions = (.2, .1, .3)

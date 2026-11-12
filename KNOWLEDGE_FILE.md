@@ -16,11 +16,70 @@ It is not a claim that every algorithm or asset was executed or proven correct.
 Binary textures/GLBs were counted, not exhaustively visually audited.
 
 The accompanying [machine-readable inventory](long-lines/docs/CODEBASE_INVENTORY.json)
-records 458 source/configuration/documentation files, all 145 tracked Python files,
+records 461 source/configuration/documentation files, all 147 tracked Python files,
 36 Godot scripts, module descriptions, definitions/line numbers, imports, static
 calls, JSON shapes, documentation headings and content hashes. All Python files
 parsed successfully; JSON parsing found no errors. Static calls are not a resolved
 runtime call graph. Counts include the currently staged new reconstruction tools.
+
+## Supervised corrections and adaptive reduction (2026-11-11)
+
+See [SUPERVISION.md](long-lines/factory/SUPERVISION.md). A new shared
+`correction_review.assess` contract requires the triggering problem to improve
+without exceeding explicit preservation budgets. Missing/nonfinite evidence
+rejects a candidate. This is deterministic software, not an LLM runtime foreman.
+It currently covers field-connectivity repairs, disposable reduction trials and
+unsafe automatic-depth view/opening retries; it does not supervise every station.
+
+The previous field guard globally halved all relief because the full target had
+25 detached grid fragments (28 cells), plus four newly enclosed one-cell air
+pockets. `implicit.preserve_components` now repairs those local representation
+defects, preserves original tiny components/cavities and open grooves, and retains
+full-strength detail. Each repair is at most eight cells; total removed/filled
+fractions are separately limited to 0.1%. Global relief retention below 80% is
+blocked rather than silently accepted. Large unresolved changes are flagged.
+
+`simplification.decimate_to_error` keeps its existing bidirectional sampled surface
+error and protected 80%-120% dense-contrast checks. After the original passing
+search, up to six coarse retries focus on failed features and their viewing-ray
+hits, protecting existing dense triangles and their local fans. New faces may
+otherwise occlude a groove even when nearby geometry remains. Retries continue
+while they make progress, then try a less aggressive level. No points are sculpted
+to pass probes and no object-specific geometry is generated. Rejected candidates
+are discarded; the prior passing candidate remains the fallback. Factory reports
+retain decisions, reasons, failed contrasts and ray-witness counts.
+
+Fresh full matched-tracer run, fixed source during capture: **16,756 triangles,
+one connected geometric surface, 0 normal disagreement**. The same 206 nominal
+source probes (same IDs, axes, anchors, target offsets and tolerances) fail 13 times
+instead of 109 on the previous 20,964-triangle run. On the older fixed 200 probes,
+the original classical model fails 97, the regressed neural model 111, and this
+export 21. All comparisons apply the recorded manufacturing translations. The
+same full-strength dense surface initially needed 27,928 triangles under the
+original reducer; adaptive retries reached 16,756 with zero protected-contrast
+failures and sampled error about 0.38 mm (budget 1.297 mm). All 190 protected
+dense contrasts also pass an independent check on the standalone export. This reverses the
+measured regression without changing QA thresholds or depth proposals.
+
+**Final asset QA still fails 13 source-depth checks.** Physical depths remain
+uncalibrated; ornamentation and narrow grooves are incomplete. The new reviewer
+exposes depth-bound saturation (front 7.0% of controls) and proposal-to-shared-field
+transfer (front 1.011; right 0.763). Right-view transfer loss and cross-view support
+still need work. Front final reserved-pixel appearance gain remains -6.619%; the
+geometry fix does not repair that inverse-shading model. The broad box-like base
+and depth-limited fitting are not declared solved. Do not increase depth blindly
+or weaken checks to make the preview more attractive.
+
+Validation: 124 pure reconstruction contracts covered (121 passed, three expected
+optional-backend skips), nine Blender unit checks and a standalone sphere reduction
+check passed, as did 39 Godot unit/45 smoke checks. Source syntax passed. The run
+uses the existing original sheet preset/estimated dimensions, not fresh automatic
+sheet recognition. Runtime tracing, fitting, repair and reduction need no per-object
+assistant edits. A post-capture guard additionally rejects filling an original
+enclosed cavity; that case is absent here. Reapplying the captured and published
+field operators produced bit-identical repaired fields. Original Dirac/main remain
+unchanged. The neural tracer remains
+opt-in pending independent-object and inverse-shading validation.
 
 ## Structural tracing integration (2026-11-11)
 
@@ -37,16 +96,10 @@ the backend. No network or LLM is used during reconstruction. The default remain
 classical; explicit `auto` reports fallback on machines without model setup and
 strict `matched` mode fails instead. Models/dependencies stay local and gitignored.
 
-Promotion is blocked by the full reconstruction result, not by software test
-failures. The fixed existing-preset leg completed at 20,964 triangles versus the
-previous 18,064. On the same previous 200 source probes, after applying recorded
-manufacturing translations, failures rise from 97 to 111. The new run's own
-109/206 source failures are a different population. Front final reserved-pixel
-appearance gain is -6.619%; geometry remains uncalibrated. The cleaner 2D trace
-does not yet establish a better final model. Keep the backend opt-in until the
-region-fitting/mesh handoff improves under controlled checks. Eleven new protocol,
-curve and export checks pass; the previous 100 contracts pass with three expected
-skips. Seven Blender checks and Godot's 39 unit/45 smoke checks pass.
+The initial tracing integration regressed the full reconstruction and was kept
+opt-in. That historical run had 20,964 triangles and 111 failures on the common
+200 probes. The supervised-correction update above supersedes that result; it
+does not establish universal 3D reconstruction or justify silent model promotion.
 
 The CAD/drawing audit found existing mesh-derived front/right/top silhouettes,
 labelled hatched sections, cut-plane markers and an inspection cutaway. These are
