@@ -370,7 +370,7 @@ def reconstruct(image, mask, base, max_depth_px, light=None, albedo=None, iterat
               'relief_selection': selection_report, 'boundary_policy': boundary_mode,
               'boundary_pixels': int(traced['boundaries'].sum()),
               'boundary_pixels_used': int(boundary_evidence.sum()),
-              'needs_review': not selection_report['final_test_pass'],
+              'needs_review': selection_report['needs_review'] or not selection_report['final_test_pass'],
               'light_source': 'provided' if fixed_light else 'jointly_fitted_with_explicit_gauge',
               'lighting_calibration': initial_identifiability, 'converged': bool(best['fit']['converged']),
               'iterations': int(sum(item['iterations'] for item in history)), 'history': history,

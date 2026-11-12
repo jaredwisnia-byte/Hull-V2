@@ -504,15 +504,18 @@ def protected_samples(obj, report, geometry_tolerance=None):
     conflicts = {probe['id']
                  for probe in baseline['probes'] if not probe['retained']}
     report['unmet_before_reduction'] = sorted(conflicts)
-    # A single image with unknown lighting/material cannot establish absolute
-    # relief. Keep its probes in final QA, but do not freeze millions of faces
-    # to an uncalibrated hypothesis. Legacy/calibrated probes remain protected.
+    # Preserve what the chosen numerical surface actually contains. Whether
+    # that surface is physically correct is a separate confidence/QA question.
+    # Excluding uncertain probes here made reduction erase inferred carvings.
     uncertain = {probe['id'] for probe in report.get('probes', [])
                  if probe.get('depth_estimate') is not None
                  and not probe['depth_estimate'].get('absolute_depth_supported_under_model', False)}
     report['unverified_depth_probes'] = sorted(uncertain)
     report['depth_review_required'] = bool(uncertain)
-    excluded = conflicts | uncertain
+    excluded = conflicts
+    report['preservation_policy'] = 'preserve dense relief independently of physical confidence'
+    report['physical_depth_verified_by_preservation'] = False
+    report['preservation_reference'] = 'actual dense surface contrasts; 20% relative band plus sampling tolerance'
     reach = max(obj.dimensions) * 2
     points = []
     tolerances = []
@@ -552,5 +555,5 @@ def protected_samples(obj, report, geometry_tolerance=None):
             'support_m': np.asarray(supports),
             # Conflicting input fits remain in final QA. They cannot be repaired
             # by retaining millions of triangles during reduction.
-            'source_report': {'probes': [probe for probe in report.get('probes', []) if probe['id'] not in excluded]},
+            'source_report': {'probes': [probe for probe in report.get('probes', []) if probe['id'] not in excluded and probe['id'] not in uncertain]},
             'contrast_report': {'probes': reference}} if points else None

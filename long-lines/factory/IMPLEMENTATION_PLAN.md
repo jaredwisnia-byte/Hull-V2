@@ -319,3 +319,22 @@ physical correctness; bound reduction against supported local relief without for
 millions of triangles or accepting painted facets as truth. Test independent shapes,
 paint-only patches, local recesses and triangle/error tradeoffs. Do not tune final
 held-out pixels. Cross-view physical validation and calibration remain unresolved.
+
+
+## Detail-loss corrections — 2026-11-11
+
+Implemented proposal-centred composition for ambiguous regions and separate
+provisional status. Absence of an image gain no longer implies zero geometry.
+Near-exact material-only explanations need contradictory proposal residuals on both
+reserved folds. Weak evidence stays provisional. Reduction preserves measured dense
+relief independently of physical-depth confidence, using existing local contrast
+bounds. Uncalibrated nominal source targets still report final QA but do not freeze
+nearly the whole grid. Same-mesh/source-probe controlled failures fell 181 to 110;
+triangles rose 3,790 to 30,330. Fresh full build has 18,064 triangles and fails 97/200
+source-depth probes. Do not claim general groove reconstruction or a fully fixed asset.
+
+Next: resolve narrow cross-groove profiles under weak directional lighting, separate
+base-envelope banding from intended relief, improve spatially coherent evidence and
+compare triangle/detail curves on independent objects. Keep source-depth checks and
+numerical dense-surface preservation results distinct. Station 08 fits geometry;
+replacing it with an intensity-to-height Poisson solve would be the wrong change.

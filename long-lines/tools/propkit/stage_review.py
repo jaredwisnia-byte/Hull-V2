@@ -23,12 +23,16 @@ def inspect(result, measured, diagnostics=None):
             flag('boundary_evidence_excluded', 6, 'review', view + ': colour-linked boundaries receive no edge-preservation weight',
                  {'used': used, 'traced': total}, 'Compare all-boundary weighting without changing edge thresholds.')
         selection = report.get('relief_selection', {})
+        if selection.get('provisional_pixels', 0):
+            flag('provisional_relief_retained', 9, 'review', view + ': uncertain relief is retained as a proposal',
+                 {'pixels': selection['provisional_pixels'], 'regions': selection.get('provisional_regions')},
+                 'Resolve with independent views or calibration; do not treat uncertainty as zero geometry.')
         dropped = [r['region_id'] for r in selection.get('regions', []) if r.get(
             'initially_supported') and not r.get('applied')]
         if dropped:
             flag('composition_rejected_patches', 9, 'review', view + ': locally supported proposals did not survive composition',
                  {'region_ids': dropped}, 'Inspect the composed normals, boundary blend and regional residuals.')
-        if report.get('needs_review') or selection.get('final_test_pass') is False:
+        if selection.get('final_test_pass') is False or (not selection and report.get('needs_review')):
             flag('unseen_pixel_check_failed', 9, 'review', view + ': final unseen-pixel check needs review',
                  {'gain': report.get('held_out_gain'),
                   'selection_mode': selection.get('mode')},

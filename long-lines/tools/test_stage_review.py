@@ -40,6 +40,12 @@ class ReviewContracts(unittest.TestCase):
                          'boundary_evidence_excluded')
         self.assertFalse(review['physical_geometry_verified'])
 
+    def test_provisional_geometry_is_not_mislabeled_as_a_failed_image_test(self):
+        review = inspect({}, {'relief': {'views': {'front': {'needs_review': True,
+                         'relief_selection': {'provisional_pixels': 100, 'provisional_regions': 2,
+                                              'final_test_pass': True}}}}})
+        self.assertEqual([f['code'] for f in review['findings']], ['provisional_relief_retained'])
+
     def test_clean_metrics_do_not_certify_physical_geometry(self):
         review = inspect({'pass': True, 'fails': []}, {})
         self.assertEqual(review['status'], 'no_flagged_issue')

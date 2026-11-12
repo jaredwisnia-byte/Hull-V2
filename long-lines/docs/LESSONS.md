@@ -663,3 +663,19 @@ fixed and verify a continuous composition instead. Finally, inspect the same pro
 at actual mesh stages: 73 dense-stage passes were already lost after reduction because
 uncertain-depth probes receive no protection. Better proposal scores alone do not mean
 a better exported asset. Keep physical confidence and numerical preservation distinct.
+
+
+### 2026-11-11 — Uncertain does not mean flat; preserving does not mean verified
+
+The previous zero-directed harmonic fill visibly blurred useful proposed relief.
+Retain ambiguous proposals with explicit provisional status; only independent strong
+material-only evidence can justify flattening. A low-signal tie is not such evidence.
+Dense geometry also needs numerical preservation even if its physical depth remains
+uncertain. Separate bounds against the actual dense surface from source-depth truth
+claims. Applying uncalibrated nominal source thresholds as hard reduction constraints
+can freeze nearly the whole grid when dense measurements barely cross that threshold.
+The same saved dense mesh now preserves more relief at 30,330 versus 3,790 triangles;
+its original source probe failures fall 181 to 110, not to zero. Do not hide that cost
+or change QA thresholds. Residual edge maps show image disagreement, not recovered
+3D carving boundaries. Read actual input quantities before adopting an external AI's
+diagnosis: reference_fitting.py receives geometric height, not luminance.

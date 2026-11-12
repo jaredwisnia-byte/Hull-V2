@@ -16,7 +16,7 @@ It is not a claim that every algorithm or asset was executed or proven correct.
 Binary textures/GLBs were counted, not exhaustively visually audited.
 
 The accompanying [machine-readable inventory](long-lines/docs/CODEBASE_INVENTORY.json)
-records 451 source/configuration/documentation files, all 139 tracked Python files,
+records 452 source/configuration/documentation files, all 140 tracked Python files,
 36 Godot scripts, module descriptions, definitions/line numbers, imports, static
 calls, JSON shapes, documentation headings and content hashes. All Python files
 parsed successfully; JSON parsing found no errors. Static calls are not a resolved
@@ -25,6 +25,55 @@ runtime call graph. Counts include the currently staged new reconstruction tools
 ## Current implementation update (2026-11-10)
 
 ### Superseding reconstruction path (2026-11-11)
+
+#### Detail-loss bug fixes (2026-11-11, supersedes the zero-fill policy below)
+
+Two verified destructive defaults are corrected. `relief_selection.py` no longer
+replaces inconclusive regions with a smooth extension toward zero. Selected samples
+are fixed and a screened correction is integrated about the existing proposal.
+Ambiguous geometry/material remain PROVISIONAL, not approved. A near-exact material-
+only explanation must beat a nonflat proposal on BOTH reserved folds to flatten it;
+weak or tied evidence does not imply flatness. Global material-only selection uses
+the same contradiction requirement. Supported/provisional labels, error maps and
+warnings are separate. A negative final image test remains a warning, never hidden.
+The new front retains its raw proposal exactly (maximum pixel-depth difference 0).
+This removes destructive blur; it does not establish physical groove depths.
+
+`surface_detail.protected_samples` now protects actual dense-surface relief even
+when its source-depth estimate is uncalibrated. Conflicts already absent from the
+dense mesh are excluded. Numerical preservation and physical confidence are separate.
+Actual dense contrasts use the existing 80%-120% band plus sampling tolerance.
+Only calibrated/legacy probes also constrain source-depth targets during reduction:
+uncalibrated target thresholds near a pass/fail boundary otherwise forced almost the
+entire dense grid to survive. Source-based final QA remains unchanged and may fail.
+
+Controlled SAME dense mesh and SAME 213 source probes: old reduction 3,790 triangles,
+181 source-depth failures and 73 dense-to-final pass losses; fixed reduction 30,330
+triangles, 110 failures and 33 losses under those original source-target thresholds.
+The fixed result passes its numerical dense-contrast preservation checks. Do not call
+that zero source losses or verified geometry. The triangle/detail tradeoff is explicit.
+Fresh full leg: 18,064 triangles, one component, 97/200 source-depth failures versus
+108 pre-reduction failures, 21 dense-stage passes lost under source thresholds, and
+no normal-facing failure. The different probe populations are not a controlled A/B.
+Front has 34 supported and 21 provisional regions, with -6.542% final reserved-pixel
+appearance gain; retained is NOT image-validated/approved. Its full final QA still
+fails. Narrow flutes, banding, cross-view agreement and physical depth remain open.
+No new edge threshold, object-specific oval template, mask or manual carving was used.
+
+Station 08 reference fitting consumes geometric coarse height, not brightness. Its
+report now states that quantity and its limited validation scope explicitly. Station
+09 already has a global gradient-dependent spline shape/light/material objective.
+Brightness gradients are not surface slopes; Poisson integration needs inferred
+slopes/normals with photometric assumptions, not raw intensity derivatives. Primary
+references: https://dspace.mit.edu/entities/publication/f93d281f-face-4890-b913-f85b3fa2e596
+and https://www.cs.cmu.edu/~garland/quadrics/ .
+
+Verification: 100 reconstruction contracts ran (97 passed, three skipped); seven
+Blender checks passed including an uncalibrated curved-groove preservation regression
+that simplifies 25,600 triangles to 122; 39 Godot unit/45 smoke checks passed. New tests
+cover weak-evidence retention, material-only rejection, final-test isolation and
+provisional-review labeling. This remains a development-leg preset test, not a
+universal reconstruction benchmark or fresh image-only intake demonstration.
 
 #### Stage-review and regional selection continuation (2026-11-11)
 

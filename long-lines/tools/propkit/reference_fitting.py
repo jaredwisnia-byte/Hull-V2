@@ -91,5 +91,8 @@ def fit(base, region, valid, tolerance=.5, hints=()):
     feather = np.clip(ndimage.distance_transform_edt(region) / 2, 0, 1)
     result[region] += feather[region] * (best[1] - base[region])
     report = dict(best[2], attempts=attempts, origin_xy=origin.tolist(), coordinate_scale_px=scale,
-                  units='analysis pixels', absolute_depth_validated=False)
+                  units='analysis pixels', absolute_depth_validated=False,
+                  input_quantity='existing coarse geometric height, not image brightness',
+                  role='local background reference, not reconstruction of the carving',
+                  validation_scope='reserved surrounding geometry only; interior extrapolation remains uncertain')
     return result, report

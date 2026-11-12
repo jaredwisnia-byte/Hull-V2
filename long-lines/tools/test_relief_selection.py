@@ -50,6 +50,23 @@ class SelectionContracts(unittest.TestCase):
         self.assertGreaterEqual(extended.min(), -2.00001)
         self.assertLessEqual(extended.max(), .00001)
 
+    def test_ambiguous_regions_keep_their_proposal_not_a_zero_prior(self):
+        args = list(self.fixture())
+        args[6] = args[4] + np.log(shade(args[0], args[5])) + .1
+        applied, material, report, maps = select(*args)
+        self.assertEqual(report['mode'], 'provisional')
+        self.assertTrue(report['needs_review'])
+        np.testing.assert_allclose(applied, args[1], atol=1e-10)
+        self.assertGreater(report['provisional_pixels'], 0)
+
+    def test_weak_evidence_is_not_a_material_only_verdict(self):
+        args = list(self.fixture(both=True))
+        args[1] = args[1] * .001
+        args[6] = args[2] + np.log(shade(args[0] + args[1], args[3]))
+        applied, material, report, maps = select(*args)
+        self.assertEqual(report['mode'], 'provisional')
+        np.testing.assert_allclose(applied, args[1], atol=1e-10)
+
     def test_linear_solver_failure_is_not_accepted(self):
         from unittest.mock import patch
         args = self.fixture()

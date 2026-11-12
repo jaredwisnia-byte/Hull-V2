@@ -1,9 +1,9 @@
 {
   "audit_date": "2026-11-11",
   "method": "Static parse and catalog; not proof of runtime correctness",
-  "local_head": "ab4d66affeed9894a28e1638021f0fb3be47b293",
+  "local_head": "9d0879e8e9d6f5f76392197d536f48259c7536b8",
   "canonical_dirac": "9d8df082dfbef7d5a508be3578d78d7c488561ab",
-  "tracked_files": 2895,
+  "tracked_files": 2896,
   "tracked_extensions": {
     ".yml": 3,
     "": 3,
@@ -16,7 +16,7 @@
     ".glb": 120,
     ".json": 164,
     ".jpg": 83,
-    ".py": 139,
+    ".py": 140,
     ".csv": 1,
     ".jsonl": 1,
     ".godot": 1,
@@ -29,8 +29,8 @@
     ".mjs": 1,
     ".css": 1
   },
-  "catalogued_files": 451,
-  "python_files": 139,
+  "catalogued_files": 452,
+  "python_files": 140,
   "parse_errors": [],
   "files": [
     {
@@ -61,13 +61,14 @@
     },
     {
       "path": "KNOWLEDGE_FILE.md",
-      "lines": 674,
-      "sha256": "2596536e4d20351de10628d3b95c0226490800133b825aa8b07c858e3a823645",
+      "lines": 723,
+      "sha256": "f7bc4e3332f04df4348a33e0fbd77a30b1a07b9f6fc7274e80b3a12b78a1af68",
       "headings": [
         "Hull knowledge file\r",
         "Purpose and evidence level\r",
         "Current implementation update (2026-11-10)\r",
         "Superseding reconstruction path (2026-11-11)\r",
+        "Detail-loss bug fixes (2026-11-11, supersedes the zero-fill policy below)\r",
         "Stage-review and regional selection continuation (2026-11-11)\r",
         "Joint-fit and CAD continuation (supersedes lighting claims below)\r",
         "Profile, feature and ownership implementation (2026-11-11)\r",
@@ -971,8 +972,8 @@
     },
     {
       "path": "long-lines/docs/LESSONS.md",
-      "lines": 665,
-      "sha256": "76f4694e51371693c7a5f724184b72a6fa7298197cab3955568b9dd893395292",
+      "lines": 681,
+      "sha256": "9e4be8a2b347faa07bf51f16aa32391cc10c36304a14884cbc30f960a5379c08",
       "headings": [
         "Lessons learned\r",
         "Automatic parts-sheet intake (Hull V2)\r",
@@ -1012,7 +1013,8 @@
         "Second TV from a rich reference sheet (Nov 9)\r",
         "Reconcile: making a contradictory sheet agree (Nov 9)\r",
         "Continuous reconstruction and detail checks (Nov 11)\r",
-        "2026-11-11 — Do not confuse absent relief with absent proposals\r"
+        "2026-11-11 — Do not confuse absent relief with absent proposals\r",
+        "2026-11-11 — Uncertain does not mean flat; preserving does not mean verified\r"
       ]
     },
     {
@@ -2274,8 +2276,8 @@
     },
     {
       "path": "long-lines/factory/IMPLEMENTATION_PLAN.md",
-      "lines": 321,
-      "sha256": "396343ab2829090622d84930e985499d1b735532d033fd621b5bdb5e7d1a9d90",
+      "lines": 340,
+      "sha256": "d785ec35c9cdd4c8afacaa5c58c83bfece5dc9bd59a8c72c7bc0f9065723dcd9",
       "headings": [
         "Hull audit implementation and acceptance plan\r",
         "Implemented: shared stages and readable code\r",
@@ -2286,7 +2288,8 @@
         "Observed acceptance results\r",
         "Profile-family implementation (2026-11-11)\r",
         "Remaining generalization and exit criteria\r",
-        "Stage evidence continuation — 2026-11-11\r"
+        "Stage evidence continuation — 2026-11-11\r",
+        "Detail-loss corrections — 2026-11-11\r"
       ]
     },
     {
@@ -10574,7 +10577,7 @@
     {
       "path": "long-lines/tools/propkit/joint_shading.py",
       "lines": 407,
-      "sha256": "e1377dbc73dda801846491d02337005ff38b6f44e84d62403bc648b8e4d16c34",
+      "sha256": "c88f96763e4434574a11e2656791d56dafd594a86446b105054423037c952319",
       "description": "Coupled shape, diffuse illumination and reflectance estimation.\n\nHeight is represented by continuous B-spline controls, not geometric templates.\nLighting and reflectance are nuisance variables with explicit gauges. Unknown\nsingle-image lighting/material cannot silently become calibrated metric depth.",
       "imports": [
         "from .feature_regions import trace",
@@ -12931,8 +12934,8 @@
     },
     {
       "path": "long-lines/tools/propkit/reference_fitting.py",
-      "lines": 95,
-      "sha256": "b533885d2fe4588c7e3d169364b4a2286e13dbf422148ccb8c36803ec1a06082",
+      "lines": 98,
+      "sha256": "2686b6e42f63314886b15795e5ef85dbfbe29067e8908e6763e77ecf21027eb5",
       "description": "Bounded reference retries, selected on reserved surrounding-surface samples.",
       "imports": [
         "from scipy import ndimage",
@@ -13441,8 +13444,8 @@
     },
     {
       "path": "long-lines/tools/propkit/relief_selection.py",
-      "lines": 139,
-      "sha256": "858042e1a3ebd4b9ddebabcad88a8b8350e45c0248304b5e061241293f87dab6",
+      "lines": 181,
+      "sha256": "a4358f3d485f624cbe3ea7bc97aae3387e611e54191fd9e1a59f4a21c348a289",
       "description": "Region-aware relief selection with continuous composition and untouched tests.\n\nSelection/acceptance assess an appearance model, not physical depth truth.",
       "imports": [
         "from .joint_shading import shade",
@@ -13461,11 +13464,11 @@
           "name": "extend_supported",
           "line": 16,
           "kind": "FunctionDef",
-          "description": "Keep supported samples fixed; extend smoothly to the coarse surface.\n\nUnknown pixels receive a screened harmonic continuation, not inferred detail.\nA failed linear solve must not be mistaken for accepted geometry."
+          "description": "Keep constraints fixed; integrate a smooth correction about a prior.\n\nWith no prior, unknown pixels extend toward zero. With a proposal prior,\nuncertainty preserves existing detail instead of flattening it.\nA failed linear solve must not be mistaken for accepted geometry."
         },
         {
           "name": "select",
-          "line": 54,
+          "line": 56,
           "kind": "FunctionDef",
           "description": ""
         }
@@ -13475,16 +13478,21 @@
         "(unknown * (laplace(unknown * value) + screening * value) + ~unknown * value).ravel",
         "LinearOperator",
         "RuntimeError",
+        "abs",
         "adjoint",
+        "all",
         "bool",
         "cg",
         "compose",
         "diagonal.ravel",
         "extend_supported",
+        "flat_supported.append",
         "float",
         "gain",
         "gradients",
         "height.copy",
+        "height.max",
+        "height.min",
         "int",
         "laplace",
         "len",
@@ -13495,6 +13503,7 @@
         "min",
         "np.all",
         "np.any",
+        "np.clip",
         "np.count_nonzero",
         "np.full",
         "np.isfinite",
@@ -13504,6 +13513,9 @@
         "np.unique",
         "np.where",
         "np.zeros",
+        "np.zeros_like",
+        "provisional.any",
+        "provisional.sum",
         "range",
         "records.append",
         "region.sum",
@@ -14656,8 +14668,8 @@
     },
     {
       "path": "long-lines/tools/propkit/stage_review.py",
-      "lines": 94,
-      "sha256": "4f720a3a64160c183b8f30b4e2a623971f47efa1a6305fb48ae5382b1625034f",
+      "lines": 98,
+      "sha256": "322f665350088bb8e052f089e0ed7cef7ae07b332816c8460dda08e031422d20",
       "description": "Deterministic review of the evidence used by the factory presentation.\n\nThis reads stage data, not rendered pixels. It does not certify geometry,\nchange thresholds, edit code or silently accept a rejected proposal.",
       "imports": [
         "from pathlib import Path",
@@ -14673,7 +14685,7 @@
         },
         {
           "name": "write",
-          "line": 90,
+          "line": 94,
           "kind": "FunctionDef",
           "description": ""
         }
@@ -14719,8 +14731,8 @@
     },
     {
       "path": "long-lines/tools/propkit/surface_detail.py",
-      "lines": 556,
-      "sha256": "31c236f50dca1e7a8b64731a7aae2a94d0ddd0cb0557356145ed346f37eec3e4",
+      "lines": 559,
+      "sha256": "312d405c63122323b05829b6b71f1df3307561975bbfa9662f2f1c7877218e66",
       "description": "Object-independent surface evidence and continuous implicit detail.\n\nConstruction patches are computational regions of one physical surface. They\nnever become capped objects merely because width or curvature changes. All\nlengths passed to the field station are metres; source observations stay in\ntheir own image frame until sampling.",
       "imports": [
         "from . import feature_regions",
@@ -18711,6 +18723,68 @@
       "environment_keys": []
     },
     {
+      "path": "long-lines/tools/test_relief_preservation_blender.py",
+      "lines": 51,
+      "sha256": "2cd9c04801fcd7772ce2b06bb019fbaa2525a00ca411aafde7a01eebc1cf5d5a",
+      "description": "Blender regression: uncertainty must not erase a real dense groove.",
+      "imports": [
+        "from pathlib import Path",
+        "from propkit import surface_detail, simplification, local_features",
+        "import bpy",
+        "import numpy as np",
+        "import sys",
+        "import unittest"
+      ],
+      "definitions": [
+        {
+          "name": "PreservationContracts",
+          "line": 11,
+          "kind": "ClassDef",
+          "description": ""
+        }
+      ],
+      "calls": [
+        "(-0.02 + depth).ravel",
+        "Path",
+        "Path(__file__).resolve",
+        "a.ravel",
+        "b.ravel",
+        "bpy.context.collection.objects.link",
+        "bpy.data.meshes.new",
+        "bpy.data.objects.new",
+        "bpy.data.objects.remove",
+        "c.ravel",
+        "d.ravel",
+        "enumerate",
+        "len",
+        "local_features.check_surface_features",
+        "mesh.from_pydata",
+        "mesh.update",
+        "np.arange",
+        "np.arange(xx.size).reshape",
+        "np.exp",
+        "np.linspace",
+        "np.meshgrid",
+        "np.sin",
+        "probes.append",
+        "self.assertEqual",
+        "self.assertFalse",
+        "self.assertIsNotNone",
+        "self.assertLess",
+        "self.assertLessEqual",
+        "self.assertTrue",
+        "simplification.decimate_to_error",
+        "str",
+        "surface_detail.protected_samples",
+        "sys.path.insert",
+        "tuple",
+        "unittest.main",
+        "xx.ravel",
+        "zz.ravel"
+      ],
+      "environment_keys": []
+    },
+    {
       "path": "long-lines/tools/test_relief_preview.py",
       "lines": 31,
       "sha256": "7921226d8c1fd6710ed0551bf0a15258fe9561fb88424849b10a08a32182d3bd",
@@ -18747,8 +18821,8 @@
     },
     {
       "path": "long-lines/tools/test_relief_selection.py",
-      "lines": 86,
-      "sha256": "ca2d1ceefdcfd06ac4a40ebbf1afb9d4a427aad9f496f7b1c1ecd11c2b639292",
+      "lines": 103,
+      "sha256": "b204ef33ae2515308773405d4e5a194a807f8eddba9c9b8bf1529592044d9f18",
       "description": "Whole-view failures must not automatically discard supported local geometry.",
       "imports": [
         "from propkit.joint_shading import shade",
@@ -18780,6 +18854,7 @@
         "np.max",
         "np.ones",
         "np.sin",
+        "np.testing.assert_allclose",
         "np.testing.assert_array_equal",
         "np.where",
         "np.zeros",
@@ -18787,6 +18862,7 @@
         "select",
         "self.assertEqual",
         "self.assertFalse",
+        "self.assertGreater",
         "self.assertGreaterEqual",
         "self.assertLess",
         "self.assertLessEqual",
@@ -19118,8 +19194,8 @@
     },
     {
       "path": "long-lines/tools/test_stage_review.py",
-      "lines": 58,
-      "sha256": "134c19829e0ee94eb5d9ccf4c9e4e87f3f075dd47f6548fca5df3413a2e37159",
+      "lines": 64,
+      "sha256": "14ee0b99aad57cc2639cee41407afb17af76ada9d712d3b607c9d62fae803abc",
       "description": "The stage critic reports evidence and never grants itself geometry authority.",
       "imports": [
         "from pathlib import Path",
