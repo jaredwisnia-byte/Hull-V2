@@ -69,6 +69,15 @@ A new line is justified only when a category repeatedly fails another line's gat
 ## Codified corrections (the gate's one retry)
 - hull: an outline that fails on one view: that view becomes paint-only (dark-on-dark backs).
 - hull: holes: convex silhouettes. Over budget: halve the decimation ratio.
+- automatic-depth hull: each missing dense-mesh depth probe receives a source,
+  proposed-height, accepted-height, shared-field and mesh cross-section image in
+  `diagnostics/probe_review/`. Only source-supported details can trigger the
+  one local view-fusion retry. It searches a bounded patch near the visible
+  surface and rejects new probe failures, component damage or outline drift.
+  The second exported build replaces the first only if the missing detail
+  improves without new QA failures, extra extreme folds, silhouette loss or
+  an excessive triangle increase. A rejected retry is recorded and rolled
+  back; uncertain source regions remain flagged for review.
 Add a rule here and in `factory.py:correct()` whenever a person fixes the same thing twice.
 
 ## Condition variants

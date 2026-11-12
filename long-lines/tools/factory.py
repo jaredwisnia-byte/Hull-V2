@@ -16,6 +16,7 @@ Work orders live in factory/orders/<name>.json; lines read them, so a new asset 
 no code. See factory/README.md.
 """
 import glob
+import copy
 import hashlib
 import importlib
 import json
@@ -335,6 +336,8 @@ def run_line(order):
                 from propkit import surface_detail
                 detail_plan = surface_detail.analyse(
                     views, (W_, D_, height), rrep)
+                if order.get('relief_retry'):
+                    detail_plan['retry_targets'] = order['relief_retry']
                 detail_plan['cad_export'] = bool(order.get('cad_export'))
                 detail_plan['diagnostic_folder'] = os.path.join(diagnostic_root(order), 'shading')
                 hp['field_hook'] = lambda field: surface_detail.apply_field(
@@ -484,6 +487,18 @@ def correct(order, result):
         # The implicit path intentionally preserves detected geometry. The
         # legacy decimation-ratio retry is overridden there and does no work.
         return False
+    if (order.get('automatic_depth') and not order.get('relief_retry')
+            and 'missing shading depth:' in fails):
+        diagnostics = order.get('measured', {}).get('relief', {}).get('probe_diagnostics', {})
+        failed_ids = {item.split('missing shading depth: ', 1)[1]
+                      for item in result['fails'] if item.startswith('missing shading depth: ')}
+        supported = [item for item in diagnostics.get('probes', ())
+                     if item['status'] == 'supported_unmet' and item['id'] in failed_ids]
+        if supported:
+            order['relief_retry'] = supported
+            order.setdefault('corrections', []).append(
+                {'action': 'local supported-view retry', 'probe_ids': [p['id'] for p in supported]})
+            return True
     if order["line"] == "hull":
         h = order.setdefault("hull", {})
         for v in ("back", "left", "right", "top"):
@@ -537,9 +552,50 @@ def render_trim_preview(name, library_root=None):
     return out
 
 
+def _local_retry_review(before, after, targets, measured):
+    """Accept a second build only if exported geometry improves safely."""
+    from propkit.correction_review import assess
+    target_ids = {item['id'] for item in targets}
+
+    def target_misses(result):
+        return {item.split('missing shading depth: ', 1)[1]
+                for item in result.get('fails', ())
+                if item.startswith('missing shading depth: ')} & target_ids
+
+    old, new = before.get('metrics', {}), after.get('metrics', {})
+    old_outline = old.get('silhouette_iou', {})
+    new_outline = new.get('silhouette_iou', {})
+    delta = min((new_outline.get(view, -1) - value
+                 for view, value in old_outline.items()), default=-1.)
+    extra_fails = set(after.get('fails', ())) - set(before.get('fails', ()))
+    retry_applied = measured.get('relief', {}).get('local_retry', {}).get('applied') is True
+    before_metrics = {'missing_target_details': len(target_misses(before))}
+    after_metrics = {
+        'missing_target_details': len(target_misses(after)),
+        'new_final_failures': len(extra_fails),
+        'extreme_fold_count': new.get('extreme_folds', {}).get('count'),
+        'extreme_folds_per_1k': new.get('extreme_folds', {}).get('per_1k'),
+        'geometric_components': new.get('geometric_components'),
+        'triangle_count': new.get('tris'),
+        'minimum_silhouette_delta': delta,
+        'field_retry_applied': int(retry_applied)}
+    limits = {'new_final_failures': (0, 0),
+              'extreme_fold_count': (0, old.get('extreme_folds', {}).get('count', -1)),
+              'extreme_folds_per_1k': (0, old.get('extreme_folds', {}).get('per_1k', -1)),
+              'geometric_components': (1, old.get('geometric_components', 0)),
+              'triangle_count': (0, old.get('tris', 0) * 1.05),
+              'minimum_silhouette_delta': (-.005, 1.),
+              'field_retry_applied': (1, 1)}
+    return assess('supported relief missing after view fusion',
+                  'accept isolated local view ownership on exported asset',
+                  before_metrics, after_metrics,
+                  improve=['missing_target_details'], limits=limits)
+
+
 def _build_candidate(order, run, samples=16):
     t0 = time.time()
     attempt, result, stages = 0, None, {}
+    previous = None
     while True:
         attempt += 1
         library_root = str(run / ("attempt-%03d" % attempt) / "library")
@@ -578,8 +634,27 @@ def _build_candidate(order, run, samples=16):
             from propkit.correction_review import Rejected
             if isinstance(e, Rejected):
                 result['correction_review_failure'] = e.report
-        if result["pass"] or attempt > STANDARDS["minimum_acceptable"]["max_retries"] or not correct(order, result):
+        if previous is not None:
+            old_result, old_measured, old_library, old_directory, old_views = previous
+            review = _local_retry_review(old_result, result,
+                                         order.get('relief_retry', ()),
+                                         order.get('measured', {}))
+            if not review['accepted']:
+                result = old_result
+                order['measured'] = old_measured
+                order['run_directory'] = old_directory
+                order['views_folder'] = old_views
+                library_root = old_library
+            result.setdefault('correction_reviews', []).append(review)
             break
+        if result['pass'] or attempt > STANDARDS['minimum_acceptable']['max_retries']:
+            break
+        prior = (copy.deepcopy(result), copy.deepcopy(order.get('measured', {})),
+                 library_root, order['run_directory'], order.get('views_folder'))
+        if not correct(order, result):
+            break
+        if order.get('relief_retry'):
+            previous = prior
     if result["pass"] and order["line"] == "extrude":
         try:
             preview = render_trim_preview(order["name"], library_root)
@@ -659,6 +734,9 @@ def build(order, samples=16):
         order['status'] = 'needs_person'
     finally:
         order.pop('_input_views_snapshot', None)
+        # This is a run-local second attempt, not a lasting instruction in
+        # the source order. A future rebuild must earn the retry anew.
+        order.pop('relief_retry', None)
         if original_views_folder is not None:
             order['views_folder'] = original_views_folder
     order['attempts'] = result.get('attempts', 0)

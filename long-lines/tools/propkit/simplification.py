@@ -147,6 +147,10 @@ def decimate_to_error(obj, tol, min_tris=120, samples=2500, protected=None):
         return modifier
 
     reviews = []
+    fold_limit = None
+    if protected is not None and 'source_report' in protected:
+        from .bake import STANDARDS
+        fold_limit = STANDARDS['minimum_acceptable']['max_extreme_folds_per_1k']
 
     def trial(ratio, focus=None):
         o2 = obj.copy()
@@ -189,6 +193,11 @@ def decimate_to_error(obj, tol, min_tris=120, samples=2500, protected=None):
             feature_error = float(
                 np.max(distances / np.maximum(protected['tolerance_m'], 1e-9)))
         n = sum(len(p_.vertices) - 2 for p_ in o2.data.polygons)
+        folds = None
+        if fold_limit is not None:
+            from .mesh_health import folded_edges
+            folds = folded_edges([tuple(v.co) for v in o2.data.vertices],
+                                 [tuple(p.vertices) for p in o2.data.polygons])
         failed = local['fails'] if protected is not None and protected.get(
             'contrast_report') else []
         if focus is not None and failed:
@@ -209,11 +218,15 @@ def decimate_to_error(obj, tol, min_tris=120, samples=2500, protected=None):
                         # its dense counterpart as well as the intended hit.
                         repair_witnesses.append(tuple(point))
         from .correction_review import assess
+        after = {'triangles': n, 'surface_error_m': err,
+                 'feature_error': feature_error}
+        limits = {'surface_error_m': (0., tol), 'feature_error': (0., 1.)}
+        if folds is not None:
+            after['extreme_folds_per_1k'] = folds['per_1k']
+            limits['extreme_folds_per_1k'] = (0., fold_limit)
         review = assess('excess mesh complexity', 'local-feature-aware quadric reduction',
                         {'triangles': tris0},
-                        {'triangles': n, 'surface_error_m': err,
-                            'feature_error': feature_error},
-                        improve=['triangles'], limits={'surface_error_m': (0., tol), 'feature_error': (0., 1.)})
+                        after, improve=['triangles'], limits=limits)
         review.update(focused_features=None if focus is None else sorted(focus),
                       failed_features=failed[:16], occlusion_witnesses=len(repair_witnesses))
         if protected is not None and protected.get('contrast_report'):
@@ -224,7 +237,8 @@ def decimate_to_error(obj, tol, min_tris=120, samples=2500, protected=None):
             feature_error = max(feature_error, 2.)
         print('REDUCTION_TRIAL', {'triangles': n, 'surface_error_m': err,
               'feature_failures': local['fails'][:5] if protected is not None and protected.get('contrast_report') else [],
-                                  'feature_error': feature_error}, flush=True)
+                                  'feature_error': feature_error,
+                                  'extreme_folds_per_1k': None if folds is None else folds['per_1k']}, flush=True)
         mesh2 = o2.data
         bpy.data.objects.remove(o2)
         bpy.data.meshes.remove(mesh2)

@@ -75,6 +75,15 @@ def inspect(result, measured, diagnostics=None):
                                          'Inspect component repair and view fusion separately; do not compensate by painting darker textures.')
     pre = {r['id']: r for r in relief.get(
         'pre_reduction_validation', {}).get('probes', [])}
+    if relief.get('unmet_before_reduction'):
+        audit = relief.get('probe_diagnostics', {})
+        flag('features_missing_on_dense_surface', 10, 'error',
+             'Source-derived detail is already missing before mesh reduction',
+             {'probe_ids': relief['unmet_before_reduction'],
+              'supported_unmet': audit.get('supported_unmet'),
+              'unsupported_source': audit.get('unsupported_source'),
+              'diagnostic': audit.get('path')},
+             'Inspect each source/proposal/shared-field/mesh cross-section. Retry only supported regions with an isolated quality gate.')
     post = result.get('metrics', {}).get(
         'surface_features', {}).get('probes', [])
     lost = [r['id'] for r in post if pre.get(r['id'], {}).get(

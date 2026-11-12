@@ -82,7 +82,9 @@ def analyse(views, dimensions, report, exclusions=()):
         inputs[view] = {'image': image, 'valid': valid,
                         'path': path, 'crop_box': box}
     report.update(features=[], views={}, method='continuous pixel shading/height inference',
-                  physical_separation='physical ownership only; shading contours do not create parts')
+                  physical_separation='physical ownership only; shading contours do not create parts',
+                  dimensions_m=list(dimensions),
+                  source_views={view: str(inputs[view]['path']) for view in inputs})
     return {'maps': maps, 'fine_maps': {}, 'shading_inputs': inputs,
             'dimensions': tuple(dimensions), 'report': report}
 
@@ -350,8 +352,9 @@ def apply_field(field, plan):
                 fraction * np.take_along_axis(source, upper, axis=axis)
             numerator += weight * (shifted - field[start:stop])
             weight_sum += weight
+        floor = plan.get('fusion_weight_floor', MIN_FUSION_WEIGHT)
         result[start:stop] = field[start:stop] + \
-            numerator / np.maximum(weight_sum, MIN_FUSION_WEIGHT)
+            numerator / np.maximum(weight_sum, floor)
     plan['report']['field'] = {'mode': 'signed_field_detail_before_meshing', 'isovalue': 0.,
                                'depth_limit': '30% of observed local solid thickness; openings remain silhouette constraints',
                                'grid_shape': list(field.shape), 'spacing_m': [dimensions[i] / field.shape[i] for i in range(3)]}
@@ -375,6 +378,10 @@ def apply_field(field, plan):
     # solver already supplies a continuous integrable surface, so keep it whole.
     from .implicit import preserve_components
     candidate, plan['report']['topology'] = preserve_components(field, result)
+    if plan.get('retry_targets'):
+        from . import local_retry
+        candidate, plan['report']['local_retry'] = local_retry.attempt(
+            field, candidate, plan, plan['retry_targets'])
     for view, values in plan.get('diagnostics', {}).items():
         if 'mask' not in values:
             continue
@@ -500,6 +507,10 @@ def protected_samples(obj, report, geometry_tolerance=None):
     conflicts = {probe['id']
                  for probe in baseline['probes'] if not probe['retained']}
     report['unmet_before_reduction'] = sorted(conflicts)
+    if conflicts and report.get('diagnostic_folder') and report.get('dimensions_m'):
+        from . import probe_review
+        probe_review.write(report, report['dimensions_m'],
+                           report.get('source_views'), obj=obj, tree=tree)
     # Preserve what the chosen numerical surface actually contains. Whether
     # that surface is physically correct is a separate confidence/QA question.
     # Excluding uncertain probes here made reduction erase inferred carvings.
