@@ -3,3 +3,5 @@ node_modules/
 long-lines/.godot/
 __pycache__/
 .hull-memory/
+
+.hull-models/

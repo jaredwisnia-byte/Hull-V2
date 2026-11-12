@@ -10,7 +10,7 @@ from skimage.segmentation import watershed
 from skimage.measure import find_contours
 
 
-def trace(rgb, mask):
+def trace(rgb, mask, backend=None):
     """Accept linear RGB in the same pixel frame as the foreground mask."""
     rgb = np.asarray(rgb, float)
     mask = np.asarray(mask, bool)
@@ -24,10 +24,21 @@ def trace(rgb, mask):
     chroma = np.log(np.maximum(rgb, .003)) - \
         np.log(np.maximum(rgb.mean(2, keepdims=True), .003))
     scale = max(1., min(mask.shape) / 180)
-    edges = canny(luminance, sigma=scale, mask=interior)
-    broad = canny(luminance, sigma=scale * 2, mask=interior)
-    persistent = edges & ndimage.binary_dilation(
-        broad, iterations=max(1, round(scale * 2)))
+    from .tracing_backend import predict
+    packet, backend_report = predict(rgb, mask, backend)
+    if packet is None:
+        edges = canny(luminance, sigma=scale, mask=interior)
+        broad = canny(luminance, sigma=scale * 2, mask=interior)
+        persistent = edges & ndimage.binary_dilation(
+            broad, iterations=max(1, round(scale * 2)))
+        fine = np.zeros_like(mask)
+        structural_score = persistent.astype(float)
+        phase_score = np.zeros(mask.shape)
+    else:
+        persistent = packet['structural']
+        fine = packet['fine_candidates']
+        structural_score = packet['structural_score']
+        phase_score = packet['phase_score']
     chroma_gradient = np.sqrt(sum(sum(
         g * g for g in np.gradient(ndimage.gaussian_filter(chroma[..., c], scale))) for c in range(3)))
     colour_boundary = chroma_gradient > .06 / scale
@@ -47,6 +58,11 @@ def trace(rgb, mask):
     from .region_grouping import merge_weak_lines, crease_evidence
     fragment_count = len(np.unique(labels[labels > 0]))
     cavity = crease_evidence(luminance, mask, scale * 6)
+    if packet is not None:
+        # Protect computational boundaries recognized by the structural model.
+        # This is not a statement that either side has positive/negative depth.
+        cavity = np.maximum(cavity, ndimage.binary_dilation(
+            persistent).astype(float) * .5)
     labels = merge_weak_lines(labels, mask, cavity, protect_strong=True)
     regions = []
     minimum = max(20, int(mask.sum() * .0005))
@@ -69,9 +85,17 @@ def trace(rgb, mask):
                         'status': 'candidate_requires_surface_validation'})
     curves = [np.c_[c[:, 1], c[:, 0]].tolist() for c in find_contours(
         persistent.astype(float), .5) if len(c) >= 6]
+    from .feature_curves import trace as curve_paths
+    structural_paths = curve_paths(persistent) if packet is not None else []
+    fine_paths = curve_paths(fine) if packet is not None else []
     return {'labels': cleaned, 'boundaries': persistent, 'relief_boundaries': relief_boundary,
+            'fine_candidates': fine, 'structural_score': structural_score, 'phase_score': phase_score,
+            'structural_paths': structural_paths, 'provisional_fine_paths': fine_paths,
+            'tracing_backend': backend_report,
+            'fine_boundary_usage': 'weak curvature evidence only; not hard grouping barriers or confirmed recesses',
             'appearance_boundaries': persistent & ~relief_boundary, 'regions': regions, 'edge_curves_xy': curves,
-            'method': 'multiscale image edges / chromatic ambiguity / marker watershed',
+            'method': ('MatchED BIPED 2026 structural / phase candidates / marker watershed' if packet is not None
+                       else 'multiscale image edges / chromatic ambiguity / marker watershed'),
             'physical_parts_created': False, 'fragment_count': fragment_count,
             'grouping': 'shared original weak-crease merging; no geometry templates'}
 
@@ -89,6 +113,8 @@ def export(result, image, directory, name):
     pixels = np.asarray(canvas).copy()
     pixels[result['relief_boundaries']] = [40, 255, 130]
     pixels[result['appearance_boundaries']] = [255, 150, 40]
+    if 'fine_candidates' in result:
+        pixels[result['fine_candidates']] = [55, 205, 255]
     canvas = Image.fromarray(pixels)
     overlay = directory / (name + '-feature-regions.png')
     canvas.save(overlay)
@@ -100,11 +126,12 @@ def export(result, image, directory, name):
     labelled = directory / (name + '-feature-labels.png')
     canvas.save(labelled)
     np.savez_compressed(directory / (name + '-feature-regions.npz'), **{k: result[k] for k in
-                        ('labels', 'boundaries', 'relief_boundaries', 'appearance_boundaries')})
+                        ('labels', 'boundaries', 'relief_boundaries', 'appearance_boundaries', 'fine_candidates', 'structural_score', 'phase_score') if k in result})
     report = {k: v for k, v in result.items() if not isinstance(v, np.ndarray)}
     report.update(coordinate_frame='analysis grid pixel centres; x right, y down',
                   image_size=list(canvas.size), overlay=str(overlay), label_overlay=str(labelled),
-                  legend={'green': 'persistent intensity edge without strong colour change; not geometry confidence',
+                  legend={'cyan': 'provisional phase-based fine curve; not a confirmed groove',
+                          'green': 'persistent intensity edge without strong colour change; not geometry confidence',
                           'orange': 'persistent intensity edge with colour change; not geometry confidence'})
     (directory / (name + '-feature-regions.json')
      ).write_text(json.dumps(report, indent=2))

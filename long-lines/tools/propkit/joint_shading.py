@@ -253,6 +253,9 @@ def reconstruct(image, mask, base, max_depth_px, light=None, albedo=None, iterat
     boundary_evidence = traced['boundaries'] if boundary_mode == 'all' else traced['relief_boundaries']
     curvature_weight = 1 - .5 * \
         ndimage.gaussian_filter(boundary_evidence.astype(float), 1)
+    curvature_weight -= .2 * \
+        ndimage.gaussian_filter(traced['fine_candidates'].astype(float), 1)
+    curvature_weight = np.clip(curvature_weight, .3, 1.)
     reference_observed = np.log(reference_rgb @ [.2126, .7152, .0722])
     reference_base = ndimage.zoom(base, np.asarray(
         finest_shape) / mask.shape, order=1) * finest_shape[1] / mask.shape[1]
@@ -370,6 +373,9 @@ def reconstruct(image, mask, base, max_depth_px, light=None, albedo=None, iterat
               'relief_selection': selection_report, 'boundary_policy': boundary_mode,
               'boundary_pixels': int(traced['boundaries'].sum()),
               'boundary_pixels_used': int(boundary_evidence.sum()),
+              'tracing_backend': traced['tracing_backend'],
+              'fine_candidate_pixels': int(traced['fine_candidates'].sum()),
+              'fine_boundary_usage': traced['fine_boundary_usage'],
               'needs_review': selection_report['needs_review'] or not selection_report['final_test_pass'],
               'light_source': 'provided' if fixed_light else 'jointly_fitted_with_explicit_gauge',
               'lighting_calibration': initial_identifiability, 'converged': bool(best['fit']['converged']),
@@ -388,7 +394,7 @@ def reconstruct(image, mask, base, max_depth_px, light=None, albedo=None, iterat
         diagnostics['fit_fold'] = reference_fold
         diagnostics['feature_region_json'] = np.asarray(json.dumps(
             {k: v for k, v in traced.items() if not isinstance(v, np.ndarray)}))
-        for key in ('labels', 'boundaries', 'relief_boundaries', 'appearance_boundaries'):
+        for key in ('labels', 'boundaries', 'relief_boundaries', 'appearance_boundaries', 'fine_candidates', 'structural_score', 'phase_score'):
             diagnostics['feature_' + key] = traced[key]
         report['feature_regions'] = {'candidate_regions': len(traced['regions']),
                                      'boundary_pixels': int(traced['boundaries'].sum()),

@@ -338,3 +338,24 @@ base-envelope banding from intended relief, improve spatially coherent evidence 
 compare triangle/detail curves on independent objects. Keep source-depth checks and
 numerical dense-surface preservation results distinct. Station 08 fits geometry;
 replacing it with an intensity-to-height Poisson solve would be the wrong change.
+
+
+## Structural tracing and connected curves — 2026-11-11
+
+Implemented optional registered MatchED-BIPED structural boundaries, separate
+weak phase-congruency curves, checked connected 2D spline paths, isolated local
+CPU inference, artifact/version provenance, cache recovery and relief-memory
+invalidation. Existing region grouping, fitting and physical-depth validation
+remain authoritative. Source/weights are local setup artifacts, never vendored.
+See TRACING.md for setup, fallback policy and CAD/drawing scope.
+
+Promotion result: not ready to become the default. Same previous 200 probes:
+97 old failures versus 111 new failures; triangles rise 18,064 to 20,964. The new
+path remains explicitly opt-in despite stronger 2D detection. Tests pass; final
+asset QA does not. See TRACING.md for the fresh-run and controlled populations.
+
+Next: evaluate coherent cross-groove profiles and downstream geometric retention
+on independent objects. A cleaner learned boundary is not itself a depth estimate.
+Paint-only phase responses must remain provisional. Do not solve triangle growth
+by weakening local preservation QA. Full hidden-line/dimensioned technical drafting
+and image-to-engineering construction inference remain separate outstanding work.

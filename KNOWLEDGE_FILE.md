@@ -16,11 +16,45 @@ It is not a claim that every algorithm or asset was executed or proven correct.
 Binary textures/GLBs were counted, not exhaustively visually audited.
 
 The accompanying [machine-readable inventory](long-lines/docs/CODEBASE_INVENTORY.json)
-records 452 source/configuration/documentation files, all 140 tracked Python files,
+records 458 source/configuration/documentation files, all 145 tracked Python files,
 36 Godot scripts, module descriptions, definitions/line numbers, imports, static
 calls, JSON shapes, documentation headings and content hashes. All Python files
 parsed successfully; JSON parsing found no errors. Static calls are not a resolved
 runtime call graph. Counts include the currently staged new reconstruction tools.
+
+## Structural tracing integration (2026-11-11)
+
+See [TRACING.md](long-lines/factory/TRACING.md). Registered local MatchED-BIPED
+(CVPR 2026) now supplies structural boundaries through the existing
+`feature_regions -> joint_shading -> regional_relief -> surface_detail` path.
+Separate phase-congruency candidates weakly relax curvature regularization;
+they never create hard grouping barriers or physical parts. Connected paths
+receive checked 2D cubic representations, with polyline fallback.
+The foreground is preserved and the numerical nearest-filled background is
+neutralized before neural tracing. Model/source hashes, runtime provenance and
+corruption-checked caches are recorded; reconstruction-memory identity includes
+the backend. No network or LLM is used during reconstruction. The default remains
+classical; explicit `auto` reports fallback on machines without model setup and
+strict `matched` mode fails instead. Models/dependencies stay local and gitignored.
+
+Promotion is blocked by the full reconstruction result, not by software test
+failures. The fixed existing-preset leg completed at 20,964 triangles versus the
+previous 18,064. On the same previous 200 source probes, after applying recorded
+manufacturing translations, failures rise from 97 to 111. The new run's own
+109/206 source failures are a different population. Front final reserved-pixel
+appearance gain is -6.619%; geometry remains uncalibrated. The cleaner 2D trace
+does not yet establish a better final model. Keep the backend opt-in until the
+region-fitting/mesh handoff improves under controlled checks. Eleven new protocol,
+curve and export checks pass; the previous 100 contracts pass with three expected
+skips. Seven Blender checks and Godot's 39 unit/45 smoke checks pass.
+
+The CAD/drawing audit found existing mesh-derived front/right/top silhouettes,
+labelled hatched sections, cut-plane markers and an inspection cutaway. These are
+already called by the automatic-depth image pipeline **after** reconstruction.
+They are not photo-derived hidden construction, general dimensioned/hidden-line
+drafting, or a production-ready closed CAD solid. Optional STEP surfaces retain
+their previous limitations. Do not describe the drawing exporter as missing, or
+describe this tracing change as completing engineering inference.
 
 ## Current implementation update (2026-11-10)
 

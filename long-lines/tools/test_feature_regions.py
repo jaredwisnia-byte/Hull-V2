@@ -1,5 +1,7 @@
 """Internal boundary evidence, appearance ambiguity and exact-frame exports."""
 import unittest
+import os
+from unittest.mock import patch
 import tempfile
 from pathlib import Path
 import numpy as np
@@ -9,6 +11,11 @@ from propkit import feature_regions
 
 
 class RegionTests(unittest.TestCase):
+    def setUp(self):
+        backend = patch.dict(os.environ, HULL_TRACE_BACKEND="classical")
+        backend.start()
+        self.addCleanup(backend.stop)
+
     def fixture(self):
         y, x = np.mgrid[:120, :140]
         shape = ((x > 25) & (x < 90) & (y > 25) & (y < 90)) | (

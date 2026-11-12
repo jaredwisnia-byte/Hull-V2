@@ -1,5 +1,7 @@
 """Coupled fitting and depth-identifiability tests with known synthetic truth."""
 import unittest
+import os
+from unittest.mock import patch
 import numpy as np
 from PIL import Image
 from propkit import shading, joint_shading, depth_measurement
@@ -22,6 +24,11 @@ def fixture():
 
 
 class JointTests(unittest.TestCase):
+    def setUp(self):
+        backend = patch.dict(os.environ, HULL_TRACE_BACKEND="classical")
+        backend.start()
+        self.addCleanup(backend.stop)
+
     def test_unknown_light_and_material_fit_converges_on_curved_base(self):
         image, mask, base, truth, light = fixture()
         height, report = joint_shading.reconstruct(

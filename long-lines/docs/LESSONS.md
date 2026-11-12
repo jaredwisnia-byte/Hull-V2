@@ -679,3 +679,18 @@ its original source probe failures fall 181 to 110, not to zero. Do not hide tha
 or change QA thresholds. Residual edge maps show image disagreement, not recovered
 3D carving boundaries. Read actual input quantities before adopting an external AI's
 diagnosis: reference_fitting.py receives geometric height, not luminance.
+
+
+### 2026-11-11 — Trace structural evidence separately from fine paint-sensitive curves
+
+The published BIPED checkpoint worked substantially better than BSDS in the fixed
+curve experiment; model identity is part of the algorithm. Fine phase responses
+still trace paint, so they must not be hard part barriers or confirmed grooves.
+Do not pass nearest-filled fitting backgrounds into a learned tracer: artificial
+colour extension produces stripe evidence. Preserve foreground bytes (round, do
+not floor the inverse colour conversion). Keep model inference in a separate local
+worker so Blender does not import Torch. Windows installs may need inherited read
+permissions enabled by the installing owner before later worker sessions use them.
+The full-build trial exposed a diagnostic handoff that reconstructed only the old
+four tracing arrays; update producer, restoration and export together, and retain
+legacy records. A new regression exercises that exact export path.

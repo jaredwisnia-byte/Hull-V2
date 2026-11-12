@@ -1,13 +1,13 @@
 {
   "audit_date": "2026-11-11",
   "method": "Static parse and catalog; not proof of runtime correctness",
-  "local_head": "9d0879e8e9d6f5f76392197d536f48259c7536b8",
+  "local_head": "b1324c893edc4f20df3a7e6915ae6b61257bd921",
   "canonical_dirac": "9d8df082dfbef7d5a508be3578d78d7c488561ab",
-  "tracked_files": 2896,
+  "tracked_files": 2902,
   "tracked_extensions": {
     ".yml": 3,
     "": 3,
-    ".md": 99,
+    ".md": 100,
     ".js": 3,
     ".png": 1116,
     ".svg": 1,
@@ -16,7 +16,7 @@
     ".glb": 120,
     ".json": 164,
     ".jpg": 83,
-    ".py": 140,
+    ".py": 145,
     ".csv": 1,
     ".jsonl": 1,
     ".godot": 1,
@@ -29,8 +29,8 @@
     ".mjs": 1,
     ".css": 1
   },
-  "catalogued_files": 452,
-  "python_files": 140,
+  "catalogued_files": 458,
+  "python_files": 145,
   "parse_errors": [],
   "files": [
     {
@@ -41,8 +41,8 @@
     },
     {
       "path": ".github/workflows/hull-contracts.yml",
-      "lines": 47,
-      "sha256": "d5d387c6a4ad39573da8d11fc3497030b666dea66883ea5fc009e460d457d054",
+      "lines": 48,
+      "sha256": "e5323ea8d1002beaefd6b4671ef61dedd9ef3e016e61556bc683a5878a7bb8e6",
       "definitions": []
     },
     {
@@ -61,11 +61,12 @@
     },
     {
       "path": "KNOWLEDGE_FILE.md",
-      "lines": 723,
-      "sha256": "f7bc4e3332f04df4348a33e0fbd77a30b1a07b9f6fc7274e80b3a12b78a1af68",
+      "lines": 757,
+      "sha256": "f2ac4c6af88603cd530b1d581aaca004c04d4564af5cba4c60d2c588602424e8",
       "headings": [
         "Hull knowledge file\r",
         "Purpose and evidence level\r",
+        "Structural tracing integration (2026-11-11)\r",
         "Current implementation update (2026-11-10)\r",
         "Superseding reconstruction path (2026-11-11)\r",
         "Detail-loss bug fixes (2026-11-11, supersedes the zero-fill policy below)\r",
@@ -972,8 +973,8 @@
     },
     {
       "path": "long-lines/docs/LESSONS.md",
-      "lines": 681,
-      "sha256": "9e4be8a2b347faa07bf51f16aa32391cc10c36304a14884cbc30f960a5379c08",
+      "lines": 696,
+      "sha256": "7ecc3f189c11432e106b4c24c72130603236a0964cb25a922a6aadd17ee2154f",
       "headings": [
         "Lessons learned\r",
         "Automatic parts-sheet intake (Hull V2)\r",
@@ -1014,7 +1015,8 @@
         "Reconcile: making a contradictory sheet agree (Nov 9)\r",
         "Continuous reconstruction and detail checks (Nov 11)\r",
         "2026-11-11 — Do not confuse absent relief with absent proposals\r",
-        "2026-11-11 — Uncertain does not mean flat; preserving does not mean verified\r"
+        "2026-11-11 — Uncertain does not mean flat; preserving does not mean verified\r",
+        "2026-11-11 — Trace structural evidence separately from fine paint-sensitive curves\r"
       ]
     },
     {
@@ -2276,8 +2278,8 @@
     },
     {
       "path": "long-lines/factory/IMPLEMENTATION_PLAN.md",
-      "lines": 340,
-      "sha256": "d785ec35c9cdd4c8afacaa5c58c83bfece5dc9bd59a8c72c7bc0f9065723dcd9",
+      "lines": 361,
+      "sha256": "b35536d7f6e2105657f3b169fb9eab7049c3c69ebdd6d9bfb042968faeae43c3",
       "headings": [
         "Hull audit implementation and acceptance plan\r",
         "Implemented: shared stages and readable code\r",
@@ -2289,7 +2291,8 @@
         "Profile-family implementation (2026-11-11)\r",
         "Remaining generalization and exit criteria\r",
         "Stage evidence continuation — 2026-11-11\r",
-        "Detail-loss corrections — 2026-11-11\r"
+        "Detail-loss corrections — 2026-11-11\r",
+        "Structural tracing and connected curves — 2026-11-11\r"
       ]
     },
     {
@@ -2354,6 +2357,19 @@
         "3. Where a part can be\r",
         "4. Object envelopes\r",
         "Adding things\r"
+      ]
+    },
+    {
+      "path": "long-lines/factory/TRACING.md",
+      "lines": 119,
+      "sha256": "2d5e6965b81d91de255990caaef71999da17d4eb6a62a9f609350f527f549e98",
+      "headings": [
+        "Structural tracing and provisional fine curves",
+        "Existing pipeline, new boundary evidence",
+        "One-time local setup",
+        "Selection, failure and reuse",
+        "End-to-end promotion gate",
+        "Scope of the CAD drawings"
       ]
     },
     {
@@ -5956,6 +5972,59 @@
       "environment_keys": []
     },
     {
+      "path": "long-lines/tools/configure_tracing.py",
+      "lines": 69,
+      "sha256": "ae48775ac61777d0d309ddbb9298b2472560b03bdde5527d853c6f510d4b5224",
+      "description": "Register the verified local MatchED-BIPED runtime once, for all future assets.\n\nThird-party source and weights are local artifacts, never committed to Hull.\nSee factory/TRACING.md for the published download locations and setup example.",
+      "imports": [
+        "from pathlib import Path",
+        "from propkit.tracing_backend import MODEL_SHA256, SOURCE_SHA256, digest",
+        "import argparse",
+        "import json",
+        "import os",
+        "import shutil",
+        "import subprocess",
+        "import sys"
+      ],
+      "definitions": [
+        {
+          "name": "main",
+          "line": 16,
+          "kind": "FunctionDef",
+          "description": ""
+        }
+      ],
+      "calls": [
+        "Path",
+        "Path(__file__).resolve",
+        "RuntimeError",
+        "SOURCE_SHA256.items",
+        "ValueError",
+        "argparse.ArgumentParser",
+        "args.config.resolve",
+        "args.python.resolve",
+        "config_path.write_text",
+        "digest",
+        "getattr",
+        "hashes.update",
+        "json.dumps",
+        "json.loads",
+        "main",
+        "os.environ.copy",
+        "os.pathsep.join",
+        "p.resolve",
+        "parser.add_argument",
+        "parser.parse_args",
+        "print",
+        "runtime['metadata'].values",
+        "shutil.copyfile",
+        "str",
+        "subprocess.run",
+        "target.parent.mkdir"
+      ],
+      "environment_keys": []
+    },
+    {
       "path": "long-lines/tools/contact_sheet.py",
       "lines": 108,
       "sha256": "53481b174269ae1b14a196162d02b52649a2c2db811ff920f30b32cc183ba4bf",
@@ -8033,10 +8102,11 @@
     },
     {
       "path": "long-lines/tools/propkit/build_memory.py",
-      "lines": 119,
-      "sha256": "b1cb7c12b25e3c7eca686059e6e4acc861b42f6a55a9a546ca2fbb64ed7ad494",
+      "lines": 120,
+      "sha256": "8fe92ea232a28574e1541969545c765a0bb49fae8e92ca65b87e7ab5fbe8c4dc",
       "description": "Versioned reconstruction experience and resumable, integrity-checked patches.\n\nAn accepted numerical fit is never labelled verified physical geometry.",
       "imports": [
+        "from .tracing_backend import identity",
         "from pathlib import Path",
         "import hashlib",
         "import json",
@@ -8061,7 +8131,7 @@
         },
         {
           "name": "BuildMemory",
-          "line": 35,
+          "line": 36,
           "kind": "ClassDef",
           "description": ""
         }
@@ -8082,6 +8152,7 @@
         "hashlib.sha256",
         "hashlib.sha256(path.read_bytes()).hexdigest",
         "hashlib.sha256(temporary.read_bytes()).hexdigest",
+        "identity",
         "isinstance",
         "json.dumps",
         "json.dumps(value, sort_keys=True, allow_nan=False).encode",
@@ -9427,12 +9498,92 @@
       "environment_keys": []
     },
     {
+      "path": "long-lines/tools/propkit/feature_curves.py",
+      "lines": 88,
+      "sha256": "8d0493eeec96f3f4ed8d2a904bf712485890a98a51f9f57e683658a8fbf565b9",
+      "description": "Connected image-curve paths and checked cubic representations; not 3D parts.",
+      "imports": [
+        "from scipy.interpolate import make_splprep",
+        "from scipy.spatial import cKDTree",
+        "from skimage.morphology import skeletonize",
+        "import inspect",
+        "import numpy as np"
+      ],
+      "definitions": [
+        {
+          "name": "paths",
+          "line": 9,
+          "kind": "FunctionDef",
+          "description": "Walk actual skeleton adjacency; no straight segments across gaps."
+        },
+        {
+          "name": "fit",
+          "line": 54,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "trace",
+          "line": 86,
+          "kind": "FunctionDef",
+          "description": ""
+        }
+      ],
+      "calls": [
+        "adj.append",
+        "cKDTree",
+        "cKDTree(dense).query",
+        "cKDTree(dense).query(samples)[0].max",
+        "cKDTree(samples).query",
+        "cKDTree(samples).query(dense)[0].max",
+        "curve.append",
+        "curves.append",
+        "divmod",
+        "fit",
+        "float",
+        "inspect.signature",
+        "int",
+        "len",
+        "make_splprep",
+        "map",
+        "max",
+        "next",
+        "np.array_equal",
+        "np.asarray",
+        "np.cumsum",
+        "np.diff",
+        "np.flatnonzero",
+        "np.interp",
+        "np.linalg.norm",
+        "np.linalg.norm(spline([0, 1]).T - points[[0, -1]], axis=1).max",
+        "np.linspace",
+        "np.ones",
+        "np.stack",
+        "paths",
+        "points.tolist",
+        "range",
+        "samples.tolist",
+        "set",
+        "skeletonize",
+        "sorted",
+        "spline",
+        "spline.c.tolist",
+        "spline.t.tolist",
+        "tuple",
+        "visited.add",
+        "walk"
+      ],
+      "environment_keys": []
+    },
+    {
       "path": "long-lines/tools/propkit/feature_regions.py",
-      "lines": 111,
-      "sha256": "e91792ab9dd6ea48ebce5a0e40b34ec5b9050f48e81979d481a3a62952db01b7",
+      "lines": 138,
+      "sha256": "f9636950d889007df161d3f8a95ed4911f279240f4c2d7a72ae2504802e3dcb5",
       "description": "Trace internal image boundaries and isolate candidate relief regions.\n\nRegions are observations, not physical parts or assertions of groove depth.\nNo object vocabulary or geometric templates are used.",
       "imports": [
+        "from .feature_curves import trace as curve_paths",
         "from .region_grouping import merge_weak_lines, crease_evidence",
+        "from .tracing_backend import predict",
         "from PIL import Image, ImageDraw",
         "from pathlib import Path",
         "from scipy import ndimage",
@@ -9451,7 +9602,7 @@
         },
         {
           "name": "export",
-          "line": 79,
+          "line": 103,
           "kind": "FunctionDef",
           "description": "Save exact-frame contours, region labels and an inspectable overlay."
         }
@@ -9467,6 +9618,7 @@
         "canvas.resize",
         "canvas.save",
         "crease_evidence",
+        "curve_paths",
         "directory.mkdir",
         "draw.text",
         "enumerate",
@@ -9486,6 +9638,7 @@
         "min",
         "ndimage.binary_closing",
         "ndimage.binary_dilation",
+        "ndimage.binary_dilation(persistent).astype",
         "ndimage.binary_erosion",
         "ndimage.distance_transform_edt",
         "ndimage.gaussian_filter",
@@ -9508,6 +9661,7 @@
         "np.zeros_like",
         "peak_local_max",
         "persistent.astype",
+        "predict",
         "range",
         "regions.append",
         "report.update",
@@ -10576,8 +10730,8 @@
     },
     {
       "path": "long-lines/tools/propkit/joint_shading.py",
-      "lines": 407,
-      "sha256": "c88f96763e4434574a11e2656791d56dafd594a86446b105054423037c952319",
+      "lines": 413,
+      "sha256": "4d5948d8d65e7d13bab09f0ca97c993a4fba2cac4755c6eb69fcb4273c59d682",
       "description": "Coupled shape, diffuse illumination and reflectance estimation.\n\nHeight is represented by continuous B-spline controls, not geometric templates.\nLighting and reflectance are nuisance variables with explicit gauges. Unknown\nsingle-image lighting/material cannot silently become calibrated metric depth.",
       "imports": [
         "from .feature_regions import trace",
@@ -10748,6 +10902,8 @@
         "trace",
         "traced.items",
         "traced['boundaries'].sum",
+        "traced['fine_candidates'].astype",
+        "traced['fine_candidates'].sum",
         "training.sum",
         "tuple",
         "values.reshape"
@@ -14731,8 +14887,8 @@
     },
     {
       "path": "long-lines/tools/propkit/surface_detail.py",
-      "lines": 559,
-      "sha256": "312d405c63122323b05829b6b71f1df3307561975bbfa9662f2f1c7877218e66",
+      "lines": 561,
+      "sha256": "11b6dc208f44b3797d69c15deb828e1c48edef0decdc49efbd30be307fa3a945",
       "description": "Object-independent surface evidence and continuous implicit detail.\n\nConstruction patches are computational regions of one physical surface. They\nnever become capped objects merely because width or curvature changes. All\nlengths passed to the field station are metres; source observations stay in\ntheir own image frame until sampling.",
       "imports": [
         "from . import feature_regions",
@@ -14820,7 +14976,7 @@
         },
         {
           "name": "protected_samples",
-          "line": 484,
+          "line": 486,
           "kind": "FunctionDef",
           "description": "Protect detected features locally, without tightening every planar face."
         }
@@ -15061,6 +15217,229 @@
         "vw[[l.vertex_index for l in me.loops]].copy",
         "w.sum",
         "weights"
+      ],
+      "environment_keys": []
+    },
+    {
+      "path": "long-lines/tools/propkit/tracing_backend.py",
+      "lines": 146,
+      "sha256": "cfc512d96f2eadb317005052330e622fa58656168ce6e91a7d11c6e5e09bc29b",
+      "description": "Optional local MatchED/phase tracing, isolated from Blender's Python runtime.\n\nModels and third-party source live in a gitignored local registry. No network\nrequest, model download, or LLM call occurs during reconstruction.",
+      "imports": [
+        "from pathlib import Path",
+        "import hashlib",
+        "import json",
+        "import numpy as np",
+        "import os",
+        "import subprocess",
+        "import tempfile",
+        "import zipfile"
+      ],
+      "definitions": [
+        {
+          "name": "Unavailable",
+          "line": 22,
+          "kind": "ClassDef",
+          "description": ""
+        },
+        {
+          "name": "digest",
+          "line": 26,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "configuration_path",
+          "line": 30,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "configuration",
+          "line": 34,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "identity",
+          "line": 47,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "srgb_pixels",
+          "line": 68,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "validate",
+          "line": 77,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "predict",
+          "line": 93,
+          "kind": "FunctionDef",
+          "description": ""
+        }
+      ],
+      "calls": [
+        "Path",
+        "Path(__file__).resolve",
+        "Path(__file__).with_name",
+        "Path(filename).is_file",
+        "Path(path).read_bytes",
+        "RuntimeError",
+        "Unavailable",
+        "ValueError",
+        "cache.mkdir",
+        "configuration",
+        "configuration_path",
+        "configuration_path().resolve",
+        "data.get",
+        "data['artifact_hashes'].items",
+        "data['artifact_hashes'].values",
+        "dict",
+        "digest",
+        "getattr",
+        "hashlib.sha256",
+        "hashlib.sha256(Path(path).read_bytes()).hexdigest",
+        "hashlib.sha256(pixels.tobytes() + np.ascontiguousarray(mask).tobytes() + str(mask.shape).encode() + json.dumps(backend, sort_keys=True).encode()).hexdigest",
+        "identity",
+        "json.dumps",
+        "json.dumps(backend, sort_keys=True).encode",
+        "json.loads",
+        "np.any",
+        "np.asarray",
+        "np.ascontiguousarray",
+        "np.ascontiguousarray(mask).tobytes",
+        "np.clip",
+        "np.isfinite",
+        "np.isfinite(value).all",
+        "np.load",
+        "np.maximum",
+        "np.rint",
+        "np.savez_compressed",
+        "np.uint8",
+        "np.where",
+        "os.environ.copy",
+        "os.environ.get",
+        "os.pathsep.join",
+        "os.replace",
+        "output.is_file",
+        "packet.is_file",
+        "packet.with_suffix",
+        "path.is_file",
+        "path.read_text",
+        "pixels.tobytes",
+        "receipt.is_file",
+        "receipt.read_text",
+        "saved[k].copy",
+        "sorted",
+        "srgb_pixels",
+        "str",
+        "str(mask.shape).encode",
+        "subprocess.run",
+        "tempfile.TemporaryDirectory",
+        "temporary.write_text",
+        "validate"
+      ],
+      "environment_keys": [
+        "HULL_TRACE_BACKEND",
+        "HULL_TRACE_CONFIG"
+      ]
+    },
+    {
+      "path": "long-lines/tools/propkit/tracing_worker.py",
+      "lines": 87,
+      "sha256": "2a4ec5183bdccc0bf0b8e862cf5d36556bc5b9e9ef08abdf6ca86395f40a4ea8",
+      "description": "Local CPU worker for the registered published MatchED-BIPED checkpoint.",
+      "imports": [
+        "from pathlib import Path",
+        "from phasepack import phasecong",
+        "from scipy import ndimage",
+        "from skimage.filters import apply_hysteresis_threshold",
+        "from skimage.morphology import skeletonize",
+        "from types import SimpleNamespace",
+        "from unittest.mock import patch",
+        "import argparse",
+        "import contextlib",
+        "import importlib.metadata",
+        "import json",
+        "import models",
+        "import numpy",
+        "import numpy as np",
+        "import scipy",
+        "import skimage",
+        "import sys",
+        "import time",
+        "import torch"
+      ],
+      "definitions": [
+        {
+          "name": "versions",
+          "line": 11,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "main",
+          "line": 21,
+          "kind": "FunctionDef",
+          "description": ""
+        }
+      ],
+      "calls": [
+        "SimpleNamespace",
+        "apply_hysteresis_threshold",
+        "argparse.ArgumentParser",
+        "args.config.read_text",
+        "contextlib.redirect_stdout",
+        "distribution.locate_file",
+        "distribution.locate_file(item).resolve",
+        "importlib.metadata.distribution",
+        "importlib.metadata.version",
+        "json.dumps",
+        "json.loads",
+        "key.removeprefix",
+        "main",
+        "model",
+        "model.load_state_dict",
+        "models.pidinet",
+        "models.pidinet(SimpleNamespace(config='carv4', sa=True, dil=True)).cpu",
+        "models.pidinet(SimpleNamespace(config='carv4', sa=True, dil=True)).cpu().eval",
+        "ndimage.binary_erosion",
+        "np.array",
+        "np.load",
+        "np.nan_to_num",
+        "np.savez_compressed",
+        "np.where",
+        "np.where(interior, phase, 0).astype",
+        "np.where(interior, structural_score, 0).astype",
+        "parser.add_argument",
+        "parser.parse_args",
+        "patch.object",
+        "phasecong",
+        "pixels.astype",
+        "print",
+        "saved.get",
+        "skeletonize",
+        "state.items",
+        "str",
+        "str(item).endswith",
+        "sys.path.insert",
+        "sys.version.split",
+        "thin[0, 0].numpy",
+        "time.perf_counter",
+        "torch.from_numpy",
+        "torch.inference_mode",
+        "torch.load",
+        "torch.set_num_threads",
+        "value.transpose",
+        "value.transpose(2, 0, 1).copy",
+        "versions"
       ],
       "environment_keys": []
     },
@@ -17932,22 +18311,24 @@
     },
     {
       "path": "long-lines/tools/test_feature_regions.py",
-      "lines": 71,
-      "sha256": "5a8ca75a65a665f5bdab95f7c62d8f2e0a7ea05769c75a25f9557eca2cc55e10",
+      "lines": 78,
+      "sha256": "aee0083f0ccd459c072b49afb9b437bbe2f7b820de14a1a08c05bb9a9f6fcbde",
       "description": "Internal boundary evidence, appearance ambiguity and exact-frame exports.",
       "imports": [
         "from PIL import Image",
         "from pathlib import Path",
         "from propkit import feature_regions",
         "from scipy import ndimage",
+        "from unittest.mock import patch",
         "import numpy as np",
+        "import os",
         "import tempfile",
         "import unittest"
       ],
       "definitions": [
         {
           "name": "RegionTests",
-          "line": 11,
+          "line": 13,
           "kind": "ClassDef",
           "description": ""
         }
@@ -17961,6 +18342,7 @@
         "a['boundaries'].sum",
         "a['boundaries'][~mask].any",
         "all",
+        "backend.start",
         "feature_regions.export",
         "feature_regions.trace",
         "len",
@@ -17979,9 +18361,11 @@
         "np.testing.assert_array_equal",
         "np.uint8",
         "outline.min",
+        "patch.dict",
         "result['appearance_boundaries'].sum",
         "result['boundaries'].any",
         "rim.sum",
+        "self.addCleanup",
         "self.assertEqual",
         "self.assertFalse",
         "self.assertGreater",
@@ -18233,27 +18617,29 @@
     },
     {
       "path": "long-lines/tools/test_joint_shading.py",
-      "lines": 88,
-      "sha256": "c23630544e3bc3fa9e51427bfc1ae51462900a0660c317f309bd6440f41793ed",
+      "lines": 95,
+      "sha256": "9f1f32c07e6ccce591e48ad8dd65e01b8749122f83d33d5253fa4b82dc166df3",
       "description": "Coupled fitting and depth-identifiability tests with known synthetic truth.",
       "imports": [
         "from PIL import Image",
         "from propkit import shading, joint_shading, depth_measurement",
         "from propkit.pixel_folds import balanced",
         "from scipy import ndimage",
+        "from unittest.mock import patch",
         "import numpy as np",
+        "import os",
         "import unittest"
       ],
       "definitions": [
         {
           "name": "fixture",
-          "line": 8,
+          "line": 10,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "JointTests",
-          "line": 24,
+          "line": 26,
           "kind": "ClassDef",
           "description": ""
         }
@@ -18261,6 +18647,7 @@
       "calls": [
         "Image.fromarray",
         "abs",
+        "backend.start",
         "balanced",
         "depth_measurement.estimate",
         "fixture",
@@ -18289,7 +18676,9 @@
         "np.where",
         "np.zeros",
         "np.zeros_like",
+        "patch.dict",
         "pixels.copy",
+        "self.addCleanup",
         "self.assertEqual",
         "self.assertFalse",
         "self.assertGreater",
@@ -19431,6 +19820,108 @@
         "tuple",
         "unittest.main",
         "zip"
+      ],
+      "environment_keys": []
+    },
+    {
+      "path": "long-lines/tools/test_tracing_backend.py",
+      "lines": 164,
+      "sha256": "20c149c93de0c10dbb503cc46fedbc8b18e886aae98c3c2d7004102418915bce",
+      "description": "Tracer provenance, fallback, cache recovery and connected-curve contracts.\n\nNo third-party weights are needed for these protocol tests. Actual neural output\nis checked separately by the opt-in --integration run.",
+      "imports": [
+        "from PIL import Image",
+        "from pathlib import Path",
+        "from propkit import surface_detail",
+        "from propkit import tracing_backend as backend, feature_curves, feature_regions",
+        "from types import SimpleNamespace",
+        "from unittest.mock import patch",
+        "import json",
+        "import numpy as np",
+        "import os",
+        "import tempfile",
+        "import unittest"
+      ],
+      "definitions": [
+        {
+          "name": "packet",
+          "line": 18,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "BackendContracts",
+          "line": 23,
+          "kind": "ClassDef",
+          "description": ""
+        },
+        {
+          "name": "CurveContracts",
+          "line": 140,
+          "kind": "ClassDef",
+          "description": ""
+        }
+      ],
+      "calls": [
+        "(result[mask] == backend.srgb_pixels(rgb, np.ones_like(mask))[mask]).all",
+        "Image.new",
+        "Path",
+        "Path(folder).glob",
+        "SimpleNamespace",
+        "arrays.items",
+        "artifact.write_text",
+        "backend.digest",
+        "backend.identity",
+        "backend.predict",
+        "backend.srgb_pixels",
+        "backend.validate",
+        "dict",
+        "feature_curves.fit",
+        "feature_curves.trace",
+        "feature_regions.export",
+        "feature_regions.trace",
+        "isinstance",
+        "json.dumps",
+        "len",
+        "next",
+        "np.arange",
+        "np.arange(256).reshape",
+        "np.arange(256, dtype=float).reshape",
+        "np.array",
+        "np.asarray",
+        "np.full",
+        "np.load",
+        "np.ones",
+        "np.ones_like",
+        "np.repeat",
+        "np.savez_compressed",
+        "np.testing.assert_allclose",
+        "np.testing.assert_array_equal",
+        "np.where",
+        "np.zeros",
+        "np.zeros_like",
+        "packet",
+        "patch.dict",
+        "patch.object",
+        "path.write_text",
+        "range",
+        "result[~mask].any",
+        "rgb.copy",
+        "sampled[:, 1].max",
+        "saved.write_bytes",
+        "self.assertEqual",
+        "self.assertFalse",
+        "self.assertGreater",
+        "self.assertLessEqual",
+        "self.assertRaises",
+        "self.assertTrue",
+        "str",
+        "surface_detail.export_maps",
+        "tempfile.TemporaryDirectory",
+        "traced.items",
+        "unittest.main",
+        "values.update",
+        "y.max",
+        "y.min"
       ],
       "environment_keys": []
     },

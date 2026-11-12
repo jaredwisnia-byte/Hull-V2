@@ -434,8 +434,10 @@ def export_maps(plan, directory):
             import json
             from . import feature_regions
             traced = json.loads(str(values['feature_region_json']))
-            for key in ('labels', 'boundaries', 'relief_boundaries', 'appearance_boundaries'):
-                traced[key] = values['feature_' + key]
+            for key in ('labels', 'boundaries', 'relief_boundaries', 'appearance_boundaries',
+                        'fine_candidates', 'structural_score', 'phase_score'):
+                if 'feature_' + key in values:
+                    traced[key] = values['feature_' + key]
             source = plan['shading_inputs'][view]['image']
             plan['report'].setdefault('feature_regions', {})[
                 view] = feature_regions.export(traced, source, directory, view)

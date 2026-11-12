@@ -28,8 +28,9 @@ def fingerprint(*values):
 def solver_version():
     import scipy
     directory = Path(__file__).parent
-    return fingerprint(np.__version__, scipy.__version__, *[(directory / name).read_text() for name in
-                       ('regional_relief.py', 'reference_fitting.py', 'joint_shading.py', 'relief_selection.py', 'feature_regions.py', 'pixel_folds.py', 'build_memory.py')])
+    from .tracing_backend import identity
+    return fingerprint(np.__version__, scipy.__version__, identity(), *[(directory / name).read_text() for name in
+                       ('regional_relief.py', 'reference_fitting.py', 'joint_shading.py', 'relief_selection.py', 'feature_regions.py', 'pixel_folds.py', 'tracing_backend.py', 'tracing_worker.py', 'feature_curves.py', 'build_memory.py')])
 
 
 class BuildMemory:

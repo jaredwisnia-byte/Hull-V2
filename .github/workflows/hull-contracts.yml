@@ -32,6 +32,7 @@ jobs:
           python long-lines/tools/test_shading.py
           python long-lines/tools/test_joint_shading.py
           python long-lines/tools/test_feature_regions.py
+          python long-lines/tools/test_tracing_backend.py
           python long-lines/tools/test_regional_relief.py
           python long-lines/tools/test_pixel_folds.py
           python long-lines/tools/test_relief_selection.py
