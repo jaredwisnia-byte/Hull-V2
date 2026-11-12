@@ -1,0 +1,255 @@
+{
+  "schema": 1,
+  "checks": [
+    {
+      "id": "sectioning",
+      "capability": "core",
+      "script": "long-lines/tools/test_sectioning.py",
+      "timeout_s": 300
+    },
+    {
+      "id": "depth_engineering",
+      "capability": "core",
+      "script": "long-lines/tools/test_depth_engineering.py",
+      "timeout_s": 300
+    },
+    {
+      "id": "profile_pipeline",
+      "capability": "core",
+      "script": "long-lines/tools/test_profile_pipeline.py",
+      "timeout_s": 300
+    },
+    {
+      "id": "surface_detail",
+      "capability": "core",
+      "script": "long-lines/tools/test_surface_detail.py",
+      "timeout_s": 300
+    },
+    {
+      "id": "correction_review",
+      "capability": "core",
+      "script": "long-lines/tools/test_correction_review.py",
+      "timeout_s": 300
+    },
+    {
+      "id": "shading",
+      "capability": "core",
+      "script": "long-lines/tools/test_shading.py",
+      "timeout_s": 300
+    },
+    {
+      "id": "joint_shading",
+      "capability": "core",
+      "script": "long-lines/tools/test_joint_shading.py",
+      "timeout_s": 300
+    },
+    {
+      "id": "feature_regions",
+      "capability": "core",
+      "script": "long-lines/tools/test_feature_regions.py",
+      "timeout_s": 300
+    },
+    {
+      "id": "tracing_backend",
+      "capability": "core",
+      "script": "long-lines/tools/test_tracing_backend.py",
+      "timeout_s": 300
+    },
+    {
+      "id": "regional_relief",
+      "capability": "core",
+      "script": "long-lines/tools/test_regional_relief.py",
+      "timeout_s": 300
+    },
+    {
+      "id": "pixel_folds",
+      "capability": "core",
+      "script": "long-lines/tools/test_pixel_folds.py",
+      "timeout_s": 300
+    },
+    {
+      "id": "relief_selection",
+      "capability": "core",
+      "script": "long-lines/tools/test_relief_selection.py",
+      "timeout_s": 300
+    },
+    {
+      "id": "relief_preview",
+      "capability": "core",
+      "script": "long-lines/tools/test_relief_preview.py",
+      "timeout_s": 300
+    },
+    {
+      "id": "stage_review",
+      "capability": "core",
+      "script": "long-lines/tools/test_stage_review.py",
+      "timeout_s": 300
+    },
+    {
+      "id": "build_memory",
+      "capability": "core",
+      "script": "long-lines/tools/test_build_memory.py",
+      "timeout_s": 300
+    },
+    {
+      "id": "reference_retries",
+      "capability": "core",
+      "script": "long-lines/tools/test_reference_retries.py",
+      "timeout_s": 300
+    },
+    {
+      "id": "relief_construction",
+      "capability": "core",
+      "script": "long-lines/tools/test_relief_construction.py",
+      "timeout_s": 300
+    },
+    {
+      "id": "spline_surface",
+      "capability": "core",
+      "script": "long-lines/tools/test_spline_surface.py",
+      "timeout_s": 300
+    },
+    {
+      "id": "part_graph",
+      "capability": "core",
+      "script": "long-lines/tools/test_part_graph.py",
+      "timeout_s": 300
+    },
+    {
+      "id": "sizing",
+      "capability": "core",
+      "script": "long-lines/tools/test_sizing.py",
+      "timeout_s": 300
+    },
+    {
+      "id": "human_scale",
+      "capability": "core",
+      "script": "long-lines/tools/test_human_scale.py",
+      "timeout_s": 300
+    },
+    {
+      "id": "automatic_intake",
+      "capability": "core",
+      "script": "long-lines/tools/test_automatic_intake.py",
+      "timeout_s": 300
+    },
+    {
+      "id": "guides",
+      "capability": "blender",
+      "script": "long-lines/tools/test_guides.py",
+      "timeout_s": 300
+    },
+    {
+      "id": "sections",
+      "capability": "blender",
+      "script": "long-lines/tools/test_sections.py",
+      "timeout_s": 300
+    },
+    {
+      "id": "warehouse",
+      "capability": "core",
+      "script": "long-lines/tools/test_warehouse.py",
+      "timeout_s": 300
+    },
+    {
+      "id": "maintenance",
+      "capability": "core",
+      "script": "long-lines/tools/test_maintenance.py",
+      "timeout_s": 300
+    },
+    {
+      "id": "trim",
+      "capability": "core",
+      "args": [
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "long-lines/tests",
+        "-p",
+        "test_trim_checks.py",
+        "-v"
+      ]
+    },
+    {
+      "id": "surface_mesh",
+      "capability": "blender",
+      "script": "long-lines/tools/test_surface_mesh.py",
+      "timeout_s": 600
+    },
+    {
+      "id": "relief_preservation_blender",
+      "capability": "blender",
+      "script": "long-lines/tools/test_relief_preservation_blender.py",
+      "timeout_s": 600
+    },
+    {
+      "id": "simplification",
+      "capability": "blender",
+      "script": "long-lines/tools/test_simplification.py",
+      "timeout_s": 600
+    },
+    {
+      "id": "automatic_build",
+      "capability": "blender",
+      "script": "long-lines/tools/test_automatic_build.py",
+      "timeout_s": 600
+    },
+    {
+      "id": "ownership_blender",
+      "capability": "blender",
+      "script": "long-lines/tools/test_ownership_blender.py",
+      "timeout_s": 600
+    },
+    {
+      "id": "cutaway_export",
+      "capability": "blender",
+      "script": "long-lines/tools/test_cutaway_export.py",
+      "timeout_s": 600
+    },
+    {
+      "id": "hull_geometry",
+      "capability": "blender",
+      "script": "long-lines/tools/test_hull_geometry.py",
+      "timeout_s": 600
+    },
+    {
+      "id": "factory_storage_blender",
+      "capability": "blender",
+      "script": "long-lines/tools/test_factory_storage_blender.py",
+      "timeout_s": 600
+    },
+    {
+      "id": "depth_displacement",
+      "capability": "blender",
+      "script": "long-lines/tools/test_depth_displacement_blender.py"
+    },
+    {
+      "id": "preflight",
+      "capability": "blender",
+      "script": "long-lines/tools/test_preflight.py"
+    },
+    {
+      "id": "godot-unit",
+      "capability": "godot",
+      "args": [
+        "--script",
+        "res://tests/run_tests.gd"
+      ]
+    },
+    {
+      "id": "godot-smoke",
+      "capability": "godot",
+      "args": [
+        "--",
+        "--smoke"
+      ],
+      "timeout_s": 300
+    },
+    {
+      "id": "cad-roundtrip",
+      "capability": "cad",
+      "script": "long-lines/tools/test_cad_export.py"
+    }
+  ]
+}

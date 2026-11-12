@@ -16,11 +16,50 @@ It is not a claim that every algorithm or asset was executed or proven correct.
 Binary textures/GLBs were counted, not exhaustively visually audited.
 
 The accompanying [machine-readable inventory](long-lines/docs/CODEBASE_INVENTORY.json)
-records 461 source/configuration/documentation files, all 147 tracked Python files,
+records 479 source/configuration/documentation files, all 154 tracked Python files,
 36 Godot scripts, module descriptions, definitions/line numbers, imports, static
 calls, JSON shapes, documentation headings and content hashes. All Python files
 parsed successfully; JSON parsing found no errors. Static calls are not a resolved
 runtime call graph. Counts include the currently staged new reconstruction tools.
+
+## Factory operations and repository maintenance (2026-11-11)
+
+The root `hull.py` CLI reuses existing station tests through
+`long-lines/factory/checks.json`: doctor, check/qualify, repository audit,
+source packaging, promotion, integrity verification, rollback and incident records.
+See [OPERATIONS.md](long-lines/factory/OPERATIONS.md) for the authoritative
+publication/recovery contract and [repository audit](docs/REPOSITORY_MAINTENANCE.md)
+for hosted settings that files cannot enforce.
+
+`factory.build` now builds in fresh `.hull-runs/<run-id>/attempt-*/library`
+folders. Each run archives its order and source/input hashes. Raw references are copied
+once, with a fresh working copy per attempt, containing legacy guide cleanup
+without mutating user inputs. A sealed receipt
+keeps QA distinct from a storage/container audit. Failed or uncertain candidates
+remain inspectable; they cannot replace the selected library version. A qualified
+candidate copies into `assets/props/releases/<name>/<run-id>` and atomically
+updates the manifest under an exclusive lock. Previous versions and a publication
+journal support guarded rollback. Legacy entries still resolve to their original
+paths and are reported unqualified by integrity verification. Direct legacy
+recipe tools are not newly certified publication paths.
+
+QA, package/export, previews, inspection renderers and Godot's PropFactory resolve
+`artifact_directory`. Inspection output stays outside immutable release payloads.
+The existing asset-regression runner now copies inputs/code into a retained
+sandbox, never restores over production state, and writes unreviewed baseline
+proposals separately. It does not erase known failures or turn observations into
+release approval. No new geometry algorithm or physical-depth claim is introduced
+by this maintenance work. The earlier leg still has the recorded 13 source-depth
+failures and inverse-shading uncertainty.
+
+The required core workflow covers all pushes/PRs, uses pinned action identities
+and Python 3.13 dependency versions, and retains qualification evidence. Native
+Blender/Godot and optional CAD are explicit profiles. Required skips fail; the
+single native displacement test was split from the pure suite so it runs in its
+actual Blender capability. Source/config changes during checks invalidate a run.
+The unrelated clock collector is manual opt-in in the proposed workflow; hosted
+behavior changes only after the branch is merged. Public hosted audit found no
+protected branches or rulesets; no hosted setting was changed.
 
 ## Supervised corrections and adaptive reduction (2026-11-11)
 

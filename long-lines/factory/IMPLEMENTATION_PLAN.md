@@ -382,3 +382,24 @@ with local geometry/visibility safeguards; right-view fusion transfer; broad-bas
 shape and narrow groove recovery; supervision contracts for remaining stations;
 independent assets. Preserve the final test fold as report-only. Never replace
 these unresolved questions with silent deeper cuts or relaxed QA thresholds.
+
+## Factory operating system and repository cleanup (2026-11-11)
+
+Implemented: candidate/release separation, per-attempt isolation, sealed input and
+payload identity, publication lock/journal, immutable versions, guarded rollback,
+retained incident records and consumer compatibility. Existing repair review,
+stage review, geometry QA and versioned memory were extended rather than replaced
+by another runtime hierarchy. Existing asset regression now uses a retained copy
+and writes baseline proposals without modifying the accepted comparison file.
+
+Implemented: common check manifest/CLI; explicit core/Blender/Godot/CAD profiles;
+pinned core dependencies and full action identities; all-change required CI;
+qualification evidence; manual source packaging; contribution/security/repair
+runbooks, owner routing, issue/PR templates and reviewed dependency update proposals.
+Root documentation identifies Hull; legacy clock documentation/code is preserved.
+The proposed legacy collector is opt-in rather than scheduled every five minutes.
+
+Still pending: owner decision on licensing and actual hosted branch/security
+rules, wider independent object fixtures, clean optional-backend qualifications,
+physically calibrated relief and the prior geometric/reconstruction backlog.
+Maintenance qualification is not certification of arbitrary model accuracy.

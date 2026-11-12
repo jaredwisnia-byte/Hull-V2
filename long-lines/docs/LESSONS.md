@@ -711,3 +711,19 @@ within a budget and retain the prior passing candidate. Same-probe measurements,
 not prettier shading or a changed probe population, established the improvement.
 The current asset still fails 13/206 nominal source checks; bound clipping, weak
 side transfer and shading ambiguity remain visible to the reviewer.
+
+## Publication is a boundary, not a status string (2026-11-11)
+
+Writing `needs_person` after export did not undo writing the candidate into the
+library. Build into a separate run, retain evidence and select only a qualified
+immutable version. Audit the copied payload independently of QA and retain a
+journal before the manifest commit boundary. Inject failures on both sides of
+that boundary, test idempotent completion and guard rollback against newer work.
+
+Regression runners must not save/restore real production files or delete failed
+experiments in `finally`. Copy inputs into a retained sandbox. A baseline update
+is a reviewed change to a measuring instrument, not an option for clearing a
+failed test. Explicit capabilities prevent a successful pure suite from implying
+Blender/CAD/OCR passed. Keep a native-only test in its native profile instead of
+normalizing hidden skips. Documentation and CODEOWNERS do not enforce hosted
+GitHub rules; inspect the actual settings separately.

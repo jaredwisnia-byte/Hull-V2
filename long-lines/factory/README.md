@@ -7,6 +7,14 @@ For captioned vessel-appliance sheets with separate part drawings, the optional
 [automatic image-only build](AUTOMATIC_INTAKE.md) detects/crops the views, generates
 the parts work order, builds, checks and exports from one image argument.
 
+## Publication and maintenance
+
+See [OPERATIONS.md](OPERATIONS.md). Factory builds now write isolated candidates;
+only qualified, non-uncertain artifacts enter versioned releases selected through
+`library.json`. Failed proposals and diagnostics are retained. The diagram below
+is a station overview; publication happens after QA and the artifact audit.
+Root `hull.py` supplies maintenance, qualification, recovery and code packaging.
+
 ## Flow
 
 ```

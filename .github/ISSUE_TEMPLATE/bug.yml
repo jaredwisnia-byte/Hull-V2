@@ -1,0 +1,20 @@
+name: Reconstruction or maintenance defect
+description: Capture a reproducible failure and its evidence.
+body:
+  - type: textarea
+    id: symptom
+    attributes:
+      label: Expected and observed behavior
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Run ID, first failing station, logs and reproduction
+      description: Remove private images, local credentials and identifying paths.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Commit, capability profile, tool versions and next experiment

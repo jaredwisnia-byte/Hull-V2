@@ -22,7 +22,7 @@ def available_digest(path):
         return None
 
 
-def render_asset(name, destination, render_script):
+def render_asset(name, destination, render_script, library_root=None):
     import bpy
     command = [
         bpy.app.binary_path, "-b", "--factory-startup", "--python-use-system-env",
@@ -30,7 +30,11 @@ def render_asset(name, destination, render_script):
         "--", name, str(destination),
     ]
     started_ns = time.time_ns()
-    process = subprocess.run(command, capture_output=True, text=True)
+    import os
+    environment = os.environ.copy()
+    if library_root is not None:
+        environment['HULL_LIBRARY_ROOT'] = str(library_root)
+    process = subprocess.run(command, capture_output=True, text=True, env=environment)
     (destination / "render.log").write_text(process.stdout + process.stderr)
     image = destination / (name + ".png")
     if process.returncode == 0 and is_fresh(image, started_ns):
@@ -79,12 +83,14 @@ def _build_image(image, output, *, build_order, library_root, render_script, exp
         build_started_ns = time.time_ns()
         result["qa"] = build_order(order)
         warnings.extend(result['qa'].get('inference_warnings', []))
-        artifact = Path(library_root) / name / (name + ".glb")
+        library_root = result['qa'].get('artifact_library_root', library_root)
+        from .warehouse import asset_directory
+        artifact = asset_directory(library_root, name) / (name + '.glb')
         if is_fresh(artifact, build_started_ns):
             result.update(export_model(name, library_root, destination))
             if order.get("automatic_depth"):
                 result.update(engineering.export(order, destination))
-            result["render"] = render_asset(name, destination, render_script)
+            result["render"] = render_asset(name, destination, render_script, library_root)
             if result["qa"]["pass"] and result["render"] and not warnings:
                 result["status"] = "complete"
         else:

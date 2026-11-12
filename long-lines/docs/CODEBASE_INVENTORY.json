@@ -1,22 +1,23 @@
 {
   "audit_date": "2026-11-11",
   "method": "Static parse and catalog; not proof of runtime correctness",
-  "local_head": "e3debd803de28846654f0ebb1773641d98ab6520",
+  "local_head": "899e4430ea3dd1f2a5b5c9be0793c0181a01d3f7",
   "canonical_dirac": "9d8df082dfbef7d5a508be3578d78d7c488561ab",
-  "tracked_files": 2905,
+  "tracked_files": 2926,
   "tracked_extensions": {
-    ".yml": 3,
-    "": 3,
-    ".md": 101,
+    "": 4,
+    ".yml": 5,
+    ".md": 109,
+    ".cmd": 1,
     ".js": 3,
     ".png": 1116,
+    ".py": 154,
     ".svg": 1,
     ".html": 1,
     ".import": 1076,
     ".glb": 120,
-    ".json": 164,
+    ".json": 165,
     ".jpg": 83,
-    ".py": 147,
     ".csv": 1,
     ".jsonl": 1,
     ".godot": 1,
@@ -25,47 +26,78 @@
     ".uid": 39,
     ".gdshader": 3,
     ".webmanifest": 1,
-    ".txt": 2,
+    ".txt": 3,
     ".mjs": 1,
     ".css": 1
   },
-  "catalogued_files": 461,
-  "python_files": 147,
+  "catalogued_files": 479,
+  "python_files": 154,
   "parse_errors": [],
   "files": [
     {
+      "path": ".github/ISSUE_TEMPLATE/bug.yml",
+      "lines": 20,
+      "sha256": "1e6adfb068e661efc3c6e855222736e488685fcabb4f4621760b16e773d2dea1",
+      "definitions": []
+    },
+    {
+      "path": ".github/dependabot.yml",
+      "lines": 12,
+      "sha256": "975b06f4d5be8da40da0337a5c3c9f2e339196f6d3807a9bfdeb8b5a59c554c7",
+      "definitions": []
+    },
+    {
+      "path": ".github/pull_request_template.md",
+      "lines": 14,
+      "sha256": "9bfc9367b839b23acf8de7b1479cee285114d65f75aa3cfd56170d2e81b47316",
+      "headings": [
+        "Problem and resulting behavior\r",
+        "Evidence\r"
+      ]
+    },
+    {
       "path": ".github/workflows/collect.yml",
-      "lines": 52,
-      "sha256": "1558e7dcff0ca8f3f907ca215b7afee5a280c524cd9b34077615b186baf282d2",
+      "lines": 62,
+      "sha256": "7f6907cde4885fd008bc13c7d05b74b7ff4dd636091a82af4610ae78888e2faf",
       "definitions": []
     },
     {
       "path": ".github/workflows/hull-contracts.yml",
-      "lines": 49,
-      "sha256": "c197fe070d26d9401fc150c5076725bddf6b9d42d5456ab23b0aa6c5e61c0f6e",
+      "lines": 41,
+      "sha256": "83bb61588b70e738cfb7f8e4b7d22a10d9a204e729665ed2c0d1718259df6a4e",
       "definitions": []
     },
     {
-      "path": ".github/workflows/trim-qa.yml",
-      "lines": 28,
-      "sha256": "0f9e85e890c04a292254ea55859a8fa2d0b873204d0c04a4cea7aed625233de4",
+      "path": ".github/workflows/package.yml",
+      "lines": 24,
+      "sha256": "b814ce4f045b21c5af976abed026fb1da2621ec6155823f0f5fc9ad8eb46e028",
       "definitions": []
     },
     {
       "path": "CLAUDE.md",
       "lines": 10,
-      "sha256": "4f68f4ab6403864118fb8572fc1091f54b5638c05c056c4ac1f975d984e58e11",
+      "sha256": "553f1e3b4cfc165e3b0737f7a79bb9f5ef4904a9bf69d3aba98bd90399726255",
       "headings": [
         "Repository notes for Claude\r"
       ]
     },
     {
+      "path": "CONTRIBUTING.md",
+      "lines": 39,
+      "sha256": "7df430d11de160187cb3b84d186952fc2aca9f7cbb0b2f41dc547714c62186cd",
+      "headings": [
+        "Working on Hull\r",
+        "A reviewable change\r"
+      ]
+    },
+    {
       "path": "KNOWLEDGE_FILE.md",
-      "lines": 810,
-      "sha256": "6c2cf2551054e48ec983e5f8dcbbec73a7e95c3ed8146ff7a7da596b90b6ed06",
+      "lines": 849,
+      "sha256": "80b209c584f7bc2c20e5f91863965e39baeafca7dddc21aeba15f6a9e6a12db4",
       "headings": [
         "Hull knowledge file\r",
         "Purpose and evidence level\r",
+        "Factory operations and repository maintenance (2026-11-11)\r",
         "Supervised corrections and adaptive reduction (2026-11-11)\r",
         "Structural tracing integration (2026-11-11)\r",
         "Current implementation update (2026-11-10)\r",
@@ -90,14 +122,21 @@
     },
     {
       "path": "README.md",
-      "lines": 38,
-      "sha256": "0e47cbd206c15dbc9f2de97c710c09d50c2e1d841f9b4aa77b4b54a89bd0d3f5",
+      "lines": 62,
+      "sha256": "cd39d56c7ebd6537f13de9f8711898c0abcffa0c2ec56342c4d7431cec612248",
       "headings": [
-        "Midnight Watch\r",
-        "Install on iPhone\r",
-        "Notifications while the app is closed\r",
-        "Run locally\r",
-        "open http://localhost:8000\r"
+        "Hull V2\r",
+        "Start here\r",
+        "Build safety\r",
+        "Project guide\r"
+      ]
+    },
+    {
+      "path": "SECURITY.md",
+      "lines": 15,
+      "sha256": "f49875e4bc61bf9ef0a4bf53bd799abd5be42102804a3e2e5379efbab6185b08",
+      "headings": [
+        "Security and responsible reporting\r"
       ]
     },
     {
@@ -111,6 +150,78 @@
       "lines": 130,
       "sha256": "eba56e6e8d582c3827d136225761919aa3a01573e5965e0c228ed2a164f71dbc",
       "definitions": []
+    },
+    {
+      "path": "docs/MAINTENANCE_VALIDATION.md",
+      "lines": 53,
+      "sha256": "ad77c20960a461589a5e58f88063bab605d6fd6ecfe09c2ac61f1d8ae5a04d3c",
+      "headings": [
+        "Maintenance validation — 2026-11-11\r",
+        "Retained asset batch\r",
+        "Hosted repository audit\r"
+      ]
+    },
+    {
+      "path": "docs/REPOSITORY_MAINTENANCE.md",
+      "lines": 62,
+      "sha256": "f0452ce5276f1fd1e02caa3cba9cfff819bc62196507461d7b3ad641bb8853d9",
+      "headings": [
+        "Repository maintenance audit — 2026-11-11\r",
+        "Findings and countermeasures\r",
+        "Hosted audit and settings still requiring action\r",
+        "Continuing work\r",
+        "Sources and rationale\r"
+      ]
+    },
+    {
+      "path": "docs/legacy/MIDNIGHT_WATCH.md",
+      "lines": 40,
+      "sha256": "5698c50956fe699b66c590f3ff97fd427818a6aa778f76a74dd5d4587b568812",
+      "headings": [
+        "Midnight Watch",
+        "Install on iPhone",
+        "Notifications while the app is closed",
+        "Run locally",
+        "open http://localhost:8000"
+      ]
+    },
+    {
+      "path": "docs/research/FACTORY_PRACTICES.md",
+      "lines": 97,
+      "sha256": "ea4baa3357e4f2440a8b9e049e82d292221fbb0e375b7c6a567169f728ed07db",
+      "headings": [
+        "Keep Hull productive through controlled improvement\r",
+        "Factory practice supports fewer, stronger controls\r",
+        "Hull needs stronger boundaries around existing machinery\r",
+        "Independent measurement must protect both learning and release\r",
+        "Maintain software through scoped checks and readable contracts\r",
+        "Repair and innovation need different approval lanes\r",
+        "Conclusion\r"
+      ]
+    },
+    {
+      "path": "hull.py",
+      "lines": 16,
+      "sha256": "cb9f25f90e3bec133ed02715f2dfb9c29197827686bab7cb0095ba6272977f61",
+      "description": "Hull V2 operations: doctor, check, qualify, audit, promote and package.",
+      "imports": [
+        "from pathlib import Path",
+        "from propkit.maintenance import main",
+        "import os",
+        "import sys"
+      ],
+      "definitions": [],
+      "calls": [
+        "Path",
+        "Path(__file__).resolve",
+        "SystemExit",
+        "folder.is_dir",
+        "main",
+        "reversed",
+        "str",
+        "sys.path.insert"
+      ],
+      "environment_keys": []
     },
     {
       "path": "index.html",
@@ -974,8 +1085,8 @@
     },
     {
       "path": "long-lines/docs/LESSONS.md",
-      "lines": 713,
-      "sha256": "144edac0b287455977af84398a563cf63a80f66b358fc1809136f5ebaed41c85",
+      "lines": 729,
+      "sha256": "e55df92caa414078d9edc1d7707d820e5ee46f697ddf871d1cb753764341d448",
       "headings": [
         "Lessons learned\r",
         "Automatic parts-sheet intake (Hull V2)\r",
@@ -1018,7 +1129,8 @@
         "2026-11-11 — Do not confuse absent relief with absent proposals\r",
         "2026-11-11 — Uncertain does not mean flat; preserving does not mean verified\r",
         "2026-11-11 — Trace structural evidence separately from fine paint-sensitive curves\r",
-        "2026-11-11 — Local numerical defects do not authorize global attenuation\r"
+        "2026-11-11 — Local numerical defects do not authorize global attenuation\r",
+        "Publication is a boundary, not a status string (2026-11-11)\r"
       ]
     },
     {
@@ -2280,8 +2392,8 @@
     },
     {
       "path": "long-lines/factory/IMPLEMENTATION_PLAN.md",
-      "lines": 384,
-      "sha256": "530bdaa41f2d9e837d2793744eca3d8d41993a3e35482cce2a5cbe232aaa714d",
+      "lines": 405,
+      "sha256": "2bd10f6b1c3aca747db818da4ac833540b8ecd5954939f244154e9d600cb6190",
       "headings": [
         "Hull audit implementation and acceptance plan\r",
         "Implemented: shared stages and readable code\r",
@@ -2295,15 +2407,30 @@
         "Stage evidence continuation — 2026-11-11\r",
         "Detail-loss corrections — 2026-11-11\r",
         "Structural tracing and connected curves — 2026-11-11\r",
-        "In-process correction supervisor and adaptive reduction — 2026-11-11\r"
+        "In-process correction supervisor and adaptive reduction — 2026-11-11\r",
+        "Factory operating system and repository cleanup (2026-11-11)\r"
+      ]
+    },
+    {
+      "path": "long-lines/factory/OPERATIONS.md",
+      "lines": 96,
+      "sha256": "e604e676beea948adabb29d5179d2d255b2b5849b043663b3dbeb1f69165bbe9",
+      "headings": [
+        "Hull factory operations\r",
+        "Standard work and containment\r",
+        "Repair protocol\r",
+        "Recovery\r",
+        "Maintenance cadence\r",
+        "Qualification limits\r"
       ]
     },
     {
       "path": "long-lines/factory/README.md",
-      "lines": 104,
-      "sha256": "ba9eeab0dda1aa0a586432a9cffbc3c3759ded9829fac498b1aebb784f964373",
+      "lines": 112,
+      "sha256": "1c312799f5c8b946701a3cd6c8b27adb2efe6363bf6910fae9d8a1fc40aac546",
       "headings": [
         "The asset factory\r",
+        "Publication and maintenance\r",
         "Flow\r",
         "Commands (all run inside Blender's Python)\r",
         "Standards (gauges)\r",
@@ -2444,6 +2571,17 @@
         "frame",
         "telephone",
         "armchair_atlas"
+      ]
+    },
+    {
+      "path": "long-lines/factory/checks.json",
+      "lines": 255,
+      "sha256": "6c5766281eb82b9c7b868f244f16dd93eee22f04fb2203a537f961ca0b17269c",
+      "root_type": "dict",
+      "item_count": 2,
+      "keys": [
+        "schema",
+        "checks"
       ]
     },
     {
@@ -5395,8 +5533,8 @@
     },
     {
       "path": "long-lines/scripts/world/prop_factory.gd",
-      "lines": 785,
-      "sha256": "7e4b8ad06aa3c6375b67ca2d957af64e4908f27f8c1bd2da17158691962eb6d3",
+      "lines": 789,
+      "sha256": "29b91d76c2d33b52abeead081b453319777ad6f110561d4cfe986b8cd4b04712",
       "class_names": [
         "PropFactory"
       ],
@@ -6040,12 +6178,13 @@
     },
     {
       "path": "long-lines/tools/contact_sheet.py",
-      "lines": 108,
-      "sha256": "53481b174269ae1b14a196162d02b52649a2c2db811ff920f30b32cc183ba4bf",
+      "lines": 110,
+      "sha256": "ae67bdc1ac59d50bfa1943d517b0f6d7138e77c6cca743a1215548d78fcce7ed",
       "description": "Renders a labelled grid of baked library props for review.\nblender -b --factory-startup -P tools/contact_sheet.py -- OUT.png [names|all|--tag T] [--size 300]",
       "imports": [
         "from PIL import Image, ImageDraw, ImageFont",
         "from mathutils import Vector",
+        "from propkit.warehouse import asset_directory",
         "import bpy",
         "import json",
         "import math",
@@ -6064,6 +6203,7 @@
         "ImageFont.truetype",
         "Vector",
         "Vector((0.55, -1.0, 0.45)).normalized",
+        "asset_directory",
         "bpy.data.cameras.new",
         "bpy.data.images.load",
         "bpy.data.lights.new",
@@ -6102,7 +6242,9 @@
         "sheet.paste",
         "sheet.save",
         "sorted",
+        "str",
         "sys.argv.index",
+        "sys.path.insert",
         "tex",
         "tiles.append"
       ],
@@ -6110,8 +6252,8 @@
     },
     {
       "path": "long-lines/tools/critique.py",
-      "lines": 247,
-      "sha256": "f7d15c83ab61d1111502b2530b5cdd3729f878d99794f3048ba75be41bbe885d",
+      "lines": 249,
+      "sha256": "b2729c7da9297d19bbffac75654c23dc736fb64bf5df1947675578aa597c1fca",
       "description": "Walks around a built prop and criticizes it.\n\n    blender -b --factory-startup -P tools/critique.py -- PROP [VIEWS_FOLDER] [--out DIR]\n\n1. Measures, by casting rays at the model from front, back, both sides and top:\n   - silhouette match against the painted views (IoU per view), if a views folder\n     with v_front.png etc. is given;\n   - relief: how much real depth the front has (a fully flat front is a smell);\n   - painted features: every round part detected in the painting (knobs, dials,\n     buttons) is checked for real protrusion, and its depth compared with what the\n     part rules say a real one should have;\n   - floating or sunken parts: lowest point should sit on the floor (z = 0).\n2. Renders a turnaround (8 angles plus 2 close-ups) to _critique.png for a person\n   or Claude to look at, and writes _critique.json with the measurements and a list\n   of complaints. Read docs/CRITIQUE.md for the review checklist.",
       "imports": [
         "from PIL import Image, ImageDraw, ImageFont",
@@ -6120,6 +6262,7 @@
         "from propkit import part_rules",
         "from propkit.hull import detect_circles, silhouette",
         "from propkit.hull import silhouette",
+        "from propkit.warehouse import asset_directory",
         "from props import hull_props",
         "from scipy import ndimage",
         "import bpy",
@@ -6132,13 +6275,13 @@
       "definitions": [
         {
           "name": "cast",
-          "line": 68,
+          "line": 70,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "silhouette_iou",
-          "line": 91,
+          "line": 93,
           "kind": "FunctionDef",
           "description": ""
         }
@@ -6160,6 +6303,7 @@
         "abs",
         "args.index",
         "args[1].startswith",
+        "asset_directory",
         "bpy.context.evaluated_depsgraph_get",
         "bpy.data.cameras.new",
         "bpy.data.images.load",
@@ -6211,6 +6355,8 @@
         "o.evaluated_get(dg).to_mesh",
         "open",
         "origin",
+        "os.environ.get",
+        "os.makedirs",
         "os.path.abspath",
         "os.path.dirname",
         "os.path.exists",
@@ -6232,12 +6378,15 @@
         "silhouette",
         "silhouette_iou",
         "small.ravel",
+        "str",
         "sys.argv.index",
         "sys.path.insert",
         "tiles.append",
         "tree.ray_cast"
       ],
-      "environment_keys": []
+      "environment_keys": [
+        "HULL_LIBRARY_ROOT"
+      ]
     },
     {
       "path": "long-lines/tools/diag/metrics.py",
@@ -6347,80 +6496,105 @@
     },
     {
       "path": "long-lines/tools/diag/regress_assets.py",
-      "lines": 101,
-      "sha256": "e38b67ad526f031a19f3de4a3fd626a2d81c9af23b75aba5761027a9af58a126",
-      "description": "Asset-level geometry regression: rebuild reference assets from their own orders under exp_ names,\nmeasure them (tools/diag/metrics.py) and compare with factory/geometry_baseline.json.\n\n    python3 tools/diag/regress_assets.py [--update-baseline] [--only car,coffee,sofa] [--keep DIR]\n\nEach case must keep its silhouette (IoU no more than 0.005 below the baseline), stay free of folds\n(per 1000 faces no more than the baseline + 0.5) and not get ridgier (ridge_deg no more than the\nbaseline + 0.3). The library, ledger and REPORT are restored and the exp_ outputs deleted afterwards.\nAbout 6 minutes. The fast synthetic suite is tools/test_hull_geometry.py.",
+      "lines": 217,
+      "sha256": "b123da006ed1493cce16eae32627c31b7a78a0df6b371806df2eaf3cf9a1b7e9",
+      "description": "Retained, isolated asset regression; never edits the real library or baseline.\n\n--update-baseline writes an OBSERVATION PROPOSAL in --output, not a golden file.\nA baseline comparison is not release approval; inherited fixtures may be defective.",
       "imports": [
+        "from pathlib import Path",
+        "from propkit import warehouse",
+        "import argparse",
         "import json",
+        "import math",
         "import os",
         "import shutil",
         "import subprocess",
         "import sys",
-        "import time"
+        "import time",
+        "import uuid"
       ],
       "definitions": [
         {
-          "name": "run",
-          "line": 30,
+          "name": "compare",
+          "line": 44,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "main",
-          "line": 38,
+          "line": 64,
           "kind": "FunctionDef",
           "description": ""
         }
       ],
       "calls": [
+        "','.join",
         "'; '.join",
+        "(Path(saved['last_run']) / 'result.json').read_text",
+        "(ROOT / order_path).read_text",
+        "(args.output or ROOT.parent / '.hull-maintenance/regression').resolve",
+        "(output / log).write_text",
+        "(work / 'factory/orders' / (asset + '.json')).read_text",
+        "(work / 'factory/orders').mkdir",
+        "BASE.read_text",
+        "CASES.keys",
+        "Path",
+        "Path(__file__).resolve",
+        "RuntimeError",
+        "SystemExit",
+        "all",
+        "argparse.ArgumentParser",
+        "args.only.split",
         "base.get",
-        "base.update",
+        "compare",
+        "current.get",
+        "current.get('artifact_audit', {}).get",
         "dict",
-        "fails.append",
-        "json.dump",
-        "json.load",
-        "len",
-        "list",
-        "m.update",
+        "failures.append",
+        "isinstance",
+        "json.dumps",
+        "json.loads",
         "main",
-        "msg.append",
-        "o.pop",
-        "o.update",
-        "open",
-        "open(os.path.join(ROOT, p), 'rb').read",
-        "open(os.path.join(ROOT, p), 'wb').write",
+        "map",
+        "math.isfinite",
+        "metric_path.read_text",
+        "metrics.get",
+        "order.pop",
+        "order.update",
         "os.environ.get",
-        "os.path.abspath",
-        "os.path.dirname",
-        "os.path.exists",
-        "os.path.isdir",
-        "os.path.join",
-        "os.remove",
+        "parser.add_argument",
+        "parser.error",
+        "parser.parse_args",
         "print",
-        "results.items",
+        "results.values",
         "round",
         "run",
-        "saved.items",
+        "set",
         "shutil.copytree",
-        "shutil.rmtree",
+        "shutil.ignore_patterns",
+        "shutil.which",
+        "str",
         "subprocess.run",
-        "sys.argv.index",
-        "sys.argv[sys.argv.index('--only') + 1].split",
-        "sys.exit",
-        "time.time"
+        "sys.path.insert",
+        "time.monotonic",
+        "uuid.uuid4",
+        "warehouse.asset_directory",
+        "warehouse.atomic_json",
+        "warehouse.digest",
+        "warehouse.inside",
+        "work.mkdir"
       ],
       "environment_keys": [
-        "PYTHONHASHSEED"
+        "HULL_BLENDER"
       ]
     },
     {
       "path": "long-lines/tools/diag/render_modes.py",
-      "lines": 178,
-      "sha256": "642c36c781d5a3a94c1f808603238faaec45301172b182b5cb36a37f0e5797e4",
+      "lines": 180,
+      "sha256": "ec29ce15cf55086f26a260071c8732fe9254cc9e6e5a10b05ba17ce9fa5a0412",
       "description": "Diagnostic renders of a library prop: the same cameras in six modes, to tell geometry from paint.\n\n    blender -b --factory-startup -P tools/diag/render_modes.py -- NAME OUT_DIR [--cams front34,side,...]\n          [--glb PATH]   (default assets/props/NAME/NAME.glb, maps beside it)\n\nModes: clay (no texture), wire (wireframe over clay), albedo (texture only, no lighting), normals\n(shading normals as colour), facets (true face normals: shows terraces the smooth shading hides),\ndepth (distance from the camera), textured (albedo + normal + ORM maps, lit).\nCameras are placed from the object's bounding box, so any prop works.",
       "imports": [
         "from mathutils import Vector",
+        "from propkit.warehouse import asset_directory",
         "import bpy",
         "import math",
         "import os",
@@ -6429,13 +6603,13 @@
       "definitions": [
         {
           "name": "mat",
-          "line": 74,
+          "line": 76,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "set_mode",
-          "line": 149,
+          "line": 151,
           "kind": "FunctionDef",
           "description": ""
         }
@@ -6449,6 +6623,7 @@
         "Vector",
         "argv.index",
         "argv[argv.index('--cams') + 1].split",
+        "asset_directory",
         "bpy.context.view_layer.update",
         "bpy.data.cameras.new",
         "bpy.data.images.load",
@@ -6477,6 +6652,7 @@
         "o.data.copy",
         "o.data.materials.append",
         "o.data.materials.clear",
+        "os.environ.get",
         "os.makedirs",
         "os.path.abspath",
         "os.path.dirname",
@@ -6484,11 +6660,15 @@
         "print",
         "sc.collection.objects.link",
         "set_mode",
+        "str",
         "sys.argv.index",
+        "sys.path.insert",
         "tex",
         "wires.append"
       ],
-      "environment_keys": []
+      "environment_keys": [
+        "HULL_LIBRARY_ROOT"
+      ]
     },
     {
       "path": "long-lines/tools/diag/scale_audit.py",
@@ -6620,11 +6800,12 @@
     },
     {
       "path": "long-lines/tools/factory.py",
-      "lines": 753,
-      "sha256": "bcf5f047bc8fb79069916d931f5536e5f8a9396e7a82597eae8479a055f76f24",
+      "lines": 816,
+      "sha256": "21020e6bde39aea2df0ec9a8f79b0e8eae5148a496f4b6673db6578971b0cfdf",
       "description": "The asset factory: work orders in, game-ready assets out, every run measured.\n\nRun under Blender (all stations share one process):\n    blender -b --factory-startup -P tools/factory.py -- intake IMAGE NAME --category tv [--height 0.5]\n    blender -b --factory-startup -P tools/factory.py -- intake_sheet SHEET_SPEC.json --source-dir DIR\n    blender -b --factory-startup -P tools/factory.py -- intake_set MANIFEST.json [--category fridge] [--name N]\n    blender -b --factory-startup -P tools/factory.py -- build NAME... | --pending | --all-orders\n    blender -b --factory-startup -P tools/factory.py -- qa NAME... | --library\n    blender -b --factory-startup -P tools/factory.py -- report\n\nStations: intake (classify the reference, split views, size from the category table,\nwrite a work order) -> build (the order's production line) -> bake/export (propkit.bake)\n-> gate (propkit.qa against factory/standards.json, one codified automatic correction,\nthen flag for a person) -> ledger (factory/ledger.jsonl) -> report (factory/REPORT.md).\nWork orders live in factory/orders/<name>.json; lines read them, so a new asset needs\nno code. See factory/README.md.",
       "imports": [
         "from PIL import Image",
+        "from pathlib import Path",
         "from propkit import bake, core, mats, qa",
         "from propkit import extrude",
         "from propkit import guides",
@@ -6636,6 +6817,7 @@
         "from propkit import stage_review",
         "from propkit import surface_detail",
         "from propkit import texturing",
+        "from propkit import warehouse",
         "from propkit.atlas import appliance",
         "from propkit.correction_review import Rejected",
         "from propkit.facade import facade_prop",
@@ -6650,6 +6832,7 @@
         "from propkit.pipeline import build_image",
         "from propkit.sheetset import build_set",
         "from propkit.simplification import screen_tolerance, decimate_to_error, refresh_normals",
+        "from propkit.warehouse import asset_directory",
         "from props.cars_painted import painted_car",
         "from props.goods_painted import painted_can",
         "from scipy import ndimage",
@@ -6661,6 +6844,7 @@
         "import numpy as np",
         "import os",
         "import pkgutil",
+        "import platform",
         "import propkit",
         "import props",
         "import shutil",
@@ -6673,115 +6857,127 @@
       "definitions": [
         {
           "name": "load_order",
-          "line": 48,
+          "line": 49,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "save_order",
-          "line": 53,
+          "line": 54,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "ledger",
-          "line": 59,
+          "line": 60,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "file_hash",
-          "line": 65,
+          "line": 66,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "split_views",
-          "line": 75,
+          "line": 76,
           "kind": "FunctionDef",
           "description": "Finds the top row of object views on a reference sheet (REFERENCE_SPEC.md) and\nsaves them as v_front/right/back/left/top. Returns the list of views found."
         },
         {
           "name": "intake",
-          "line": 115,
+          "line": 116,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "automatic_build",
-          "line": 143,
+          "line": 144,
           "kind": "FunctionDef",
           "description": "Compatibility entry point for the image-only orchestration station."
         },
         {
           "name": "reference_views",
-          "line": 153,
+          "line": 154,
           "kind": "FunctionDef",
           "description": "Parts orders keep the complete reference in their assembly subfolder."
         },
         {
           "name": "intake_sheet",
-          "line": 163,
+          "line": 164,
           "kind": "FunctionDef",
           "description": "A multi-asset sheet spec: one work order per listed item. Facade items crop an\nelevation; atlas items keep the whole parts sheet and name which numbered panel\n(propkit.atlas.panels) is which face. Sources go to source_textures/<name>/."
         },
         {
           "name": "intake_set",
-          "line": 209,
+          "line": 210,
           "kind": "FunctionDef",
           "description": "A v2 sheet set (painted + depth + part map + section + manifest, REFERENCE_SPEC.md):\nfiles copied to source_textures/<name>/, size from the manifest's dimensions."
         },
         {
           "name": "human_scale_height",
-          "line": 241,
+          "line": 242,
           "kind": "FunctionDef",
           "description": "The height a hull order's views imply under human scale (propkit/human_scale.py): each whole-object\ncontact measured in the views (front height = 1), solved and cross-checked. Returns (height_m, report)."
         },
         {
+          "name": "diagnostic_root",
+          "line": 269,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
           "name": "run_line",
-          "line": 268,
+          "line": 273,
           "kind": "FunctionDef",
           "description": "Builds the order's geometry in the current scene. One function per line."
         },
         {
           "name": "correct",
-          "line": 464,
+          "line": 468,
           "kind": "FunctionDef",
           "description": "Codified corrections for known failure modes (docs/LESSONS.md). Returns True if\nthe order was changed and is worth one more attempt."
         },
         {
           "name": "tex_for",
-          "line": 511,
+          "line": 515,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "render_trim_preview",
-          "line": 518,
+          "line": 522,
           "kind": "FunctionDef",
           "description": "Always make a PNG turnaround of a shipped extruded asset. No source sheets."
         },
         {
-          "name": "build",
-          "line": 535,
+          "name": "_build_candidate",
+          "line": 540,
           "kind": "FunctionDef",
           "description": ""
         },
         {
+          "name": "build",
+          "line": 612,
+          "kind": "FunctionDef",
+          "description": "Build isolated candidates; publish only a qualified immutable version."
+        },
+        {
           "name": "mount_of",
-          "line": 618,
+          "line": 681,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "gate",
-          "line": 630,
+          "line": 693,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "report",
-          "line": 648,
+          "line": 711,
           "kind": "FunctionDef",
           "description": ""
         }
@@ -6791,6 +6987,9 @@
         "', '.join",
         "'; '.join",
         "'\\n'.join",
+        "(repo / 'long-lines/tools').rglob",
+        "(run / 'inputs').rglob",
+        "(run / 'run.json').read_text",
         "HB.contacts",
         "HB.entry",
         "HS.anchor",
@@ -6802,15 +7001,21 @@
         "Image.open(os.path.join(source_dir, it['sheet'])).convert",
         "Image.open(os.path.join(source_dir, it['sheet'])).convert('RGB').crop",
         "Image.open(os.path.join(source_dir, it['sheet'])).convert('RGB').crop(tuple(it['box'])).save",
+        "Path",
+        "Path(FACT).glob",
+        "Path(source).is_file",
         "RuntimeError",
         "STANDARDS['size_classes'].get",
         "ValueError",
+        "_build_candidate",
         "_sec.overlay",
         "_sil",
         "anchors.append",
         "any",
         "appliance",
+        "asset_directory",
         "assets.values",
+        "attempt_inputs.rglob",
         "automatic_build",
         "b.get",
         "bake.finish",
@@ -6824,10 +7029,12 @@
         "by_line.setdefault",
         "c.isdigit",
         "cat.get",
+        "context['file_hashes'].update",
         "core.reset",
         "correct",
         "decimate_to_error",
         "detail.get",
+        "diagnostic_root",
         "dict",
         "dims.get",
         "e.get",
@@ -6863,6 +7070,7 @@
         "im.crop((max(0, x0 - pad), max(0, y0 - pad), min(W, x1 + pad), min(H, y1 + pad))).save",
         "importlib.import_module",
         "info.update",
+        "inputs.append",
         "int",
         "intake",
         "intake_set",
@@ -6909,12 +7117,14 @@
         "order.get('measured', {}).get",
         "order.get('measured', {}).get('relief', {}).get",
         "order.get('measured', {}).get('relief', {}).get('views', {}).values",
+        "order.pop",
         "order.setdefault",
         "order.setdefault('corrections', []).append",
         "order.update",
         "order['assumptions'].append",
         "order['measured'].get",
         "order['measured'].get('relief', {}).get",
+        "os.environ.get",
         "os.makedirs",
         "os.path.abspath",
         "os.path.basename",
@@ -6924,11 +7134,15 @@
         "os.path.normpath",
         "os.path.relpath",
         "out.append",
+        "p.is_file",
+        "p.resolve",
         "paint_views",
         "painted_can",
         "painted_car",
         "part.get",
         "pkgutil.iter_modules",
+        "platform.python_version",
+        "prepared.extend",
         "print",
         "propkit.PROPS[order['name']]['fn']",
         "qa.check",
@@ -6941,6 +7155,7 @@
         "region.get",
         "relief.hook",
         "render_trim_preview",
+        "repo.glob",
         "report",
         "reps.setdefault",
         "reps.setdefault((r['name'], r['input_hash']), set()).add",
@@ -6949,15 +7164,18 @@
         "result.get",
         "result.setdefault",
         "result.setdefault('correction_reviews', []).append",
+        "result.update",
         "result['fails'].append",
         "result['inference_warnings'].append",
         "result['metrics'].get",
         "round",
+        "run.glob",
         "run_line",
         "save_order",
         "screen_tolerance",
         "set",
         "shutil.copy",
+        "shutil.copytree",
         "silhouette",
         "sizing.envelope",
         "sorted",
@@ -6987,11 +7205,22 @@
         "view.get",
         "view.get('regional_relief', {}).get",
         "views.get",
+        "views.is_dir",
         "views.items",
+        "views.rglob",
+        "warehouse.atomic_json",
+        "warehouse.create",
+        "warehouse.digest",
+        "warehouse.promote",
+        "warehouse.seal",
+        "working.resolve",
         "zip",
         "{'height': 1.0, 'width': W, 'depth': D}.get"
       ],
-      "environment_keys": []
+      "environment_keys": [
+        "HULL_RELEASE_POLICY",
+        "HULL_RUN_ROOT"
+      ]
     },
     {
       "path": "long-lines/tools/label_panels.py",
@@ -7400,10 +7629,11 @@
     },
     {
       "path": "long-lines/tools/open_in_blender.py",
-      "lines": 63,
-      "sha256": "a25ae7e32ca9efa8fafa57229d5e4ad0eac2953854460e97e9da4c33642d5319",
+      "lines": 65,
+      "sha256": "f33c98e1bf4489fe8035cdd7e7869e20445728e61cd3ac5ccb1cf516aa33948a",
       "description": "Open a library prop in Blender's window with its textures connected.\n\nLibrary GLBs carry placeholder materials (the game applies the baked albedo/normal/ORM maps\nitself), so a plain File > Import shows them grey. This script imports the GLB and wires the\nthree maps beside it into a normal Principled material.\n\n    blender --python long-lines/tools/open_in_blender.py -- fridge_1_set\n    blender --python long-lines/tools/open_in_blender.py -- path/to/model.glb\n\nOr in Blender: Scripting tab > Open this file > set NAME below > Run Script.",
       "imports": [
+        "from propkit.warehouse import asset_directory",
         "import bpy",
         "import os",
         "import sys"
@@ -7411,6 +7641,7 @@
       "definitions": [],
       "calls": [
         "arg.endswith",
+        "asset_directory",
         "bpy.data.images.load",
         "bpy.data.materials.new",
         "bpy.data.objects.remove",
@@ -7428,7 +7659,9 @@
         "os.path.join",
         "os.path.normpath",
         "print",
+        "str",
         "sys.argv.index",
+        "sys.path.insert",
         "tex"
       ],
       "environment_keys": []
@@ -7648,12 +7881,13 @@
     },
     {
       "path": "long-lines/tools/preview_trim.py",
-      "lines": 114,
-      "sha256": "6ae8bb1e6541ee9ca97edf2ece06eca013bc012d5e0bc881625a670e1ad624c8",
+      "lines": 118,
+      "sha256": "715649b0441bb4bbc966778641f887125ffb7ca78c7dfe8ee34a9530f9c27858",
       "description": "Render a finished exported trim GLB into a labelled three-view PNG.\n\nRun: blender -b --factory-startup -P long-lines/tools/preview_trim.py -- NAME\nRequires the baked GLB, albedo, normal and ORM maps in assets/props/NAME.",
       "imports": [
         "from PIL import Image, ImageDraw, ImageFont",
         "from mathutils import Vector",
+        "from propkit.warehouse import asset_directory",
         "import bpy",
         "import math",
         "import os",
@@ -7662,7 +7896,7 @@
       "definitions": [
         {
           "name": "image_node",
-          "line": 29,
+          "line": 33,
           "kind": "FunctionDef",
           "description": ""
         }
@@ -7681,6 +7915,7 @@
         "ImageFont.truetype",
         "RuntimeError",
         "Vector",
+        "asset_directory",
         "bpy.data.cameras.new",
         "bpy.data.images.load",
         "bpy.data.lights.new",
@@ -7701,6 +7936,8 @@
         "nodes.new",
         "o.data.materials.append",
         "o.data.materials.clear",
+        "os.environ.get",
+        "os.makedirs",
         "os.path.abspath",
         "os.path.dirname",
         "os.path.join",
@@ -7711,10 +7948,15 @@
         "scene.collection.objects.link",
         "sheet.paste",
         "sheet.save",
+        "str",
         "sys.argv.index",
+        "sys.path.insert",
         "tiles.append"
       ],
-      "environment_keys": []
+      "environment_keys": [
+        "HULL_LIBRARY_ROOT",
+        "HULL_PREVIEW_OUTPUT"
+      ]
     },
     {
       "path": "long-lines/tools/propkit/__init__.py",
@@ -7839,8 +8081,8 @@
     },
     {
       "path": "long-lines/tools/propkit/bake.py",
-      "lines": 367,
-      "sha256": "e82271c6312fbe0cd76e6bc1ce23f3e568c38c6fe650bc86a0848034637d2526",
+      "lines": 368,
+      "sha256": "e4d6c5b0b0eae44e3c6286964c77674aff4da7e64e95d5e78ab87b24bacbd1a5",
       "description": "Joins a recipe's parts, unwraps, bakes and exports one prop.",
       "imports": [
         "from . import core, mats",
@@ -7848,6 +8090,7 @@
         "from .ownership import split_standalone",
         "from .ownership import tag_parts, save_mesh_ownership, prepare_export_ownership",
         "from .simplification import refresh_normals",
+        "from .warehouse import asset_directory",
         "from pathlib import Path",
         "import bmesh",
         "import bmesh as _bm",
@@ -7891,7 +8134,7 @@
         },
         {
           "name": "update_manifest",
-          "line": 360,
+          "line": 361,
           "kind": "FunctionDef",
           "description": ""
         }
@@ -7906,6 +8149,7 @@
         "_bm.ops.recalc_face_normals",
         "abs",
         "any",
+        "asset_directory",
         "base.with_name",
         "base.with_suffix",
         "base.with_suffix('.glb').read_bytes",
@@ -11418,6 +11662,207 @@
       "environment_keys": []
     },
     {
+      "path": "long-lines/tools/propkit/maintenance.py",
+      "lines": 522,
+      "sha256": "313d036dcb2d58a5ef753a18e470e599d7ad88ccfbc07ee32160a050dbba9f9c",
+      "description": "One operations entry point; existing stations retain their own algorithms.\n\nChecks never update golden baselines, delete releases, install dependencies or\nchange code. Reports declare capability coverage and retain failed observations.",
+      "imports": [
+        "from . import warehouse",
+        "from datetime import datetime, timezone",
+        "from pathlib import Path",
+        "import argparse",
+        "import hashlib",
+        "import importlib",
+        "import importlib.metadata",
+        "import json",
+        "import os",
+        "import re",
+        "import shutil",
+        "import subprocess",
+        "import sys",
+        "import time",
+        "import uuid",
+        "import zipfile"
+      ],
+      "definitions": [
+        {
+          "name": "git",
+          "line": 25,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "load_plan",
+          "line": 34,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "doctor",
+          "line": 58,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "choose_profiles",
+          "line": 132,
+          "kind": "FunctionDef",
+          "description": "Cheap docs checks; unknown changes conservatively require core checks."
+        },
+        {
+          "name": "repository_audit",
+          "line": 160,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "source_identity",
+          "line": 207,
+          "kind": "FunctionDef",
+          "description": "Fingerprint code and station configuration, excluding changing run records."
+        },
+        {
+          "name": "run_checks",
+          "line": 225,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "package",
+          "line": 330,
+          "kind": "FunctionDef",
+          "description": "A deterministic code bundle from committed bytes, excluding user assets."
+        },
+        {
+          "name": "incident",
+          "line": 426,
+          "kind": "FunctionDef",
+          "description": "Append learning evidence without revising a candidate's measurements."
+        },
+        {
+          "name": "main",
+          "line": 449,
+          "kind": "FunctionDef",
+          "description": ""
+        }
+      ],
+      "calls": [
+        "', '.join",
+        "(output / (check['id'] + '.log')).write_text",
+        "(root / '.github/workflows').glob",
+        "(root / '.github/workflows/hull-contracts.yml').read_text",
+        "(root / 'long-lines/factory').glob",
+        "(root / 'long-lines/factory/checks.json').read_text",
+        "(root / 'requirements-core.txt').read_text",
+        "(root / directory).rglob",
+        "(root / filename).is_file",
+        "Path",
+        "Path(destination).resolve",
+        "Path(executable).resolve",
+        "Path(output).resolve",
+        "Path(receipt_path).resolve",
+        "ValueError",
+        "action.startswith",
+        "all",
+        "any",
+        "archive.writestr",
+        "argparse.ArgumentParser",
+        "args.profiles.split",
+        "check.get",
+        "choose_profiles",
+        "commands.add_parser",
+        "datetime.now",
+        "datetime.now(timezone.utc).isoformat",
+        "destination.parent.mkdir",
+        "dict",
+        "doctor",
+        "environment.get",
+        "environment.update",
+        "evidence['fails'].append",
+        "fails.append",
+        "files.extend",
+        "git",
+        "git(root, 'ls-files').splitlines",
+        "git(root, 'ls-tree', '-r', '--name-only', 'HEAD').splitlines",
+        "git(root, 'rev-parse', 'HEAD').strip",
+        "git(root, 'rev-parse', 'HEAD^{tree}').strip",
+        "hashlib.sha256",
+        "hashlib.sha256(raw).hexdigest",
+        "importlib.import_module",
+        "importlib.metadata.version",
+        "incident",
+        "int",
+        "json.dumps",
+        "json.loads",
+        "large.append",
+        "len",
+        "list",
+        "load_plan",
+        "modules.items",
+        "name.endswith",
+        "name.startswith",
+        "os.environ.copy",
+        "os.environ.get",
+        "os.pathsep.join",
+        "output.mkdir",
+        "p.is_file",
+        "p.relative_to",
+        "p.relative_to(root).as_posix",
+        "package",
+        "parser.add_subparsers",
+        "parser.parse_args",
+        "path.is_file",
+        "path.read_text",
+        "path.stat",
+        "path.suffix.lower",
+        "plan.get",
+        "print",
+        "process.stdout.strip",
+        "process.stdout.strip().splitlines",
+        "profiles.add",
+        "profiles.update",
+        "raw.replace",
+        "re.findall",
+        "re.search",
+        "receipt_path.read_text",
+        "repository_audit",
+        "result.get",
+        "results.append",
+        "round",
+        "run_checks",
+        "seen.add",
+        "selected.append",
+        "set",
+        "shutil.which",
+        "sorted",
+        "source_identity",
+        "str",
+        "sub.add_argument",
+        "subprocess.check_output",
+        "subprocess.run",
+        "sum",
+        "sys.version.split",
+        "time.monotonic",
+        "uuid.uuid4",
+        "value.strip",
+        "version.startswith",
+        "warehouse.atomic_json",
+        "warehouse.digest",
+        "warehouse.inside",
+        "warehouse.inside(root, check['script']).is_file",
+        "warehouse.promote",
+        "warehouse.rollback",
+        "warehouse.verify_release",
+        "warnings.append",
+        "zipfile.ZipFile",
+        "zipfile.ZipInfo"
+      ],
+      "environment_keys": [
+        "HULL_BLENDER",
+        "HULL_GODOT"
+      ]
+    },
+    {
       "path": "long-lines/tools/propkit/mats.py",
       "lines": 366,
       "sha256": "325611392e306792bcd6f668882626aad155905760de2c2c099853db5113e87a",
@@ -12367,18 +12812,20 @@
     },
     {
       "path": "long-lines/tools/propkit/pipeline.py",
-      "lines": 125,
-      "sha256": "511a15a4d32f69afc4fcefb32cdf6d217796ba9d6b759b6c18d6cfff9a1722c7",
+      "lines": 131,
+      "sha256": "a49988b476d8ce67758275655d430ec6a099deb37aee5ca3cf69f947b3f9a0b9",
       "description": "Image-only orchestration. Geometry stays in the existing factory engines.\n\nCallbacks keep this station testable without importing or duplicating factory\ndispatch. All file freshness checks belong here, before packaging or reporting.",
       "imports": [
         "from . import engineering",
         "from .memory_outcomes import record",
         "from .preflight import inspect_order",
+        "from .warehouse import asset_directory",
         "from pathlib import Path",
         "from sheet_blobs import automatic",
         "import bpy",
         "import hashlib",
         "import json",
+        "import os",
         "import subprocess",
         "import time",
         "import traceback"
@@ -12404,13 +12851,13 @@
         },
         {
           "name": "_build_image",
-          "line": 41,
+          "line": 45,
           "kind": "FunctionDef",
           "description": "Intake -> native work order -> build/QA -> fresh exports -> diagnostics."
         },
         {
           "name": "build_image",
-          "line": 100,
+          "line": 106,
           "kind": "FunctionDef",
           "description": "Persist a reviewable failure report even if a station raises unexpectedly."
         }
@@ -12423,6 +12870,7 @@
         "Path(intake['work_order']).read_text",
         "Path(output).resolve",
         "_build_image",
+        "asset_directory",
         "automatic",
         "available_digest",
         "bool",
@@ -12442,6 +12890,7 @@
         "log.write_text",
         "order.get",
         "order.get('physical_part_graph', {}).get",
+        "os.environ.copy",
         "part.get",
         "part.get('depth_inference', {}).get",
         "path.is_file",
@@ -12838,8 +13287,8 @@
     },
     {
       "path": "long-lines/tools/propkit/qa.py",
-      "lines": 373,
-      "sha256": "6671be9f11d2fa8e8aaa95f34ff94d4de2c11378700d7862f191f28c2305a5c2",
+      "lines": 376,
+      "sha256": "cdc861653ec802edeffd903af2a81afe9971fbe3907cbed1cca0d196ef172f9a",
       "description": "The factory's quality gate: measures a built prop against factory/standards.json.\n\ncheck(name, views_dir=None, category=None) -> {\"pass\": bool, \"fails\": [...], \"metrics\": {...}}\n\nFast (ray casts and mesh statistics, no rendering), so the whole library can be gated\nin one Blender process. The visual turnaround stays in tools/critique.py and is only\nrendered for failures or spot checks: the gate enforces a minimum standard, not polish.",
       "imports": [
         "from . import trim_checks",
@@ -12848,6 +13297,7 @@
         "from .local_features import check_surface_features",
         "from .local_features import geometry_components",
         "from .texturing import uv_quality",
+        "from .warehouse import asset_directory",
         "from PIL import Image",
         "from mathutils import Vector",
         "from mathutils.bvhtree import BVHTree",
@@ -12874,13 +13324,13 @@
         },
         {
           "name": "glb_normal_disagreement",
-          "line": 41,
+          "line": 42,
           "kind": "FunctionDef",
           "description": "Share of the GLB's triangles with a stored vertex normal more than 72 degrees off the triangle's\nown facing (read from the file itself, not through an importer): stale or reversed normals render\nas dark streaks however the geometry looks."
         },
         {
           "name": "check",
-          "line": 82,
+          "line": 83,
           "kind": "FunctionDef",
           "description": ""
         }
@@ -12914,6 +13364,7 @@
         "acc",
         "acc(prim['indices']).reshape",
         "arr.reshape",
+        "asset_directory",
         "bool",
         "bpy.context.evaluated_depsgraph_get",
         "bpy.ops.import_scene.gltf",
@@ -12992,6 +13443,7 @@
         "silhouette",
         "size_class",
         "sorted",
+        "str",
         "struct.unpack",
         "sum",
         "tree.ray_cast",
@@ -16073,6 +16525,233 @@
       "environment_keys": []
     },
     {
+      "path": "long-lines/tools/propkit/warehouse.py",
+      "lines": 462,
+      "sha256": "5f1db3d00a3c6855169c461ecc75925ae1f7853e5d9bfffdff3b4a9198e2ed44",
+      "description": "Candidate evidence and immutable releases. Pure Python; never edits geometry.\n\nThe library manifest is the publication boundary. Failed and uncertain runs stay\navailable outside the library; a failed publication cannot replace a good entry.",
+      "imports": [
+        "from contextlib import contextmanager",
+        "from datetime import datetime, timezone",
+        "from pathlib import Path",
+        "import hashlib",
+        "import json",
+        "import math",
+        "import os",
+        "import re",
+        "import shutil",
+        "import struct",
+        "import tempfile",
+        "import uuid",
+        "import zlib"
+      ],
+      "definitions": [
+        {
+          "name": "digest",
+          "line": 22,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "asset_name",
+          "line": 30,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "inside",
+          "line": 47,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "atomic_json",
+          "line": 55,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "library_lock",
+          "line": 75,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "asset_directory",
+          "line": 93,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "build_record",
+          "line": 105,
+          "kind": "FunctionDef",
+          "description": "A release's label must not borrow QA from a newer failed build."
+        },
+        {
+          "name": "snapshot",
+          "line": 119,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "container_triangles",
+          "line": 134,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "valid_png",
+          "line": 186,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "audit",
+          "line": 218,
+          "kind": "FunctionDef",
+          "description": "Independent storage/format audit; QA remains a separate geometry gauge."
+        },
+        {
+          "name": "create",
+          "line": 280,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "seal",
+          "line": 302,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "promote",
+          "line": 329,
+          "kind": "FunctionDef",
+          "description": "Publish an immutable version, then atomically select it in the manifest."
+        },
+        {
+          "name": "rollback",
+          "line": 399,
+          "kind": "FunctionDef",
+          "description": "Restore the saved pointer only if no newer publication has intervened."
+        },
+        {
+          "name": "verify_release",
+          "line": 447,
+          "kind": "FunctionDef",
+          "description": ""
+        }
+      ],
+      "calls": [
+        "(Path(library) / 'library.json').read_text",
+        "(library / 'library.json').is_file",
+        "(library / 'library.json').read_text",
+        "(receipt_path.parent / 'publication.json').read_text",
+        "(root / relative).resolve",
+        "(run / 'run.json').read_text",
+        "Path",
+        "Path(folder).resolve",
+        "Path(library).resolve",
+        "Path(path).is_file",
+        "Path(path).open",
+        "Path(receipt_path).resolve",
+        "Path(root).resolve",
+        "RuntimeError",
+        "ValueError",
+        "all",
+        "asset_directory",
+        "asset_name",
+        "atomic_json",
+        "audit",
+        "container_triangles",
+        "datetime.now",
+        "datetime.now(timezone.utc).strftime",
+        "destination.exists",
+        "destination.parent.mkdir",
+        "dict",
+        "digest",
+        "doc.get",
+        "doc.get('asset', {}).get",
+        "entry.get",
+        "fails.append",
+        "folder.is_dir",
+        "folder.rglob",
+        "h.hexdigest",
+        "h.update",
+        "hashlib.sha256",
+        "inside",
+        "isinstance",
+        "iter",
+        "json.dump",
+        "json.loads",
+        "json.loads((library / 'library.json').read_text(encoding='utf-8')).get",
+        "json.loads(manifest.read_text(encoding='utf-8')).get",
+        "len",
+        "library_lock",
+        "lock.unlink",
+        "manifest.get",
+        "manifest.is_file",
+        "manifest.items",
+        "manifest.pop",
+        "manifest.read_text",
+        "manifest_path.is_file",
+        "manifest_path.read_text",
+        "math.isfinite",
+        "metrics.get",
+        "name.lower",
+        "next",
+        "os.close",
+        "os.fsync",
+        "os.getpid",
+        "os.open",
+        "os.replace",
+        "os.write",
+        "out.fileno",
+        "out.flush",
+        "out.write",
+        "path.is_file",
+        "path.is_relative_to",
+        "path.is_symlink",
+        "path.parent.mkdir",
+        "path.read_bytes",
+        "path.read_text",
+        "path.relative_to",
+        "path.relative_to(folder).as_posix",
+        "previous.get",
+        "primitive.get",
+        "qa.get",
+        "qa.get('stage_review', {}).get",
+        "re.fullmatch",
+        "receipt.get",
+        "receipt.get('context', {}).get",
+        "receipt.get('context', {}).get('file_hashes', {}).items",
+        "receipt.update",
+        "receipt['qa']['metrics'].get",
+        "receipt_path.read_text",
+        "relative.as_posix",
+        "reversed",
+        "root.mkdir",
+        "run.mkdir",
+        "run.resolve",
+        "shutil.copytree",
+        "snapshot",
+        "sorted",
+        "source.read",
+        "source_manifest.read_text",
+        "staging.rename",
+        "str",
+        "str(os.getpid()).encode",
+        "struct.unpack",
+        "tempfile.NamedTemporaryFile",
+        "temporary.unlink",
+        "uuid.uuid4",
+        "valid_png",
+        "view.get",
+        "zlib.crc32"
+      ],
+      "environment_keys": []
+    },
+    {
       "path": "long-lines/tools/props/__init__.py",
       "lines": 0,
       "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -17587,12 +18266,13 @@
     },
     {
       "path": "long-lines/tools/render_turnaround.py",
-      "lines": 147,
-      "sha256": "5d756649c59853dcfb697fac3a1b244b81fbda0203660ee0dd9bc8d3949dd3fe",
+      "lines": 151,
+      "sha256": "9d5902d4ed98cd070af74cc2dbaa229955cf0bf3386766f9dccb7d058a1324cf",
       "description": "Final renders of a shipped library prop: the assembly line's last station.\n\n    blender -b --factory-startup -P tools/render_turnaround.py -- NAME [OUT_DIR]\n\nWrites OUT_DIR/NAME.png (default docs/renders/): front, right, back, left, top and three-quarter views\nwith its textures, plus a clay three-quarter (shape only), on one sheet with its size, triangles, build time\nand quality-gate result. Orthographic cameras framed on the prop's own size, so any prop works.",
       "imports": [
         "from PIL import Image, ImageDraw, ImageFont",
         "from mathutils import Vector",
+        "from propkit.warehouse import asset_directory, build_record",
         "import bpy",
         "import json",
         "import math",
@@ -17603,13 +18283,13 @@
       "definitions": [
         {
           "name": "material",
-          "line": 63,
+          "line": 66,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "shoot",
-          "line": 89,
+          "line": 92,
           "kind": "FunctionDef",
           "description": ""
         }
@@ -17629,6 +18309,7 @@
         "ImageFont.truetype",
         "Vector",
         "abs",
+        "asset_directory",
         "bpy.context.view_layer.update",
         "bpy.data.cameras.new",
         "bpy.data.images.load",
@@ -17639,12 +18320,13 @@
         "bpy.ops.import_scene.gltf",
         "bpy.ops.render.render",
         "bpy.ops.wm.read_factory_settings",
+        "build_record",
         "d.cross",
         "d.cross(right).normalized",
         "d.text",
         "enumerate",
         "json.load",
-        "json.load(open(os.path.join(ROOT, 'assets', 'props', 'library.json'))).get",
+        "json.load(open(os.path.join(library_root, 'library.json'))).get",
         "json.loads",
         "label.replace",
         "label.replace(' ', '_').replace",
@@ -17657,31 +18339,33 @@
         "math.radians",
         "math.sin",
         "max",
-        "next",
         "nt.links.new",
         "nt.nodes.new",
         "o.data.materials.append",
         "o.data.materials.clear",
         "open",
         "order.get",
+        "os.environ.get",
         "os.makedirs",
         "os.path.abspath",
         "os.path.dirname",
         "os.path.isfile",
         "os.path.join",
         "print",
-        "r.get",
-        "reversed",
         "sc.collection.objects.link",
         "sheet.paste",
         "sheet.save",
         "shoot",
         "shots.append",
+        "str",
         "sys.argv.index",
+        "sys.path.insert",
         "tempfile.gettempdir",
         "tex"
       ],
-      "environment_keys": []
+      "environment_keys": [
+        "HULL_LIBRARY_ROOT"
+      ]
     },
     {
       "path": "long-lines/tools/review_stages.py",
@@ -18401,17 +19085,59 @@
       "environment_keys": []
     },
     {
-      "path": "long-lines/tools/test_depth_engineering.py",
-      "lines": 118,
-      "sha256": "2fb0d3208a4f5bd3333f96259505ee7016905080eec64fce447cce46cc5150ba",
-      "description": "Synthetic evidence regressions; no per-object coordinates in the pipeline.",
+      "path": "long-lines/tools/test_depth_displacement_blender.py",
+      "lines": 48,
+      "sha256": "6a67336745a328b60c4643d019d72e461783f28317845b49e4d22e7db68118bb",
+      "description": "Native displacement contract, separated from pure numerical inference tests.",
       "imports": [
         "from pathlib import Path",
         "from propkit import relief",
-        "from propkit.depth_inference import profile_depth, select_relief",
-        "from propkit.engineering import construction_graph, section_segments",
         "from unittest.mock import patch",
         "import bpy",
+        "import numpy as np",
+        "import sys",
+        "import unittest"
+      ],
+      "definitions": [
+        {
+          "name": "DisplacementTests",
+          "line": 11,
+          "kind": "ClassDef",
+          "description": ""
+        }
+      ],
+      "calls": [
+        "Path",
+        "Path(__file__).resolve",
+        "abs",
+        "all",
+        "bpy.context.scene.collection.objects.link",
+        "bpy.data.meshes.new",
+        "bpy.data.objects.new",
+        "bpy.data.objects.remove",
+        "hook",
+        "mesh.from_pydata",
+        "np.array",
+        "np.full",
+        "np.zeros",
+        "patch.object",
+        "relief.hook",
+        "self.assertTrue",
+        "str",
+        "sys.path.insert",
+        "unittest.main"
+      ],
+      "environment_keys": []
+    },
+    {
+      "path": "long-lines/tools/test_depth_engineering.py",
+      "lines": 97,
+      "sha256": "4f2d5cba98778a46faac0cbf5a0945e3166f9ac6f89df0792c930ac68376b9d3",
+      "description": "Synthetic evidence regressions; no per-object coordinates in the pipeline.",
+      "imports": [
+        "from pathlib import Path",
+        "from propkit.depth_inference import profile_depth, select_relief",
+        "from propkit.engineering import construction_graph, section_segments",
         "import numpy as np",
         "import sys",
         "import unittest"
@@ -18428,20 +19154,11 @@
         "(~mask).sum",
         "Path",
         "Path(__file__).resolve",
-        "abs",
-        "all",
-        "bpy.context.scene.collection.objects.link",
-        "bpy.data.meshes.new",
-        "bpy.data.objects.new",
-        "bpy.data.objects.remove",
         "construction_graph",
         "h.copy",
-        "hook",
         "len",
-        "mesh.from_pydata",
         "np.array",
         "np.exp",
-        "np.full",
         "np.gradient",
         "np.linalg.norm",
         "np.ones",
@@ -18449,9 +19166,7 @@
         "np.random.default_rng",
         "np.random.default_rng(4).normal",
         "np.zeros",
-        "patch.object",
         "profile_depth",
-        "relief.hook",
         "section_segments",
         "select_relief",
         "self.assertAlmostEqual",
@@ -18462,8 +19177,72 @@
         "signal.copy",
         "str",
         "sys.path.insert",
+        "unittest.main"
+      ],
+      "environment_keys": []
+    },
+    {
+      "path": "long-lines/tools/test_factory_storage_blender.py",
+      "lines": 105,
+      "sha256": "bb0b05ca54520e505b507b963af3a6f4cb4900eaa0aae832823e8fc5986ce4be",
+      "description": "Real bake/export/QA plus fault containment through the factory publication path.",
+      "imports": [
+        "from pathlib import Path",
+        "from propkit import warehouse as w",
+        "from unittest.mock import patch",
+        "import copy",
+        "import factory",
+        "import json",
+        "import os",
+        "import sys",
+        "import tempfile",
+        "import unittest"
+      ],
+      "definitions": [
+        {
+          "name": "FactoryStorageContracts",
+          "line": 17,
+          "kind": "ClassDef",
+          "description": ""
+        }
+      ],
+      "calls": [
+        "(Path(failed['candidate_receipt']).parent / 'result.json').is_file",
+        "(approved / 'library.json').read_bytes",
+        "(approved / 'library.json').read_text",
+        "(approved / entry['artifact_directory']).is_dir",
+        "(orders / (order['name'] + '.json')).read_text",
+        "(source / 'reference-note.txt').read_text",
+        "(source / 'reference-note.txt').write_text",
+        "(working / 'reference-note.txt').write_text",
+        "Path",
+        "Path(__file__).resolve",
+        "Path(failed['candidate_receipt']).is_file",
+        "ValueError",
+        "copy.deepcopy",
+        "factory.build",
+        "factory.core.box",
+        "factory.mats.paint",
+        "factory.qa.check",
+        "json.loads",
+        "orders.mkdir",
+        "patch.dict",
+        "patch.object",
+        "raw.read_text",
+        "self.assertEqual",
+        "self.assertFalse",
+        "self.assertNotEqual",
+        "self.assertNotIn",
+        "self.assertTrue",
+        "source.mkdir",
+        "str",
+        "sys.path.insert",
+        "tempfile.TemporaryDirectory",
         "unittest.main",
-        "unittest.skipUnless"
+        "w.atomic_json",
+        "w.promote",
+        "w.rollback",
+        "w.verify_release"
       ],
       "environment_keys": []
     },
@@ -18844,6 +19623,76 @@
         "self.assertTrue",
         "shading.illumination",
         "unittest.main"
+      ],
+      "environment_keys": []
+    },
+    {
+      "path": "long-lines/tools/test_maintenance.py",
+      "lines": 161,
+      "sha256": "21fa593c9bb27ff31d154c6171b4f893bdf25982a8d1cfed931a7295051c3e93",
+      "description": "Operations contracts: coverage, drift, retained evidence and deterministic packaging.",
+      "imports": [
+        "from pathlib import Path",
+        "from propkit import maintenance as m, warehouse as w",
+        "from unittest.mock import patch",
+        "import importlib.util",
+        "import json",
+        "import subprocess",
+        "import tempfile",
+        "import unittest",
+        "import zipfile"
+      ],
+      "definitions": [
+        {
+          "name": "MaintenanceTests",
+          "line": 14,
+          "kind": "ClassDef",
+          "description": ""
+        }
+      ],
+      "calls": [
+        "(root / '.github').mkdir",
+        "(root / '.github/CODEOWNERS').write_text",
+        "(root / '.gitignore').write_text",
+        "(root / 'README.md').write_text",
+        "(root / 'hull.py').write_text",
+        "(root / 'secret.png').write_bytes",
+        "ImportError",
+        "Path",
+        "Path(__file__).resolve",
+        "Path(first['path']).read_text",
+        "dict",
+        "float",
+        "importlib.util.module_from_spec",
+        "importlib.util.spec_from_file_location",
+        "json.loads",
+        "m.choose_profiles",
+        "m.doctor",
+        "m.incident",
+        "m.load_plan",
+        "m.package",
+        "m.repository_audit",
+        "m.run_checks",
+        "m.subprocess.CompletedProcess",
+        "module.compare",
+        "patch.object",
+        "path.read_bytes",
+        "self.assertEqual",
+        "self.assertFalse",
+        "self.assertIn",
+        "self.assertNotEqual",
+        "self.assertNotIn",
+        "self.assertRaises",
+        "self.assertTrue",
+        "spec.loader.exec_module",
+        "str",
+        "subprocess.run",
+        "tempfile.TemporaryDirectory",
+        "unittest.main",
+        "w.atomic_json",
+        "z.namelist",
+        "z.read",
+        "zipfile.ZipFile"
       ],
       "environment_keys": []
     },
@@ -20106,6 +20955,92 @@
         "values.update",
         "y.max",
         "y.min"
+      ],
+      "environment_keys": []
+    },
+    {
+      "path": "long-lines/tools/test_warehouse.py",
+      "lines": 238,
+      "sha256": "8865910530691ac2834a410cc5fba638db9f8732e20b6d3a10ab6b1b4fe835f3",
+      "description": "Release boundaries, fault injection and quarantine, without Blender.",
+      "imports": [
+        "from pathlib import Path",
+        "from propkit import warehouse as w",
+        "from unittest.mock import patch",
+        "import json",
+        "import struct",
+        "import tempfile",
+        "import unittest",
+        "import zlib"
+      ],
+      "definitions": [
+        {
+          "name": "WarehouseTests",
+          "line": 13,
+          "kind": "ClassDef",
+          "description": ""
+        }
+      ],
+      "calls": [
+        "(folder / 'test_asset.glb').write_bytes",
+        "(folder / f'test_asset_{kind}.png').write_bytes",
+        "(release / '.hull-promotion.lock').exists",
+        "(release / '.hull-promotion.lock').write_text",
+        "(release / 'library.json').read_text",
+        "(release / entry['artifact_directory']).is_dir",
+        "(release / second['artifact_directory']).is_dir",
+        "(self.lib / 'test_asset/test_asset.glb').write_bytes",
+        "(self.run / 'input-order.json').write_text",
+        "(self.run / 'publication.json').read_bytes",
+        "(self.run / 'receipt.json').read_text",
+        "(self.run / 'run.json').read_text",
+        "(w.asset_directory(release, 'test_asset') / 'test_asset.glb').is_file",
+        "(w.asset_directory(release, 'test_asset') / 'test_asset.glb.import').write_text",
+        "OSError",
+        "Path",
+        "chunk",
+        "dict",
+        "float",
+        "folder.mkdir",
+        "json.dumps",
+        "json.dumps({'asset': {'version': '2.0'}, 'meshes': [{'primitives': [{'attributes': {'POSITION': 0}, 'indices': 1}]}], 'buffers': [{'byteLength': 42}], 'bufferViews': [{'buffer': 0, 'byteOffset': 0, 'byteLength': 36}, {'buffer': 0, 'byteOffset': 36, 'byteLength': 6}], 'accessors': [{'count': 3, 'componentType': 5126, 'type': 'VEC3', 'bufferView': 0}, {'count': 3, 'componentType': 5123, 'type': 'SCALAR', 'bufferView': 1}]}).encode",
+        "json.loads",
+        "len",
+        "original",
+        "patch.object",
+        "path.read_text",
+        "release.mkdir",
+        "self.addCleanup",
+        "self.assertEqual",
+        "self.assertFalse",
+        "self.assertIn",
+        "self.assertNotEqual",
+        "self.assertNotIn",
+        "self.assertRaises",
+        "self.assertRaisesRegex",
+        "self.assertTrue",
+        "self.root.iterdir",
+        "set",
+        "source.write_bytes",
+        "str",
+        "struct.pack",
+        "tempfile.TemporaryDirectory",
+        "unittest.main",
+        "w.asset_directory",
+        "w.asset_name",
+        "w.atomic_json",
+        "w.audit",
+        "w.build_record",
+        "w.create",
+        "w.digest",
+        "w.inside",
+        "w.library_lock",
+        "w.promote",
+        "w.rollback",
+        "w.seal",
+        "w.verify_release",
+        "zlib.compress",
+        "zlib.crc32"
       ],
       "environment_keys": []
     },

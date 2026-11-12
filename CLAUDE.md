@@ -6,5 +6,5 @@ requirements, active call paths, known failures and verification limits.
 
 This repo holds two unrelated projects:
 
-- **Midnight Watch** (repo root): a static web app. See README.md.
+- **Midnight Watch** (repo root): a static web app. See docs/legacy/MIDNIGHT_WATCH.md.
 - **Long Lines** (`long-lines/`): a Godot 4.4 game prototype. **Read `long-lines/CLAUDE.md` before working on it.**

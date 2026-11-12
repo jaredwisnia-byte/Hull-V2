@@ -1,20 +1,26 @@
 name: Collect events
 
 on:
-  schedule:
-    # GitHub's shortest schedule; runs are often delayed a few minutes under load.
-    - cron: "*/5 * * * *"
   workflow_dispatch:
+    inputs:
+      enable_legacy_collection:
+        description: Publish legacy Midnight Watch event data
+        type: boolean
+        required: true
+        default: false
 
 concurrency:
   group: collect
   cancel-in-progress: false
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   collect:
+    if: ${{ inputs.enable_legacy_collection == true }}
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
@@ -23,9 +29,11 @@ jobs:
       APP_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
       OUT_DIR: out
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
           cache: npm
@@ -44,9 +52,11 @@ jobs:
       # The data branch holds a single commit that is replaced on every run.
       - name: Publish to data branch
         working-directory: out
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           git init -q -b data
           git add events.json seen.json
           git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
             commit -qm "Update events"
-          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" data
+          git push -qf "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" data

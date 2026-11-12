@@ -306,7 +306,8 @@ def finish(name, out_root, tex=1024, samples=24, tags=(), owned_projection=False
 def export_textured(name, out_root, destination):
     """Package existing baked maps for standalone viewing; geometry is unchanged."""
     from pathlib import Path
-    base = Path(out_root) / name / name
+    from .warehouse import asset_directory
+    base = asset_directory(out_root, name) / name
     destination = Path(destination)
     destination.mkdir(parents=True, exist_ok=True)
     bpy.ops.wm.read_factory_settings(use_empty=True)

@@ -1,101 +1,217 @@
-"""Asset-level geometry regression: rebuild reference assets from their own orders under exp_ names,
-measure them (tools/diag/metrics.py) and compare with factory/geometry_baseline.json.
+"""Retained, isolated asset regression; never edits the real library or baseline.
 
-    python3 tools/diag/regress_assets.py [--update-baseline] [--only car,coffee,sofa] [--keep DIR]
-
-Each case must keep its silhouette (IoU no more than 0.005 below the baseline), stay free of folds
-(per 1000 faces no more than the baseline + 0.5) and not get ridgier (ridge_deg no more than the
-baseline + 0.3). The library, ledger and REPORT are restored and the exp_ outputs deleted afterwards.
-About 6 minutes. The fast synthetic suite is tools/test_hull_geometry.py.
+--update-baseline writes an OBSERVATION PROPOSAL in --output, not a golden file.
+A baseline comparison is not release approval; inherited fixtures may be defective.
 """
+
+import argparse
 import json
+import math
 import os
+from pathlib import Path
 import shutil
 import subprocess
 import sys
 import time
+import uuid
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-ROOT = os.path.dirname(os.path.dirname(HERE))
-CASES = {   # name -> (order file, reference views for the silhouette)
-    "car": ("factory/orders/car_sedan_tan.json", "assets/source_textures/car_sedan_tan"),
-    "coffee": ("factory/orders/coffee_maker_drip.json", "assets/source_textures/coffee_maker_drip/assembly"),
-    "sofa": ("factory/fixtures/fixture_sofa_parts.json", "assets/source_textures/fixture_sofa_parts/assembly"),
-    "wallphone": ("factory/fixtures/fixture_wallphone_parts.json", "assets/source_textures/fixture_wallphone_parts/assembly"),
+TOOLS = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(TOOLS))
+from propkit import warehouse
+
+ROOT = TOOLS.parent
+CASES = {
+    "car": (
+        "factory/orders/car_sedan_tan.json",
+        "assets/source_textures/car_sedan_tan",
+    ),
+    "coffee": (
+        "factory/orders/coffee_maker_drip.json",
+        "assets/source_textures/coffee_maker_drip/assembly",
+    ),
+    "sofa": (
+        "factory/fixtures/fixture_sofa_parts.json",
+        "assets/source_textures/fixture_sofa_parts/assembly",
+    ),
+    "wallphone": (
+        "factory/fixtures/fixture_wallphone_parts.json",
+        "assets/source_textures/fixture_wallphone_parts/assembly",
+    ),
 }
-BASE = os.path.join(ROOT, "factory", "geometry_baseline.json")
-RESTORE = ["assets/props/library.json", "factory/REPORT.md", "factory/ledger.jsonl"]
+BASE = ROOT / "factory/geometry_baseline.json"
 
 
-def run(cmd):
-    # builds iterate sets of names in places: Python's per-run string hashing then changes the order parts
-    # are joined and decimated, and the metrics wobble from run to run (coffee folds 0.35-1.05 with no code
-    # change). A fixed hash seed makes each comparison like for like.
-    env = dict(os.environ, PYTHONHASHSEED=os.environ.get("PYTHONHASHSEED", "0"))
-    return subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True, env=env)
+def compare(metrics, baseline):
+    failures = []
+    for key in ("iou_mean", "ridge_deg", "folds_per_1k", "tris"):
+        if not isinstance(metrics.get(key), (int, float)) or not math.isfinite(
+            metrics[key]
+        ):
+            failures.append("Missing finite metric: " + key)
+    if failures:
+        return failures
+    if not baseline:
+        return ["No reviewed comparison baseline"]
+    if metrics["iou_mean"] < baseline["iou_mean"] - 0.005:
+        failures.append("Silhouette IoU fell beyond .005 allowance")
+    if metrics["folds_per_1k"] > baseline["folds_per_1k"] + 0.5:
+        failures.append("Fold rate rose beyond .5/1k allowance")
+    if metrics["ridge_deg"] > baseline["ridge_deg"] + 0.3:
+        failures.append("Ridge score rose beyond .3 degree allowance")
+    return failures
 
 
 def main():
-    only = sys.argv[sys.argv.index("--only") + 1].split(",") if "--only" in sys.argv else list(CASES)
-    update = "--update-baseline" in sys.argv
-    base = json.load(open(BASE)) if os.path.exists(BASE) else {}
-    saved = {p: open(os.path.join(ROOT, p), "rb").read() for p in RESTORE}
-    results, fails = {}, []
-    try:
-        for case in only:
-            order_path, views = CASES[case]
-            name = "exp_regress_" + case
-            o = json.load(open(os.path.join(ROOT, order_path)))
-            for k in ("measured", "attempts", "qa"):
-                o.pop(k, None)
-            o.update(name=name, status="pending")
-            json.dump(o, open(os.path.join(ROOT, "factory", "orders", name + ".json"), "w"), indent=1)
-            t = time.time()
-            run(["blender", "-b", "--factory-startup", "-P", "tools/factory.py", "--", "build", name])
-            secs = round(time.time() - t, 1)
-            status = json.load(open(os.path.join(ROOT, "factory", "orders", name + ".json")))["status"]
-            out = os.path.join("/tmp", name + "_metrics.json")
-            run(["blender", "-b", "--factory-startup", "-P", "tools/diag/metrics.py", "--",
-                 "assets/props/%s/%s.glb" % (name, name), views, "--json", out])
-            m = json.load(open(out))
-            m.update(seconds=secs, status=status)
-            results[case] = m
-            b = base.get(case)
-            msg = []
-            if status != "shipped":
-                msg.append("build not shipped (%s)" % status)
-            if b:
-                if m["iou_mean"] < b["iou_mean"] - 0.005:
-                    msg.append("silhouette IoU %.4f < baseline %.4f - 0.005" % (m["iou_mean"], b["iou_mean"]))
-                if m["folds_per_1k"] > b["folds_per_1k"] + 0.5:
-                    msg.append("folds/1k %.2f > baseline %.2f + 0.5" % (m["folds_per_1k"], b["folds_per_1k"]))
-                if m["ridge_deg"] > b["ridge_deg"] + 0.3:
-                    msg.append("ridge %.2f > baseline %.2f + 0.3" % (m["ridge_deg"], b["ridge_deg"]))
-            print("%-7s %s  iou %.4f ridge %.2f folds/1k %.2f  %ss  %s" % (case, "FAIL" if msg else "ok  ", m["iou_mean"],
-                  m["ridge_deg"], m["folds_per_1k"], secs, "; ".join(msg)))
-            if msg:
-                fails.append(case)
-    finally:
-        for p, data in saved.items():
-            open(os.path.join(ROOT, p), "wb").write(data)
-        for case in only:
-            name = "exp_regress_" + case
-            if "--keep" in sys.argv and os.path.isdir(os.path.join(ROOT, "assets/props/" + name)):
-                keep_dir = sys.argv[sys.argv.index("--keep") + 1]
-                shutil.copytree(os.path.join(ROOT, "assets/props/" + name), os.path.join(keep_dir, name), dirs_exist_ok=True)
-            for p in ("assets/props/" + name, "factory/orders/%s.json" % name, "docs/inference/" + name):
-                full = os.path.join(ROOT, p)
-                if os.path.isdir(full):
-                    shutil.rmtree(full)
-                elif os.path.exists(full):
-                    os.remove(full)
-    if update:
-        base.update({k: {f: v[f] for f in ("iou_mean", "ridge_deg", "folds_per_1k", "tris")} for k, v in results.items()})
-        json.dump(base, open(BASE, "w"), indent=1)
-        print("baseline updated")
-    print("ASSET REGRESSION: %d failed" % len(fails))
-    sys.exit(1 if fails else 0)
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--only", default=",".join(CASES))
+    parser.add_argument(
+        "--blender", default=os.environ.get("HULL_BLENDER", shutil.which("blender"))
+    )
+    parser.add_argument("--output", "--keep", type=Path)
+    parser.add_argument(
+        "--update-baseline",
+        action="store_true",
+        help="Retain observation proposal; never edits the reviewed baseline",
+    )
+    args = parser.parse_args()
+    names = args.only.split(",")
+    if not set(names) <= CASES.keys():
+        parser.error("Unknown fixture")
+    if not args.blender:
+        parser.error("Provide --blender or HULL_BLENDER")
+    output = (
+        args.output or ROOT.parent / ".hull-maintenance/regression"
+    ).resolve() / uuid.uuid4().hex
+    work = output / "repository/long-lines"
+    work.mkdir(parents=True)
+    shutil.copytree(
+        ROOT / "tools", work / "tools", ignore=shutil.ignore_patterns("__pycache__")
+    )
+    shutil.copytree(
+        ROOT / "factory",
+        work / "factory",
+        ignore=shutil.ignore_patterns("orders", "ledger.jsonl", "REPORT.md"),
+    )
+    (work / "factory/orders").mkdir()
+    warehouse.atomic_json(work / "assets/props/library.json", {})
+    environment = dict(
+        os.environ,
+        PYTHONHASHSEED="0",
+        HULL_RELEASE_POLICY="hold",
+        HULL_RUN_ROOT=str(output / "runs"),
+        OPENBLAS_NUM_THREADS="1",
+    )
+    base = json.loads(BASE.read_text())
+    results = {}
+
+    def run(script, argv, log):
+        command = [
+            args.blender,
+            "-b",
+            "--factory-startup",
+            "--python-use-system-env",
+            "--python-exit-code",
+            "1",
+            "-t",
+            "3",
+            "-P",
+            str(work / script),
+            "--",
+            *map(str, argv),
+        ]
+        process = subprocess.run(
+            command,
+            cwd=work,
+            env=environment,
+            capture_output=True,
+            text=True,
+            timeout=1200,
+        )
+        (output / log).write_text(process.stdout + process.stderr, encoding="utf-8")
+        if process.returncode:
+            raise RuntimeError("Native process failed; inspect " + log)
+
+    for name in names:
+        started = time.monotonic()
+        try:
+            order_path, views = CASES[name]
+            order = json.loads((ROOT / order_path).read_text())
+            folder = warehouse.inside(
+                ROOT / "assets/source_textures", order["views_folder"]
+            )
+            target = warehouse.inside(
+                work / "assets/source_textures", order["views_folder"]
+            )
+            shutil.copytree(folder, target)
+            asset = "exp_regress_" + name
+            for key in ("measured", "attempts", "qa", "last_run", "run_directory"):
+                order.pop(key, None)
+            order.update(name=asset, status="pending")
+            warehouse.atomic_json(work / "factory/orders" / (asset + ".json"), order)
+            run("tools/factory.py", ["build", asset], name + "-build.log")
+            saved = json.loads(
+                (work / "factory/orders" / (asset + ".json")).read_text()
+            )
+            current = json.loads((Path(saved["last_run"]) / "result.json").read_text())
+            candidate_library = Path(current["artifact_library_root"])
+            glb = warehouse.asset_directory(candidate_library, asset) / (asset + ".glb")
+            metric_path = output / (name + "-metrics.json")
+            run(
+                "tools/diag/metrics.py",
+                [glb, work / views, "--json", metric_path],
+                name + "-metrics.log",
+            )
+            metrics = json.loads(metric_path.read_text())
+            failures = compare(metrics, base.get(name))
+            if current.get("artifact_audit", {}).get("pass") is not True:
+                failures.append("Candidate artifact/input audit failed")
+            if current["pass"] is not True:
+                failures.append("Build QA failed: " + "; ".join(current["fails"]))
+            if current.get("inference_warnings"):
+                failures.append("Build has unresolved inference warnings")
+            results[name] = {
+                "metrics": metrics,
+                "failures": failures,
+                "receipt": current.get("candidate_receipt"),
+                "build_disposition": current["disposition"],
+            }
+        except (
+            OSError,
+            ValueError,
+            KeyError,
+            RuntimeError,
+            subprocess.SubprocessError,
+        ) as error:
+            results[name] = {"failures": [str(error)]}
+        results[name]["seconds"] = round(time.monotonic() - started, 2)
+        print(
+            name,
+            "FAIL" if results[name]["failures"] else "PASS",
+            results[name]["failures"],
+            flush=True,
+        )
+    result = {
+        "pass": all(not r["failures"] for r in results.values()),
+        "cases": results,
+        "baseline_sha256": warehouse.digest(BASE),
+        "baseline_changed": False,
+        "output": str(output),
+        "scope": "retained isolated observations; not physical depth certification",
+    }
+    warehouse.atomic_json(output / "regression.json", result)
+    if args.update_baseline:
+        warehouse.atomic_json(
+            output / "baseline-proposal.json",
+            {
+                "review_status": "unreviewed",
+                "observations": results,
+                "baseline_sha256": warehouse.digest(BASE),
+                "instructions": "Review each fixture, known failures and measurement validity before a separate baseline change",
+            },
+        )
+    print("ASSET REGRESSION:", json.dumps(result))
+    return 0 if result["pass"] else 1
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

@@ -1,0 +1,6 @@
+# Qualified core profile: Python 3.13. No Torch/OCR/CAD runtime is implied.
+numpy==2.5.4
+scipy==1.18.1
+Pillow==13.0.0
+scikit-image==0.26.0
+opencv-python-headless==5.0.0.93

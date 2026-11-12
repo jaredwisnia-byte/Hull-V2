@@ -22,6 +22,7 @@ import json
 import os
 import tempfile
 import pkgutil
+import shutil
 import sys
 import time
 import traceback
@@ -265,6 +266,10 @@ def human_scale_height(order, views):
     return k, {"scale": rep}
 
 
+def diagnostic_root(order):
+    return os.path.join(order['run_directory'], 'diagnostics') if order.get('run_directory') else os.path.join(ROOT, 'docs', 'inference', order['name'])
+
+
 def run_line(order):
     """Builds the order's geometry in the current scene. One function per line."""
     line = order["line"]
@@ -302,7 +307,7 @@ def run_line(order):
             hp["paint_only"] = sorted(set(hp.get("paint_only", [])) | {
                                       k for k in po if k in views})
             order.setdefault("measured", {})["reconcile"] = rrep
-            od = os.path.join(ROOT, "docs", "inference", order["name"])
+            od = diagnostic_root(order)
             os.makedirs(od, exist_ok=True)
             json.dump(rrep, open(os.path.join(
                 od, "reconcile.json"), "w"), indent=1)
@@ -331,8 +336,7 @@ def run_line(order):
                 detail_plan = surface_detail.analyse(
                     views, (W_, D_, height), rrep)
                 detail_plan['cad_export'] = bool(order.get('cad_export'))
-                detail_plan['diagnostic_folder'] = os.path.join(
-                    ROOT, 'docs', 'inference', order['name'], 'shading')
+                detail_plan['diagnostic_folder'] = os.path.join(diagnostic_root(order), 'shading')
                 hp['field_hook'] = lambda field: surface_detail.apply_field(
                     field, detail_plan)
                 hp['mesh_hook'] = lambda obj: surface_detail.capture_high(
@@ -359,7 +363,7 @@ def run_line(order):
                 "curved_runs": srep["curved_runs"],
                 "bands": [{k: b.get(k) for k in ("v", "best_n", "curved", "confidence", "decided_by", "gain")}
                           for b in srep["bands"]]}
-            od = os.path.join(ROOT, "docs", "inference", order["name"])
+            od = diagnostic_root(order)
             os.makedirs(od, exist_ok=True)
             for k, vp in views.items():
                 if k in ("front", "back", "left", "right"):
@@ -515,29 +519,36 @@ def tex_for(order):
     return STANDARDS["size_classes"].get(cls, STANDARDS["size_classes"]["medium"])["tex"]
 
 
-def render_trim_preview(name):
+def render_trim_preview(name, library_root=None):
     """Always make a PNG turnaround of a shipped extruded asset. No source sheets."""
     import bpy
     import subprocess
+    from propkit.warehouse import asset_directory
     script = os.path.join(HERE, "preview_trim.py")
-    proc = subprocess.run([bpy.app.binary_path, "-b", "--factory-startup",
+    out = str(asset_directory(library_root, name) / '_preview.png') if library_root else os.path.abspath(os.path.join(HERE, '..', '..', '.hull-maintenance', 'previews', name, '_preview.png'))
+    proc = subprocess.run([bpy.app.binary_path, "-b", "--factory-startup", "--python-use-system-env", "--python-exit-code", "1",
                            "-P", script, "--", name], text=True, capture_output=True,
-                          timeout=180)
+                          timeout=180, env=dict(os.environ, HULL_LIBRARY_ROOT=str(library_root or LIB), HULL_PREVIEW_OUTPUT=out))
     if proc.returncode:
         raise RuntimeError("preview Blender failed: " +
                            (proc.stderr or proc.stdout)[-1200:])
-    out = os.path.join(LIB, name, "_preview.png")
     if not os.path.exists(out):
         raise RuntimeError("render completed but preview PNG is missing")
     return out
 
 
-def build(order, samples=16):
+def _build_candidate(order, run, samples=16):
     t0 = time.time()
     attempt, result, stages = 0, None, {}
     while True:
         attempt += 1
+        library_root = str(run / ("attempt-%03d" % attempt) / "library")
+        order["run_directory"] = str(run / ("attempt-%03d" % attempt))
         try:
+            if order.get('_input_views_snapshot'):
+                working = run / ("attempt-%03d" % attempt) / 'inputs'
+                shutil.copytree(order['_input_views_snapshot'], working)
+                order['views_folder'] = str(working.resolve())
             core.reset()
             mats.reset()
             ts = time.time()
@@ -546,19 +557,19 @@ def build(order, samples=16):
             ts = time.time()
             # standards.json mounting: by tag
             mount_tags = ["wall"] if order.get("mount") == "wall" else []
-            info = bake.finish(order["name"], LIB, tex_for(
+            info = bake.finish(order["name"], library_root, tex_for(
                 order), samples, tags=[order["category"]] + mount_tags,
                 owned_projection=bool(order.get('automatic_depth')))
             stages["bake_and_export"] = round(time.time() - ts, 1)
             ts = time.time()
             info.update({"tags": [order["category"], "factory"], "desc": order.get("notes") or order["name"],
-                         "kind": order.get("kind", "static")})
+                         "kind": order.get("kind", "static"), "run_id": run.name})
             bake.update_manifest(os.path.join(
-                LIB, "library.json"), order["name"], info)
+                library_root, "library.json"), order["name"], info)
             vd = reference_views(order)
             result = qa.check(order["name"], vd, order.get("class"), tuple(order.get("hull", {}).get("paint_only", ())),
                               solid=order["line"] in STANDARDS["solid_lines"], mount=order.get("mount", "floor"),
-                              trim_order=order)
+                              trim_order=order, library_root=library_root)
             stages["qa"] = round(time.time() - ts, 1)
         except Exception as e:
             traceback.print_exc()
@@ -571,7 +582,7 @@ def build(order, samples=16):
             break
     if result["pass"] and order["line"] == "extrude":
         try:
-            preview = render_trim_preview(order["name"])
+            preview = render_trim_preview(order["name"], library_root)
             result["metrics"]["preview_png"] = os.path.relpath(preview, ROOT)
         except Exception as e:
             result["pass"] = False
@@ -581,7 +592,7 @@ def build(order, samples=16):
         'surface depths are inverse-shading estimates; lighting and material ambiguity remain'] if inferred else []
     if order.get('automatic_depth'):
         from propkit import stage_review
-        review_folder = os.path.join(ROOT, 'docs', 'inference', order['name'])
+        review_folder = diagnostic_root(order)
         result['stage_review'] = stage_review.inspect(
             result, order.get('measured', {}), os.path.join(review_folder, 'shading'))
         result['stage_review_path'] = stage_review.write(
@@ -593,25 +604,77 @@ def build(order, samples=16):
         result['build_memory']=record(result,{'asset':order['name'],'source':str(order.get('source','')),
             'region_keys':[region.get('memory_key') for view in order.get('measured',{}).get('relief',{}).get('views',{}).values()
                            for region in view.get('regional_relief',{}).get('regions',[]) if region.get('memory_key')]})
-    order["status"] = "shipped" if result["pass"] and not result['inference_warnings'] else "needs_person"
-    order["attempts"] = attempt
+    result.update(attempts=attempt, seconds=round(time.time()-t0, 2), stage_seconds=stages,
+                  artifact_library_root=library_root)
+    return result
+
+
+def build(order, samples=16):
+    """Build isolated candidates; publish only a qualified immutable version."""
+    from pathlib import Path
+    import platform
+    from propkit import warehouse
+    repo = Path(ROOT).parent
+    started = time.time()
+    inputs = list((repo / 'long-lines/tools').rglob('*.py')) + list(Path(FACT).glob('*.json'))
+    inputs += list(repo.glob('requirements*.txt'))
+    views = Path(SRC) / order['views_folder'] if order.get('views_folder') else None
+    if views and views.is_dir():
+        inputs += [p for p in views.rglob('*') if p.is_file() and p.suffix != '.import']
+    source = order.get('source')
+    if source and Path(source).is_file():
+        inputs.append(Path(source))
+    context = {'file_hashes': {str(p.resolve()): warehouse.digest(p) for p in inputs},
+               'python': platform.python_version()}
+    run = warehouse.create(os.environ.get('HULL_RUN_ROOT', repo / '.hull-runs'), order, context)
+    original_views_folder = order.get('views_folder')
+    try:
+        if views and views.is_dir():
+            snapshot = run / 'inputs' / 'original_views'
+            shutil.copytree(views, snapshot)
+            order['_input_views_snapshot'] = str(snapshot)
+        result = _build_candidate(order, run, samples)
+        # Legacy guide cleanup is allowed only in working copies. Preserve the
+        # raw snapshot and the actual prepared references in the run identity.
+        prepared = list((run / 'inputs').rglob('*'))
+        for attempt_inputs in run.glob('attempt-*/inputs'):
+            prepared.extend(attempt_inputs.rglob('*'))
+        context['file_hashes'].update({str(p.resolve()): warehouse.digest(p) for p in prepared if p.is_file()})
+        warehouse.atomic_json(run / 'run.json', dict(json.loads((run / 'run.json').read_text(encoding='utf-8')), context=context))
+        receipt = warehouse.seal(run, order, result, result['artifact_library_root'])
+        result['candidate_receipt'] = str(run / 'receipt.json')
+        result['artifact_audit'] = receipt['audit']
+        result['run_id'] = run.name
+        result['disposition'] = receipt['state']
+        if receipt['state'] == 'qualified_candidate' and os.environ.get('HULL_RELEASE_POLICY', 'auto') == 'auto':
+            warehouse.promote(run / 'receipt.json', LIB)
+            result['disposition'] = 'released'
+        order['status'] = 'shipped' if result['disposition'] == 'released' else ('qualified_candidate' if receipt['audit']['pass'] else 'needs_person')
+    except Exception as error:
+        traceback.print_exc()
+        result = {'pass': False, 'fails': ['candidate/release error: ' + str(error)], 'metrics': {},
+                  'inference_warnings': [], 'run_id': run.name, 'disposition': 'quarantined',
+                  'candidate_receipt': str(run / 'receipt.json')}
+        warehouse.atomic_json(run / 'failure.json', result)
+        order['status'] = 'needs_person'
+    finally:
+        order.pop('_input_views_snapshot', None)
+        if original_views_folder is not None:
+            order['views_folder'] = original_views_folder
+    order['attempts'] = result.get('attempts', 0)
+    result.setdefault('seconds', round(time.time() - started, 2))
+    result.setdefault('attempts', 0)
+    result.setdefault('stage_seconds', {})
+    order['last_run'] = str(run)
     save_order(order)
-    srcs = glob.glob(os.path.join(
-        SRC, order.get("views_folder", "-"), "*.png"))
-    ledger({"op": "build", "name": order["name"], "line": order["line"], "pass": result["pass"],
-            "attempts": attempt, "auto": result["pass"] and attempt == 1 and not result['inference_warnings'], "seconds": round(time.time() - t0, 1),
-            "inference_warnings": result['inference_warnings'],
-            "stage_seconds": stages,
-            "fails": result["fails"], "metrics": result["metrics"],
-            "input_hash": file_hash(srcs + [os.path.join(ORDERS, order["name"] + ".json")]),
-            "output_hash": file_hash([os.path.join(LIB, order["name"], order["name"] + ".glb")]),
-            # Reproducibility is judged on the gauges, not bytes: Blender's UV packer is not
-            # deterministic, so GLB bytes differ run to run while the product is the same.
-            "gauge_hash": hashlib.sha1(json.dumps([result["metrics"].get(k) for k in ("tris", "size_m", "silhouette_iou", "geometry_signature", "texture_signature",
-                                                                                      "trim_section_iou", "frame_opening_occlusion", "trim_colour_difference")],
-                                                  sort_keys=True).encode()).hexdigest()[:12]})
-    print("BUILT" if result["pass"] else "FLAGGED",
-          order["name"], result["fails"])
+    ledger(dict(op='build', name=order['name'], line=order['line'],
+                auto=result.get('disposition') == 'released' and result.get('attempts') == 1,
+                input_hash=warehouse.digest(run / 'input-order.json'),
+                output_hash=file_hash(glob.glob(os.path.join(result.get('artifact_library_root', ''), order['name'], '*.glb'))),
+                gauge_hash=hashlib.sha1(json.dumps([result['metrics'].get(k) for k in ('tris', 'size_m', 'silhouette_iou', 'geometry_signature', 'texture_signature', 'trim_section_iou', 'frame_opening_occlusion', 'trim_colour_difference')], sort_keys=True).encode()).hexdigest()[:12],
+                **{k: result.get(k) for k in ('pass','fails','metrics','seconds','attempts','stage_seconds','inference_warnings','run_id','disposition','candidate_receipt')}))
+    warehouse.atomic_json(run / 'result.json', result)
+    print('BUILT' if order['status'] == 'shipped' else 'FLAGGED', order['name'], result['fails'])
     return result
 
 
@@ -693,7 +756,7 @@ def report():
              "| Factory builds needing a person | %d |" % sum(
                  1 for r in builds if not r["pass"]),
              "| Mean build time (s) | %.0f |" % (
-                 sum(r["seconds"] for r in builds) / max(len(builds), 1)),
+                 sum(r.get("seconds") or 0 for r in builds) / max(len(builds), 1)),
              "| Same inputs -> same gauges | %d of %d order/input pairs |" % (
                  repro, len(repeated)),
              "| Median triangles | %d |" % (

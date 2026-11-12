@@ -32,9 +32,10 @@ def size_class(max_dim, category_class=None):
     return "building"
 
 
-def _load(name):
+def _load(name, library_root=None):
     bpy.ops.wm.read_factory_settings(use_empty=True)
-    bpy.ops.import_scene.gltf(filepath=os.path.join(LIB, name, name + ".glb"))
+    from .warehouse import asset_directory
+    bpy.ops.import_scene.gltf(filepath=str(asset_directory(library_root or LIB, name) / (name + '.glb')))
     return [o for o in bpy.data.objects if o.type == "MESH"]
 
 
@@ -79,16 +80,18 @@ def glb_normal_disagreement(path):
     return bad / max(1, tot)
 
 
-def check(name, views_dir=None, category_class=None, paint_only=(), solid=False, mount="floor", trim_order=None):
+def check(name, views_dir=None, category_class=None, paint_only=(), solid=False, mount="floor", trim_order=None, library_root=None):
     m, fails = {}, []
-    d = os.path.join(LIB, name)
+    from .warehouse import asset_directory
+    library_root = library_root or LIB
+    d = str(asset_directory(library_root, name))
     for suffix in (".glb", "_albedo.png", "_normal.png", "_orm.png"):
         if not os.path.exists(os.path.join(d, name + suffix)):
             fails.append("missing file " + name + suffix)
     if fails:
         return {"pass": False, "fails": fails, "metrics": m}
     try:
-        objs = _load(name)
+        objs = _load(name, library_root)
     except Exception as e:  # file integrity
         return {"pass": False, "fails": ["GLB does not load: %s" % e], "metrics": m}
     dg = bpy.context.evaluated_depsgraph_get()
@@ -121,7 +124,7 @@ def check(name, views_dir=None, category_class=None, paint_only=(), solid=False,
         if trim_order.get('line') == 'hull' and m['geometric_components'] != 1:
             fails.append(
                 'single physical surface contains disconnected geometric islands')
-    library_path = os.path.join(LIB, 'library.json')
+    library_path = os.path.join(library_root, 'library.json')
     if trim_order and trim_order.get('automatic_depth') and os.path.isfile(library_path):
         projection = json.load(open(library_path)).get(
             name, {}).get('texture_ownership', {})

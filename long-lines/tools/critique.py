@@ -28,6 +28,7 @@ from PIL import Image, ImageDraw, ImageFont
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 from propkit import part_rules  # noqa: E402
+from propkit.warehouse import asset_directory
 
 LIB = os.path.normpath(os.path.join(HERE, "..", "assets", "props"))
 SRC = os.path.normpath(os.path.join(HERE, "..", "assets", "source_textures"))
@@ -35,10 +36,11 @@ SRC = os.path.normpath(os.path.join(HERE, "..", "assets", "source_textures"))
 args = sys.argv[sys.argv.index("--") + 1:]
 name = args[0]
 views_dir = os.path.join(SRC, args[1]) if len(args) > 1 and not args[1].startswith("--") else None
-out_dir = args[args.index("--out") + 1] if "--out" in args else os.path.join(LIB, name)
+out_dir = args[args.index("--out") + 1] if "--out" in args else os.path.join(HERE, '..', '..', '.hull-maintenance', 'critique', name)
+os.makedirs(out_dir, exist_ok=True)
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
-d = os.path.join(LIB, name)
+d = str(asset_directory(os.environ.get('HULL_LIBRARY_ROOT', LIB), name))
 bpy.ops.import_scene.gltf(filepath=os.path.join(d, name + ".glb"))
 objs = [o for o in bpy.data.objects if o.type == "MESH"]
 dg = bpy.context.evaluated_depsgraph_get()

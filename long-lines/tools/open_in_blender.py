@@ -23,7 +23,9 @@ if arg.endswith(".glb"):
     path = os.path.abspath(arg)
     folder, name = os.path.dirname(path), os.path.basename(path)[:-4]
 else:
-    folder, name = os.path.join(LIB, arg), arg
+    sys.path.insert(0, HERE)
+    from propkit.warehouse import asset_directory
+    folder, name = str(asset_directory(LIB, arg)), arg
     path = os.path.join(folder, name + ".glb")
 
 for o in list(bpy.data.objects):          # start from an empty scene

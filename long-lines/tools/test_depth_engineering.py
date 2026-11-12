@@ -9,27 +9,6 @@ from propkit.depth_inference import profile_depth, select_relief  # noqa: E402
 
 
 class InferenceTests(unittest.TestCase):
-    @unittest.skipUnless('bpy' in sys.modules, 'mesh displacement requires Blender')
-    def test_selected_signed_depth_changes_geometry_and_obeys_cap(self):
-        import bpy
-        from propkit import relief
-        from unittest.mock import patch
-        with patch.object(relief, 'shared_light', return_value=np.array([-.7, -.7])), \
-                patch.object(relief, 'view_relief', return_value=(np.zeros((16, 16)), {})):
-            for sign in (-1, 1):
-                mesh = bpy.data.meshes.new('test')
-                mesh.from_pydata(
-                    [(-.5, 0, 0), (.5, 0, 0), (.5, 0, 1), (-.5, 0, 1)], [], [(0, 1, 2, 3)])
-                obj = bpy.data.objects.new('test', mesh)
-                bpy.context.scene.collection.objects.link(obj)
-                report = {}
-                hook = relief.hook({'front': 'unused'}, 1, 1, 1, report,
-                                   maps_override={'front': np.full((16, 16), sign*20.)}, keep_high=False, cap_share=.02)
-                hook(obj)
-                self.assertTrue(all(abs(v.co.y+sign*.02) <
-                                1e-6 for v in mesh.vertices))
-                bpy.data.objects.remove(obj, do_unlink=True)
-
     def test_depth_ignores_thin_mounting_pins(self):
         mask = np.zeros((100, 100), bool)
         mask[:, 10:30] = True
