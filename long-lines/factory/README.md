@@ -78,6 +78,12 @@ A new line is justified only when a category repeatedly fails another line's gat
   improves without new QA failures, extra extreme folds, silhouette loss or
   an excessive triangle increase. A rejected retry is recorded and rolled
   back; uncertain source regions remain flagged for review.
+- automatic-depth hull: an image-supported elongated profile can propose a
+  simpler shaft envelope while the existing depth solver retains local detail.
+  A dense-mesh gate stops the candidate if it loses more features, and the
+  complete exported candidate must improve without new QA failures, worse
+  folds or outline loss. See [PROCESS_SELECTION.md](PROCESS_SELECTION.md) for
+  routing evidence and the early-station audit.
 Add a rule here and in `factory.py:correct()` whenever a person fixes the same thing twice.
 
 ## Condition variants

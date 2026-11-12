@@ -114,6 +114,22 @@ class SurfaceContracts(unittest.TestCase):
         np.testing.assert_allclose(apply_field(
             original, plan), original, atol=2e-8)
 
+    def test_profile_envelope_is_applied_after_original_detail(self):
+        original = self.field(True)
+        height = np.full((48, 48), -.01)
+        ordinary = apply_field(original, {'dimensions': (1, 1, 1),
+                                         'maps': {'front': height},
+                                         'report': {'features': []}})
+        correction = np.zeros_like(original)
+        correction[:, :, 20:28] = -.002
+        plan = {'dimensions': (1, 1, 1), 'maps': {'front': height},
+                'report': {'features': []},
+                'post_detail_envelope': lambda base, detailed: detailed + correction}
+        routed = apply_field(original, plan)
+        np.testing.assert_allclose(routed[:, :, :20], ordinary[:, :, :20])
+        np.testing.assert_allclose(routed[:, :, 28:], ordinary[:, :, 28:])
+        self.assertIn('profile_topology', plan['report'])
+
     def test_oblique_curved_skin_retains_observed_depth(self):
         n = 64
         x = (np.arange(n) + .5) / n - .5

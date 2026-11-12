@@ -382,6 +382,15 @@ def apply_field(field, plan):
         from . import local_retry
         candidate, plan['report']['local_retry'] = local_retry.attempt(
             field, candidate, plan, plan['retry_targets'])
+    if plan.get('post_detail_envelope') is not None:
+        # Change the coarse envelope after solving detail on the original field.
+        # Solving detail on a different base moves visible roots in every view
+        # and can erase relief even outside the selected construction region.
+        candidate, plan['report']['profile_topology'] = preserve_components(
+            field, plan['post_detail_envelope'](field, candidate))
+        plan['report']['profile_envelope'] = {
+            'method': 'local fitted envelope plus unchanged original detail displacement',
+            'physical_part_boundary': False}
     for view, values in plan.get('diagnostics', {}).items():
         if 'mask' not in values:
             continue

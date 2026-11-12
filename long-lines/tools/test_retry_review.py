@@ -41,6 +41,14 @@ class RetryReviewTests(unittest.TestCase):
         self.assertTrue(factory.correct(order, self.before))
         self.assertEqual([item['id'] for item in order['relief_retry']], ['groove'])
 
+    def test_profile_candidate_is_compared_before_local_retry(self):
+        order = {'line': 'hull', 'automatic_depth': True,
+                 'measured': {'process_plan': {'choice': 'profile_shaft_candidate'},
+                              'relief': {'probe_diagnostics': {'probes': self.targets}}}}
+        self.assertTrue(factory.correct(order, self.before))
+        self.assertEqual(order['construction_mode'], 'profile_trial')
+        self.assertNotIn('relief_retry', order)
+
 
 if __name__ == '__main__':
     unittest.main()
