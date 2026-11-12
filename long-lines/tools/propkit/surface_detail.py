@@ -12,6 +12,11 @@ VIEWS = {'front': (1, False), 'back': (1, True),
          'right': (0, True), 'left': (0, False),
          'top': (2, True), 'bottom': (2, False)}
 
+# A large normalization floor suppresses valid relief near a changing skin
+# orientation and creates a sharp transition in the extracted surface.
+# Keep only enough floor to avoid amplifying unsupported, near-zero weights.
+MIN_FUSION_WEIGHT = 1e-4
+
 
 def visible_root(field, axis, reverse, span):
     stack = np.moveaxis(field, axis, 0)
@@ -346,7 +351,7 @@ def apply_field(field, plan):
             numerator += weight * (shifted - field[start:stop])
             weight_sum += weight
         result[start:stop] = field[start:stop] + \
-            numerator / np.maximum(weight_sum, .05)
+            numerator / np.maximum(weight_sum, MIN_FUSION_WEIGHT)
     plan['report']['field'] = {'mode': 'signed_field_detail_before_meshing', 'isovalue': 0.,
                                'depth_limit': '30% of observed local solid thickness; openings remain silhouette constraints',
                                'grid_shape': list(field.shape), 'spacing_m': [dimensions[i] / field.shape[i] for i in range(3)]}

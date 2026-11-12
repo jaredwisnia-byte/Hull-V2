@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 from PIL import Image
 from scipy import ndimage
-from propkit.surface_detail import apply_field
+from propkit.surface_detail import apply_field, visible_root
 from propkit.implicit import bounded_field, pad_field
 
 
@@ -113,6 +113,24 @@ class SurfaceContracts(unittest.TestCase):
             (40, 40))}, 'report': {'features': []}}
         np.testing.assert_allclose(apply_field(
             original, plan), original, atol=2e-8)
+
+    def test_oblique_curved_skin_retains_observed_depth(self):
+        n = 64
+        x = (np.arange(n) + .5) / n - .5
+        X, Y, Z = np.meshgrid(x, x, x, indexing='ij')
+        original = np.sqrt(X * X + Y * Y + Z * Z) - .43
+        plan = {'dimensions': (1, 1, 1),
+                'maps': {'front': np.full((n, n), -.02)},
+                'report': {'features': []}}
+        result = apply_field(original, plan)
+        before = visible_root(original, 1, False, 1)[0]
+        after = visible_root(result, 1, False, 1)[0]
+        # The 0.35 m section faces the camera obliquely. The old fusion
+        # floor cut a 20 mm observed recess to about 5.5 mm here.
+        index = (.35 + .5) * n - .5
+        displacement = ndimage.map_coordinates(
+            after - before, [[index], [(n - 1) / 2]], order=1)[0]
+        self.assertAlmostEqual(float(displacement), .02, delta=.003)
 
     def test_multiview_relief_preserves_a_thin_structural_connection(self):
         x = (np.arange(48) + .5) / 48 - .5
