@@ -1,9 +1,9 @@
 {
   "audit_date": "2026-11-11",
   "method": "Static parse and catalog; not proof of runtime correctness",
-  "local_head": "60a9d0533d8e35bee1ddad575714affa3f838c11",
+  "local_head": "ab4d66affeed9894a28e1638021f0fb3be47b293",
   "canonical_dirac": "9d8df082dfbef7d5a508be3578d78d7c488561ab",
-  "tracked_files": 2885,
+  "tracked_files": 2895,
   "tracked_extensions": {
     ".yml": 3,
     "": 3,
@@ -16,7 +16,7 @@
     ".glb": 120,
     ".json": 164,
     ".jpg": 83,
-    ".py": 129,
+    ".py": 139,
     ".csv": 1,
     ".jsonl": 1,
     ".godot": 1,
@@ -29,8 +29,8 @@
     ".mjs": 1,
     ".css": 1
   },
-  "catalogued_files": 441,
-  "python_files": 129,
+  "catalogued_files": 451,
+  "python_files": 139,
   "parse_errors": [],
   "files": [
     {
@@ -41,8 +41,8 @@
     },
     {
       "path": ".github/workflows/hull-contracts.yml",
-      "lines": 43,
-      "sha256": "edf55da1d7bc4980e0e77308edfc363dd1721b78963478147141cbf85a3560c6",
+      "lines": 47,
+      "sha256": "d5d387c6a4ad39573da8d11fc3497030b666dea66883ea5fc009e460d457d054",
       "definitions": []
     },
     {
@@ -61,13 +61,14 @@
     },
     {
       "path": "KNOWLEDGE_FILE.md",
-      "lines": 625,
-      "sha256": "cf6bb8b1136cf00c2b9c61f5fc4eeecfa59d7caa32012d9e7303818bfefea8e0",
+      "lines": 674,
+      "sha256": "2596536e4d20351de10628d3b95c0226490800133b825aa8b07c858e3a823645",
       "headings": [
         "Hull knowledge file\r",
         "Purpose and evidence level\r",
         "Current implementation update (2026-11-10)\r",
         "Superseding reconstruction path (2026-11-11)\r",
+        "Stage-review and regional selection continuation (2026-11-11)\r",
         "Joint-fit and CAD continuation (supersedes lighting claims below)\r",
         "Profile, feature and ownership implementation (2026-11-11)\r",
         "Repository identity and boundaries\r",
@@ -970,8 +971,8 @@
     },
     {
       "path": "long-lines/docs/LESSONS.md",
-      "lines": 651,
-      "sha256": "d233adefd3ac6ef63152ff642e9769cd114781fe4db0cf25860a9ffedd31b648",
+      "lines": 665,
+      "sha256": "76f4694e51371693c7a5f724184b72a6fa7298197cab3955568b9dd893395292",
       "headings": [
         "Lessons learned\r",
         "Automatic parts-sheet intake (Hull V2)\r",
@@ -1010,7 +1011,8 @@
         "Cross-sections inferred from the painting, no guide lines (Nov 9)\r",
         "Second TV from a rich reference sheet (Nov 9)\r",
         "Reconcile: making a contradictory sheet agree (Nov 9)\r",
-        "Continuous reconstruction and detail checks (Nov 11)\r"
+        "Continuous reconstruction and detail checks (Nov 11)\r",
+        "2026-11-11 — Do not confuse absent relief with absent proposals\r"
       ]
     },
     {
@@ -2272,18 +2274,19 @@
     },
     {
       "path": "long-lines/factory/IMPLEMENTATION_PLAN.md",
-      "lines": 302,
-      "sha256": "8df773a3fc8d2e52bb3c2db95634a8b5de6980ab02e91487ae57ecc5f7579d69",
+      "lines": 321,
+      "sha256": "396343ab2829090622d84930e985499d1b735532d033fd621b5bdb5e7d1a9d90",
       "headings": [
-        "Hull audit implementation and acceptance plan",
-        "Implemented: shared stages and readable code",
-        "Joint-fit continuation and remaining acceptance (2026-11-11)",
-        "Current acceptance work: continuous implicit detail (2026-11-11)",
-        "Implemented: local depth decisions and honest validation",
-        "Implemented: section and cutaway inspection",
-        "Observed acceptance results",
-        "Profile-family implementation (2026-11-11)",
-        "Remaining generalization and exit criteria"
+        "Hull audit implementation and acceptance plan\r",
+        "Implemented: shared stages and readable code\r",
+        "Joint-fit continuation and remaining acceptance (2026-11-11)\r",
+        "Current acceptance work: continuous implicit detail (2026-11-11)\r",
+        "Implemented: local depth decisions and honest validation\r",
+        "Implemented: section and cutaway inspection\r",
+        "Observed acceptance results\r",
+        "Profile-family implementation (2026-11-11)\r",
+        "Remaining generalization and exit criteria\r",
+        "Stage evidence continuation — 2026-11-11\r"
       ]
     },
     {
@@ -6531,8 +6534,8 @@
     },
     {
       "path": "long-lines/tools/factory.py",
-      "lines": 729,
-      "sha256": "176736a4de92ec922cc702e29845c2ef261dbdcf0f8b2c24a7dffae73af0c2cf",
+      "lines": 738,
+      "sha256": "4af5ba9923fb1efee3c40df5fe7a6938da422b1867c3bddcc11bfdbdf1a7a7eb",
       "description": "The asset factory: work orders in, game-ready assets out, every run measured.\n\nRun under Blender (all stations share one process):\n    blender -b --factory-startup -P tools/factory.py -- intake IMAGE NAME --category tv [--height 0.5]\n    blender -b --factory-startup -P tools/factory.py -- intake_sheet SHEET_SPEC.json --source-dir DIR\n    blender -b --factory-startup -P tools/factory.py -- intake_set MANIFEST.json [--category fridge] [--name N]\n    blender -b --factory-startup -P tools/factory.py -- build NAME... | --pending | --all-orders\n    blender -b --factory-startup -P tools/factory.py -- qa NAME... | --library\n    blender -b --factory-startup -P tools/factory.py -- report\n\nStations: intake (classify the reference, split views, size from the category table,\nwrite a work order) -> build (the order's production line) -> bake/export (propkit.bake)\n-> gate (propkit.qa against factory/standards.json, one codified automatic correction,\nthen flag for a person) -> ledger (factory/ledger.jsonl) -> report (factory/REPORT.md).\nWork orders live in factory/orders/<name>.json; lines read them, so a new asset needs\nno code. See factory/README.md.",
       "imports": [
         "from PIL import Image",
@@ -6544,6 +6547,7 @@
         "from propkit import relief",
         "from propkit import sections as _sec",
         "from propkit import sizing",
+        "from propkit import stage_review",
         "from propkit import surface_detail",
         "from propkit import texturing",
         "from propkit.atlas import appliance",
@@ -6678,19 +6682,19 @@
         },
         {
           "name": "mount_of",
-          "line": 594,
+          "line": 603,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "gate",
-          "line": 606,
+          "line": 615,
           "kind": "FunctionDef",
           "description": ""
         },
         {
           "name": "report",
-          "line": 624,
+          "line": 633,
           "kind": "FunctionDef",
           "description": ""
         }
@@ -6855,6 +6859,7 @@
         "reps.values",
         "rest.index",
         "result['fails'].append",
+        "result['inference_warnings'].append",
         "result['metrics'].get",
         "round",
         "run_line",
@@ -6868,6 +6873,8 @@
         "spec.get",
         "spec['items'].items",
         "split_views",
+        "stage_review.inspect",
+        "stage_review.write",
         "str",
         "subprocess.run",
         "sum",
@@ -7490,6 +7497,65 @@
       ]
     },
     {
+      "path": "long-lines/tools/preview_relief.py",
+      "lines": 50,
+      "sha256": "80374b1e86aa00d2dcaecbe976a2d671b359701fc330484f917bd2ca287be457",
+      "description": "Blender CLI: preview recorded relief as an uncapped diagnostic skin, not an asset.",
+      "imports": [
+        "from pathlib import Path",
+        "from propkit.relief_preview import mesh_grid",
+        "import argparse",
+        "import bpy",
+        "import json",
+        "import numpy as np",
+        "import sys"
+      ],
+      "definitions": [
+        {
+          "name": "main",
+          "line": 12,
+          "kind": "FunctionDef",
+          "description": ""
+        }
+      ],
+      "calls": [
+        "(args.output / 'preview-manifest.json').write_text",
+        "Path",
+        "Path(__file__).resolve",
+        "argparse.ArgumentParser",
+        "args.output.mkdir",
+        "args.output.resolve",
+        "args.result.read_text",
+        "artifacts.append",
+        "bpy.data.libraries.write",
+        "bpy.data.meshes.new",
+        "bpy.data.meshes.remove",
+        "bpy.data.objects.new",
+        "bpy.data.objects.remove",
+        "faces.tolist",
+        "float",
+        "json.dumps",
+        "json.loads",
+        "len",
+        "main",
+        "mesh.from_pydata",
+        "mesh.update",
+        "mesh_grid",
+        "np.asarray",
+        "np.load",
+        "np.zeros",
+        "parser.add_argument",
+        "parser.parse_args",
+        "print",
+        "source[key].copy",
+        "str",
+        "sys.argv.index",
+        "sys.path.insert",
+        "vertices.tolist"
+      ],
+      "environment_keys": []
+    },
+    {
       "path": "long-lines/tools/preview_trim.py",
       "lines": 114,
       "sha256": "6ae8bb1e6541ee9ca97edf2ece06eca013bc012d5e0bc881625a670e1ad624c8",
@@ -7965,7 +8031,7 @@
     {
       "path": "long-lines/tools/propkit/build_memory.py",
       "lines": 119,
-      "sha256": "6c811f8cb3f90210fb5cc92c08bf176b774ff03b0cd32c0df521dddcafbd9c9e",
+      "sha256": "b1cb7c12b25e3c7eca686059e6e4acc861b42f6a55a9a546ca2fbb64ed7ad494",
       "description": "Versioned reconstruction experience and resumable, integrity-checked patches.\n\nAn accepted numerical fit is never labelled verified physical geometry.",
       "imports": [
         "from pathlib import Path",
@@ -9360,7 +9426,7 @@
     {
       "path": "long-lines/tools/propkit/feature_regions.py",
       "lines": 111,
-      "sha256": "b41ab90f8c034279c6c736828ee897621a633f48a8af5357dc84d9bf62ea810d",
+      "sha256": "e91792ab9dd6ea48ebce5a0e40b34ec5b9050f48e81979d481a3a62952db01b7",
       "description": "Trace internal image boundaries and isolate candidate relief regions.\n\nRegions are observations, not physical parts or assertions of groove depth.\nNo object vocabulary or geometric templates are used.",
       "imports": [
         "from .region_grouping import merge_weak_lines, crease_evidence",
@@ -10507,12 +10573,14 @@
     },
     {
       "path": "long-lines/tools/propkit/joint_shading.py",
-      "lines": 386,
-      "sha256": "25b4fa60e6ccc6858382f3ed5e6d9aeb05225126449bc5b8743fb6212b9bc484",
+      "lines": 407,
+      "sha256": "e1377dbc73dda801846491d02337005ff38b6f44e84d62403bc648b8e4d16c34",
       "description": "Coupled shape, diffuse illumination and reflectance estimation.\n\nHeight is represented by continuous B-spline controls, not geometric templates.\nLighting and reflectance are nuisance variables with explicit gauges. Unknown\nsingle-image lighting/material cannot silently become calibrated metric depth.",
       "imports": [
         "from .feature_regions import trace",
+        "from .pixel_folds import balanced",
         "from .regional_relief import refine",
+        "from .relief_selection import select",
         "from .shading import gradients, adjoint",
         "from .spline_surface import Basis, control_shape",
         "from PIL import Image",
@@ -10584,11 +10652,14 @@
         "ValueError",
         "abs",
         "adjoint",
+        "balanced",
         "basis.adjoint",
         "basis.adjoint(gradient * feather).ravel",
         "basis.evaluate",
         "basis.project",
         "bool",
+        "boundary_evidence.astype",
+        "boundary_evidence.sum",
         "cg",
         "coefficients.copy",
         "coefficients.ravel",
@@ -10665,6 +10736,7 @@
         "rgb.mean",
         "rhs.ravel",
         "round",
+        "select",
         "set",
         "shade",
         "solution.reshape",
@@ -10673,7 +10745,6 @@
         "trace",
         "traced.items",
         "traced['boundaries'].sum",
-        "traced['relief_boundaries'].astype",
         "training.sum",
         "tuple",
         "values.reshape"
@@ -12305,6 +12376,31 @@
       "environment_keys": []
     },
     {
+      "path": "long-lines/tools/propkit/pixel_folds.py",
+      "lines": 16,
+      "sha256": "2bf8baa540230c83fef405cb64df8aa03d92093aede183d6bdfcc202f4aaedae",
+      "description": "Deterministic spatially balanced pixel folds, independent of image values.",
+      "imports": [
+        "import numpy as np"
+      ],
+      "definitions": [
+        {
+          "name": "balanced",
+          "line": 5,
+          "kind": "FunctionDef",
+          "description": "Every full 3x3 block contains each fold once, without fixed row phases."
+        }
+      ],
+      "calls": [
+        "np.argsort",
+        "np.empty",
+        "np.random.default_rng",
+        "range",
+        "rng.random"
+      ],
+      "environment_keys": []
+    },
+    {
       "path": "long-lines/tools/propkit/preflight.py",
       "lines": 25,
       "sha256": "0e80b9d6acf37d4603fd18ae7390d6d61c68e95846a9c20f49bfa97dfee07e28",
@@ -13307,6 +13403,117 @@
         "sum",
         "supported.append",
         "target['mask'].astype"
+      ],
+      "environment_keys": []
+    },
+    {
+      "path": "long-lines/tools/propkit/relief_preview.py",
+      "lines": 28,
+      "sha256": "dc5601fe886b6e5f431a8600a397589bf762af5748e75d8a203eb4673cd24a5d",
+      "description": "Diagnostic open-surface meshes from actual numerical relief maps.",
+      "imports": [
+        "from .surface_detail import chart_frame",
+        "import numpy as np"
+      ],
+      "definitions": [
+        {
+          "name": "mesh_grid",
+          "line": 5,
+          "kind": "FunctionDef",
+          "description": ""
+        }
+      ],
+      "calls": [
+        "ValueError",
+        "chart_frame",
+        "map",
+        "mask.sum",
+        "np.arange",
+        "np.asarray",
+        "np.concatenate",
+        "np.full",
+        "np.isfinite",
+        "np.isfinite(base[mask]).all",
+        "np.isfinite(height[mask]).all",
+        "np.nonzero"
+      ],
+      "environment_keys": []
+    },
+    {
+      "path": "long-lines/tools/propkit/relief_selection.py",
+      "lines": 139,
+      "sha256": "858042e1a3ebd4b9ddebabcad88a8b8350e45c0248304b5e061241293f87dab6",
+      "description": "Region-aware relief selection with continuous composition and untouched tests.\n\nSelection/acceptance assess an appearance model, not physical depth truth.",
+      "imports": [
+        "from .joint_shading import shade",
+        "from .shading import gradients, adjoint",
+        "from scipy.sparse.linalg import LinearOperator, cg",
+        "import numpy as np"
+      ],
+      "definitions": [
+        {
+          "name": "gain",
+          "line": 9,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "extend_supported",
+          "line": 16,
+          "kind": "FunctionDef",
+          "description": "Keep supported samples fixed; extend smoothly to the coarse surface.\n\nUnknown pixels receive a screened harmonic continuation, not inferred detail.\nA failed linear solve must not be mistaken for accepted geometry."
+        },
+        {
+          "name": "select",
+          "line": 54,
+          "kind": "FunctionDef",
+          "description": ""
+        }
+      ],
+      "calls": [
+        "(-unknown.astype(float) * laplace(known)).ravel",
+        "(unknown * (laplace(unknown * value) + screening * value) + ~unknown * value).ravel",
+        "LinearOperator",
+        "RuntimeError",
+        "adjoint",
+        "bool",
+        "cg",
+        "compose",
+        "diagonal.ravel",
+        "extend_supported",
+        "float",
+        "gain",
+        "gradients",
+        "height.copy",
+        "int",
+        "laplace",
+        "len",
+        "list",
+        "map",
+        "material.copy",
+        "max",
+        "min",
+        "np.all",
+        "np.any",
+        "np.count_nonzero",
+        "np.full",
+        "np.isfinite",
+        "np.isin",
+        "np.log",
+        "np.mean",
+        "np.unique",
+        "np.where",
+        "np.zeros",
+        "range",
+        "records.append",
+        "region.sum",
+        "retained.append",
+        "shade",
+        "solution.reshape",
+        "supported.append",
+        "supported.copy",
+        "unknown.astype",
+        "vector.reshape"
       ],
       "environment_keys": []
     },
@@ -14444,6 +14651,69 @@
         "tuple",
         "valid.any",
         "valid.ravel"
+      ],
+      "environment_keys": []
+    },
+    {
+      "path": "long-lines/tools/propkit/stage_review.py",
+      "lines": 94,
+      "sha256": "4f720a3a64160c183b8f30b4e2a623971f47efa1a6305fb48ae5382b1625034f",
+      "description": "Deterministic review of the evidence used by the factory presentation.\n\nThis reads stage data, not rendered pixels. It does not certify geometry,\nchange thresholds, edit code or silently accept a rejected proposal.",
+      "imports": [
+        "from pathlib import Path",
+        "import json",
+        "import numpy as np"
+      ],
+      "definitions": [
+        {
+          "name": "inspect",
+          "line": 11,
+          "kind": "FunctionDef",
+          "description": ""
+        },
+        {
+          "name": "write",
+          "line": 90,
+          "kind": "FunctionDef",
+          "description": ""
+        }
+      ],
+      "calls": [
+        "Path",
+        "abs",
+        "construction.get",
+        "cross.get",
+        "dict",
+        "findings.append",
+        "flag",
+        "float",
+        "inspect",
+        "json.dumps",
+        "len",
+        "measured.get",
+        "measured.get('surface_details', {}).items",
+        "np.any",
+        "np.load",
+        "np.ptp",
+        "part.get",
+        "path.is_file",
+        "path.parent.mkdir",
+        "path.write_text",
+        "pre.get",
+        "pre.get(r['id'], {}).get",
+        "r.get",
+        "relief.get",
+        "relief.get('pre_reduction_validation', {}).get",
+        "relief.get('views', {}).items",
+        "report.get",
+        "result.get",
+        "result.get('metrics', {}).get",
+        "result.get('metrics', {}).get('part_surface_features', {}).get",
+        "result.get('metrics', {}).get('surface_features', {}).get",
+        "s.lower",
+        "selection.get",
+        "set",
+        "str"
       ],
       "environment_keys": []
     },
@@ -16897,6 +17167,44 @@
       "environment_keys": []
     },
     {
+      "path": "long-lines/tools/review_stages.py",
+      "lines": 25,
+      "sha256": "945c84860b432f132ae520f63e408022cee12c58c59ae2c3b564d095f2da5d84",
+      "description": "Review the structured evidence behind a factory slideshow; no LLM needed.",
+      "imports": [
+        "from pathlib import Path",
+        "from propkit import stage_review",
+        "import argparse",
+        "import json"
+      ],
+      "definitions": [
+        {
+          "name": "main",
+          "line": 8,
+          "kind": "FunctionDef",
+          "description": ""
+        }
+      ],
+      "calls": [
+        "argparse.ArgumentParser",
+        "args.order.read_text",
+        "args.result.read_text",
+        "data.get",
+        "json.dumps",
+        "json.loads",
+        "len",
+        "main",
+        "order.get",
+        "parser.add_argument",
+        "parser.parse_args",
+        "print",
+        "stage_review.inspect",
+        "stage_review.write",
+        "str"
+      ],
+      "environment_keys": []
+    },
+    {
       "path": "long-lines/tools/sheet_blobs.py",
       "lines": 331,
       "sha256": "192ff42ac4ef74c001d641e27b5366e2a1692a1b471fe0ee3c1640c8efd818a0",
@@ -17913,12 +18221,13 @@
     },
     {
       "path": "long-lines/tools/test_joint_shading.py",
-      "lines": 87,
-      "sha256": "b9107f43606c44aaea6ff0c0f5a31c5ea647ca67e08cf99df749ef2f93a9ccce",
+      "lines": 88,
+      "sha256": "c23630544e3bc3fa9e51427bfc1ae51462900a0660c317f309bd6440f41793ed",
       "description": "Coupled fitting and depth-identifiability tests with known synthetic truth.",
       "imports": [
         "from PIL import Image",
         "from propkit import shading, joint_shading, depth_measurement",
+        "from propkit.pixel_folds import balanced",
         "from scipy import ndimage",
         "import numpy as np",
         "import unittest"
@@ -17940,6 +18249,7 @@
       "calls": [
         "Image.fromarray",
         "abs",
+        "balanced",
         "depth_measurement.estimate",
         "fixture",
         "image.resize",
@@ -18106,6 +18416,42 @@
         "self.assertGreater",
         "self.assertTrue",
         "tempfile.TemporaryDirectory",
+        "unittest.main"
+      ],
+      "environment_keys": []
+    },
+    {
+      "path": "long-lines/tools/test_pixel_folds.py",
+      "lines": 28,
+      "sha256": "af0e0f972db5877df2c88d0fad91bd41f445a20553209f22cb8d0bfb22ca2a3a",
+      "description": "Holdout groups cover space without fixed pixel-row phase bias.",
+      "imports": [
+        "from propkit.pixel_folds import balanced",
+        "import numpy as np",
+        "import unittest"
+      ],
+      "definitions": [
+        {
+          "name": "FoldContracts",
+          "line": 7,
+          "kind": "ClassDef",
+          "description": ""
+        }
+      ],
+      "calls": [
+        "((folds >= 0) & (folds < 9)).all",
+        "balanced",
+        "folds[y:y + 3, x:x + 3].ravel",
+        "max",
+        "min",
+        "np.arange",
+        "np.count_nonzero",
+        "np.sort",
+        "np.testing.assert_array_equal",
+        "range",
+        "self.assertGreater",
+        "self.assertLess",
+        "self.assertTrue",
         "unittest.main"
       ],
       "environment_keys": []
@@ -18360,6 +18706,94 @@
         "self.assertLess",
         "self.assertTrue",
         "self.charts",
+        "unittest.main"
+      ],
+      "environment_keys": []
+    },
+    {
+      "path": "long-lines/tools/test_relief_preview.py",
+      "lines": 31,
+      "sha256": "7921226d8c1fd6710ed0551bf0a15258fe9561fb88424849b10a08a32182d3bd",
+      "description": "Recorded-map previews preserve metric relief and exclude background cells.",
+      "imports": [
+        "from propkit.relief_preview import mesh_grid",
+        "import numpy as np",
+        "import unittest"
+      ],
+      "definitions": [
+        {
+          "name": "PreviewContracts",
+          "line": 7,
+          "kind": "ClassDef",
+          "description": ""
+        }
+      ],
+      "calls": [
+        "int",
+        "len",
+        "mask.sum",
+        "mesh_grid",
+        "np.cross",
+        "np.full",
+        "np.ones",
+        "np.testing.assert_allclose",
+        "np.zeros",
+        "self.assertEqual",
+        "self.assertLess",
+        "self.assertRaises",
+        "unittest.main"
+      ],
+      "environment_keys": []
+    },
+    {
+      "path": "long-lines/tools/test_relief_selection.py",
+      "lines": 86,
+      "sha256": "ca2d1ceefdcfd06ac4a40ebbf1afb9d4a427aad9f496f7b1c1ecd11c2b639292",
+      "description": "Whole-view failures must not automatically discard supported local geometry.",
+      "imports": [
+        "from propkit.joint_shading import shade",
+        "from propkit.relief_selection import select, extend_supported",
+        "from unittest.mock import patch",
+        "import numpy as np",
+        "import unittest"
+      ],
+      "definitions": [
+        {
+          "name": "SelectionContracts",
+          "line": 8,
+          "kind": "ClassDef",
+          "description": ""
+        }
+      ],
+      "calls": [
+        "abs",
+        "args[6].copy",
+        "extend_supported",
+        "extended.max",
+        "extended.min",
+        "list",
+        "np.any",
+        "np.array",
+        "np.clip",
+        "np.full",
+        "np.log",
+        "np.max",
+        "np.ones",
+        "np.sin",
+        "np.testing.assert_array_equal",
+        "np.where",
+        "np.zeros",
+        "patch",
+        "select",
+        "self.assertEqual",
+        "self.assertFalse",
+        "self.assertGreaterEqual",
+        "self.assertLess",
+        "self.assertLessEqual",
+        "self.assertRaisesRegex",
+        "self.assertTrue",
+        "self.fixture",
+        "shade",
         "unittest.main"
       ],
       "environment_keys": []
@@ -18678,6 +19112,45 @@
         "surfaces.document",
         "surfaces.evaluate_document",
         "surfaces.fit_height",
+        "unittest.main"
+      ],
+      "environment_keys": []
+    },
+    {
+      "path": "long-lines/tools/test_stage_review.py",
+      "lines": 58,
+      "sha256": "134c19829e0ee94eb5d9ccf4c9e4e87f3f075dd47f6548fca5df3413a2e37159",
+      "description": "The stage critic reports evidence and never grants itself geometry authority.",
+      "imports": [
+        "from pathlib import Path",
+        "from propkit.stage_review import inspect",
+        "import copy",
+        "import numpy as np",
+        "import tempfile",
+        "import unittest"
+      ],
+      "definitions": [
+        {
+          "name": "ReviewContracts",
+          "line": 10,
+          "kind": "ClassDef",
+          "description": ""
+        }
+      ],
+      "calls": [
+        "Path",
+        "any",
+        "copy.deepcopy",
+        "inspect",
+        "next",
+        "np.ones",
+        "np.savez_compressed",
+        "np.sin",
+        "np.zeros",
+        "self.assertEqual",
+        "self.assertFalse",
+        "self.assertTrue",
+        "tempfile.TemporaryDirectory",
         "unittest.main"
       ],
       "environment_keys": []

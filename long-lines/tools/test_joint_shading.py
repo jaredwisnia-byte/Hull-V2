@@ -71,7 +71,8 @@ class JointTests(unittest.TestCase):
         base = ndimage.zoom(base, 2.5, order=1) * 2.5
         pixels = np.asarray(image).copy()
         y, x = np.indices(mask.shape)
-        testing = mask & ((y + 3 * x) % 9 == 1)
+        from propkit.pixel_folds import balanced
+        testing = mask & (balanced(mask.shape) == 1)
         changed = pixels.copy()
         changed[testing] = np.uint8(pixels[testing] * .65)
         before, after = {}, {}

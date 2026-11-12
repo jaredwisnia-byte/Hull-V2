@@ -565,6 +565,15 @@ def build(order, samples=16):
     result['inference_warnings'] = [
         'surface depths are inverse-shading estimates; lighting and material ambiguity remain'] if inferred else []
     if order.get('automatic_depth'):
+        from propkit import stage_review
+        review_folder = os.path.join(ROOT, 'docs', 'inference', order['name'])
+        result['stage_review'] = stage_review.inspect(
+            result, order.get('measured', {}), os.path.join(review_folder, 'shading'))
+        result['stage_review_path'] = stage_review.write(
+            result['stage_review'], os.path.join(review_folder, 'stage-review.json'))
+        if result['stage_review']['status'] == 'needs_review':
+            result['inference_warnings'].append(
+                'stage-evidence review identified unresolved reconstruction issues')
         from propkit.memory_outcomes import record
         result['build_memory']=record(result,{'asset':order['name'],'source':str(order.get('source','')),
             'region_keys':[region.get('memory_key') for view in order.get('measured',{}).get('relief',{}).get('views',{}).values()

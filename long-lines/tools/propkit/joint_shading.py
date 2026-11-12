@@ -209,7 +209,7 @@ def fit_height(base, initial, basis, material, observed, training, lighting, mas
                     'objective': float(fit.fun), 'controls': list(basis.controls)}, fit.x.reshape(basis.controls)
 
 
-def reconstruct(image, mask, base, max_depth_px, light=None, albedo=None, iterations=160, diagnostics=None, memory_path=None):
+def reconstruct(image, mask, base, max_depth_px, light=None, albedo=None, iterations=160, diagnostics=None, memory_path=None, boundary_mode='all'):
     """Alternate shape/light/material fits through actual resolution refinement."""
     from PIL import Image
     mask = np.asarray(mask, bool)
@@ -233,8 +233,8 @@ def reconstruct(image, mask, base, max_depth_px, light=None, albedo=None, iterat
         finest_shape[::-1], Image.Resampling.LANCZOS))
     reference_mask = ndimage.zoom(
         mask, np.asarray(finest_shape) / mask.shape, order=0)
-    rows, cols = np.indices(finest_shape)
-    reference_fold = (rows + 3 * cols) % 9
+    from .pixel_folds import balanced
+    reference_fold = balanced(finest_shape)
     reference_training = reference_mask & (reference_fold >= 3)
     reference_acceptance = reference_mask & (reference_fold == 2)
     reference_validation = reference_mask & (reference_fold == 0)
@@ -248,8 +248,11 @@ def reconstruct(image, mask, base, max_depth_px, light=None, albedo=None, iterat
     traced = trace(fitting_rgb, reference_mask)
     # Preserve observed internal boundaries within one continuous surface;
     # segmentation does not split/cap the mesh or prescribe a depth sign.
+    if boundary_mode not in ('all', 'achromatic'):
+        raise ValueError('Unknown boundary evidence policy')
+    boundary_evidence = traced['boundaries'] if boundary_mode == 'all' else traced['relief_boundaries']
     curvature_weight = 1 - .5 * \
-        ndimage.gaussian_filter(traced['relief_boundaries'].astype(float), 1)
+        ndimage.gaussian_filter(boundary_evidence.astype(float), 1)
     reference_observed = np.log(reference_rgb @ [.2126, .7152, .0722])
     reference_base = ndimage.zoom(base, np.asarray(
         finest_shape) / mask.shape, order=1) * finest_shape[1] / mask.shape[1]
@@ -334,29 +337,45 @@ def reconstruct(image, mask, base, max_depth_px, light=None, albedo=None, iterat
     from .regional_relief import refine
     height, material, regional_report = refine(current_base, height, material, observed, reference_observed,
                                                lighting, traced['labels'], current_mask, reference_training, reference_validation,
-                                               reference_acceptance, max_depth_px * pixel_scale,memory_path=memory_path)
+                                               reference_acceptance, max_depth_px * pixel_scale, memory_path=memory_path)
     before = flat_material + \
         np.log(shade(current_base, flat_light)) - reference_observed
     after = material + \
         np.log(shade(current_base + height, lighting)) - reference_observed
     baseline = float(np.mean(before[testing]**2))
     error = float(np.mean(after[testing]**2))
+    proposal_error = error
+    proposal_gain = 1 - error / max(baseline, 1e-12)
+    proposal_height = height.copy()
+    from .relief_selection import select
+    height, material, selection_report, error_maps = select(current_base, height, material, lighting,
+                                                            flat_material, flat_light, reference_observed, traced[
+                                                                'labels'], current_mask,
+                                                            reference_validation, reference_acceptance, reference_testing)
+    accepted = selection_report['mode'] != 'none'
+    error = float(np.mean(error_maps['applied_error_map'][testing]))
     improvement = 1 - error / max(baseline, 1e-12)
-    accepted = baseline > 1e-5 and improvement > .05
     regional_report['applied_to_output'] = bool(accepted)
     depth = depth_information(height, current_base, lighting, reference_observed, material, testing, chroma,
                               fixed_light=fixed_light, fixed_material=fixed_material)
     result = ndimage.zoom(
-        height, 1 / ratio, order=1)[:mask.shape[0], :mask.shape[1]] / pixel_scale
+        proposal_height, 1 / ratio, order=1)[:mask.shape[0], :mask.shape[1]] / pixel_scale
     result *= mask
+    applied_result = ndimage.zoom(
+        height, 1 / ratio, order=1)[:mask.shape[0], :mask.shape[1]] / pixel_scale * mask
     report = {'method': 'alternating continuous spline shape / diffuse light / edge-aware reflectance',
               'accepted': bool(accepted), 'held_out_gain': float(improvement), 'material_only_error': baseline,
               'surface_error': error, 'light': lighting[:3].tolist(), 'ambient': float(lighting[3]),
+              'proposal_surface_error': proposal_error, 'proposal_held_out_gain': proposal_gain,
+              'relief_selection': selection_report, 'boundary_policy': boundary_mode,
+              'boundary_pixels': int(traced['boundaries'].sum()),
+              'boundary_pixels_used': int(boundary_evidence.sum()),
+              'needs_review': not selection_report['final_test_pass'],
               'light_source': 'provided' if fixed_light else 'jointly_fitted_with_explicit_gauge',
               'lighting_calibration': initial_identifiability, 'converged': bool(best['fit']['converged']),
               'iterations': int(sum(item['iterations'] for item in history)), 'history': history,
               'solve_resolution': list(shape), 'source_resolution': list(mask.shape), 'depth_bound_px': float(max_depth_px),
-              'validation_protocol': 'training folds 3-8; selection fold 0; local acceptance fold 2; final test fold 1, removed before pyramid construction',
+              'validation_protocol': 'balanced 3x3 blocks; training 3-8; selection 0; acceptance 2; report-only final test 1; withheld before pyramid construction',
               'integrability': 'continuous spline height gradient',
               'absolute_depth_status': 'conditional_on_calibration' if fixed_light and fixed_material else 'not_identified',
               'depth_information': depth,
@@ -364,6 +383,9 @@ def reconstruct(image, mask, base, max_depth_px, light=None, albedo=None, iterat
               'uncertainty': 'single-image lighting/albedo (reflectance) ambiguity; physical scale must be independently established'}
     if diagnostics is not None:
         import json
+        diagnostics.update(error_maps)
+        diagnostics['fit_mask'] = current_mask
+        diagnostics['fit_fold'] = reference_fold
         diagnostics['feature_region_json'] = np.asarray(json.dumps(
             {k: v for k, v in traced.items() if not isinstance(v, np.ndarray)}))
         for key in ('labels', 'boundaries', 'relief_boundaries', 'appearance_boundaries'):
@@ -372,8 +394,7 @@ def reconstruct(image, mask, base, max_depth_px, light=None, albedo=None, iterat
                                      'boundary_pixels': int(traced['boundaries'].sum()),
                                      'geometry_interpretation': 'unresolved; boundaries guide regularization only'}
         diagnostics.update(mask=mask, coarse_height_px=base, hypothesis_height_px=result,
-                           accepted_height_px=result if accepted else np.zeros_like(
-                               result),
+                           accepted_height_px=applied_result,
                            log_material=ndimage.zoom(
                                material, 1 / ratio, order=1)[:mask.shape[0], :mask.shape[1]],
                            observed_log_luminance=np.log(
@@ -383,4 +404,4 @@ def reconstruct(image, mask, base, max_depth_px, light=None, albedo=None, iterat
                            spline_controls_px=final_coefficients / pixel_scale, knots_u=best['basis'].u_knots, knots_v=best['basis'].v_knots)
         diagnostics['spline_controls_scope'] = np.asarray(
             'global initialization before local refinement; final numerical height map includes local fits')
-    return (result if accepted else np.zeros_like(result)), report
+    return applied_result, report

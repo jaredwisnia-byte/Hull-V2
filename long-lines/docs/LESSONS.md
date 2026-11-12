@@ -649,3 +649,17 @@ library, ledger and REPORT are restored afterwards (git checkout + delete the ex
   deferred regions forever. Distinguish compute deferral from missing evidence.
 - Use retrieval to suggest attempts, not to transplant another object's geometry.
   Keep final build failures separate from local numerical fitting experience.
+
+
+### 2026-11-11 — Do not confuse absent relief with absent proposals
+
+A whole-view failure discarded all front detail even when many local regions helped.
+Inspect raw/applied maps, residuals and unpainted diagnostic surfaces. Overlay orange
+and green are both persistent intensity boundaries; colour change is not a reliable
+geometry label. Controlled boundary weighting made little difference on this leg.
+Periodic pixel folds were locked to row phases; use value-independent balanced folds.
+Zeroing height at every region border creates artificial rims; keep supported samples
+fixed and verify a continuous composition instead. Finally, inspect the same probes
+at actual mesh stages: 73 dense-stage passes were already lost after reduction because
+uncertain-depth probes receive no protection. Better proposal scores alone do not mean
+a better exported asset. Keep physical confidence and numerical preservation distinct.

@@ -104,8 +104,8 @@ def export(result, image, directory, name):
     report = {k: v for k, v in result.items() if not isinstance(v, np.ndarray)}
     report.update(coordinate_frame='analysis grid pixel centres; x right, y down',
                   image_size=list(canvas.size), overlay=str(overlay), label_overlay=str(labelled),
-                  legend={'green': 'persistent intensity boundary; not confirmed geometry',
-                          'orange': 'persistent boundary with chromatic ambiguity'})
+                  legend={'green': 'persistent intensity edge without strong colour change; not geometry confidence',
+                          'orange': 'persistent intensity edge with colour change; not geometry confidence'})
     (directory / (name + '-feature-regions.json')
      ).write_text(json.dumps(report, indent=2))
     return report

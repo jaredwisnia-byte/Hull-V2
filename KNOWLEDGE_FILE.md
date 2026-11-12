@@ -16,7 +16,7 @@ It is not a claim that every algorithm or asset was executed or proven correct.
 Binary textures/GLBs were counted, not exhaustively visually audited.
 
 The accompanying [machine-readable inventory](long-lines/docs/CODEBASE_INVENTORY.json)
-records 441 source/configuration/documentation files, all 129 tracked Python files,
+records 451 source/configuration/documentation files, all 139 tracked Python files,
 36 Godot scripts, module descriptions, definitions/line numbers, imports, static
 calls, JSON shapes, documentation headings and content hashes. All Python files
 parsed successfully; JSON parsing found no errors. Static calls are not a resolved
@@ -25,6 +25,55 @@ runtime call graph. Counts include the currently staged new reconstruction tools
 ## Current implementation update (2026-11-10)
 
 ### Superseding reconstruction path (2026-11-11)
+
+#### Stage-review and regional selection continuation (2026-11-11)
+
+`pixel_folds.py` replaces the row-phase-locked `(row+3*column)%9` split with
+fixed-seed spatially balanced 3x3 blocks. Every full block contains all nine folds.
+Training 3-8, selection 0, acceptance 2 and report-only final test 1 remain separate;
+withheld intensities are removed before the pyramid. A controlled test confirms
+final test intensity changes cannot choose applied geometry/material.
+
+`relief_selection.py` keeps regions that improve both selection and acceptance
+appearance error by more than 5%. Whole-view support preserves the original full
+proposal. Otherwise supported height samples are fixed and screened harmonic
+continuation joins them toward the coarse surface. The actual composed normals
+are checked again before retaining regions. Unsupported continuation is not
+validated detail. Nonconvergent linear solves fail explicitly. Final test scores
+are reported but cannot select geometry; `accepted` means applied, not physically
+verified. Failed test results retain a review warning. Absolute depths remain
+unidentified for these uncalibrated painted images.
+
+All persistent boundaries now receive equal edge-preservation weighting. Green
+means an intensity boundary without strong colour change; orange means one with
+colour change. Neither colour certifies geometry. The achromatic-only policy is
+retained as an explicit controlled-comparison option; no edge threshold was raised.
+
+`stage_review.py` automatically audits structured evidence after depth-enabled
+builds. It flags wholly withheld nonflat proposals, regions lost during composition,
+dense-to-final probe losses, incomplete cross-view support, construction fallbacks
+and final QA failures. It writes stage-review.json and adds result warnings. It does
+not inspect rendered pixels, use an LLM, change thresholds or certify geometry.
+`review_stages.py` reruns it on saved results. `preview_relief.py` creates uncapped
+single-view diagnostic skins from recorded maps at physical scale. These are not
+solid production models, new reconstructions or accepted carving geometry.
+
+Observed same-preset leg run: front retains 30 of 35 locally supported regions,
+with +13.247% final reserved-pixel error gain versus material-only appearance.
+The all-boundary vs achromatic-only controlled variants score +13.247% vs +13.245%:
+weighting orange edges alone contributes little here. The original -22.7% score
+used different, row-phase-locked test pixels and is not an apples-to-apples score.
+The new full export has 3,790 triangles, one component, 181/213 probe failures and
+a 2.7% normal-facing disagreement. Of 97 dense-stage passing probes, 73 already
+fail immediately after reduction. Existing policy excludes all 213 uncertain-depth
+probes from simplification protection (zero protected samples). This explains the
+loss; preserving numerical detail without certifying speculative physical depth
+remains work. Dense output also has unresolved grooves and banding. The result is
+not a universally improved or validated asset. This leg is a development case, not
+an independent generalization benchmark. Current verification ran 97 contracts:
+94 passed and three skipped (two require the optional native CAD runtime); 39 Godot
+unit and 45 smoke checks passed. Compilation passed. Original preset/source were reused;
+no manual geometry/masks/depths were supplied for the revised run.
 
 #### Joint-fit and CAD continuation (supersedes lighting claims below)
 

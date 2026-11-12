@@ -300,3 +300,22 @@ Blender integration requires the local Blender runtime.
 These research-dependent stages require independent fixtures and acceptance gates.
 Preserve the original and approved assets; do not lower thresholds to make one
 picture pass. Update KNOWLEDGE_FILE and regenerate the static inventory after changes.
+
+
+## Stage evidence continuation — 2026-11-11
+
+Implemented balanced reserved-pixel folds, local selection with continuous harmonic
+composition, explicit raw/applied error maps, metric diagnostic skins and automatic
+structured stage review. Existing 5% local acceptance and final asset quality limits
+are unchanged. Green/orange overlay meanings are clarified; equal boundary weighting
+has little effect in the controlled leg comparison.
+
+The leg front now retains 30 supported regions (+13.247% reserved-pixel appearance
+gain), but the final 3,790-triangle mesh still fails 181/213 depth probes. A saved
+post-reduction check locates 73 newly failing probes at reduction, before baking.
+All 213 uncalibrated depth probes are excluded from protection by existing policy.
+Next: separate preservation of a chosen numerical surface from confidence in its
+physical correctness; bound reduction against supported local relief without forcing
+millions of triangles or accepting painted facets as truth. Test independent shapes,
+paint-only patches, local recesses and triangle/error tradeoffs. Do not tune final
+held-out pixels. Cross-view physical validation and calibration remain unresolved.

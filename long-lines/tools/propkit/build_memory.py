@@ -29,7 +29,7 @@ def solver_version():
     import scipy
     directory = Path(__file__).parent
     return fingerprint(np.__version__, scipy.__version__, *[(directory / name).read_text() for name in
-                       ('regional_relief.py', 'reference_fitting.py', 'joint_shading.py', 'build_memory.py')])
+                       ('regional_relief.py', 'reference_fitting.py', 'joint_shading.py', 'relief_selection.py', 'feature_regions.py', 'pixel_folds.py', 'build_memory.py')])
 
 
 class BuildMemory:
