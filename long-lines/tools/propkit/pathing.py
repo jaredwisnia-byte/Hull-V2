@@ -46,9 +46,11 @@ def io_path(path):
     file I/O only; Blender operators may not accept the extended prefix.
     """
     value = os.fspath(path)
-    if os.name != 'nt' or value.startswith('\\\\?\\') or _windows_code_units(value) < 248:
+    if os.name != 'nt' or value.startswith('\\\\?\\'):
         return value
     absolute = os.path.abspath(value)
+    if _windows_code_units(absolute) < 248:
+        return value
     if absolute.startswith('\\\\'):
         return '\\\\?\\UNC\\' + absolute[2:]
     return '\\\\?\\' + absolute

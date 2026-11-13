@@ -2,6 +2,7 @@
 
 import os
 import unittest
+from unittest.mock import patch
 
 from propkit.pathing import (BLENDER_WINDOWS_PATH_LIMIT,
                              _windows_code_units, check_blender_export_paths,
@@ -63,6 +64,13 @@ class IOPathContracts(unittest.TestCase):
         self.assertLess(len(path), 248)
         self.assertGreaterEqual(_windows_code_units(path), 248)
         self.assertTrue(io_path(path).startswith('\\\\?\\'))
+
+    @unittest.skipUnless(os.name == 'nt', 'Windows path contract')
+    def test_short_relative_name_under_long_root_uses_extended_prefix(self):
+        absolute = os.path.normpath(os.path.join('C:/', 'x' * 240, 'image.png'))
+        self.assertGreaterEqual(_windows_code_units(absolute), 248)
+        with patch('propkit.pathing.os.path.abspath', return_value=absolute):
+            self.assertEqual(io_path('image.png'), '\\\\?\\' + absolute)
 
 
 if __name__ == '__main__':
