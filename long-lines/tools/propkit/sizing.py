@@ -23,7 +23,8 @@ _cache = {}
 
 def manual():
     if "m" not in _cache:
-        _cache["m"] = json.load(open(MANUAL_PATH))
+        with open(MANUAL_PATH, encoding="utf-8") as stream:
+            _cache["m"] = json.load(stream)
     return _cache["m"]
 
 
