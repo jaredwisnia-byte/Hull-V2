@@ -55,9 +55,9 @@ unknowns. The resulting construction decisions must refer back to the drawing.
   three times the resolution allowance enter stage review. Views
   without a verified pixel map and views held out of geometry are not compared.
   This checks the outer envelope, not carving depth or hidden section shape.
-  The current check applies to the single-body automatic Hull line. Multipart
-  assets need per-part source ownership before an assembly-sheet width can be
-  compared meaningfully with one exported part.
+  The check now applies to automatic single-body and multipart Hull lines,
+  comparing the assembly source outline with the full assembled export. This
+  does not validate individual part profiles or their internal features.
 - On four archived single-body exports, the carved leg had 0/19 out-of-budget
   height samples in each elevation, the toaster had 2/19 in front, the camera
   had 6/19 in back, and the car had 11/19 on the left plus isolated severe
@@ -70,6 +70,20 @@ unknowns. The resulting construction decisions must refer back to the drawing.
   clock, stand mixer, a carved leg, and another camera view set. The trial
   exposed a questionable leg seam accepted as an opening candidate; that case
   is retained as a negative control.
+- Automatic multipart intake now traces exact original-sheet crops for the
+  assembly and each assigned companion group before construction. Each path
+  retains its crop offset into the original sheet. A 26-crop blender diagnostic
+  verified every crop against the supplied image pixel for pixel. The same
+  prebuild process produced assembly drawings for a toaster, instant camera,
+  and hair dryer. A reused crop assigned to two directions is reported as one
+  observation, not two independent measurements. Supplied part-view orders
+  also receive prebuild trace sheets.
+- An archived multipart blender export was audited against the source assembly
+  drawing: front 2/19, right 9/19, left 11/19, and back 17/19 sampled widths
+  exceeded the source-resolution allowance; six back samples were severe.
+  The export also failed its existing top-outline check (78% agreement). This
+  is a diagnostic of an existing export, not proof the current build improved
+  the blender.
 
 ## Still open
 
@@ -77,6 +91,12 @@ unknowns. The resulting construction decisions must refer back to the drawing.
   validated universal association of fragments into physical parts or of
   corresponding features across views. The camera lens therefore is not yet
   guaranteed to become a correct cylindrical assembly.
+- Multipart construction currently consumes prepared view masks and the
+  inferred part plan. The source drawings record those observations and the
+  assembly envelope is audited after export, but the builder does not yet
+  consume internal trace IDs as constraints. Some prepared views may have
+  altered pixels or unverified direction labels; their source relationship
+  remains explicitly unresolved.
 - True cross-section shapes, hidden lines, dimensioned part drawings, and a
   complete construction-consumption audit are incomplete. Current section/profile
   tools make geometric inferences from silhouettes and shading; the width audit

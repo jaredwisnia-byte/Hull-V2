@@ -8,6 +8,8 @@ import sys
 import tempfile
 import unittest
 from unittest.mock import patch
+import numpy as np
+from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import sheet_blobs  # noqa: E402
@@ -15,6 +17,31 @@ import factory  # noqa: E402
 
 
 class BuildGuards(unittest.TestCase):
+    def test_parts_line_draws_supplied_views_before_geometry(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            for name in ('assembly', 'body'):
+                part = root / 'source' / name
+                part.mkdir(parents=True)
+                pixels = np.full((90, 90, 3), 255, np.uint8)
+                pixels[15:75, 20:70] = 10
+                Image.fromarray(pixels).save(part / 'v_front.png')
+            order = {'line': 'hull_parts', 'layout': 'parts', 'name': 'test',
+                     'views_folder': 'source', 'assembly': 'assembly',
+                     'parts': [{'name': 'body', 'views': 'body', 'root': True}],
+                     'run_directory': str(root / 'run')}
+            def build(candidate, unused_root):
+                drawing = candidate['measured']['source_drawing']
+                self.assertEqual(drawing['stage'], 'before_geometry')
+                self.assertTrue(Path(drawing['traces']).is_file())
+                self.assertIn('body', drawing['part_drawings'])
+                return {'parts': {'body': {}}}
+            with patch.object(factory, 'SRC', str(root)), \
+                    patch('propkit.hull_assembly.build', side_effect=build):
+                factory.run_line(order)
+            self.assertIn('parts', order['measured'])
+            self.assertIn('source_drawing', order['measured'])
+
     def test_station_exception_is_saved_as_a_reviewable_failure(self):
         with tempfile.TemporaryDirectory() as folder:
             source = Path(folder) / 'input.png'

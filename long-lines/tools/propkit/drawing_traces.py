@@ -259,7 +259,8 @@ def observe(view, path, construction_mask=None, opening_witness=None):
 
 
 def infer(views, destination, construction_masks=None, opening_report=None,
-          view_consistency=None, geometry_views=None, source_views=None):
+          view_consistency=None, geometry_views=None, source_views=None,
+          source_sheet_frames=None):
     """Create the first-station drawing and JSON from arbitrary labelled views."""
     destination = Path(destination)
     destination.mkdir(parents=True, exist_ok=True)
@@ -299,6 +300,11 @@ def infer(views, destination, construction_masks=None, opening_report=None,
     observations = dict(build_observations)
     for name in changed_frames:
         observations[name] = observe(name, source_views[name])
+    for name, frame in (source_sheet_frames or {}).items():
+        if name in observations:
+            observations[name]['source_sheet_frame'] = frame
+            for trace in observations[name]['traces']:
+                trace['source_sheet_frame'] = frame
     view_use = {}
     for name in selected:
         used = None if geometry_views is None else name in geometry_views
@@ -345,7 +351,11 @@ def infer(views, destination, construction_masks=None, opening_report=None,
         if item['kind'] == 'opposed_mask_opening']
     side = 'right' if 'right' in observations else 'left'
     paired_sections = []
-    if 'front' in observations and side in observations:
+    frames = source_sheet_frames or {}
+    repeated_pair = ('front' in frames and side in frames and
+                     frames['front'].get('source_region_id') ==
+                     frames[side].get('source_region_id'))
+    if 'front' in observations and side in observations and not repeated_pair:
         front = observations['front']
         other = observations[side]
         for front_section, side_section in zip(
@@ -462,6 +472,8 @@ def infer(views, destination, construction_masks=None, opening_report=None,
               'status': 'source_observations_and_opposed_mask_openings',
               'observations': observations, 'coordinate_transforms': coordinate_transforms,
               'paired_elevation_envelopes': paired_sections,
+              'unresolved_view_pairs_same_source_region':
+                  [['front', side]] if repeated_pair else [],
               'view_construction_use': view_use,
               'view_conflicts_in_use': conflicts,
               'reconciled_views_without_source_pixel_map': unresolved_frames,
@@ -478,3 +490,59 @@ def infer(views, destination, construction_masks=None, opening_report=None,
     image.save(destination / 'technical-traces.png')
     (destination / 'technical-traces.json').write_text(json.dumps(report))
     return report
+
+
+def infer_sheet_regions(sheet_path, records, regions, destination):
+    """Trace exact source-sheet crops for assembly and companion view groups.
+
+    The assigned orthographic view name is an intake hypothesis. Crop-local
+    paths retain a translation back to the original sheet; no prepared-view
+    paint, erased background or rotation is presented as an original pixel.
+    """
+    sheet_path = Path(sheet_path).resolve()
+    sheet = Image.open(sheet_path).convert('RGB')
+    by_id = {region['id']: region for region in regions}
+    destination = Path(destination)
+    results = {}
+    for group, record in records.items():
+        if Path(group).name != group or group in ('.', '..'):
+            raise ValueError('Unsafe source drawing group name')
+        raw_folder = destination / group / 'source-crops'
+        raw_folder.mkdir(parents=True, exist_ok=True)
+        raw_views, frames = {}, {}
+        for view, identifier in record.get('views', {}).items():
+            if view not in ('front', 'back', 'left', 'right', 'top', 'bottom'):
+                continue
+            region = by_id[identifier]
+            box = tuple(map(int, region['box']))
+            if not (0 <= box[0] < box[2] <= sheet.width and
+                    0 <= box[1] < box[3] <= sheet.height):
+                raise ValueError('Source region lies outside the original sheet')
+            path = raw_folder / f'v_{view}.png'
+            sheet.crop(box).save(path)
+            raw_views[view] = str(path)
+            frames[view] = {
+                'original_sheet_path': str(sheet_path),
+                'source_region_id': identifier,
+                'source_crop_box_sheet_px': list(box),
+                'sheet_xy_from_crop_xy': {'scale_xy': [1, 1],
+                                          'offset_xy': [box[0], box[1]]},
+                'view_assignment': ('source_caption' if group == 'assembly' else
+                                    'automatic_companion_view_hypothesis'),
+            }
+        if not raw_views:
+            continue
+        result_folder = destination / group
+        drawing = infer(raw_views, result_folder, source_sheet_frames=frames)
+        reused = sorted({identifier for identifier in record.get('views', {}).values()
+                         if list(record.get('views', {}).values()).count(identifier) > 1})
+        drawing['original_sheet_path'] = str(sheet_path)
+        drawing['source_region_reused_for_multiple_view_labels'] = reused
+        drawing['source_kind'] = 'unaltered crop of original supplied sheet'
+        trace_path = result_folder / 'technical-traces.json'
+        trace_path.write_text(json.dumps(drawing))
+        results[group] = {'sheet': str(result_folder / 'technical-traces.png'),
+                          'traces': str(trace_path), 'source_views': raw_views,
+                          'source_sheet_frames': frames,
+                          'reused_source_regions': reused}
+    return results

@@ -279,7 +279,47 @@ def run_line(order):
     line = order["line"]
     if line == "hull_parts":     # an object from its parts, each a hull from its own views
         from propkit.hull_assembly import build as hull_parts_build
-        order["measured"] = hull_parts_build(order, SRC)
+        from propkit.hull_assembly import part_views
+        from propkit import drawing_traces
+        measured = order.setdefault('measured', {})
+        source_drawings = dict(order.get('source_drawings', {}))
+        root = os.path.join(SRC, order['views_folder'])
+        plan = order.get('parts') or {}
+        folders = ({order['assembly']} |
+                   ({spec['views'] for spec in plan if spec.get('views')}
+                    if isinstance(plan, list) else set(plan.values())))
+        for folder in sorted(folders - source_drawings.keys()):
+            views = {view: path for view, path in
+                     part_views(os.path.join(root, folder)).items()
+                     if view in ('front', 'back', 'left', 'right', 'top', 'bottom')}
+            if not views:
+                continue
+            drawing_folder = os.path.join(diagnostic_root(order),
+                                          'technical-traces', folder)
+            drawing_traces.infer(views, drawing_folder, geometry_views=views)
+            source_drawings[folder] = {
+                'sheet': os.path.join(drawing_folder, 'technical-traces.png'),
+                'traces': os.path.join(drawing_folder, 'technical-traces.json'),
+                'source_kind': 'supplied part-view file',
+            }
+        assembly_drawing = source_drawings.get(order.get('assembly'))
+        if assembly_drawing:
+            measured['source_drawing'] = {
+                'stage': 'before_geometry',
+                'sheet': assembly_drawing['sheet'],
+                'traces': assembly_drawing['traces'],
+                'source_kind': assembly_drawing.get('source_kind',
+                                                   'unaltered original-sheet crop'),
+                'part_drawings': {name: {'sheet': item['sheet'],
+                                        'traces': item['traces'],
+                                        'reused_source_regions': item.get(
+                                            'reused_source_regions', [])}
+                                  for name, item in source_drawings.items()
+                                  if name != order.get('assembly')},
+                'construction_use': 'assembly envelope and part placement use prepared views; raw source traces are checked after export',
+            }
+        built = hull_parts_build(order, SRC)
+        measured.update(built)
         return
     if line == "hull":
         from propkit.hull import hull_prop
@@ -354,7 +394,10 @@ def run_line(order):
                     view_consistency=(order['measured'].get('reconcile') or
                                       order.get('view_consistency')),
                     geometry_views=geometry_views,
-                    source_views=original_views)
+                    source_views=(order.get('source_drawings', {}).get(
+                        'assembly', {}).get('source_views') or original_views),
+                    source_sheet_frames=order.get('source_drawings', {}).get(
+                        'assembly', {}).get('source_sheet_frames'))
                 order.setdefault('measured', {})['source_drawing'] = {
                     'stage': 'before_geometry',
                     'sheet': os.path.join(trace_folder, 'technical-traces.png'),

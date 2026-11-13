@@ -119,6 +119,14 @@ class ReviewContracts(unittest.TestCase):
         self.assertEqual(review['findings'][0]['code'],
                          'export_diverges_from_traced_sections')
 
+    def test_reused_companion_drawing_is_not_independent_view_evidence(self):
+        measured = {'source_drawing': {'part_drawings': {'lid': {
+            'reused_source_regions': [4], 'traces': 'lid.json'}}}}
+        review = inspect({'metrics': {}}, measured)
+        self.assertEqual(review['status'], 'needs_review')
+        self.assertEqual(review['findings'][0]['code'],
+                         'companion_view_evidence_reused')
+
     def test_separate_part_evidence_is_also_checked(self):
         measured = {'surface_details': {'handle': {
             'pre_reduction_validation': {'probes': [{'id': 'a', 'retained': True}]}}}}

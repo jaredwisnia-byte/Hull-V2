@@ -34,6 +34,15 @@ def inspect(result, measured, diagnostics=None):
              'Opposing source masks agree, but the accepted cuts may also be painted gaps',
              {'drawing': drawing.get('sheet'), 'candidates': openings},
              'Inspect each source region and clay cut from multiple views before treating it as a verified through-opening.')
+    repeated_sources = {
+        name: item['reused_source_regions']
+        for name, item in drawing.get('part_drawings', {}).items()
+        if item.get('reused_source_regions')}
+    if repeated_sources:
+        flag('companion_view_evidence_reused', 5, 'review',
+             'One source drawing supplies multiple assigned directions for a companion part',
+             {'parts': repeated_sources, 'drawing': drawing.get('sheet')},
+             'Confirm orientation or obtain an independent view before treating those directions as separate 3D evidence.')
     section_audit = result.get('metrics', {}).get('drawing_section_audit', {})
     divergent = {
         view: {'outside_tolerance_count': data['outside_tolerance_count'],

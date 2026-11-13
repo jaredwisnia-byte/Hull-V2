@@ -349,7 +349,7 @@ def check(name, views_dir=None, category_class=None, paint_only=(), solid=False,
                 fails.append(
                     'automatic reference comparison missing: ' + ', '.join(sorted(missing)))
     drawing_path = (trim_order or {}).get('measured', {}).get('source_drawing', {}).get('traces')
-    if drawing_path and trim_order.get('automatic_depth') and trim_order.get('line') == 'hull':
+    if drawing_path and trim_order.get('automatic_depth') and trim_order.get('line') in ('hull', 'hull_parts'):
         from .drawing_traces import audit_projected_elevations
         try:
             with open(drawing_path, encoding='utf-8') as stream:

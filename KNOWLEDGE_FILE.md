@@ -968,3 +968,22 @@ map, a colour preview, and the existing source-confidence map. The strongest
 Standalone exports copy these maps for inspection. The screen-space triangle
 tolerance can now take an explicit viewing distance. Neither change estimates
 physical detail absent from the input.
+
+## Multipart source drawings (2026-11-13)
+
+SOURCE-VERIFIED: Automatic sheet intake now saves exact original-sheet crops
+and generates prebuild assembly and companion trace drawings with a crop-to-sheet
+pixel offset. Reusing one crop under multiple view labels is marked as an
+unresolved view pair. Supplied multipart view folders get the same prebuild
+trace station. The measured drawing survives assembly build reporting, and
+automatic multipart export QA compares assembly source contour widths with
+the whole exported mesh.
+
+OBSERVED RUN: All 26 crops assigned from the supplied blender sheet matched
+their original image regions pixel for pixel. An archived assembled blender
+export failed its top silhouette check (78% agreement). Its source drawing
+width audit found 2/19 front, 9/19 right, 11/19 left and 17/19 back samples
+outside the source-resolution allowance, with six severe back deviations.
+This audit does not qualify the part geometry. Internal trace IDs still do not
+drive multipart construction, and some prepared builder views may have altered
+pixels or uncertain direction assignments. Those remain open evidence gaps.

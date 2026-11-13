@@ -1,6 +1,7 @@
 """Measured drafting stations must retain source contours and uncertainty."""
 import unittest
 import tempfile
+import json
 from pathlib import Path
 from unittest.mock import patch
 
@@ -9,10 +10,42 @@ from PIL import Image
 
 from propkit.drawing_traces import (_elevation_section, _end_frame_hypotheses,
                                     _verified_build_to_source_map,
-                                    audit_projected_elevations, infer, observe)
+                                    audit_projected_elevations, infer,
+                                    infer_sheet_regions, observe)
 
 
 class SourceSectionContracts(unittest.TestCase):
+    def test_original_sheet_crops_keep_absolute_pixel_provenance(self):
+        with tempfile.TemporaryDirectory() as folder:
+            sheet = Path(folder) / 'sheet.png'
+            pixels = np.full((60, 200, 3), 255, np.uint8)
+            for left in (0, 70, 140):
+                pixels[15:45, left + 12:left + 42] = 10
+            Image.fromarray(pixels).save(sheet)
+            regions = [{'id': index, 'box': box} for index, box in enumerate(
+                ([0, 0, 60, 60], [70, 0, 130, 60], [140, 0, 200, 60]))]
+            records = {'assembly': {'views': {'front': 0, 'right': 1}},
+                       'component': {'views': {'front': 2, 'right': 2}}}
+            drawings = infer_sheet_regions(sheet, records, regions,
+                                           Path(folder) / 'drawings')
+            assembly = json.loads(Path(drawings['assembly']['traces']).read_text())
+            front = assembly['observations']['front']
+            self.assertEqual(front['foreground_box_px'], [12, 15, 42, 45])
+            self.assertEqual(front['source_sheet_frame']['sheet_xy_from_crop_xy']
+                             ['offset_xy'], [0, 0])
+            right = assembly['observations']['right']
+            self.assertEqual(right['traces'][0]['source_sheet_frame']
+                             ['sheet_xy_from_crop_xy']['offset_xy'], [70, 0])
+            component = json.loads(
+                Path(drawings['component']['traces']).read_text())
+            self.assertEqual(component['source_region_reused_for_multiple_view_labels'],
+                             [2])
+            self.assertEqual(component['paired_elevation_envelopes'], [])
+            self.assertEqual(component['unresolved_view_pairs_same_source_region'],
+                             [['front', 'right']])
+            self.assertEqual(component['observations']['front']['source_sheet_frame']
+                             ['view_assignment'], 'automatic_companion_view_hypothesis')
+
     def test_sheet_dimensions_come_from_source_pixels(self):
         with tempfile.TemporaryDirectory() as folder:
             source = Path(folder) / 'front.png'
