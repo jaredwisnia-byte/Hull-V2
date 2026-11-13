@@ -4,7 +4,11 @@ import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
-from propkit.drawing_traces import _elevation_section, _end_frame_hypotheses, infer
+import numpy as np
+from PIL import Image
+
+from propkit.drawing_traces import (_elevation_section, _end_frame_hypotheses,
+                                    _verified_build_to_source_map, infer)
 
 
 class SourceSectionContracts(unittest.TestCase):
@@ -87,7 +91,8 @@ class SourceSectionContracts(unittest.TestCase):
                     'opposed_mask_opening_count': int(opening)}
 
         with tempfile.TemporaryDirectory() as folder, patch(
-                'propkit.drawing_traces.observe', side_effect=observed):
+                'propkit.drawing_traces.observe', side_effect=observed), patch(
+                'propkit.drawing_traces._verified_build_to_source_map', return_value=None):
             report = infer({'front': 'build.png'}, folder,
                            source_views={'front': 'original.png'})
         self.assertEqual(report['observations']['front']['source_path'], 'original.png')
@@ -99,6 +104,81 @@ class SourceSectionContracts(unittest.TestCase):
         self.assertEqual(candidate['build_input_trace_id'], 'build_input:front:opening:1')
         self.assertIsNone(candidate['area_source_px'])
         self.assertEqual(candidate['area_build_input_px'], 12)
+
+    def test_verified_flip_maps_contour_centers_back_to_original_pixels(self):
+        with tempfile.TemporaryDirectory() as folder:
+            source = Path(folder) / 'source.png'
+            built = Path(folder) / 'built.png'
+            pixels = np.arange(3 * 4 * 3, dtype=np.uint8).reshape(3, 4, 3)
+            Image.fromarray(pixels).save(source)
+            Image.fromarray(pixels[:, ::-1]).save(built)
+            frame = {'source_size_px': [4, 3],
+                     'build_to_source_xy': {'scale_xy': [-1, 1],
+                                            'offset_xy': [3, 0]},
+                     'appearance_modifications': []}
+            self.assertEqual(_verified_build_to_source_map(source, built, frame),
+                             frame['build_to_source_xy'])
+            def observed(view, path, *unused):
+                is_build = str(path) == str(built)
+                return {'source_path': str(path), 'source_size_px': [4, 3],
+                        'foreground_box_px': [0, 0, 4, 3],
+                        'observed_elevation_sections': [],
+                        'traces': ([{'id': 'front:opening:1',
+                                    'kind': 'opposed_mask_opening',
+                                    'points_source_xy': [[0, 0], [1, 1]],
+                                    'cross_view_witness': 'back',
+                                    'area_source_px': 2,
+                                    'appearance_median_rgb': [0, 0, 0],
+                                    'appearance_std_rgb': [0, 0, 0]}]
+                                   if is_build else []),
+                        'outer_path_count': 0, 'internal_path_count': 0,
+                        'opposed_mask_opening_count': int(is_build)}
+            with patch('propkit.drawing_traces.observe', side_effect=observed):
+                report = infer({'front': str(built)}, Path(folder) / 'sheet',
+                               source_views={'front': str(source)},
+                               view_consistency={'pixel_frames': {'front': frame}})
+            self.assertEqual(report['reconciled_views_with_verified_source_pixel_map'],
+                             ['front'])
+            self.assertFalse(report['reconciled_views_without_source_pixel_map'])
+            self.assertEqual(report['build_constraints'][0]['mapped_original_source_xy'],
+                             [[3, 0], [2, 1]])
+            frame['appearance_modifications'] = [{'kind': 'background_erasure'}]
+            self.assertIsNone(_verified_build_to_source_map(source, built, frame))
+
+    def test_lossless_flip_maps_build_opening_candidate_to_original_frame(self):
+        def observed(view, path, *unused):
+            build = str(path).endswith('built.png')
+            return {'source_path': str(path), 'source_size_px': [4, 3],
+                    'foreground_box_px': [0, 0, 4, 3],
+                    'observed_elevation_sections': [],
+                    'traces': ([{'id': 'front:opening:1', 'kind': 'opposed_mask_opening',
+                                'cross_view_witness': 'back', 'area_source_px': 2,
+                                'points_source_xy': [[0.5, 1.0], [1.5, 1.0]],
+                                'appearance_median_rgb': [0, 0, 0],
+                                'appearance_std_rgb': [0, 0, 0]}] if build else []),
+                    'outer_path_count': 0, 'internal_path_count': 0,
+                    'opposed_mask_opening_count': int(build)}
+
+        with tempfile.TemporaryDirectory() as folder:
+            source = Path(folder) / 'source.png'
+            built = Path(folder) / 'built.png'
+            pixels = np.arange(3 * 4 * 3, dtype=np.uint8).reshape(3, 4, 3)
+            Image.fromarray(pixels).save(source)
+            Image.fromarray(pixels[:, ::-1]).save(built)
+            frame = {'source_size_px': [4, 3],
+                     'build_to_source_xy': {'scale_xy': [-1, 1],
+                                            'offset_xy': [3, 0]},
+                     'appearance_modifications': []}
+            with patch('propkit.drawing_traces.observe', side_effect=observed):
+                report = infer({'front': str(built)}, Path(folder) / 'report',
+                               source_views={'front': str(source)},
+                               view_consistency={'pixel_frames': {'front': frame}})
+        self.assertEqual(report['reconciled_views_without_source_pixel_map'], [])
+        self.assertEqual(report['reconciled_views_with_verified_source_pixel_map'],
+                         ['front'])
+        self.assertEqual(report['reconciliation_pixel_frames']['front'], frame)
+        self.assertEqual(report['build_constraints'][0]['mapped_original_source_xy'],
+                         [[2.5, 1.0], [1.5, 1.0]])
 
 
 if __name__ == '__main__':

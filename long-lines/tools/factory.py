@@ -365,6 +365,8 @@ def run_line(order):
                     'view_conflicts_in_use': source_drawing['view_conflicts_in_use'],
                     'reconciled_views_without_source_pixel_map':
                         source_drawing['reconciled_views_without_source_pixel_map'],
+                    'reconciled_views_with_verified_source_pixel_map':
+                        source_drawing['reconciled_views_with_verified_source_pixel_map'],
                     'paired_elevation_measurements': len(
                         source_drawing['paired_elevation_envelopes']),
                     'path_counts': {view: {'outer': record['outer_path_count'],

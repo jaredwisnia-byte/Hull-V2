@@ -15,9 +15,11 @@ consumer pilot orders have at least one such conflict. End-view aspect evidence
 is recorded without rotating or excluding any view. These are diagnostics, not
 validated cross-view feature identities, physical sections or corrected meshes.
 For explicit reconciliation, the sheet now records original source paths and
-altered build-input paths separately; a changed view remains under review until
-its construction pixels can be mapped back to the supplied image. A CRT TV
-right-view flip exercised the distinction.
+altered build-input paths separately. Lossless horizontal flips have exact,
+pixel-checked mappings. A changed view with erased pixels remains under review
+because those edges may not exist in the supplied image. A CRT TV right view
+exercised both flip and erasure; its original trace remains intact and its
+build-input contours remain unresolved.
 See [drawing status](docs/TRACE_DRIVEN_DRAWING_STATUS.md) for the acceptance gate.
 
 ## Consumer sheet intake pilot (2026-11-12)
