@@ -69,6 +69,10 @@ checkpoint, digest mismatch or changed qualified payload is an integrity failure
 Unreferenced checkpoints are reported, never collected automatically. Record
 database, WAL and SHM sizes; do not run `VACUUM` or a checkpoint. A partial scan
 or newly inaccessible path yields degraded coverage, not a clean pass.
+For each known BuildMemory database, run `hull.py memory-inventory DATABASE
+--output REPORT.json --verify-hashes` into that shift's evidence folder.
+Compare referenced, unreferenced and missing counts with the previous report;
+never treat a live scan as authority to delete files.
 
 ### 15:00 — foreman review and controlled improvement
 

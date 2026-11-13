@@ -5,6 +5,7 @@ change code. Reports declare capability coverage and retain failed observations.
 """
 
 import argparse
+from contextlib import closing
 from datetime import datetime, timezone
 import hashlib
 import importlib
@@ -489,6 +490,10 @@ def main(root):
         sub.add_argument("--changed-files", nargs="*")
     sub = commands.add_parser("package")
     sub.add_argument("--output", type=Path, required=True)
+    sub = commands.add_parser("memory-inventory")
+    sub.add_argument("database", type=Path)
+    sub.add_argument("--output", type=Path, required=True)
+    sub.add_argument("--verify-hashes", action="store_true")
     sub = commands.add_parser("promote")
     sub.add_argument("receipt", type=Path)
     sub.add_argument("--qualification", type=Path, required=True)
@@ -506,6 +511,13 @@ def main(root):
     try:
         if args.command == "package":
             result = package(root, args.output)
+        elif args.command == "memory-inventory":
+            if not args.database.is_file():
+                raise ValueError("Memory database does not exist")
+            from .build_memory import BuildMemory
+            with closing(BuildMemory(args.database)) as memory:
+                result = memory.retention_inventory(args.verify_hashes)
+            warehouse.atomic_json(args.output, result)
         elif args.command == "promote":
             result = warehouse.promote(
                 args.receipt, root / "long-lines/assets/props", args.qualification
