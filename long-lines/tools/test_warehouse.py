@@ -11,6 +11,18 @@ from propkit import warehouse as w
 
 
 class WarehouseTests(unittest.TestCase):
+    def test_run_evidence_budget_reports_growth_without_discarding_files(self):
+        w.seal(self.run, self.order, self.result, self.lib)
+        evidence = self.run / "inputs" / "diagnostic.npz"
+        evidence.parent.mkdir(exist_ok=True)
+        evidence.write_bytes(b"diagnostic evidence")
+        report = w.run_evidence_manifest(self.run, budget_bytes=1)
+        self.assertTrue(report["over_budget"])
+        self.assertGreater(report["groups_bytes"]["inputs"], 0)
+        self.assertFalse(report["collection_authorized"])
+        self.assertTrue(evidence.is_file())
+        self.assertTrue((self.run / "retention-manifest.json").is_file())
+
     def test_render_labels_follow_release_identity_not_latest_failed_build(self):
         rows = [
             {"op": "build", "name": "asset", "run_id": "old", "pass": True},
