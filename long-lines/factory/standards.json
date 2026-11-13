@@ -46,6 +46,8 @@
   "floor_tolerance_m": 0.02,
   "max_hole_fraction": 0.003,
   "max_backfacing_fraction": 0.05,
+  "max_extreme_folds_per_1k": 10.0,
+  "_extreme_folds_note": "Only automatically inferred solid surfaces: adjacent faces over 115 degrees after position welding. Review before relaxing; genuine sharp carvings can contribute.",
   "texel_density_px_per_m": [
    120,
    6000

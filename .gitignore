@@ -2,3 +2,11 @@ node_modules/
 .notify-state/
 long-lines/.godot/
 __pycache__/
+.hull-memory/
+
+.hull-models/
+
+.hull-runs/
+.hull-maintenance/
+.hull-runtime/
+dist/

@@ -143,6 +143,17 @@ fo = folds_per_1k(hs)
 vr = volume_ratio(hs)
 check("housing", 0.68 < vr < 0.82 and fo < 0.5, "volume/bbox %.3f (C shape: 0.68-0.82), folds/1k %.2f" % (vr, fo))
 
+# A previous lathe build must not suppress a later object's sectional route.
+HULL_REPORT["revolve"] = {"round": True}
+from propkit.sections import BAND  # noqa: E402
+flat_bands = [{"v": [i * BAND, (i + 1) * BAND], "curved": False,
+               "best_n": None, "evidence": {}}
+              for i in range(int(1 / BAND))]
+build(hv, 0.33, "sdf", res=40, revolve=False, sections=True,
+      section_bands=flat_bands)
+check("fresh route", "sections" in HULL_REPORT and "revolve" not in HULL_REPORT,
+      "sectional analysis ran after a different object's lathe")
+
 # disc: round FRONT view, thin side and top -> a lathe about the front-to-back axis
 dv = {"front": view("df", (120, 120), lambda d, s: d.ellipse([2, 2, s[0] - 3, s[1] - 3], fill=TAN)),
       "right": view("dr", (16, 120), lambda d, s: d.rectangle([0, 0, s[0] - 1, s[1] - 1], fill=TAN))}

@@ -11,6 +11,8 @@ from mathutils import Vector
 from PIL import Image, ImageDraw, ImageFont
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+from propkit.warehouse import asset_directory
 LIB = os.path.normpath(os.path.join(HERE, "..", "assets", "props"))
 args = sys.argv[sys.argv.index("--") + 1:]
 out, rest = args[0], args[1:]
@@ -54,7 +56,7 @@ sc.collection.objects.link(cam)
 sc.camera = cam
 tiles = []
 for n in names:
-    d = os.path.join(LIB, n)
+    d = str(asset_directory(LIB, n))
     before = set(bpy.data.objects)
     bpy.ops.import_scene.gltf(filepath=os.path.join(d, n + ".glb"))
     objs = [o for o in bpy.data.objects if o not in before and o.type == "MESH"]

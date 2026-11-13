@@ -3,6 +3,17 @@
 Mistakes made on this project and the rule that prevents each one. Read before working;
 add to it whenever something goes wrong.
 
+## Automatic parts-sheet intake (Hull V2)
+- A parts work order keeps complete reference views in its assembly subfolder.
+  Pointing QA at the source root silently skipped every silhouette comparison.
+  Resolve the assembly folder explicitly and fail automatic orders when any of
+  the five required reference comparisons is absent.
+- A failed rebuild can leave an earlier GLB on disk. Standalone export must check
+  that the current build actually wrote its artifact before packaging it.
+- Glass painted against a dark background can be mistaken for silhouette holes.
+  Keep the vessel core filled while preserving the external handle aperture;
+  inspect both clay geometry and textured turnarounds.
+
 ## Brands and content
 - **AI texture sheets paint real brands** (Zenith, Mercury Montego, KitchenAid). Every sheet
   goes through `tools/prepare_sheet.py`, and a person or Claude must look at `_review.png` and
@@ -584,3 +595,147 @@ library, ledger and REPORT are restored afterwards (git checkout + delete the ex
   control panel plastic) as see-through, and paint_views repainted them from neighbours: that smeared the
   first new TV's frame ("jagged"). A see-through hole must also show from the opposite view (mirrored);
   with no opposite view the old behaviour stays (hull_assembly.confirmed_holes).
+## Continuous reconstruction and detail checks (Nov 11)
+
+- The active experiment solves continuous height/gradient fields from shading.
+  Circle detection and fixed dome/channel templates were rejected and removed.
+  Brightness is not height: material colour, illumination and cast shadows can
+  imitate relief. A successful image fit alone does not prove metric geometry.
+- Do not use validation probes to manufacture local point dents. Validate the
+  continuous solution independently. Unmet dense-fit constraints stay QA failures
+  but must not lock the simplifier at source-grid density.
+- Protect thin cores and check solid connectivity when combining view corrections:
+  independent recesses can cut through the same support from opposite sides.
+- A computational curvature region is not a physical component. Independent caps
+  create visible joints; share one implicit surface unless physical separation has evidence.
+- Cell-centred signed fields need metric ghost cells. Arbitrary positive padding
+  moves the zero crossing and can flatten shallow crowns at the sampling box.
+- Checking a bead only at its centre admits pyramids. Check several angular and
+  radial crown/rim contrasts on the exported mesh, without textures or normal maps.
+- Keep small features with local contrast bounds and sampling uncertainty, rather
+  than demanding micrometre absolute positions across an entire dense source grid.
+- Blender decimation weights of exactly zero lock edges. Soft protection must
+  remain nonzero after inversion; its influence also needs physical scale.
+- Preserve native physical IDs through export. Matching tiny triangle centroids
+  is fragile when exporter triangulation or normal splits change.
+- QA feature frames must include floor/wall seating translations. Check each part
+  against its own geometry so another assembled part cannot intercept its rays.
+- Withhold validation/test intensities before building any image pyramid. A coarse
+  initialization can otherwise leak the very pixels used to judge the final fit.
+- Unknown lighting/material makes inferred groove depth conditional. Keep its QA
+  evidence, but do not freeze dense meshes to unsupported sub-voxel depth targets.
+- Kernel-valid STEP faces are not watertight CAD solids. Read back the exchange
+  file and verify units/trim holes; sewing and assembly frames need separate checks.
+- A class-independent identity graph does not automatically replace a role-based
+  manufacturing grammar. Record which downstream stages actually consume it.
+- Trace internal boundaries before relief fitting, but keep segmentation separate
+  from depth truth. Painted facets and shadows can form closed regions too.
+- Boundary extraction must use training-only intensities to preserve holdout
+  isolation. Export integer masks and declare pixel frames; contour coordinates
+  need the padding offset removed in pixel-centre convention.
+- Weak-edge union can bypass a strong crease through a third region. Protect
+  strong adjacency during merging rather than trusting pairwise weak edges alone.
+- Original relief already contained weak-crease merging. Share that machinery;
+  do not describe a missing call in the active path as absence from the codebase.
+- Equal occupied voxel signs do not guarantee equal interpolated surfaces.
+  Check zero-crossing drift before adopting sampled Boolean recomposition.
+- Reserve separate local-acceptance pixels so regional hypothesis selection
+  cannot consume the final test pixels used to judge the full surface.
+- A reference failure should exhaust a bounded family of models/support regions
+  and record its attempts before stopping. Keep the validation limits unchanged.
+- Checkpoint identities must exclude final test intensities. A cache hit should
+  never convert a rejected/uncertain estimate into verified physical geometry.
+- Budget NEW work, not replayed checkpoints, or a resume loop can starve the same
+  deferred regions forever. Distinguish compute deferral from missing evidence.
+- Use retrieval to suggest attempts, not to transplant another object's geometry.
+  Keep final build failures separate from local numerical fitting experience.
+
+
+### 2026-11-11 — Do not confuse absent relief with absent proposals
+
+A whole-view failure discarded all front detail even when many local regions helped.
+Inspect raw/applied maps, residuals and unpainted diagnostic surfaces. Overlay orange
+and green are both persistent intensity boundaries; colour change is not a reliable
+geometry label. Controlled boundary weighting made little difference on this leg.
+Periodic pixel folds were locked to row phases; use value-independent balanced folds.
+Zeroing height at every region border creates artificial rims; keep supported samples
+fixed and verify a continuous composition instead. Finally, inspect the same probes
+at actual mesh stages: 73 dense-stage passes were already lost after reduction because
+uncertain-depth probes receive no protection. Better proposal scores alone do not mean
+a better exported asset. Keep physical confidence and numerical preservation distinct.
+
+
+### 2026-11-11 — Uncertain does not mean flat; preserving does not mean verified
+
+The previous zero-directed harmonic fill visibly blurred useful proposed relief.
+Retain ambiguous proposals with explicit provisional status; only independent strong
+material-only evidence can justify flattening. A low-signal tie is not such evidence.
+Dense geometry also needs numerical preservation even if its physical depth remains
+uncertain. Separate bounds against the actual dense surface from source-depth truth
+claims. Applying uncalibrated nominal source thresholds as hard reduction constraints
+can freeze nearly the whole grid when dense measurements barely cross that threshold.
+The same saved dense mesh now preserves more relief at 30,330 versus 3,790 triangles;
+its original source probe failures fall 181 to 110, not to zero. Do not hide that cost
+or change QA thresholds. Residual edge maps show image disagreement, not recovered
+3D carving boundaries. Read actual input quantities before adopting an external AI's
+diagnosis: reference_fitting.py receives geometric height, not luminance.
+
+
+### 2026-11-11 — Trace structural evidence separately from fine paint-sensitive curves
+
+The published BIPED checkpoint worked substantially better than BSDS in the fixed
+curve experiment; model identity is part of the algorithm. Fine phase responses
+still trace paint, so they must not be hard part barriers or confirmed grooves.
+Do not pass nearest-filled fitting backgrounds into a learned tracer: artificial
+colour extension produces stripe evidence. Preserve foreground bytes (round, do
+not floor the inverse colour conversion). Keep model inference in a separate local
+worker so Blender does not import Torch. Windows installs may need inherited read
+permissions enabled by the installing owner before later worker sessions use them.
+The full-build trial exposed a diagnostic handoff that reconstructed only the old
+four tracing arrays; update producer, restoration and export together, and retain
+legacy records. A new regression exercises that exact export path.
+
+
+### 2026-11-11 — Local numerical defects do not authorize global attenuation
+
+The full fitted leg had one main solid plus 25 detached pieces totalling 28 cells,
+and four newly enclosed one-cell air pockets. Counting only solid components and
+halving the whole field erased useful relief; counting only solids also missed
+inner mesh shells. Repair only new grid-scale defects, preserve original tiny
+parts/cavities and open grooves, and audit changed volume. Large unexplained changes
+must fail a correction contract rather than authorize a destructive fallback.
+Adaptive reduction also needs actual failed-ray witnesses: keeping a nearby groove
+triangle is insufficient when a new coarse neighbour occludes it. Protect original
+dense geometry locally, never sculpt points to hit probes. Continue useful retries
+within a budget and retain the prior passing candidate. Same-probe measurements,
+not prettier shading or a changed probe population, established the improvement.
+The current asset still fails 13/206 nominal source checks; bound clipping, weak
+side transfer and shading ambiguity remain visible to the reviewer.
+
+## Publication is a boundary, not a status string (2026-11-11)
+
+Writing `needs_person` after export did not undo writing the candidate into the
+library. Build into a separate run, retain evidence and select only a qualified
+immutable version. Audit the copied payload independently of QA and retain a
+journal before the manifest commit boundary. Inject failures on both sides of
+that boundary, test idempotent completion and guard rollback against newer work.
+
+Regression runners must not save/restore real production files or delete failed
+experiments in `finally`. Copy inputs into a retained sandbox. A baseline update
+is a reviewed change to a measuring instrument, not an option for clearing a
+failed test. Explicit capabilities prevent a successful pure suite from implying
+Blender/CAD/OCR passed. Keep a native-only test in its native profile instead of
+normalizing hidden skips. Documentation and CODEOWNERS do not enforce hosted
+GitHub rules; inspect the actual settings separately.
+
+## Follow the actual dispatcher before changing budgets (2026-11-12)
+
+The sofa uses the legacy dictionary-parts assembler, not parts_layout. A first
+experiment remaining at exactly 38,000 triangles exposed the missed route.
+Connect retained assemblers to the shared reducer rather than deleting them as
+legacy. Preserve fixed tolerances through final baking; a ceiling conflict is
+a QA issue, not permission to loosen error limits.
+
+Parallel benchmark copies also shared tempfile names derived only from asset
+name. Give each worker its own TMP/TEMP/TMPDIR; reject collided experiments
+rather than compare their output. Preserve those failure records.

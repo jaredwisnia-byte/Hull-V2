@@ -21,7 +21,10 @@ argv = sys.argv[sys.argv.index("--") + 1:]
 name = argv[0]
 out_dir = argv[1] if len(argv) > 1 else os.path.join(ROOT, "docs", "renders")
 os.makedirs(out_dir, exist_ok=True)
-base = os.path.join(ROOT, "assets", "props", name, name)
+sys.path.insert(0, HERE)
+from propkit.warehouse import asset_directory, build_record
+library_root = os.environ.get('HULL_LIBRARY_ROOT', os.path.join(ROOT, 'assets', 'props'))
+base = str(asset_directory(library_root, name) / name)
 CAMS = [("front", 0, 0), ("right", 90, 0), ("back", 180, 0), ("left", -90, 0), ("top", 0, 89.9),
         ("three-quarter", -35, 18)]
 PX = 520
@@ -122,9 +125,13 @@ try:
 except OSError:
     font = ImageFont.load_default(size=18)
     bold = ImageFont.load_default(size=24)
-lib = json.load(open(os.path.join(ROOT, "assets", "props", "library.json"))).get(name, {})
+lib = json.load(open(os.path.join(library_root, "library.json"))).get(name, {})
 ledger = [json.loads(l) for l in open(os.path.join(ROOT, "factory", "ledger.jsonl")) if '"%s"' % name in l]
-last = next((r for r in reversed(ledger) if r.get("op") == "build" and r.get("name") == name), {})
+run_id = lib.get('release_id') or lib.get('run_id')
+last = build_record(ledger, name, run_id)
+order_path = os.path.join(ROOT, 'factory', 'orders', name + '.json')
+order = json.load(open(order_path)) if os.path.isfile(order_path) else {}
+inference_review = last.get('pass') and (last.get('inference_warnings') or (not run_id and order.get('status') == 'needs_person'))
 cols, T = 4, 360
 sheet = Image.new("RGB", (cols * T, 70 + 2 * T + 40), (246, 244, 239))
 d = ImageDraw.Draw(sheet)
@@ -132,7 +139,8 @@ s = lib.get("size") or [0, 0, 0]
 d.text((14, 12), name, fill=(30, 30, 30), font=bold)
 d.text((14, 44), "%.0f x %.0f x %.0f mm (W x H x D)   %s triangles   built in %s s   quality gate: %s" % (
     s[0] * 1000, s[1] * 1000, s[2] * 1000, lib.get("tris", "?"), last.get("seconds", "?"),
-    "pass" if last.get("pass") else "FAIL"), fill=(70, 70, 70), font=font)
+    "geometry pass; inference needs review" if inference_review else
+    "not recorded" if not last else "pass" if last.get("pass") else "FAIL"), fill=(70, 70, 70), font=font)
 for i, (label, p) in enumerate(shots):
     im = Image.open(p).convert("RGB").resize((T, T))
     x, y = (i % cols) * T, 70 + (i // cols) * T

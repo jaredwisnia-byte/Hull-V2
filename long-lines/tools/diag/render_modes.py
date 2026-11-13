@@ -24,7 +24,9 @@ if "--cams" in argv:
 if "--glb" in argv:
     glb = argv[argv.index("--glb") + 1]
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-glb = glb or os.path.join(ROOT, "assets", "props", name, name + ".glb")
+sys.path.insert(0, os.path.join(ROOT, 'tools'))
+from propkit.warehouse import asset_directory
+glb = glb or str(asset_directory(os.environ.get('HULL_LIBRARY_ROOT', os.path.join(ROOT, 'assets', 'props')), name) / (name + '.glb'))
 base = glb[:-4]
 os.makedirs(out, exist_ok=True)
 

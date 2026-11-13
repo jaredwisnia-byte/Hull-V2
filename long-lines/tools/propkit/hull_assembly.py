@@ -198,7 +198,8 @@ def fit_to_box(obj, w, d, h, touch):
     return moved
 
 
-def check_gaps(boxes, contacts, frame, rep):
+def check_gaps(boxes, contacts, frame, rep, sampling_meshes=None):
+    sampling_meshes = sampling_meshes or {}
     """For each contact, sample the first part's surface facing the second (away from the rounded
     edges) and measure how far it is from the second part (0 where it is inside it). Also each
     seat/back part against the frame below/behind it."""
@@ -216,6 +217,15 @@ def check_gaps(boxes, contacts, frame, rep):
         return h[0] is not None and (h[0] - p).dot(h[1]) > 0, (h[3] if h[0] is not None else 1e9)
 
     ax_i = {"x": 0, "y": 1, "z": 2}
+    candidate_trees = {}
+    def own_distance(obj, point):
+        if obj.name not in sampling_meshes:
+            return 0.0
+        if obj.name not in candidate_trees:
+            candidate_trees[obj.name] = tree(obj)
+        nearest = candidate_trees[obj.name].find_nearest(point)
+        return nearest[3] if nearest[0] is not None else 1e9
+
     pairs = [(boxes[i], boxes[j], ax, pl, +1) for i, j, ax, pl in contacts if "obj" in boxes[i] and "obj" in boxes[j]
              and "foot" not in (boxes[i]["kind"], boxes[j]["kind"])]
     out = []
@@ -230,14 +240,14 @@ def check_gaps(boxes, contacts, frame, rep):
             if any(l >= h for l, h in zip(lo, hi)):
                 continue
             ds = []
-            for v in P["obj"].data.vertices:
+            for v in sampling_meshes.get(P["obj"].name, P["obj"].data).vertices:
                 p = P["obj"].matrix_world @ v.co
                 if abs(p[k] - pl) > 0.03 or any(not (l <= p[ax_i[a]] <= h) for a, l, h in zip(others, lo, hi)):
                     continue
                 if (v.normal[k] * s_) < 0.5:          # only the side facing the neighbour
                     continue
                 ins, d = inside(tq, p)
-                ds.append(0.0 if ins else d)
+                ds.append(max(0.0 if ins else d, own_distance(P["obj"], p)))
             if len(ds) >= 5:
                 out.append({"a": P["kind"], "b": Q["kind"], "axis": ax, "samples": len(ds),
                             "p90_mm": round(float(np.percentile(ds, 90)) * 1000, 1)})
@@ -245,14 +255,14 @@ def check_gaps(boxes, contacts, frame, rep):
         if b["kind"] not in ("seat", "back") or "obj" not in b:
             continue
         ds = []
-        for v in b["obj"].data.vertices:
+        for v in sampling_meshes.get(b["obj"].name, b["obj"].data).vertices:
             p = b["obj"].matrix_world @ v.co
             if p[2] > b["z"][0] + 0.02 or v.normal[2] > -0.5:
                 continue
             if not (b["x"][0] + 0.03 <= p[0] <= b["x"][1] - 0.03 and b["y"][0] + 0.03 <= p[1] <= b["y"][1] - 0.03):
                 continue
             ins, d = inside(ft, p)
-            ds.append(0.0 if ins else d)
+            ds.append(max(0.0 if ins else d, own_distance(b["obj"], p)))
         if len(ds) >= 5:
             out.append({"a": b["kind"], "b": "frame", "axis": "z", "samples": len(ds),
                         "p90_mm": round(float(np.percentile(ds, 90)) * 1000, 1)})
@@ -262,7 +272,7 @@ def check_gaps(boxes, contacts, frame, rep):
         if b["kind"] != "foot" or "obj" not in b:
             continue
         ds = []
-        for v in b["obj"].data.vertices:
+        for v in sampling_meshes.get(b["obj"].name, b["obj"].data).vertices:
             p = b["obj"].matrix_world @ v.co
             if v.normal[2] < 0.5 or p[2] < b["z"][1] - 0.02:
                 continue
@@ -270,7 +280,7 @@ def check_gaps(boxes, contacts, frame, rep):
             for t in above:
                 ins, d = inside(t, p)
                 best = min(best, 0.0 if ins else d)
-            ds.append(best)
+            ds.append(max(best, own_distance(b["obj"], p)))
         out.append({"a": "foot", "b": "body", "axis": "z", "samples": len(ds),
                     "p90_mm": round(float(np.percentile(ds, 90)) * 1000, 1) if len(ds) >= 3 else 1e3})
     return out
@@ -608,6 +618,8 @@ def build(order, src_root):
                       mesh_hook=guide_hook(guides.get("assembly"), W, D, H))
     from mathutils import Vector
     from mathutils.bvhtree import BVHTree
+    from .simplification import reduce_assembly_part
+    reduce_assembly_part(frame, order, rep)
     frame.data.update()
     ftree = BVHTree.FromPolygons([frame.matrix_world @ v.co for v in frame.data.vertices], [p_.vertices for p_ in frame.data.polygons])
 
@@ -631,6 +643,7 @@ def build(order, src_root):
 
     # 5. every part as its own hull, sized to its box and moved into place
     placed = []
+    contact_samples = {}
     for n, b in enumerate(boxes):
         fold = os.path.join(root, parts[b["kind"]])
         views = part_views(fold)
@@ -681,10 +694,15 @@ def build(order, src_root):
                         width_m=w, depth_m=d, features=False, rough=order.get("rough", 0.6), paint=False,
                         sil_override=guided_sil(views, g), mesh_hook=guide_hook(g, w, d, h))
         # blended projection (facing^4 x visibility): no stretched streaks where a face is seen at a slant
+        # Fit the dense reference before reduction. Keep the same contact
+        # witnesses so changing vertex density cannot change the gap gauge.
+        b["fit"] = {} if os.environ.get("HULLASM_NOFIT") else fit_to_box(obj, w, d, h, b["touch"])
+        obj.data.update()
+        contact_samples[obj.name] = obj.data.copy()
+        from .simplification import reduce_assembly_part
+        reduce_assembly_part(obj, order, rep)
         texturing.project(obj, paint_views(views, tmp, "p%d" % n), w, d, h, others=[], name=obj.name,
                           rough=order.get("rough", 0.6))
-        # HULLASM_NOFIT=1 only to prove the gap check still catches unfitted parts
-        b["fit"] = {} if os.environ.get("HULLASM_NOFIT") else fit_to_box(obj, w, d, h, b["touch"])
         print("HULLASM part", b["kind"], {a: [round(v, 3) for v in G[a]] for a in "xyz"}, "fit", b["fit"])
         obj.location = ((G["x"][0] + G["x"][1]) / 2, (G["y"][0] + G["y"][1]) / 2, G["z"][0])
         placed.append(obj)
@@ -695,7 +713,7 @@ def build(order, src_root):
                       rough=order.get("rough", 0.6))
     rep["guide_edits"] = guide_counts
     # 7. gap check: at every contact, how far apart the two built surfaces really are
-    rep["gaps_mm"] = check_gaps(boxes, contacts, frame, rep)
+    rep["gaps_mm"] = check_gaps(boxes, contacts, frame, rep, contact_samples)
     worst = max([g["p90_mm"] for g in rep["gaps_mm"]] or [0])
     if worst > MAX_GAP * 1000:
         bad = [g for g in rep["gaps_mm"] if g["p90_mm"] > MAX_GAP * 1000]
@@ -1026,6 +1044,8 @@ def build_attached(order, src_root):
             views["top"], _ = orient_top(views["top"], w, d, os.path.join(tmp, "top_%s.png" % f))
         obj = hull_prop(views, h, res=order.get("part_res", 100), name="%s_%s" % (order["name"], f), width_m=w,
                         depth_m=d, features=False, paint=False, rough=order.get("rough", 0.6))
+        from .simplification import reduce_assembly_part
+        reduce_assembly_part(obj, order, rep)
         texturing.project(obj, paint_views(views, tmp, "p_" + f), w, d, h, others=[], name=obj.name,
                           rough=order.get("rough", 0.6))
         obj.location = ((x0 + x1) / 2, (y0 + y1) / 2, z0)
@@ -1162,6 +1182,8 @@ def build_attached(order, src_root):
             "towards": best, "moved_mm": round((before[best][1] + SNAP_SINK) * 1000, 1),
             "gap_after_mm": round(after[best][1] * 1000, 1), "touching_share": round(after[best][2], 2),
             "under_gap_mm": round(obj["under_gap_m"] * 1000, 1) if obj["under_gap_m"] >= 0 else None}
+    from .simplification import reduce_assembly_part
+    reduce_assembly_part(body, order, rep)
     # 5. the body painted from the whole-object views, the parts occluding it
     texturing.project(body, paint_views(asm_views, tmp, "body"), W, D, H, others=placed, name=body.name,
                       rough=order.get("rough", 0.6))

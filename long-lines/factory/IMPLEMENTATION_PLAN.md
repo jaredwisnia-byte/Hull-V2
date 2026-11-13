@@ -1,0 +1,405 @@
+# Hull audit implementation and acceptance plan
+
+This is a working status document. Implemented stages below are exercised in code;
+the research backlog is not presented as completed inverse-CAD functionality.
+The original Claude/Dirac checkout is unchanged. All runtime decisions are software
+operations; no conversational LLM supplies per-object corrections.
+
+## Implemented: shared stages and readable code
+
+### Joint-fit continuation and remaining acceptance (2026-11-11)
+
+Memory/retry pass adds local versioned SQLite/NPZ patch checkpoints and separate
+final-build QA records. Plane/quadratic/thin-plate references over three support
+radii and two relief spline resolutions replace the single-attempt path. Retry
+selection never consumes final test intensities. Nearby reference strategies may
+reorder attempts; they do not bypass tests or constitute a trained ML predictor.
+Rerunning a build replays matching completed patches and advances compute-deferred
+regions. Unsupported geometry remains unverified; corrupt checkpoints are refitted.
+
+77 reconstruction tests and Godot's 39/45 checks pass. The real front continuation
+reused 24 and processed 24 more regions; a third call reused 48 and left three with
+insufficient independent data. First-batch leg: 3,260 triangles, 113/155 depth
+failures plus the normal-facing failure. Front relief remains rejected. The resume
+demonstration ran the solver stage only, not a new validated full export.
+
+Next acceptance work: coherent adaptive subdivision, patch-level acceptance across
+whole-view failures, detail retention during reduction/export, verified training
+data and a held-out trained strategy selector. Do not label memory retrieval as
+trained perception, or successful reconstruction tests as accepted physical depth.
+
+Current regional continuation adds shared original weak-crease merging with an
+active-path strong-boundary guard; surrounding-surface reference fits; held-out
+material/recess/raised spline comparisons; cross-view region depth checks; guarded
+aggregate subtract/add fields; and retained pre-reduction feature QA. 68 contracts
+pass, plus the Godot checks. The five legacy extraction checks preserve prior output.
+The revised leg front has 51 candidates rather than 219, but its front-view relief
+still fails final appearance validation. Do not claim complete carving recovery.
+Cross-view checking is diagnostic rather than full joint camera/shape fitting.
+CSG composition falls back when sampled zero crossings drift; individual reusable
+cutters and robust general reference surfaces remain acceptance work.
+Final leg: 3,262 triangles, one component, 114/157 depth failures and one normal
+disagreement failure. Before reduction, 75 probes already failed; 55 previously
+retained probes failed after export (16 previously failed probes passed).
+Only 4/203 cross-view regions had reciprocal support. CSG zero-crossing drift
+0.937 cells exceeded the 0.1-cell limit, so the fitted field was preserved.
+Priorities now have measurable targets: improve reference/depth recovery, retain
+resolved features during reduction, jointly reconcile view evidence, and safely
+reinitialize construction fields before reusable individual cutter export.
+
+Internal boundary tracing is now active before joint relief fitting. Persistent
+multiscale boundaries, chromatic ambiguity and watershed region masks are exported
+in the analysis-image frame. Boundaries guide continuous curvature regularization;
+they do not select a depth sign, instantiate cutting volumes or split physical parts.
+Five new boundary contracts pass, bringing the reconstruction suite to 55 tests.
+The leg front has 219 candidates including painted facets, so coherent carving
+grouping and cross-view validation remain explicit acceptance work.
+The region-guided leg produced 3,384 triangles and one component but failed 121/163
+depth checks. Different probes prevent treating this as a measured accuracy gain.
+
+Added continuous B-spline shape/light/reflectance alternation, conditional metric
+depth reports, adaptive NURBS-subset chart fitting and optional native STEP export.
+Final shared-field charts avoid exporting contradictory independent view surfaces.
+STEP outputs remain local open faces; assembly transforms, chart sewing and solid
+validation are not complete. The optional backend has a native readback/area test.
+
+Class-independent correspondence graphs now track physical identity and ambiguity
+across views, and export source-pixel masks in declared assembly-image frames.
+They enter work orders and unresolved identities require review. The legacy
+manufacturing grammar and texture projector have NOT been replaced by this graph.
+Next: bind confidently resolved physical IDs to manufacturing and source-camera
+ownership, then remove role grammar only after held-out assembly tests pass.
+
+Unverified shading depths no longer freeze reduction; their probes remain in
+exported-mesh QA. A first joint leg run used 3,384 triangles and one component but
+failed 122 local depth checks. This is a budget improvement, not accepted detail.
+The stricter follow-up with withheld intensities removed before pyramid creation
+must be assessed separately. A new regression ensures withheld test intensities
+cannot change the fitted geometry. No silhouette/depth/contact limits were relaxed.
+
+Follow-up observed: 3,644 triangles, one component, 127/164 local depth failures.
+All five CAD charts rejected approximation; none were exported as accepted STEP.
+The cached blender correspondence trial left all three candidate identities
+spatially underconstrained and required review. Two source ownership maps were
+exported, not consumed by the texture projector. These are unresolved acceptance
+results, not a successful universal reconstruction demonstration.
+
+Acceptance order: verify known-depth fixtures with varying reflectance/light;
+confirm interior relief across calibrated views; generalize camera/shape fitting;
+complete evidence-based physical ownership/manufacturing; apply ownership to final
+texture sources; adapt/merge CAD charts with quantified seams and closed-solid
+checks. Do not merge into main on the strength of controlled fixtures alone.
+
+### Current acceptance work: continuous implicit detail (2026-11-11)
+
+The active automatic-depth path supersedes the capped construction-band prototype.
+It extracts one continuous signed-field surface, using pixel shading fall-off and
+integrable height gradients in six orthographic views. It does not select table-leg
+geometry by object name or accept assistant-supplied feature positions. Explicit
+physical parts still go through the original parts-layout engine.
+
+Implemented supporting fixes: metric field boundaries; continuous inverse shading
+with material correction and held-out pixel tests; local curvature-aware reduction;
+soft scale-aware detail protection;
+native physical IDs through glTF; complete posed high-resolution bake sources;
+planar shading refresh; manufacturing translations in exported-feature checks.
+Tests exercise continuous curved relief, an organic curved skin, undulating terrain,
+flat false positives, connectedness and dense planar-grid reduction.
+
+Acceptance remains open until real builds and renders have been reviewed. The
+circle/channel template prototype reached 17,602 triangles and passed its geometry
+probes, but close-ups exposed pinching and the user rejected the template-driven
+approach. That implementation was removed before publication. The active solver
+estimates a continuous height field rather than selecting a primitive per feature.
+Its first low-regularization trial overfit training pixels and was rejected by
+held-out pixels. Increasing curvature regularization improves held-out prediction;
+this is evidence of shading fit, not proof of correct metric depth. The software
+records unresolved fitting conflicts and explicit lighting/material assumptions.
+The blender is a held-out image-only assembly test;
+its inconsistent top reference must retain review status rather than have its
+threshold relaxed. Record final observed results here before publishing.
+
+Still research work: reliable generic physical semantics, perspective/shape
+calibration, ambiguity-aware inverse lighting/material recovery, and complete
+ornamental reconstruction. The common operator is object-independent; that does
+not establish solved perception for every possible image.
+
+Controlled validation passes: four shading contracts (continuous curved relief,
+exact gradient integration, chromatic material rejection and flat-image rejection),
+five field contracts including a thin structural bridge, and five Blender surface
+contracts including organic/machined skins, undulating terrain and flat impostors.
+The existing ownership/export and orchestration guards pass. Godot has 39 unit
+checks and 45 smoke checks passing. The real-image trials still produce fitting
+conflicts and can exceed the triangle ceiling; no real asset is accepted on the
+basis of these controlled tests. The lighting gauge is assumed, not learned or
+uniquely estimated, and joint camera/shape/reflectance recovery is not complete.
+
+The latest held-out blender run also rejects assembly seating: the jar/housing
+joint reports a 10 mm gap and only 18% contact after inferred geometry changes.
+The pipeline reports this failure and refuses to package a stale prior model.
+Do not repair this with an object-specific offset or relaxed contact threshold.
+Mounting constraints and recovered surfaces must be reconciled generically.
+
+Research basis: [Horn, Height and Gradient from Shading](https://dspace.mit.edu/entities/publication/459ecc14-2067-4c01-983b-22d98156e780)
+describes height/gradient integration with reflectance and regularization.
+[CMU's photometric measurement report](https://publications.ri.cmu.edu/illumination-planning-for-photometric-measurements)
+distinguishes photometric stereo: a fixed viewpoint under changing illumination,
+which an ordinary front/side reference sheet does not supply.
+
+- `propkit/pipeline.py` owns image-only intake/build/export/render orchestration,
+  freshness checks, persistent failure reports and review status. Factory's public
+  entry point remains compatible. Unexpected station errors write a traceback and
+  result instead of leaving a stale successful output looking current.
+- `propkit/preflight.py` reuses existing view reconciliation for diagnostics on
+  the automatic parts path. Suggested flips/resizing/view rejection are proposals,
+  never silently applied to source evidence. Conflicts retain `needs_review`.
+- `propkit/simplification.py` holds the existing screen-space tolerance and
+  bidirectional sampled surface-error simplifier. Parts-layout compatibility imports
+  remain; single-body projected hulls opt in through `automatic_depth` or
+  `budget: screen`. Reduction now precedes projection on that path.
+- Fixed the simplifier's reported-error calculation: retain the selected trial's
+  measured error instead of measuring the final mesh against itself. Refresh split
+  normals after topology changes, reusing one helper in both affected paths.
+- Expanded dense statements, spacing and long expressions in the active entry points
+  and recent vision/depth/engineering modules. AST comparisons verify that vision
+  and vision-order formatting did not change their semantics. Import-order-sensitive
+  Blender entry points retain explicit path initialization.
+
+## Implemented: local depth decisions and honest validation
+
+The original relief engine already segments physical candidate regions. Those
+regions now reach the depth selector directly. Each region's observed shading is
+tested against relief/flat hypotheses at the existing acceptance threshold.
+Unrelated wood paint elsewhere no longer vetoes a local feature. Source masks
+still exclude separately manufactured controls and uncertain silhouette borders.
+
+Selected relief remains bounded to 2% of the smaller horizontal dimension. On
+single-body builds the dense relief copy is retained for the existing high-to-low
+normal bake, preserving details below the low-poly surface tolerance. Parts builds
+do not supply a partial body-only bake source for the whole joined assembly.
+These are shading hypotheses, not measured groove depths or guaranteed recovery.
+
+Automatic-depth QA now records unfiltered silhouette overlap, uses a 144-pixel
+width rather than the legacy 72, and includes bottom references when supplied.
+The raw outline can fail even when the older protrusion-filtered score passes.
+Existing thresholds are unchanged. Camera framing is still derived from model
+bounds; this is stronger detection, not calibrated camera/geometry validation.
+
+## Implemented: section and cutaway inspection
+
+`propkit/sectioning.py` defines arbitrary finite plane origins/normals, computes
+mesh intersections, joins closed degree-two contour components and reports open
+or branched components. Even/odd filling preserves nested voids. Hatching marks
+cut material; open contours are not silently filled.
+
+Engineering export supplies A-A/B-B transverse sections and a C-C longitudinal
+section at a common scale, with plane indicators/directions on parent views.
+An order can override one to three planes through:
+
+```json
+{"engineering":{"sections":[
+  {"label":"A-A","origin_m":[0,0,0.3],"normal":[0,0,1]}
+]}}
+```
+
+`propkit/cutaway.py` exports a separately clipped `surface-cutaway.glb` using
+Blender's existing mesh operations. It restores scene selection and never edits
+the main geometry. Its cut boundaries are intentionally open: blindly capping
+them could fill a real hollow component. Hatched 2D sections and a clipped surface
+are diagnostics of reconstructed geometry, not certified solid CAD or discoveries
+of unseen interiors. Offset/half/broken-out drafting conventions and full hidden-line
+elimination are not implemented.
+
+## Observed acceptance results
+
+Guided leg: existing source SHA/preset reused, no new supplied crop coordinates.
+The previous new-selector build had 23,750 triangles and rejected every relief
+region. The cleaned path has 1,302 triangles, zero normal disagreement, and sampled
+surface error 1.292 mm against its 1.297 mm screen-space tolerance. It selects
+14/50 front, 19/43 right, 12/41 back and 13/40 left candidate regions. Raw silhouette
+overlap is approximately .953-.972 on elevations, .962 top and .809 bottom.
+The low bottom score remains a limitation, not evidence of perfect geometry.
+
+Blender: the image-only workflow still builds about 3,650 triangles but now flags
+inconsistent reference proportions and the lever prior conflict. Raw top overlap
+around .787 fails the unchanged .8 threshold, whereas the old filtered metric
+passed. This is correct rejection of a previously over-permissive acceptance case,
+not a claim that duplicated handle appearance has been fixed.
+
+Tests exercised locally: 11 depth/engineering tests under Blender; 5 section
+topology tests; sphere simplification bound/reduction; non-destructive cutaway
+half-space export; non-destructive preflight conflict reporting; 3 orchestration
+guards; 9 intake tests; existing hull geometry, guide, section, sizing/human-scale
+and 8 trim checks; Godot 39 unit and 45 smoke checks. New CI runs syntax and
+pure-Python section/depth/sizing contracts. Blender integration still needs a
+Blender-equipped runner; it is not falsely counted as hosted CI coverage.
+
+## Profile-family implementation (2026-11-11)
+
+The next production path is integrated in `factory.run_line` for automatic-depth
+projected hull orders. It selects elongated profiles from masks, fits camera roll
+and shared nonlinear curvature, traces longitudinal channels, and compares bounded
+shape/light/material fits against flat and painted-stripe alternatives. Construction
+bands are independently cut from the original hull; the shaft uses a spline loft
+with channel vertices. Other geometry continues through the original engines.
+
+The finished leg has eight construction identities, seven channels and 3,308
+triangles. Ray probes through the exported mesh verify all seven recesses at three
+stations. Inward hits and normal disagreement are zero. This passes geometric QA,
+while uncertain depth evidence is separately reported. The rendering still shows
+limited ornamental geometry; source paint is substantially richer than the capital
+and foot meshes. Do not call the object fully reconstructed from its silhouette.
+
+The held-out blender image ran through the full image-only pipeline in 72.7 s,
+without runtime LLM preparation. It retains 3,650 triangles, no inward-facing hits
+and no normal disagreement, and correctly remains `needs_review`: raw top-view
+overlap is .787, below the unchanged .8 threshold. This is a regression/abstention
+case, not a claim that its handle semantics or assembly are fully corrected.
+
+Physical IDs survive join/bake/export and return as separate standalone nodes.
+Final UV texels use rasterized source visibility and owner labels rather than
+interpolated vertex visibility. Per-source overlap correction is shared across
+triangles, bounded, and rejects incompatible paint. Unsupported pixels fill only
+from the same owner's evidence, with confidence/unresolved counts. Invisible
+details are not synthesized or represented as observed texture.
+
+The new pure-Python and Blender contracts exercise known curved/rolled axes,
+source reprojection, paint ambiguity, duplicate observation merging, raster
+occlusion, colour-space handling, seam correction, duplicate geometry rejection,
+oriented internal caps, actual GLB part round trips and local missing-depth checks.
+Existing hull/guide/section/sizing/orchestration checks and Godot 39 unit/45 smoke
+checks pass locally. Hosted CI includes the pure-Python profile contracts; actual
+Blender integration requires the local Blender runtime.
+
+## Remaining generalization and exit criteria
+
+1. **Ownership and part recognition:** adapt existing sheetset part ownership to
+   arbitrary automatic inputs, with one physical identity across observations. The
+   new geometry ownership and rounded-shaft feature matcher are not a general
+   image semantic segmenter. Distinguish genuine two-handle objects. Do not merge
+   sheetset and isolated-profile depth estimators without reconciling their different
+   coordinate/evidence contracts.
+2. **Region construction:** use existing section/revolve/loft/sweep engines to fit
+   meaningful construction regions beyond the integrated elongated profile family.
+   Its bands/shaft now manufacture independently, but semantic names and ornamental
+   subpart decomposition remain unresolved. Hold out unrelated object families.
+3. **Joint camera/shape fitting:** fit roll, projection and landmark correspondence
+   with bounded numerical optimization; separate genuine bends from camera tilt.
+   Test known camera perturbations, curved shafts and contradictory drawings.
+   The integrated, tested roll/shared-bend fit applies only to nominal orthographic
+   profiles. Perspective pose, unknown view direction and absolute linear tilt
+   remain unresolved; a planar warp is not general 3D rectification.
+4. **Appearance ownership:** integrated per-texel validity/occlusion, disagreement
+   rejection and bounded seam correction still depend on correct physical placement
+   and image semantics. Validate unrelated families and incorrect semantic masks.
+   Larger atlases or synthesized pixels do not create authentic source evidence.
+5. **Feature validation:** add local contours, groove depth/sign, attachment frames,
+   apertures and small-feature checks beyond the new exported shaft-depth probes,
+   existing attachment gaps and persistent physical IDs.
+
+These research-dependent stages require independent fixtures and acceptance gates.
+Preserve the original and approved assets; do not lower thresholds to make one
+picture pass. Update KNOWLEDGE_FILE and regenerate the static inventory after changes.
+
+
+## Stage evidence continuation — 2026-11-11
+
+Implemented balanced reserved-pixel folds, local selection with continuous harmonic
+composition, explicit raw/applied error maps, metric diagnostic skins and automatic
+structured stage review. Existing 5% local acceptance and final asset quality limits
+are unchanged. Green/orange overlay meanings are clarified; equal boundary weighting
+has little effect in the controlled leg comparison.
+
+The leg front now retains 30 supported regions (+13.247% reserved-pixel appearance
+gain), but the final 3,790-triangle mesh still fails 181/213 depth probes. A saved
+post-reduction check locates 73 newly failing probes at reduction, before baking.
+All 213 uncalibrated depth probes are excluded from protection by existing policy.
+Next: separate preservation of a chosen numerical surface from confidence in its
+physical correctness; bound reduction against supported local relief without forcing
+millions of triangles or accepting painted facets as truth. Test independent shapes,
+paint-only patches, local recesses and triangle/error tradeoffs. Do not tune final
+held-out pixels. Cross-view physical validation and calibration remain unresolved.
+
+
+## Detail-loss corrections — 2026-11-11
+
+Implemented proposal-centred composition for ambiguous regions and separate
+provisional status. Absence of an image gain no longer implies zero geometry.
+Near-exact material-only explanations need contradictory proposal residuals on both
+reserved folds. Weak evidence stays provisional. Reduction preserves measured dense
+relief independently of physical-depth confidence, using existing local contrast
+bounds. Uncalibrated nominal source targets still report final QA but do not freeze
+nearly the whole grid. Same-mesh/source-probe controlled failures fell 181 to 110;
+triangles rose 3,790 to 30,330. Fresh full build has 18,064 triangles and fails 97/200
+source-depth probes. Do not claim general groove reconstruction or a fully fixed asset.
+
+Next: resolve narrow cross-groove profiles under weak directional lighting, separate
+base-envelope banding from intended relief, improve spatially coherent evidence and
+compare triangle/detail curves on independent objects. Keep source-depth checks and
+numerical dense-surface preservation results distinct. Station 08 fits geometry;
+replacing it with an intensity-to-height Poisson solve would be the wrong change.
+
+
+## Structural tracing and connected curves — 2026-11-11
+
+Implemented optional registered MatchED-BIPED structural boundaries, separate
+weak phase-congruency curves, checked connected 2D spline paths, isolated local
+CPU inference, artifact/version provenance, cache recovery and relief-memory
+invalidation. Existing region grouping, fitting and physical-depth validation
+remain authoritative. Source/weights are local setup artifacts, never vendored.
+See TRACING.md for setup, fallback policy and CAD/drawing scope.
+
+Promotion result: not ready to become the default. Same previous 200 probes:
+97 old failures versus 111 new failures; triangles rise 18,064 to 20,964. The new
+path remains explicitly opt-in despite stronger 2D detection. Tests pass; final
+asset QA does not. See TRACING.md for the fresh-run and controlled populations.
+
+Next: evaluate coherent cross-groove profiles and downstream geometric retention
+on independent objects. A cleaner learned boundary is not itself a depth estimate.
+Paint-only phase responses must remain provisional. Do not solve triangle growth
+by weakening local preservation QA. Full hidden-line/dimensioned technical drafting
+and image-to-engineering construction inference remain separate outstanding work.
+
+
+## In-process correction supervisor and adaptive reduction — 2026-11-11
+
+Implemented the shared correction contract, local solid/air speck repairs, bounded
+full-relief retention, local feature/ray-witness QEM retries, blocked unsupported
+view/hole assumption changes and recorded before/after decisions. Stage review now
+also exposes bound saturation and proposal-to-shared-field transfer. See
+SUPERVISION.md for exact coverage and limits.
+
+Fixed-input full run: 16,756 triangles, one surface, zero normal disagreement,
+13/206 own source failures versus 109/206; older common probes improve 111/200 to
+21/200. QA thresholds and source targets are unchanged. The old global half-depth
+guard was triggered by 28 detached solid cells plus four one-cell air pockets.
+The 27,928-triangle full-strength reducer baseline falls to 16,756 while passing
+all protected dense contrasts. This supersedes the earlier blocked-promotion
+geometry result; physical depth and general model promotion remain unproven.
+
+Next: bounded depth continuation evaluated only on selection/acceptance folds,
+with local geometry/visibility safeguards; right-view fusion transfer; broad-base
+shape and narrow groove recovery; supervision contracts for remaining stations;
+independent assets. Preserve the final test fold as report-only. Never replace
+these unresolved questions with silent deeper cuts or relaxed QA thresholds.
+
+## Factory operating system and repository cleanup (2026-11-11)
+
+Implemented: candidate/release separation, per-attempt isolation, sealed input and
+payload identity, publication lock/journal, immutable versions, guarded rollback,
+retained incident records and consumer compatibility. Existing repair review,
+stage review, geometry QA and versioned memory were extended rather than replaced
+by another runtime hierarchy. Existing asset regression now uses a retained copy
+and writes baseline proposals without modifying the accepted comparison file.
+
+Implemented: common check manifest/CLI; explicit core/Blender/Godot/CAD profiles;
+pinned core dependencies and full action identities; all-change required CI;
+qualification evidence; manual source packaging; contribution/security/repair
+runbooks, owner routing, issue/PR templates and reviewed dependency update proposals.
+Root documentation identifies Hull; legacy clock documentation/code is preserved.
+The proposed legacy collector is opt-in rather than scheduled every five minutes.
+
+Still pending: owner decision on licensing and actual hosted branch/security
+rules, wider independent object fixtures, clean optional-backend qualifications,
+physically calibrated relief and the prior geometric/reconstruction backlog.
+Maintenance qualification is not certification of arbitrary model accuracy.

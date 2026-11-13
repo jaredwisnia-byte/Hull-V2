@@ -1,6 +1,6 @@
-# Repository notes for Claude
+# Hull V2 repository notes
 
-This repo holds two unrelated projects:
-
-- **Midnight Watch** (repo root): a static web app. See README.md.
-- **Long Lines** (`long-lines/`): a Godot 4.4 game prototype. **Read `long-lines/CLAUDE.md` before working on it.**
+Read KNOWLEDGE_FILE.md before changing reconstruction. Hull software lives in
+long-lines/tools with its original Godot consumer under long-lines/. Read
+long-lines/CLAUDE.md for that project. Unrelated archived applications are under
+deprecated/ and are outside the active build.

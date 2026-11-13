@@ -243,7 +243,11 @@ static func _tv() -> Node3D:
 ## Loads a prop modelled and baked in Blender (assets/props/<name>/) and gives
 ## it the baked toon material. Returns null if the asset isn't there.
 static func baked_prop(name: String) -> Node3D:
-	var dir := "res://assets/props/%s/" % name
+	var entry: Dictionary = manifest().get(name, {})
+	var relative: String = entry.get("artifact_directory", name)
+	if relative.is_absolute_path() or ".." in relative or "\\" in relative:
+		return null
+	var dir := "res://assets/props/%s/" % relative
 	if not ResourceLoader.exists(dir + name + ".glb"):
 		return null
 	var scene: PackedScene = load(dir + name + ".glb")

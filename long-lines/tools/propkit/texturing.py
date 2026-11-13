@@ -28,6 +28,7 @@ from mathutils.bvhtree import BVHTree
 
 DIRS = {"front": Vector((0, -1, 0)), "back": Vector((0, 1, 0)), "right": Vector((1, 0, 0)),
         "left": Vector((-1, 0, 0)), "top": Vector((0, 0, 1))}
+PROJECTIONS = {}
 
 
 def _uv(view, co, W, D, H):
@@ -40,7 +41,8 @@ def _uv(view, co, W, D, H):
         return (y + D / 2) / D, z / H
     if view == "left":
         return 1 - (y + D / 2) / D, z / H
-    return (x + W / 2) / W, (y + D / 2) / D          # top: front edge at the image bottom
+    # top: front edge at the image bottom
+    return (x + W / 2) / W, (y + D / 2) / D
 
 
 def smoothed_normals(obj, iters=6):
@@ -51,23 +53,26 @@ def smoothed_normals(obj, iters=6):
     n = np.array([list(v.normal) for v in bm.verts])
     nb = [[e.other_vert(v).index for e in v.link_edges] for v in bm.verts]
     for _ in range(iters):
-        m = np.array([n[i] + n[js].sum(0) if js else n[i] for i, js in enumerate(nb)])
+        m = np.array([n[i] + n[js].sum(0) if js else n[i]
+                     for i, js in enumerate(nb)])
         n = m / np.maximum(np.linalg.norm(m, axis=1, keepdims=True), 1e-9)
     bm.free()
     return n
 
 
-def project(obj, views, W, D, H, others=(), name="proj", power=4.0, rough=0.5, metal=0.0):
+def project(obj, views, W, D, H, others=(), name="proj", power=4.0, rough=0.5, metal=0.0, camera_fit=None):
     from . import mats
     me = obj.data
     mw = obj.matrix_world
-    names = [k for k in ("front", "back", "right", "left", "top") if k in views]
+    names = [k for k in ("front", "back", "right",
+                         "left", "top") if k in views]
     sizes = {}
     from PIL import Image
     for k in names:
         w_, h_ = Image.open(views[k]).size
         span = {"front": W, "back": W, "right": D, "left": D, "top": W}[k]
-        sizes[k] = w_ / span                                   # pixels per metre
+        # pixels per metre
+        sizes[k] = w_ / span
     best = max(sizes.values())
     # Occluders: this mesh and every other part (a handset hides the base beneath it).
     verts, polys = [], []
@@ -78,6 +83,7 @@ def project(obj, views, W, D, H, others=(), name="proj", power=4.0, rough=0.5, m
     tree = BVHTree.FromPolygons(verts, polys)
     sn = smoothed_normals(obj)
     span = max(W, D, H)
+
     def weights(p, nrm):
         w = np.zeros(len(names))
         for j, k in enumerate(names):
@@ -93,7 +99,8 @@ def project(obj, views, W, D, H, others=(), name="proj", power=4.0, rough=0.5, m
             w[int(np.argmax([nrm.dot(DIRS[k]) for k in names]))] = 1.0
         return w / w.sum()
 
-    vw = np.array([weights(mw @ v.co, Vector(sn[i])) for i, v in enumerate(me.vertices)]).reshape(-1, len(names))
+    vw = np.array([weights(mw @ v.co, Vector(sn[i]))
+                  for i, v in enumerate(me.vertices)]).reshape(-1, len(names))
     # At a hard edge (and everywhere on a coarse mesh) a vertex's smoothed normal belongs to no face:
     # a box's corner vertex averages front, side and back, and a big back face spanned by corners would
     # take the front's paint. Corners whose face turns more than 30 degrees from the vertex normal are
@@ -109,15 +116,18 @@ def project(obj, views, W, D, H, others=(), name="proj", power=4.0, rough=0.5, m
     # Per-corner UVs for every view, and per-corner weights (packed 4 per colour attribute).
     for k in names:
         # A colour attribute, not a UV map: bake.finish makes the only UV map from the mesh.
-        a = me.color_attributes.get("uvp_" + k) or me.color_attributes.new("uvp_" + k, "FLOAT_COLOR", "CORNER")
+        a = me.color_attributes.get(
+            "uvp_" + k) or me.color_attributes.new("uvp_" + k, "FLOAT_COLOR", "CORNER")
         for li, loop in enumerate(me.loops):
             u_, v_ = _uv(k, mw @ me.vertices[loop.vertex_index].co, W, D, H)
             a.data[li].color = (u_, v_, 0, 1)
     packs = [names[i:i + 4] for i in range(0, len(names), 4)]
     for pi, pack in enumerate(packs):
-        a = me.color_attributes.get("vw%d" % pi) or me.color_attributes.new("vw%d" % pi, "FLOAT_COLOR", "CORNER")
+        a = me.color_attributes.get("vw%d" % pi) or me.color_attributes.new(
+            "vw%d" % pi, "FLOAT_COLOR", "CORNER")
         for li, loop in enumerate(me.loops):
-            ws = [loop_w[li, names.index(k)] for k in pack] + [0.0] * (4 - len(pack))
+            ws = [loop_w[li, names.index(k)]
+                  for k in pack] + [0.0] * (4 - len(pack))
             a.data[li].color = ws
     # One material: sum over views of image(uv_view) x weight_view.
     m, nt, bsdf, out = mats._new("proj_" + name)
@@ -141,7 +151,8 @@ def project(obj, views, W, D, H, others=(), name="proj", power=4.0, rough=0.5, m
             mul.blend_type = "MULTIPLY"
             mul.inputs["Factor"].default_value = 1.0
             nt.links.new(img.outputs["Color"], mul.inputs[6])
-            ch = sep.outputs[("Red", "Green", "Blue")[ci]] if ci < 3 else wattr.outputs["Alpha"]
+            ch = sep.outputs[("Red", "Green", "Blue")[ci]
+                             ] if ci < 3 else wattr.outputs["Alpha"]
             comb = nt.nodes.new("ShaderNodeCombineColor")
             for c_ in ("Red", "Green", "Blue"):
                 nt.links.new(ch, comb.inputs[c_])
@@ -161,10 +172,14 @@ def project(obj, views, W, D, H, others=(), name="proj", power=4.0, rough=0.5, m
     for p in me.polygons:
         p.material_index = 0
     mats.register("proj_" + name, m, bsdf, out, acc, rough, metal)
-    cover = {k: round(float((vw[:, j] > 0.5).mean()), 3) for j, k in enumerate(names)}
+    PROJECTIONS[m.name] = {"object": obj, "initial_matrix": np.array(mw.copy()),
+                           "views": dict(views), "dimensions": (W, D, H), "camera_fit": camera_fit}
+    cover = {k: round(float((vw[:, j] > 0.5).mean()), 3)
+             for j, k in enumerate(names)}
     # The stretch that matters: points whose best view sees them at more than 60 degrees
     # (facing < 0.5) get smeared colour whatever the UV layout. Area-weighted by vertex.
-    facing_best = np.array([max(Vector(sn[i]).dot(DIRS[k]) for k in names) for i in range(len(sn))])
+    facing_best = np.array([max(Vector(sn[i]).dot(DIRS[k])
+                           for k in names) for i in range(len(sn))])
     grazing = float((facing_best < 0.5).mean())
     return {"views": names, "dominant_share": cover, "grazing_share": round(grazing, 3),
             "single_view_vertices": int((np.sort(vw, 1)[:, -1] >= 0.999).sum())}

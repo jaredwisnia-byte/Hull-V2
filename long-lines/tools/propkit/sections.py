@@ -24,7 +24,8 @@ import numpy as np
 from PIL import Image, ImageDraw
 from scipy import ndimage
 
-from .hull import silhouette
+from .silhouette import silhouette
+from .image_signals import CAVITY_SIGMA, masked_luminance, masked_local_mean
 
 CANDIDATES = (2.0, 2.6, 3.5, 5.0, 8.0, 24.0)     # superellipse exponents tried; the last is the box
 BOX = CANDIDATES[-1]
@@ -91,10 +92,10 @@ def band_profiles(path, other_widths=None):
 def carving(path):
     """Per band: (crease density, share of crease edges running diagonally). Carving (leaves, scrolls) has
     creases every way; turned work has them along the axis (flutes) or around it (rings, beads)."""
-    from . import relief as R
     m, img = silhouette(path)
-    L = R._lum(img, m)
-    cav = np.clip(R._local_mean(L, m, R.CAVITY_SIGMA) - L, 0, None)
+    L = masked_luminance(img, m)
+    local = masked_local_mean(L, m, CAVITY_SIGMA)
+    cav = np.clip(local - L, 0, None)
     cn = np.clip(cav / (np.percentile(cav[m], 95) + 1e-6), 0, 1)
     gy, gx = np.gradient(ndimage.gaussian_filter(cn, 1.0))
     mag = np.hypot(gx, gy)
@@ -288,9 +289,10 @@ def curved_runs(bands):
     return runs
 
 
-def hook(views, report):
+def hook(views, report, bands=None):
     """A hull voxel_hook: slices in curved bands become superellipses of their band's n."""
-    bands = infer(views)
+    if bands is None:
+        bands = infer(views)
     report["bands"] = [{k: v for k, v in b.items() if k != "evidence"} for b in bands]
     report["evidence"] = {i: b["evidence"] for i, b in enumerate(bands) if b["evidence"]}
     report["curved_runs"] = curved_runs(bands)

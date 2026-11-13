@@ -3,6 +3,18 @@
 The factory is the product; the models are its output. This folder holds the factory's
 standards, work orders, ledger and report. The machinery is in `tools/`.
 
+For captioned vessel-appliance sheets with separate part drawings, the optional
+[automatic image-only build](AUTOMATIC_INTAKE.md) detects/crops the views, generates
+the parts work order, builds, checks and exports from one image argument.
+
+## Publication and maintenance
+
+See [OPERATIONS.md](OPERATIONS.md). Factory builds now write isolated candidates;
+only qualified, non-uncertain artifacts enter versioned releases selected through
+`library.json`. Failed proposals and diagnostics are retained. The diagram below
+is a station overview; publication happens after QA and the artifact audit.
+Root `hull.py` supplies maintenance, qualification, recovery and code packaging.
+
 ## Flow
 
 ```
@@ -57,6 +69,21 @@ A new line is justified only when a category repeatedly fails another line's gat
 ## Codified corrections (the gate's one retry)
 - hull: an outline that fails on one view: that view becomes paint-only (dark-on-dark backs).
 - hull: holes: convex silhouettes. Over budget: halve the decimation ratio.
+- automatic-depth hull: each missing dense-mesh depth probe receives a source,
+  proposed-height, accepted-height, shared-field and mesh cross-section image in
+  `diagnostics/probe_review/`. Only source-supported details can trigger the
+  one local view-fusion retry. It searches a bounded patch near the visible
+  surface and rejects new probe failures, component damage or outline drift.
+  The second exported build replaces the first only if the missing detail
+  improves without new QA failures, extra extreme folds, silhouette loss or
+  an excessive triangle increase. A rejected retry is recorded and rolled
+  back; uncertain source regions remain flagged for review.
+- automatic-depth hull: an image-supported elongated profile can propose a
+  simpler shaft envelope while the existing depth solver retains local detail.
+  A dense-mesh gate stops the candidate if it loses more features, and the
+  complete exported candidate must improve without new QA failures, worse
+  folds or outline loss. See [PROCESS_SELECTION.md](PROCESS_SELECTION.md) for
+  routing evidence and the early-station audit.
 Add a rule here and in `factory.py:correct()` whenever a person fixes the same thing twice.
 
 ## Condition variants

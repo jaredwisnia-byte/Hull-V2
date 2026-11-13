@@ -27,18 +27,23 @@ from PIL import Image
 from scipy import ndimage
 
 from .hull import silhouette
+from .image_signals import CAVITY_SIGMA, masked_luminance, masked_local_mean
 
-CAVITY_SIGMA = 6.0      # px: the neighbourhood a crease is darker than
 CREASE = 0.35           # share of the 95th-percentile cavity that counts as a crease
 DOME = 0.6              # dome height / region half width (1.0 = hemisphere)
-BASE_R = 0.09           # a region whose half width exceeds this share of the view's width is base surface
+# a region whose half width exceeds this share of the view's width is base surface
+BASE_R = 0.09
 MIN_R = 1.5             # px: narrower regions are left to the crease grooves
 BOUND = 0.3             # mean crease strength round a region for it to count as carved
-MERGE = 0.22            # neighbours split by a line weaker than this (mean crease strength) are one region
+# neighbours split by a line weaker than this (mean crease strength) are one region
+MERGE = 0.22
 FIT = 0.12              # share of its shading a dome or dish must explain
-MAX_R_PX = 8.0          # px: domes stop rising past this half width (no pillows on broad leaves)
-CHANNEL = 3.0           # a region may be sunk only if this many times longer than wide (a channel)
-CONFIDENT = 0.25        # |cos| between a region's shading vector and the light below which it stays flat
+# px: domes stop rising past this half width (no pillows on broad leaves)
+MAX_R_PX = 8.0
+# a region may be sunk only if this many times longer than wide (a channel)
+CHANNEL = 3.0
+# |cos| between a region's shading vector and the light below which it stays flat
+CONFIDENT = 0.25
 CREASE_DEPTH = 0.5      # crease groove depth, in px at full cavity
 MAX_RELIEF = 0.07       # relief never exceeds this share of the object's thinner side
 HIGH_TRIS = 800000       # the dense copy baked into the normal map is simplified to this
@@ -47,13 +52,11 @@ ELEVATIONS = ("front", "back", "right", "left")
 
 
 def _lum(img, m):
-    a = np.asarray(img.convert("RGB")).astype(float) / 255
-    L = a @ [0.299, 0.587, 0.114]
-    return np.where(m, L, 0)
+    return masked_luminance(img, m)
 
 
 def _local_mean(x, m, sigma):
-    return ndimage.gaussian_filter(np.where(m, x, 0), sigma) / np.maximum(ndimage.gaussian_filter(m.astype(float), sigma), 1e-3)
+    return masked_local_mean(x, m, sigma)
 
 
 def _regions(m, cn):
@@ -64,48 +67,22 @@ def _regions(m, cn):
     inner = ndimage.binary_erosion(m, iterations=2)
     open_ = inner & (cn <= CREASE)
     d = ndimage.distance_transform_edt(open_)
-    pk = peak_local_max(d, min_distance=4, threshold_abs=MIN_R, labels=ndimage.label(open_)[0])
+    pk = peak_local_max(d, min_distance=4, threshold_abs=MIN_R,
+                        labels=ndimage.label(open_)[0])
     mk = np.zeros(m.shape, int)
     mk[tuple(pk.T)] = np.arange(1, len(pk) + 1)
     lab = watershed(cn, mk, mask=inner, watershed_line=True)
     # merge neighbours split by a weak line (one flute cut into pieces along its length; a leaf's painted
     # streaks): keep a dividing line only where it is a real crease on average
-    line = (lab == 0) & inner
-    ys, xs = np.nonzero(line)
-    pairs = {}
-    hh, ww = lab.shape
-    for y, x in zip(ys, xs):
-        nb = lab[max(0, y - 1):y + 2, max(0, x - 1):x + 2]
-        u = np.unique(nb[nb > 0])
-        for i in range(len(u)):
-            for j in range(i + 1, len(u)):
-                key = (u[i], u[j])
-                a, c = pairs.get(key, (0.0, 0))
-                pairs[key] = (a + cn[y, x], c + 1)
-    parent = np.arange(lab.max() + 1)
-
-    def find(a):
-        while parent[a] != a:
-            parent[a] = parent[parent[a]]
-            a = parent[a]
-        return a
-    for (a, b), (tot, cnt) in pairs.items():
-        if tot / cnt < MERGE:
-            parent[find(a)] = find(b)
-    roots = np.array([find(i) for i in range(len(parent))])
-    lab = roots[lab]
-    lab[lab == roots[0]] = 0
-    # dissolve weak line pixels into their region
-    weak = (lab == 0) & inner & (cn < MERGE)
-    if weak.any():
-        idx = ndimage.distance_transform_edt(lab == 0, return_distances=False, return_indices=True)
-        lab[weak] = lab[tuple(i[weak] for i in idx)]
-    return lab
+    from .region_grouping import merge_weak_lines
+    return merge_weak_lines(lab, inner, cn, MERGE)
 
 
 def _region_votes(L, m, cn, lab):
     """Per region: dome shape, its shading vector (regression on the dome's slopes) and boundary bands."""
-    hp = L - _local_mean(L, m, 8.0)                       # shading detail, without the paint's broad tone
+    hp = L - \
+        _local_mean(
+            L, m, 8.0)                       # shading detail, without the paint's broad tone
     W = m.shape[1]
     out = []
     for i, sl in enumerate(ndimage.find_objects(lab), 1):
@@ -123,7 +100,8 @@ def _region_votes(L, m, cn, lab):
         inside = r & (d > 1)
         if inside.sum() < 6:
             continue
-        A = np.c_[-gx[inside], -gy[inside]]               # shading of z = dome: -hx lx - hy ly (+ lz)
+        # shading of z = dome: -hx lx - hy ly (+ lz)
+        A = np.c_[-gx[inside], -gy[inside]]
         b = hp[sl][inside]
         coef, *_ = np.linalg.lstsq(A, b - b.mean(), rcond=None)
         res = b - b.mean() - A @ coef
@@ -133,13 +111,16 @@ def _region_votes(L, m, cn, lab):
         # carved, not just painted: creases all round it, and shading a dome (or dish) explains
         if bound < BOUND or r2 < FIT:
             continue
-        out.append({"sl": sl, "r": r, "dome": dome, "coef": coef, "w": float(inside.sum()), "R": R, "r2": r2})
+        out.append({"sl": sl, "r": r, "dome": dome, "coef": coef,
+                   "w": float(inside.sum()), "R": R, "r2": r2})
     return out, hp
 
 
 def light_of(votes):
     """One light direction (image x right, y down) from many regions' shading vectors: their principal
     axis, signed so the light comes from above (as painters light)."""
+    if not votes:
+        return np.array([-2**-.5, -2**-.5])
     M = sum(v["w"] * np.outer(v["coef"], v["coef"]) for v in votes)
     l = np.linalg.eigh(M)[1][:, -1]
     if l[1] > 0 or (abs(l[1]) < 0.2 and l[0] > 0):
@@ -147,7 +128,7 @@ def light_of(votes):
     return l
 
 
-def view_relief(path, view=None, light=None):
+def view_relief(path, view=None, light=None, region_masks=None):
     """Height map (px, + out of the surface) for one painted view, over its silhouette crop; and a report.
     light: a shared light direction (image coords) from all the sheet's views, else this view's own."""
     m, img = silhouette(path)
@@ -164,7 +145,8 @@ def view_relief(path, view=None, light=None):
     h = np.zeros_like(L)
     h_up = np.zeros_like(L)
     raised = sunk = flat = 0
-    off = np.array([l[1], l[0]])                          # (row, col) step towards the light
+    # (row, col) step towards the light
+    off = np.array([l[1], l[0]])
     for v in votes:
         sl, r, dome = v["sl"], v["r"], v["dome"]
         n = np.linalg.norm(v["coef"])
@@ -175,6 +157,7 @@ def view_relief(path, view=None, light=None):
         ring_in = r & ~ndimage.binary_erosion(r, iterations=2)
         yy, xx = np.nonzero(r)
         cy, cx = yy.mean(), xx.mean()
+
         def side(mask, towards):
             ys, xs = np.nonzero(mask)
             proj = (ys - cy) * off[0] + (xs - cx) * off[1]
@@ -199,6 +182,10 @@ def view_relief(path, view=None, light=None):
         raised += s > 0
         sunk += s < 0
         h[sl][r] = s * dome[r]
+        if region_masks is not None:
+            region = np.zeros_like(m)
+            region[sl] = r
+            region_masks.append(region)
     h -= CREASE_DEPTH * cn * 2
     h = ndimage.gaussian_filter(h, 0.7)
     h[~m] = 0
@@ -236,12 +223,14 @@ def _smoothed_normals(verts, faces, iters=4):
     nv = len(verts)
     v = verts[faces]
     fn = np.cross(v[:, 1] - v[:, 0], v[:, 2] - v[:, 0])
-    n = np.stack([sum(np.bincount(faces[:, j], fn[:, c], nv) for j in range(3)) for c in range(3)], 1)
+    n = np.stack([sum(np.bincount(faces[:, j], fn[:, c], nv)
+                 for j in range(3)) for c in range(3)], 1)
     a = np.r_[faces[:, 0], faces[:, 1], faces[:, 2]]
     b = np.r_[faces[:, 1], faces[:, 2], faces[:, 0]]
     for _ in range(iters):
         n = n / np.maximum(np.linalg.norm(n, axis=1, keepdims=True), 1e-12)
-        n = n + np.stack([np.bincount(a, n[b, c], nv) + np.bincount(b, n[a, c], nv) for c in range(3)], 1)
+        n = n + np.stack([np.bincount(a, n[b, c], nv) +
+                         np.bincount(b, n[a, c], nv) for c in range(3)], 1)
     return n / np.maximum(np.linalg.norm(n, axis=1, keepdims=True), 1e-12)
 
 
@@ -253,20 +242,28 @@ def _sample(img, u, v):
     return ndimage.map_coordinates(img, [y, x], order=1, mode="nearest")
 
 
-def hook(views, W, D, H, report):
+def hook(views, W, D, H, report, maps_override=None, keep_high=True, cap_share=MAX_RELIEF, light_override=None):
     """A hull mesh_hook: displace the dense mesh by the views' relief. Fills report (per view and totals)."""
     from .texturing import _uv
     maps, mpp = {}, {}
-    light = shared_light(views)
-    report["light_dir"] = [round(float(light[0]), 2), round(float(-light[1]), 2)]
+    light = shared_light(views) if light_override is None else light_override
+    report["light_dir"] = [
+        round(float(light[0]), 2), round(float(-light[1]), 2)]
     for k in ELEVATIONS:
         if k in views:
-            h, rep = view_relief(views[k], k, light)
-            maps[k] = h
+            if maps_override is not None:
+                h = maps_override[k]
+                rep = {}
+            else:
+                h, rep = view_relief(views[k], k, light)
+            maps[k] = maps_override.get(k, np.zeros_like(
+                h)) if maps_override is not None else h
             mpp[k] = (W if k in ("front", "back") else D) / h.shape[1]
-            report.setdefault("views", {})[k] = rep
-    cap = MAX_RELIEF * min(W, D)
-    dirs = {"front": (0, -1, 0), "back": (0, 1, 0), "right": (1, 0, 0), "left": (-1, 0, 0)}
+            if maps_override is None:
+                report.setdefault("views", {})[k] = rep
+    cap = cap_share * min(W, D)
+    dirs = {"front": (0, -1, 0), "back": (0, 1, 0),
+            "right": (1, 0, 0), "left": (-1, 0, 0)}
 
     def apply(obj):
         me = obj.data
@@ -287,10 +284,15 @@ def hook(views, W, D, H, report):
             u, v = _uv(k, co[sel].T, W, D, H)
             hsum[sel] += f[sel] * _sample(hm, u, v) * mpp[k]
             wsum[sel] += f[sel]
-        disp = np.clip(np.where(wsum > 0, hsum / np.maximum(wsum, 1e-9), 0), -cap, cap)
+        disp = np.clip(np.where(wsum > 0, hsum /
+                       np.maximum(wsum, 1e-9), 0), -cap, cap)
         co += n * disp[:, None]
         me.vertices.foreach_set("co", co.ravel())
         me.update()
+        report["displaced_mm"] = {"max_out": round(float(disp.max()) * 1000, 2), "max_in": round(float(-disp.min()) * 1000, 2),
+                                  "cap": round(cap * 1000, 2), "vertices": int(nv)}
+        if not keep_high:
+            return
         # the dense relief, kept for baking its detail into the normal map (bake.finish bakes
         # "<name>__high" onto the simplified mesh): geometry keeps what the triangle budget can hold
         import bpy

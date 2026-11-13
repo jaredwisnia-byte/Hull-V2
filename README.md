@@ -1,38 +1,60 @@
-# Midnight Watch
+# Hull V2
 
-> This repo also holds `long-lines/`, a Godot test slice of the game *Long Lines*. See [long-lines/README.md](long-lines/README.md).
+Image references → geometric reconstruction → textured models → measured inspection.
 
-A 24-hour countdown clock in the style of the Bulletin of the Atomic Scientists' Doomsday Clock. It counts down to midnight and puts a red marker on the dial at the time of each geopolitically significant event. Every event also goes into a ledger below the clock with its source and timestamp.
+Hull is the asset-production software in `long-lines/tools`; the Long Lines Godot
+project supplies its original asset library and a consumer for exported props.
+The reconstruction pipeline runs in software, without a runtime LLM. It supports
+orthographic views, parts sheets, inferred sections, local relief hypotheses,
+texture ownership, inspection drawings and optional CAD surface exchange.
+**A passing image fit does not establish physical depth or universal recognition.**
 
-- **Dial:** the full face is 24 hours, with midnight at the top. The hand shows the current time, and the shaded arc is the time left until midnight.
-- **Markers:** a solid red pip is an event since midnight. A hollow pip is an event from before midnight. Tap a marker to jump to its entry in the ledger.
-- **Events:** a scheduled GitHub Actions job (`.github/workflows/collect.yml`) reads RSS feeds from BBC, NYT, the Guardian, NPR, Al Jazeera, France 24, CNBC, MarketWatch, Ars Technica and IEEE Spectrum. It sorts headlines into six categories (Politics, Science, Economics, Finance, Engineering, Geopolitics) by keyword and drops stories that match none. The last 8 hours of events are published as `events.json` on the repo's `data` branch, and the app checks that file every minute. Filter chips limit the list and dial to a single category.
-- **Notifications:** the same job sends a Web Push alert for each new event, so they arrive even when the app is closed. While the app is open, it also notifies you directly.
+## Start here
 
-The job runs every 5 minutes, GitHub's shortest schedule, and runs can be late. Categories, keywords and feeds live in `config.js`.
+1. Use Python **3.13** and Blender **5.2.3** for the qualified profile.
+2. Install the core dependencies in an isolated environment:
+   `python -m pip install -r requirements-core.txt`.
+3. Run `python hull.py doctor`, then `python hull.py check`.
+4. Follow the [image intake guide](long-lines/factory/AUTOMATIC_INTAKE.md) to build.
 
-## Install on iPhone
+On Windows, `Hull.cmd doctor` also finds Blender 5.2's bundled Python if Python
+is not installed separately. It does not install packages or change machine policy.
+For a local dependency folder use `python -m pip install --target .hull-runtime -r requirements-core.txt`.
 
-1. Host the repo with GitHub Pages: **Settings → Pages → Build and deployment → Source: Deploy from a branch**, then pick `master` and `/ (root)`.
-2. On your iPhone, open the Pages URL (`https://<user>.github.io/<repo>/`) in Safari.
-3. Tap **Share → Add to Home Screen**. The app then opens full-screen from its own icon.
-
-## Notifications while the app is closed
-
-1. Open the app from your Home Screen, tap **Enable notifications**, and allow them.
-2. Tap **Copy push key**.
-3. In the repo, go to **Settings → Secrets and variables → Actions** and add two repository secrets:
-   - `PUSH_SUBSCRIPTION`: the push key you just copied.
-   - `VAPID_PRIVATE_KEY`: the private signing key that pairs with `VAPID_PUBLIC_KEY` in `config.js`.
-4. Notifications start with the next scheduled run. **Actions → Collect events → Run workflow** starts one right away. If a run finds more than 3 new events, they arrive as a single summary.
-
-GitHub pauses scheduled workflows after 60 days without repo activity. Re-enable it from the Actions tab if that happens.
-
-## Run locally
-
-```sh
-python3 -m http.server 8000
-# open http://localhost:8000
+```text
+python hull.py audit
+python hull.py check --profiles core
+python hull.py qualify --blender "PATH/TO/blender.exe" --godot "PATH/TO/godot.exe"
+python hull.py package --output "PATH/TO/Hull-V2-source.zip"
 ```
 
-This is a static web app with no build step and no dependencies.
+`qualify` requires core, Blender and Godot checks; `--profiles core,blender,godot,cad`
+also requires a working optional Open CASCADE backend. Missing capabilities and
+skipped required checks fail qualification. OCR, neural models and CAD dependencies
+are separate capabilities; installing core does not install them.
+
+## Build safety
+
+Each factory build keeps its order, diagnostics, QA and candidate exports under
+`.hull-runs/<run-id>/`. Failed or uncertain candidates remain inspectable.
+Passing candidates receive an artifact audit before publication into immutable
+`long-lines/assets/props/releases/<name>/<run-id>/` versions. `library.json` selects
+the active version; legacy asset paths still load. Set `HULL_RELEASE_POLICY=hold`
+for experiments, then use `python hull.py promote RECEIPT.json` when qualified.
+Promotion cannot override failed QA or unresolved inference warnings.
+
+## Project guide
+
+- [Operations, repairs and recovery](long-lines/factory/OPERATIONS.md)
+- [Contribution and validation](CONTRIBUTING.md)
+- [Repository maintenance audit](docs/REPOSITORY_MAINTENANCE.md)
+- [Validation and retained benchmark failures](docs/MAINTENANCE_VALIDATION.md)
+- [Current machinery and limitations](KNOWLEDGE_FILE.md)
+- [Factory manual and sizing](long-lines/factory/README.md)
+- [Security reporting](SECURITY.md)
+- [Long Lines game](long-lines/README.md)
+- [Archived unrelated components](deprecated/README.md)
+
+A code-only ZIP is a reproducible source handoff, not a standalone installer: model
+assets, trained weights, dependencies, generated outputs and private run records are excluded.
+No project-wide license grant is inferred; dependency and image rights remain separate.

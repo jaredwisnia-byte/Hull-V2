@@ -14,7 +14,11 @@ from PIL import Image, ImageDraw, ImageFont
 HERE = os.path.dirname(os.path.abspath(__file__))
 LIB = os.path.normpath(os.path.join(HERE, "..", "assets", "props"))
 name = sys.argv[sys.argv.index("--") + 1]
-folder = os.path.join(LIB, name)
+sys.path.insert(0, HERE)
+from propkit.warehouse import asset_directory
+folder = str(asset_directory(os.environ.get('HULL_LIBRARY_ROOT', LIB), name))
+output = os.environ.get('HULL_PREVIEW_OUTPUT', os.path.join(HERE, '..', '..', '.hull-maintenance', 'previews', name, '_preview.png'))
+os.makedirs(os.path.dirname(output), exist_ok=True)
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.import_scene.gltf(filepath=os.path.join(folder, name + ".glb"))
@@ -94,7 +98,7 @@ for label, direction, scale in views:
     camera.location = centre + direction.normalized() * max(3, size.length * 2)
     camera.rotation_euler = (centre - camera.location).to_track_quat("-Z", "Y").to_euler()
     camera.data.ortho_scale = scale
-    path = os.path.join(folder, "_preview_temp.png")
+    path = os.path.join(os.path.dirname(output), "_preview_temp.png")
     scene.render.filepath = path
     bpy.ops.render.render(write_still=True)
     tiles.append((label, Image.open(path).convert("RGB").copy()))
@@ -109,6 +113,6 @@ except OSError:
 for i, (label, img) in enumerate(tiles):
     sheet.paste(img, (i * 380, 0))
     draw.text((i * 380 + 12, 351), label, fill=(235, 226, 210), font=font)
-out = os.path.join(folder, "_preview.png")
+out = output
 sheet.save(out)
 print("TRIM_PREVIEW", out)
