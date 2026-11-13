@@ -91,6 +91,14 @@ class ReviewContracts(unittest.TestCase):
         self.assertEqual(review['findings'][0]['code'],
                          'preflight_view_conflict_used_for_geometry')
 
+    def test_reconciled_trace_without_source_mapping_requires_review(self):
+        review = inspect({'pass': True, 'fails': []}, {'source_drawing': {
+            'sheet': 'technical-traces.png',
+            'reconciled_views_without_source_pixel_map': ['right']}})
+        self.assertEqual(review['status'], 'needs_review')
+        self.assertEqual(review['findings'][0]['code'],
+                         'reconciled_view_lacks_source_pixel_map')
+
     def test_separate_part_evidence_is_also_checked(self):
         measured = {'surface_details': {'handle': {
             'pre_reduction_validation': {'probes': [{'id': 'a', 'retained': True}]}}}}

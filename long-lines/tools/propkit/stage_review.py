@@ -16,6 +16,12 @@ def inspect(result, measured, diagnostics=None):
         findings.append(dict(code=code, station=station, severity=severity, summary=summary,
                              evidence=evidence, next_check=next_check))
     drawing = measured.get('source_drawing', {})
+    changed_frames = drawing.get('reconciled_views_without_source_pixel_map', [])
+    if changed_frames:
+        flag('reconciled_view_lacks_source_pixel_map', 5, 'review',
+             'Reconciliation altered build-input views without a source-pixel map',
+             {'views': changed_frames, 'drawing': drawing.get('sheet')},
+             'Map every build-input contour to the original source pixels before treating its inferred geometry as source-trace constrained.')
     conflicts = drawing.get('view_conflicts_in_use', [])
     if conflicts:
         flag('preflight_view_conflict_used_for_geometry', 5, 'review',

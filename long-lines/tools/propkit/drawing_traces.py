@@ -163,7 +163,7 @@ def observe(view, path, construction_mask=None, opening_witness=None):
 
 
 def infer(views, destination, construction_masks=None, opening_report=None,
-          view_consistency=None, geometry_views=None):
+          view_consistency=None, geometry_views=None, source_views=None):
     """Create the first-station drawing and JSON from arbitrary labelled views."""
     destination = Path(destination)
     destination.mkdir(parents=True, exist_ok=True)
@@ -173,16 +173,28 @@ def infer(views, destination, construction_masks=None, opening_report=None,
         raise ValueError('At least one labelled source view is required')
     construction_masks = construction_masks or {}
     opening_report = opening_report or {}
+    source_views = source_views or views
     view_consistency = view_consistency or {}
     proposed_paint_only = set(view_consistency.get('paint_only', ()))
     opposites = {'front': 'back', 'back': 'front',
                  'left': 'right', 'right': 'left'}
-    observations = {
+    build_observations = {
         name: observe(name, views[name],
                       construction_masks[name][0] if name in construction_masks else None,
                       opposites.get(name) if opening_report.get('accepted', {}).get(name, 0)
                       else None)
         for name in selected}
+    changed_frames = [name for name in selected
+                      if str(source_views.get(name, views[name])) != str(views[name])]
+    for name in changed_frames:
+        for item in build_observations[name]['traces']:
+            item['id'] = f"build_input:{item['id']}"
+        for section in build_observations[name]['observed_elevation_sections']:
+            for crossing in section['crossings']:
+                crossing['source_trace_id'] = f"build_input:{crossing['source_trace_id']}"
+    observations = dict(build_observations)
+    for name in changed_frames:
+        observations[name] = observe(name, source_views[name])
     view_use = {}
     for name in selected:
         used = None if geometry_views is None else name in geometry_views
@@ -194,6 +206,10 @@ def infer(views, destination, construction_masks=None, opening_report=None,
                 'views', {}).get(name, {}).get('off_pct'),
             'conflict_in_use': bool(used and proposed),
             'preflight_is_diagnostic_only': bool(view_consistency),
+            'original_source_path': str(source_views.get(name, views[name])),
+            'build_input_path': str(views[name]),
+            'build_input_differs_from_source': name in changed_frames,
+            'source_to_build_pixel_map': 'unresolved' if name in changed_frames else 'identity',
         }
         observations[name]['construction_use'] = view_use[name]
     conflicts = [name for name, status in view_use.items()
@@ -202,12 +218,18 @@ def infer(views, destination, construction_masks=None, opening_report=None,
     constraints = [
         {'id': item['id'], 'kind': 'opposed_mask_opening',
          'source_view': name, 'cross_view_witness': item['cross_view_witness'],
-         'source_trace_id': item['id'],
-         'area_source_px': item['area_source_px'],
+         'source_trace_id': item['id'] if name not in changed_frames else None,
+         'build_input_trace_id': item['id'],
+         'area_source_px': item['area_source_px'] if name not in changed_frames else None,
+         'area_build_input_px': item['area_source_px'] if name in changed_frames else None,
+         'measurement_pixel_frame': ('reconciled_build_input' if name in changed_frames
+                                     else 'original_source'),
          'appearance_median_rgb': item['appearance_median_rgb'],
          'appearance_std_rgb': item['appearance_std_rgb'],
-         'status': 'construction_candidate_in_use_physical_hole_unverified'}
-        for name, observed in observations.items() for item in observed['traces']
+         'status': ('construction_candidate_in_use_physical_hole_unverified'
+                    if name not in changed_frames else
+                    'build_input_candidate_original_source_mapping_unresolved')}
+        for name, observed in build_observations.items() for item in observed['traces']
         if item['kind'] == 'opposed_mask_opening']
     side = 'right' if 'right' in observations else 'left'
     paired_sections = []
@@ -252,11 +274,16 @@ def infer(views, destination, construction_masks=None, opening_report=None,
             draw.text((x0 + 12, y0 + 29),
                       'PREFLIGHT CONFLICT: VIEW STILL USED FOR GEOMETRY',
                       fill='#b00020')
+        if name in changed_frames:
+            draw.text((x0 + 12, y0 + 45),
+                      'ORIGINAL SOURCE SHOWN; BUILD INPUT WAS ALTERED',
+                      fill='#b00020')
         record = observations[name]
         w, h = record['source_size_px']
-        scale = min((x1 - x0 - 42) / w, (y1 - y0 - 80) / h)
+        header_height = 70 if name in changed_frames else 40
+        scale = min((x1 - x0 - 42) / w, (y1 - y0 - header_height - 40) / h)
         ox = x0 + (x1 - x0 - w * scale) / 2
-        oy = y0 + 40 + (y1 - y0 - 80 - h * scale) / 2
+        oy = y0 + header_height + (y1 - y0 - header_height - 40 - h * scale) / 2
         coordinate_transforms[name] = {'sheet_xy_from_source_xy':
                                         {'scale': scale, 'offset_xy': [ox, oy]}}
         for item in record['traces']:
@@ -300,6 +327,9 @@ def infer(views, destination, construction_masks=None, opening_report=None,
               'paired_elevation_envelopes': paired_sections,
               'view_construction_use': view_use,
               'view_conflicts_in_use': conflicts,
+              'reconciled_views_without_source_pixel_map': changed_frames,
+              'reconciled_build_input_observations': {
+                  name: build_observations[name] for name in changed_frames},
               'end_view_frame_hypotheses': frame_hypotheses,
               'geometry_inferences': [], 'build_constraints': constraints,
               'unknowns': ['internal depth', 'material or shadow versus relief',

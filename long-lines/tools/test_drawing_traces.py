@@ -73,6 +73,33 @@ class SourceSectionContracts(unittest.TestCase):
         self.assertIn('unresolved', top['status'])
         self.assertEqual(top['construction_use'], 'diagnostic_only')
 
+    def test_reconciled_build_pixels_do_not_masquerade_as_original_traces(self):
+        def observed(view, path, *unused):
+            opening = 'build' in str(path)
+            return {'source_path': str(path), 'source_size_px': [20, 20],
+                    'foreground_box_px': [2, 2, 18, 18],
+                    'observed_elevation_sections': [],
+                    'traces': ([{'id': 'front:opening:1', 'kind': 'opposed_mask_opening',
+                                'cross_view_witness': 'back', 'area_source_px': 12,
+                                'appearance_median_rgb': [0, 0, 0],
+                                'appearance_std_rgb': [0, 0, 0]}] if opening else []),
+                    'outer_path_count': 0, 'internal_path_count': 0,
+                    'opposed_mask_opening_count': int(opening)}
+
+        with tempfile.TemporaryDirectory() as folder, patch(
+                'propkit.drawing_traces.observe', side_effect=observed):
+            report = infer({'front': 'build.png'}, folder,
+                           source_views={'front': 'original.png'})
+        self.assertEqual(report['observations']['front']['source_path'], 'original.png')
+        self.assertEqual(report['reconciled_build_input_observations']['front']['source_path'],
+                         'build.png')
+        self.assertEqual(report['reconciled_views_without_source_pixel_map'], ['front'])
+        candidate = report['build_constraints'][0]
+        self.assertIsNone(candidate['source_trace_id'])
+        self.assertEqual(candidate['build_input_trace_id'], 'build_input:front:opening:1')
+        self.assertIsNone(candidate['area_source_px'])
+        self.assertEqual(candidate['area_build_input_px'], 12)
+
 
 if __name__ == '__main__':
     unittest.main()

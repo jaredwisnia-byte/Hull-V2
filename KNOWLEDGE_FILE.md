@@ -14,6 +14,10 @@ report when a view proposed for paint only is still used for geometry; all seven
 consumer pilot orders have at least one such conflict. End-view aspect evidence
 is recorded without rotating or excluding any view. These are diagnostics, not
 validated cross-view feature identities, physical sections or corrected meshes.
+For explicit reconciliation, the sheet now records original source paths and
+altered build-input paths separately; a changed view remains under review until
+its construction pixels can be mapped back to the supplied image. A CRT TV
+right-view flip exercised the distinction.
 See [drawing status](docs/TRACE_DRIVEN_DRAWING_STATUS.md) for the acceptance gate.
 
 ## Consumer sheet intake pilot (2026-11-12)

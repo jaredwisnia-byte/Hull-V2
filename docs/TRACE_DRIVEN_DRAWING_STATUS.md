@@ -34,6 +34,11 @@ unknowns. The resulting construction decisions must refer back to the drawing.
   review flags this contradiction. Source-aspect residuals for 0/180 versus
   90/270 degree end-view axes are saved as diagnostic hypotheses, not applied
   rotations; aspect cannot resolve flips or camera pose.
+- When reconciliation changes a build view, the sheet traces the original
+  supplied image and stores the altered construction image separately. Its
+  build-input contour IDs cannot masquerade as source contour IDs. Stage review
+  holds the result until a source-to-build pixel mapping exists. A CRT television
+  with a flipped right view exercised this path; the raw path stayed intact.
 - Prebuild integration was checked on an instant camera and cassette recorder.
   A mixed diagnostic trial also included toaster, typewriter, hair dryer, alarm
   clock, stand mixer, a carved leg, and another camera view set. The trial
@@ -58,6 +63,9 @@ unknowns. The resulting construction decisions must refer back to the drawing.
   may be explained by a rotated view or a core-mask measurement, so the next
   correction must compare the source frame, full silhouette, and resulting
   mesh on the mixed set before adopting a view transformation or exclusion.
+- Reconciled build-input paths have no inverse mapping to original source pixels.
+  They remain usable as construction evidence only with an explicit provenance
+  gap, and release review holds them pending that mapping.
 
 ## Next acceptance gate
 

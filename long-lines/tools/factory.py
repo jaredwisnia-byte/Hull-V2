@@ -286,6 +286,7 @@ def run_line(order):
         d = os.path.join(SRC, order["views_folder"])
         views = {k: os.path.join(d, "v_%s.png" % k)
                  for k in order.get("views", [])}
+        original_views = dict(views)
         hp = dict(order.get("hull", {}))
         # "paint": "project" blends every view by how squarely each face sees it (texturing.project, as
         # hull_parts does). The default paints each face from one view only, which streaks slanted faces
@@ -352,7 +353,8 @@ def run_line(order):
                     opening_report=order['measured'].get('observed_openings'),
                     view_consistency=(order['measured'].get('reconcile') or
                                       order.get('view_consistency')),
-                    geometry_views=geometry_views)
+                    geometry_views=geometry_views,
+                    source_views=original_views)
                 order.setdefault('measured', {})['source_drawing'] = {
                     'stage': 'before_geometry',
                     'sheet': os.path.join(trace_folder, 'technical-traces.png'),
@@ -361,6 +363,8 @@ def run_line(order):
                     'status': 'source contours and opposing-mask opening candidates; physical meaning unresolved',
                     'opening_candidates': source_drawing['build_constraints'],
                     'view_conflicts_in_use': source_drawing['view_conflicts_in_use'],
+                    'reconciled_views_without_source_pixel_map':
+                        source_drawing['reconciled_views_without_source_pixel_map'],
                     'paired_elevation_measurements': len(
                         source_drawing['paired_elevation_envelopes']),
                     'path_counts': {view: {'outer': record['outer_path_count'],
