@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 import cv2
 from PIL import Image
-from sheet_blobs import visual_regions, visual_match
+from sheet_blobs import visual_regions, visual_match, caption_regions
 from propkit.vision import role, repeated_row
 from propkit.vision_order import assign, generate
 
@@ -24,6 +24,12 @@ class VisionTests(unittest.TestCase):
         image[195:198,:]=100
         boxes,_=visual_regions(image.astype(int),[])
         self.assertEqual(len(boxes),2)
+
+    def test_adjacent_views_joined_by_mask_are_split_by_captions(self):
+        boxes=[[10,10,210,150]]
+        labels=[{'view':'left','box':[45,155,75,170]},
+                {'view':'right','box':[145,155,185,170]}]
+        self.assertEqual(len(caption_regions(boxes,labels,200)),2)
 
     def test_known_visual_transform(self):
         rng=np.random.default_rng(8)
@@ -75,6 +81,24 @@ class VisionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             with self.assertRaisesRegex(ValueError,'five labelled'):
                 generate({'regions':[]},Image.new('RGB',(100,100)),np.zeros(3),folder)
+
+    def test_generic_order_retains_unresolved_components(self):
+        import tempfile, json
+        image=Image.new('RGB',(400,400),(20,20,20))
+        boxes=[[20,20,100,160],[120,20,200,160],[220,20,300,160],
+               [20,200,100,340],[120,200,200,340]]
+        regions=[{'id':i,'part':'assembly','view':view,'box':box}
+                 for i,(view,box) in enumerate(zip(
+                     ('front','back','left','right','top'),boxes))]
+        regions.append({'id':5,'part':'knob','view':None,'box':[220,200,270,250]})
+        with tempfile.TemporaryDirectory() as folder:
+            order=generate({'image':'radio.png','regions':regions,'compact_parts':{}},
+                           image,np.array([20,20,20]),folder)
+            self.assertEqual(order['line'],'hull')
+            self.assertEqual(len(order['views']),5)
+            self.assertGreater(order['height_m'], .2)
+            evidence=json.loads((__import__('pathlib').Path(folder)/'vision-report.json').read_text())
+            self.assertEqual(evidence['unresolved_component_groups'],['knob'])
 
 
 if __name__=='__main__':

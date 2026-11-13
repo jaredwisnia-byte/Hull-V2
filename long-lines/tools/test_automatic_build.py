@@ -57,6 +57,24 @@ class BuildGuards(unittest.TestCase):
             self.assertEqual(result['status'], 'needs_review')
             self.assertNotIn('model', result)
 
+    def test_unresolved_generic_parts_prevent_complete_status(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            image = root/'image.png'
+            image.write_bytes(b'input')
+            order = root/'order.json'
+            order.write_text(json.dumps({
+                'name': 'body_only', 'assumptions': [],
+                'unresolved_component_regions': [7, 8]}))
+            report = {'status': 'ready_to_build', 'work_order': str(order)}
+            with patch.object(sheet_blobs, 'automatic', return_value=report), \
+                    patch.object(factory, 'LIB', str(root)), \
+                    patch.object(factory, 'build', return_value={
+                        'pass': True, 'fails': [], 'metrics': {}}):
+                result = factory.automatic_build(image, root/'output')
+            self.assertIn('unresolved_companion_parts', result['inference_warnings'])
+            self.assertEqual(result['status'], 'needs_review')
+
 
 def artifact_acceptance(path):
     result = json.loads(path.read_text())

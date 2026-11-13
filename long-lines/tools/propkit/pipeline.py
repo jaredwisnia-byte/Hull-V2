@@ -68,6 +68,8 @@ def _build_image(image, output, *, build_order, library_root, render_script, exp
         result["assumptions"] = order["assumptions"]
         warnings = [part["name"] for part in order.get("parts", [])
                     if part.get("depth_inference", {}).get("needs_review")]
+        if order.get('unresolved_component_regions'):
+            warnings.append('unresolved_companion_parts')
         if order.get('physical_part_graph',{}).get('needs_review'):
             warnings.append('unresolved_physical_part_ownership')
         if order.get("automatic_depth"):

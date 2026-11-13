@@ -90,6 +90,56 @@ def bounds(a, background, y0=0, y1=None):
     return [int(x.min()), int(y.min()+y0), int(x.max()+1), int(y.max()+y0+1)]
 
 
+def generic_order(report, image, background, output, assembly, groups):
+    """Build the observed outer body when no supported part grammar exists.
+
+    Component drawings remain evidence, never silently become duplicated geometry.
+    """
+    from sheet_blobs import crop
+    from . import sizing
+
+    source = output/'source'/'assembly'
+    source.mkdir(parents=True, exist_ok=True)
+    for view, region in assembly.items():
+        tile = image.crop(region['box'])
+        painting, holes = crop(np.asarray(tile).astype(int), background,
+                               [0, 0, tile.width, tile.height])
+        Image.fromarray(painting).save(source/f'v_{view}.png')
+        if holes.any():
+            Image.fromarray(np.uint8(holes)*255).save(source/f'h_{view}.png')
+
+    front = image.crop(assembly['front']['box'])
+    # A hand-width for the entire consumer device produced miniature assets and
+    # excessive texel density. Three hand-widths is an explicit generic prior,
+    # still not a physical measurement or object classification.
+    scale = 3*sizing.facts()['hand_width']/1000/front.width
+    unresolved = [region['id'] for region in report['regions']
+                  if region['id'] not in {item['id'] for item in assembly.values()}
+                  and region['view'] != 'perspective']
+    asset = 'vision_' + __import__('re').sub('[^a-z0-9]+', '_',
+                                            Path(report['image']).stem.lower()).strip('_')
+    order = {'name': asset, 'category': 'appliance', 'line': 'hull',
+             'status': 'pending', 'class': 'small', 'tex': 2048,
+             'views_folder': str(source), 'views': list(assembly),
+             'height_m': front.height*scale, 'budget': 'screen', 'rough': .65,
+             'hull': {'paint': 'project', 'relief': True},
+             'automatic_depth': True, 'vision_generated': True,
+             'build_scope': 'outer_body_only',
+             'unresolved_component_regions': unresolved,
+             'source': report['image'],
+             'assumptions': ['Width estimated as three hand-widths; not measured.',
+                             'Single observed body only; companion parts are unresolved.']}
+    (output/'work-order.json').write_text(json.dumps(order, indent=2))
+    (output/'vision-report.json').write_text(json.dumps({
+        'mode': 'generic_outer_body', 'image_only': True, 'runtime_llm': False,
+        'scale_m_per_pixel': scale, 'unresolved_component_groups': sorted(groups),
+        'unresolved_component_regions': unresolved,
+        'records': {'assembly': {'views': {view: region['id']
+                                           for view, region in assembly.items()}}}
+    }, indent=2))
+    return order
+
+
 def generate(report, image, background, output):
     """No user coordinates, dimensions, inventory or placement values are accepted."""
     from sheet_blobs import crop
@@ -110,13 +160,12 @@ def generate(report, image, background, output):
     roles = {name: role(name) for name in groups}
     unknown = [name for name, value in roles.items() if value == 'part']
     if unknown:
-        raise ValueError('unsupported part roles: '+', '.join(unknown))
+        return generic_order(report, image, background, output, assembly, groups)
     containers = [name for name in groups if roles[name] == 'container']
     supports = [name for name in groups if roles[name] == 'support']
     lids = [name for name in groups if roles[name] == 'lid']
     if len(containers) != 1 or len(supports) > 1 or len(lids) > 1:
-        raise ValueError(
-            'current automatic assembly grammar needs one vessel and at most one base/collar and lid')
+        return generic_order(report, image, background, output, assembly, groups)
     compact = report['compact_parts']
     for name in groups:
         if roles[name] in ('button', 'knob', 'lever') and name not in compact:

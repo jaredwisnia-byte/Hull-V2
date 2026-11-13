@@ -120,6 +120,31 @@ def visual_match(template, scene):
             'score':float(count*min(1,coverage*4))}
 
 
+def caption_regions(boxes, labels, image_height):
+    """Separate adjacent drawings when independent captions share one mask blob."""
+    result = [list(box) for box in boxes]
+    captions = [label for label in labels if label['view'] is not None]
+    changed = True
+    while changed:
+        changed = False
+        for index, box in enumerate(result):
+            nearby = [label for label in captions
+                      if box[0] < (label['box'][0]+label['box'][2])/2 < box[2]
+                      and -image_height*.02 <= label['box'][1]-box[3] <= image_height*.12]
+            nearby.sort(key=lambda label: (label['box'][0]+label['box'][2])/2)
+            if len(nearby) < 2:
+                continue
+            centers = [(label['box'][0]+label['box'][2])/2 for label in nearby]
+            split = int(round((centers[0]+centers[1])/2))
+            if min(split-box[0], box[2]-split) < (box[2]-box[0])*.18:
+                continue
+            result[index:index+1] = [[box[0],box[1],split,box[3]],
+                                     [split,box[1],box[2],box[3]]]
+            changed = True
+            break
+    return result
+
+
 def automatic(sheet, output):
     """Image-only inspection stage. Ambiguous views stay unresolved, not guessed."""
     sheet=Path(sheet).resolve()
@@ -129,6 +154,7 @@ def automatic(sheet, output):
     a=np.asarray(image).astype(int)
     labels=recognized_labels(sheet)
     boxes,dividers=visual_regions(a,labels)
+    boxes=caption_regions(boxes,labels,image.height)
     # Detect horizontal section boundaries from long divider support.
     lines=np.nonzero(dividers.sum(1)>image.width*.4)[0]
     cuts=[]
@@ -137,7 +163,12 @@ def automatic(sheet, output):
             cuts.append(int(y))
     def band(y):
         return sum(y>cut for cut in cuts)
-    headings=[label for label in labels if label['view'] is None]
+    # Branding printed within a drawing is not a section heading.
+    headings=[label for label in labels if label['view'] is None
+              and band(label['box'][1]) > 0 and not any(
+        box[0] <= (label['box'][0]+label['box'][2])/2 <= box[2]
+        and box[1] <= (label['box'][1]+label['box'][3])/2 <= box[3]
+        for box in boxes)]
     regions=[]
     for i,box in enumerate(boxes):
         x0,y0,x1,y1=box
@@ -153,12 +184,11 @@ def automatic(sheet, output):
     for label in (l for l in labels if l['view'] is not None):
         x0,y0,x1,y1=label['box']; cx=(x0+x1)/2
         candidates=[r for r in regions if r['part']=='assembly' and r['view'] is None
-                    and r['box'][0]<=cx<=r['box'][2] and r['box'][3]<=y0+4]
+                    and r['box'][0]<=cx<=r['box'][2]
+                    and -image.height*.02 <= y0-r['box'][3] <= image.height*.12]
         if not candidates:
             continue
         region=min(candidates,key=lambda r:y0-r['box'][3])
-        if y0-region['box'][3] > image.height*.12:
-            continue
         region.update(view=label['view'],status='caption_assigned',confidence=label['confidence'])
     assembly=[r for r in regions if r['part']=='assembly' and r['view'] not in (None,'perspective')]
     cv=__import__('cv2'); cv.setNumThreads(1)

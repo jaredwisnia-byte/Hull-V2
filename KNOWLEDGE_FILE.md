@@ -3,6 +3,17 @@
 Last audited: 2026-11-11. Read this before proposing a new reconstruction module.
 Update it when verified behaviour, inputs, call paths or test results change.
 
+## Consumer sheet intake pilot (2026-11-12)
+
+See [consumer sheet intake](docs/CONSUMER_SHEET_INTAKE.md) and
+[issue #5](https://github.com/jaredwisnia-byte/Hull-V2/issues/5). Seven distinct
+image-generated consumer-object sheets exposed two blockers: top-row branding was
+treated as a part heading, and the automatic work-order generator required a vessel.
+The revised intake assigns all five required orthographic directions in 7/7 pilot
+sheets and emits a generic outer-body work order for unsupported part grammars.
+This is not proof of complete reconstruction: companion parts stay unresolved,
+and the generic scale is an unmeasured prior. Full-build quality is a separate gate.
+
 ## Purpose and evidence level
 
 The priority is reusable software that accepts supported inputs and executes without
