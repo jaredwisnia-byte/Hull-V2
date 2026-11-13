@@ -324,6 +324,10 @@ def run_line(order):
                 v_top, v_bottom, grep_ = rb
                 order.setdefault("measured", {})["guides"] = grep_
                 hp["voxel_hook"] = guides.round_hook(v_top, v_bottom, grep_)
+        if order.get('build_scope') == 'outer_body_only':
+            from propkit.silhouette import observed_silhouettes
+            hp['sil_override'], openings_report = observed_silhouettes(views)
+            order.setdefault('measured', {})['observed_openings'] = openings_report
         if hp.pop("relief", False):
             # carving inside the outline, read from the painting (propkit/relief.py)
             from propkit import relief
@@ -348,7 +352,8 @@ def run_line(order):
                 profile_model, route = process_planner.propose(views, height)
                 order.setdefault('measured', {})['process_plan'] = route
                 detail_plan = surface_detail.analyse(
-                    views, (W_, D_, height), rrep)
+                    views, (W_, D_, height), rrep,
+                    silhouettes=hp.get('sil_override'))
                 if order.get('relief_retry'):
                     detail_plan['retry_targets'] = order['relief_retry']
                 detail_plan['cad_export'] = bool(order.get('cad_export'))
@@ -395,10 +400,6 @@ def run_line(order):
                 hp["mesh_hook"] = relief.hook(views, W_, D_, height, rrep)
         from propkit.hull import HULL_REPORT
         HULL_REPORT.pop("sections", None)
-        if order.get('build_scope') == 'outer_body_only':
-            from propkit.silhouette import observed_silhouettes
-            hp['sil_override'], openings_report = observed_silhouettes(views)
-            order.setdefault('measured', {})['observed_openings'] = openings_report
         obj = hull_prop(views, height, name=order["name"], **hp)
         order.setdefault('measured', {})['field'] = dict(
             HULL_REPORT.get('field', {}))

@@ -59,18 +59,26 @@ def chart_frame(view, dimensions):
             'bottom': ([-w / 2, -d / 2, 0], [w, 0, 0], [0, d, 0], [0, 0, -1])}[view]
 
 
-def analyse(views, dimensions, report, exclusions=()):
+def analyse(views, dimensions, report, exclusions=(), silhouettes=None):
     """Prepare pixel observations. Geometry is inferred after the base field exists.
 
     No circle recognition, primitive selection or fixed groove profiles run here.
     The visible field supplies the initial surface and boundary conditions.
     """
-    from .hull import silhouette
-    maps, inputs = {}, {}
+    from .silhouette import silhouette
+    maps, inputs, excluded_opening_pixels = {}, {}, {}
+    silhouettes = silhouettes or {}
     for view, path in views.items():
         if view not in VIEWS:
             continue
         mask, image, box = silhouette(path, with_box=True)
+        if view in silhouettes:
+            observed_mask, observed_image = silhouettes[view]
+            if (observed_mask.shape != mask.shape or
+                    observed_image.size != image.size):
+                raise ValueError('Observed opening mask does not match source crop')
+            excluded_opening_pixels[view] = int(np.count_nonzero(mask & ~observed_mask))
+            mask, image = observed_mask, observed_image
         valid = ndimage.binary_erosion(mask, iterations=3)
         for excluded_view, box in exclusions:
             if view == excluded_view:
@@ -84,6 +92,7 @@ def analyse(views, dimensions, report, exclusions=()):
     report.update(features=[], views={}, method='continuous pixel shading/height inference',
                   physical_separation='physical ownership only; shading contours do not create parts',
                   dimensions_m=list(dimensions),
+                  excluded_opening_pixels=excluded_opening_pixels,
                   source_views={view: str(inputs[view]['path']) for view in inputs})
     return {'maps': maps, 'fine_maps': {}, 'shading_inputs': inputs,
             'dimensions': tuple(dimensions), 'report': report}
