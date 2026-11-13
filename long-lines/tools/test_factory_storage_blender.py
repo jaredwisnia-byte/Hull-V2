@@ -90,6 +90,7 @@ class FactoryStorageContracts(unittest.TestCase):
                     "source_unchanged_during_checks": True,
                     "repository_policy": {"pass": True},
                     "profiles": required,
+                    "planned_checks": context["required_checks"],
                     "source_hashes": context["source_hashes"],
                     "runtime": {
                         "pass": True,
@@ -101,9 +102,9 @@ class FactoryStorageContracts(unittest.TestCase):
                             "version": runtime["blender_version"],
                         }},
                     },
-                    "checks": [{"id": profile, "capability": profile,
+                    "checks": [{"id": check["id"], "capability": check["capability"],
                                 "pass": True, "exit_code": 0, "skipped": 0}
-                               for profile in required],
+                               for check in context["required_checks"]],
                 })
                 entry = w.promote(receipt, approved, qualification)
                 self.assertTrue(w.verify_release(approved, order["name"])["pass"])

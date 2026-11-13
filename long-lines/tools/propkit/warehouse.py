@@ -420,9 +420,27 @@ def qualification_errors(receipt, qualification):
         required
     ) <= set(checked_runtime.get("qualified_capabilities", [])):
         errors.append("Required capability profiles were not qualified")
+    expected_checks = context.get("required_checks")
+    planned_checks = qualification.get("planned_checks")
+    actual_checks = qualification.get("checks")
+    def check_pairs(items):
+        if not isinstance(items, list) or not all(
+            isinstance(item, dict) and isinstance(item.get("id"), str)
+            and isinstance(item.get("capability"), str) for item in items
+        ):
+            return None
+        pairs = [(item["id"], item["capability"]) for item in items
+                 if item["capability"] in required]
+        return pairs if len(pairs) == len(set(pairs)) else None
+    expected = check_pairs(expected_checks)
+    planned = check_pairs(planned_checks)
+    observed = check_pairs(actual_checks)
+    if (not expected or planned is None or observed is None or
+            set(expected) != set(planned) or set(expected) != set(observed)):
+        errors.append("Required check inventory differs from qualification")
     for profile in required:
-        checks = [check for check in qualification.get("checks", [])
-                  if check.get("capability") == profile]
+        checks = [check for check in (actual_checks if isinstance(actual_checks, list) else [])
+                  if isinstance(check, dict) and check.get("capability") == profile]
         if not checks or any(check.get("pass") is not True or
                              check.get("exit_code") != 0 or
                              check.get("skipped", 0) for check in checks):

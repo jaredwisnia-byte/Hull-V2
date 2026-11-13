@@ -344,6 +344,10 @@ def run_checks(root, profiles, output, blender=None, godot=None):
         and unchanged
         and all(r["pass"] for r in results),
         "profiles": profiles,
+        "planned_checks": [
+            {"id": check["id"], "capability": check["capability"]}
+            for check in plan["checks"] if check["capability"] in profiles
+        ],
         "source_unchanged_during_checks": unchanged,
         "repository_policy": policy,
         "runtime": health,

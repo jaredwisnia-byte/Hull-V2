@@ -775,6 +775,11 @@ def build(order, samples=16):
     if source and Path(source).is_file():
         inputs.append(Path(source))
     required = warehouse.required_capabilities(order)
+    required_checks = [
+        {'id': check['id'], 'capability': check['capability']}
+        for check in maintenance.load_plan(repo)['checks']
+        if check['capability'] in required
+    ]
     local_runtime = maintenance.doctor(repo, [capability for capability in required
                                                if capability != 'godot'],
                                        blender=bpy.app.binary_path)
@@ -786,6 +791,7 @@ def build(order, samples=16):
         'file_hashes': file_hashes,
         'source_hashes': source_hashes,
         'required_capabilities': required,
+        'required_checks': required_checks,
         'runtime': {'pass': local_runtime['pass'],
                     'python': local_runtime['python'],
                     'packages': local_runtime['packages'],
