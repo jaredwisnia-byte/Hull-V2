@@ -231,14 +231,18 @@ the engine and its patch and held results are retained under the same local
 `fusion-stage-isolation` area. Any future automatic fusion choice must be
 judged on final exported depth, new failures, folds, and triangle budget.
 
-A third object, the typewriter, rules out choosing that same power from the
-aggregate depth-failure count. On identical held first-attempt work orders,
-the baseline had 158 missing-depth failures and the power-0.5 candidate 157.
-The candidate resolved 87 individual failures but introduced 86 different
-ones; triangles and extreme-fold rate were unchanged at 1,410 and 9.929 per
-1,000. This is a substantial per-feature regression despite the one-count
-total improvement. The existing factory correction review already compares
-new final failures by identity and can roll back a second attempt. Any fusion
-candidate must use that final-export gate, and the trial remains disabled.
-The two held typewriter runs and comparison are recorded in the local
-`fusion-stage-isolation` experiment area.
+A third object, the typewriter, exposed a reproducibility problem in the
+comparison itself. The first held baseline had 158 missing-depth failures;
+the power-0.5 candidate and a second unchanged baseline each had 157. The
+candidate changed 86 failed feature IDs relative to the first baseline, but
+the repeated baseline changed 94. The unchanged baselines also had slightly
+different geometry signatures. All three exported 1,410 triangles and 9.929
+extreme folds per 1,000. Their input-order hashes match, while regional
+relief memory and per-view held-out results changed between runs. The shared
+mutable memory is a plausible cause, but has not yet been isolated as the
+only cause. Numeric feature IDs cannot be compared across changed source
+probe cohorts. Therefore the typewriter result neither validates nor refutes
+the fusion candidate. The trial remains disabled. Before using the existing
+final-export rollback gate to select a fusion candidate, the builds must
+start from an identical memory snapshot and verify matching source evidence.
+All three held runs are in the local `fusion-stage-isolation` experiment area.
