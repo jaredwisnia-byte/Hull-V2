@@ -202,3 +202,17 @@ diagnostic preview filename failed while shorter files in the same directory
 saved. Long diagnostic image paths now use Windows extended-path I/O for save
 and copy; ordinary paths remain in manifests. This was verified inside Blender
 with a 268-character path. It fixes the build interruption, not the depth QA.
+
+An isolated normal-aware weighting trial then discounted views whose ray
+direction disagreed with the local coarse-field normal. On the first cassette
+candidate it improved the median visible-root contrast ratio from 0.019 to
+0.88 and reduced triangles from 5,572 to 5,406. It did **not** reduce the 18
+exported depth failures. The stage review moved ten failures to single-view
+transfer, and several top features acquired wrong-sign or multi-millimetre
+dense-mesh contrast against sub-millimetre targets. The trial was removed
+from the engine. The next candidate must preserve source-view sign and scale
+while preventing nearly flat competing views from diluting a supported groove;
+it must pass final-mesh QA, not only an intermediate field ratio. Local records
+are retained under
+`C:/Users/jared/Documents/Codex/Hull-maintenance-validation/experiments/fusion-stage-isolation/cv1`
+and `cv2`.
