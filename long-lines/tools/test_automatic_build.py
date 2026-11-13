@@ -17,6 +17,46 @@ import factory  # noqa: E402
 
 
 class BuildGuards(unittest.TestCase):
+    def test_single_body_constructor_consumes_prebuild_drawing_masks(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            for view in ('front', 'right'):
+                pixels = np.zeros((80, 80, 3), np.uint8)
+                pixels[10:70, 16:64] = 150
+                Image.fromarray(pixels).save(root / f'v_{view}.png')
+            order = {'name': 'drawing_contract_probe', 'line': 'hull',
+                     'views_folder': str(root), 'views': ['front', 'right'],
+                     'height_m': .2, 'hull': {'relief': True},
+                     'automatic_depth': True, 'run_directory': str(root / 'run'),
+                     'measured': {}}
+            from propkit import process_planner, surface_detail
+            with patch.object(factory, 'SRC', str(root)), \
+                    patch.object(process_planner, 'plan_methods',
+                                 return_value=({'method': 'continuous_field'}, None)), \
+                    patch.object(process_planner, 'propose',
+                                 return_value=(None, {})), \
+                    patch.object(surface_detail, 'analyse', return_value={}), \
+                    patch('propkit.hull.hull_prop', return_value=object()) as builder:
+                factory.run_line(order)
+            supplied = builder.call_args.kwargs['sil_override']
+            drawing = order['measured']['source_drawing']
+            receipt = drawing['construction_receipt']
+            self.assertEqual(set(supplied), {'front', 'right'})
+            self.assertEqual(receipt['status'], 'supplied_to_hull_constructor')
+            self.assertTrue(Path(drawing['section_envelopes']).is_file())
+            self.assertEqual(hashlib.sha256(Path(
+                drawing['construction_contract']).read_bytes()).hexdigest(),
+                receipt['drawing_sha256'])
+            evolving = Path(drawing['traces'])
+            evolving.write_text(evolving.read_text() + '\n')
+            self.assertEqual(hashlib.sha256(Path(
+                drawing['construction_contract']).read_bytes()).hexdigest(),
+                receipt['drawing_sha256'])
+            self.assertEqual(drawing['opening_candidates'], [])
+            for view in supplied:
+                self.assertTrue(receipt['views'][view]['build_trace_ids'])
+                self.assertTrue(supplied[view][0].any())
+
     def test_handbook_parts_receive_prebuild_drawings(self):
         from propkit import handbook
         order_path = (Path(__file__).resolve().parents[1] / 'factory' /

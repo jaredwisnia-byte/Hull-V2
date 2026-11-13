@@ -1,13 +1,14 @@
-"""Prebuild drafting evidence: only paths traced in the supplied views.
+"""Prebuild source traces and explicitly labelled visual-hull inferences.
 
-This deliberately does not create solids, fit circles, or infer depth. A later
-cross-view solver may consume these paths, but must record its own inferences.
+Observed paths stay in source pixels. Inferred section masks are projections of
+the same compiled silhouettes supplied to construction, never observed cuts.
 """
 
 import json
 import hashlib
 import math
 from pathlib import Path
+from xml.etree import ElementTree as ET
 
 import numpy as np
 from PIL import Image, ImageDraw
@@ -48,6 +49,112 @@ def _elevation_section(outer, row, height_fraction):
         'crossing_parity_valid': parity_valid,
         'physical_cross_section_shape': 'unobserved',
     }
+
+
+def _projected_section(masks, active_views, height_fraction, resolution=128):
+    """Intersect compiled masks at a height, using the hull constructor frame.
+
+    The result is the *initial visual hull* section. It does not include later
+    revolutions, shading relief, smoothing, or inferred hidden cavities.
+    """
+    coordinate = (np.arange(resolution) + .5) / resolution
+    x, y = np.meshgrid(coordinate, coordinate, indexing='xy')
+    z = 1. - height_fraction
+
+    def sample(view, u, v):
+        mask = masks[view]
+        h, w = mask.shape
+        ix = np.clip(np.rint(u * (w - 1)).astype(int), 0, w - 1)
+        iy = np.clip(np.rint(v * (h - 1)).astype(int), 0, h - 1)
+        return mask[iy, ix]
+
+    section = np.ones((resolution, resolution), bool)
+    if 'front' in active_views:
+        section &= sample('front', x, 1 - z)
+    if 'back' in active_views:
+        section &= sample('back', 1 - x, 1 - z)
+    if 'right' in active_views:
+        section &= sample('right', y, 1 - z)
+    if 'left' in active_views:
+        section &= sample('left', 1 - y, 1 - z)
+    if 'top' in active_views:
+        section &= sample('top', x, 1 - y)
+    return section
+
+
+def _write_vector_sheet(destination, image_size, selected, observations,
+                        coordinate_transforms, panel_width=510, panel_height=600):
+    """Export the observed trace sheet as editable vectors with source IDs."""
+    namespace = 'http://www.w3.org/2000/svg'
+    ET.register_namespace('', namespace)
+    svg = ET.Element(f'{{{namespace}}}svg', {
+        'width': str(image_size[0]), 'height': str(image_size[1]),
+        'viewBox': f'0 0 {image_size[0]} {image_size[1]}'})
+    ET.SubElement(svg, f'{{{namespace}}}text', {
+        'x': '28', 'y': '28', 'fill': '#111111'}).text = (
+            'PREBUILD SOURCE-TRACED CONSTRUCTION REFERENCE')
+    ET.SubElement(svg, f'{{{namespace}}}text', {
+        'x': '28', 'y': '57', 'fill': '#555555'}).text = (
+            'Black: observed outline. Blue: unresolved image boundary. Hidden geometry unknown.')
+    columns = min(3, len(selected))
+    for number, view in enumerate(selected):
+        row, column = divmod(number, columns)
+        panel_x, panel_y = column * panel_width + 18, row * panel_height + 105
+        ET.SubElement(svg, f'{{{namespace}}}rect', {
+            'x': str(panel_x), 'y': str(panel_y),
+            'width': str(panel_width - 36), 'height': str(panel_height - 25),
+            'fill': 'none', 'stroke': '#444444'})
+        ET.SubElement(svg, f'{{{namespace}}}text', {
+            'x': str(panel_x + 12), 'y': str(panel_y + 22),
+            'fill': '#111111'}).text = view.upper() + ' / SOURCE TRACE'
+        transform = coordinate_transforms[view]['sheet_xy_from_source_xy']
+        scale, (offset_x, offset_y) = transform['scale'], transform['offset_xy']
+        for trace_record in observations[view]['traces']:
+            points = trace_record['points_source_xy']
+            if len(points) < 2:
+                continue
+            command = 'M ' + ' L '.join(
+                f'{offset_x + scale * x:.2f},{offset_y + scale * y:.2f}'
+                for x, y in points)
+            if trace_record['kind'] == 'outer_silhouette':
+                color = '#111111'
+            elif trace_record['kind'] == 'opposed_mask_opening':
+                color = '#008b51'
+            else:
+                color = '#2474c3'
+            path = ET.SubElement(svg, f'{{{namespace}}}path', {
+                'd': command, 'fill': 'none', 'stroke': color,
+                'stroke-width': '1', 'data-source-id': trace_record['id'],
+                'data-kind': trace_record['kind']})
+            ET.SubElement(path, f'{{{namespace}}}title').text = (
+                trace_record['physical_interpretation'])
+        box = observations[view]['foreground_box_px']
+        left, top = offset_x + scale * box[0], offset_y + scale * box[1]
+        right, bottom = offset_x + scale * box[2], offset_y + scale * box[3]
+        dimension_x = max(panel_x + 9, left - 18)
+        dimension_y = min(panel_y + panel_height - 76, bottom + 18)
+        for x1, y1, x2, y2 in (
+                (dimension_x, top, dimension_x, bottom),
+                (dimension_x - 5, top, dimension_x + 5, top),
+                (dimension_x - 5, bottom, dimension_x + 5, bottom),
+                (left, dimension_y, right, dimension_y),
+                (left, dimension_y - 5, left, dimension_y + 5),
+                (right, dimension_y - 5, right, dimension_y + 5)):
+            ET.SubElement(svg, f'{{{namespace}}}line', {
+                'x1': f'{x1:.2f}', 'y1': f'{y1:.2f}',
+                'x2': f'{x2:.2f}', 'y2': f'{y2:.2f}',
+                'stroke': '#a04a00', 'stroke-width': '1'})
+        ET.SubElement(svg, f'{{{namespace}}}text', {
+            'x': f'{dimension_x + 7:.2f}', 'y': f'{(top + bottom) / 2:.2f}',
+            'fill': '#a04a00'}).text = f'{box[3] - box[1]} px'
+        ET.SubElement(svg, f'{{{namespace}}}text', {
+            'x': f'{(left + right) / 2:.2f}', 'y': f'{dimension_y - 7:.2f}',
+            'fill': '#a04a00'}).text = f'{box[2] - box[0]} px'
+        ET.SubElement(svg, f'{{{namespace}}}text', {
+            'x': str(panel_x + 12), 'y': str(panel_y + panel_height - 55),
+            'fill': '#555555'}).text = (
+                f'OBSERVED BBOX {box[2] - box[0]} x {box[3] - box[1]} source px')
+    ET.ElementTree(svg).write(destination, encoding='utf-8', xml_declaration=True)
 
 
 def _end_frame_hypotheses(observations):
@@ -261,7 +368,8 @@ def observe(view, path, construction_mask=None, opening_witness=None):
 
 def infer(views, destination, construction_masks=None, opening_report=None,
           view_consistency=None, geometry_views=None, source_views=None,
-          source_sheet_frames=None, compile_construction_masks=False):
+          source_sheet_frames=None, compile_construction_masks=False,
+          estimated_height_m=None):
     """Create the first-station drawing and JSON from arbitrary labelled views."""
     destination = Path(destination)
     destination.mkdir(parents=True, exist_ok=True)
@@ -269,6 +377,9 @@ def infer(views, destination, construction_masks=None, opening_report=None,
                 if name in views]
     if not selected:
         raise ValueError('At least one labelled source view is required')
+    if estimated_height_m is not None and not (
+            np.isfinite(estimated_height_m) and estimated_height_m > 0):
+        raise ValueError('Drawing height estimate must be positive and finite')
     construction_masks = construction_masks or {}
     opening_report = opening_report or {}
     source_views = source_views or views
@@ -401,6 +512,97 @@ def infer(views, destination, construction_masks=None, opening_report=None,
                 'cross_section_shape': 'unobserved',
                 'status': 'paired_source_silhouette_envelopes_only',
             })
+    section_records = []
+    if paired_sections and compiled_masks:
+        # Draw measured section *envelopes* before construction. The dashed
+        # rectangle is a bound from two elevations, not a guessed cut face.
+        stations = [min(paired_sections, key=lambda item: abs(
+            item['height_fraction_from_top'] - fraction))
+            for fraction in (.05, .25, .5, .75, .95)]
+        section_sheet = Image.new('RGB', (1100, 190 * len(stations) + 105), 'white')
+        section_draw = ImageDraw.Draw(section_sheet)
+        section_draw.text((24, 18), 'PREBUILD SECTION ENVELOPES / SOURCE MEASUREMENTS',
+                          fill='#111111')
+        section_draw.text((24, 44),
+                          'Gray: inferred initial visual hull. Dashed box: observed limits. Hidden cut profile unknown.',
+                          fill='#555555')
+        section_masks = {name: np.asarray(Image.open(item['path']).convert('L')) > 127
+                         for name, item in compiled_masks.items()}
+        active_views = set(geometry_views) if geometry_views is not None else set(selected)
+        overall_width = (observations['front']['foreground_box_px'][2] -
+                         observations['front']['foreground_box_px'][0]) / (
+                             observations['front']['foreground_box_px'][3] -
+                             observations['front']['foreground_box_px'][1])
+        overall_depth = (observations[side]['foreground_box_px'][2] -
+                         observations[side]['foreground_box_px'][0]) / (
+                             observations[side]['foreground_box_px'][3] -
+                             observations[side]['foreground_box_px'][1])
+        for index, station in enumerate(stations):
+            y0 = 80 + 190 * index
+            fraction = station['height_fraction_from_top']
+            width = station['width_over_height']
+            depth = station['depth_over_height']
+            section_draw.text((24, y0), f'SECTION {index + 1} / {fraction:.0%} FROM TOP',
+                              fill='#111111')
+            section_draw.text((24, y0 + 25),
+                              f'WIDTH / HEIGHT {width:.3f}    DEPTH / HEIGHT {depth:.3f}',
+                              fill='#a04a00')
+            if estimated_height_m is not None:
+                section_draw.text((24, y0 + 75),
+                                  f'ESTIMATED W {1000 * width * estimated_height_m:.1f} mm'
+                                  f'    D {1000 * depth * estimated_height_m:.1f} mm',
+                                  fill='#a04a00')
+            section_draw.text((24, y0 + 50),
+                              f'Front trace: {station["front_trace_crossings"][0]["source_trace_id"]}'
+                              f'    {side.title()} trace: '
+                              f'{station["side_trace_crossings"][0]["source_trace_id"]}',
+                              fill='#555555')
+            cx, cy = 820, y0 + 86
+            scale = 110 / max(overall_width, overall_depth, 1e-6)
+            half_w, half_d = width * scale / 2, depth * scale / 2
+            section = _projected_section(
+                section_masks, active_views, fraction)
+            section_path = destination / f'construction-section-{index + 1}.png'
+            Image.fromarray(section.astype(np.uint8) * 255).save(section_path)
+            section_records.append({
+                'height_fraction_from_top': fraction,
+                'mask_path': str(section_path),
+                'mask_sha256': hashlib.sha256(section_path.read_bytes()).hexdigest(),
+                'construction_views': sorted(active_views & set(section_masks)),
+                'source_front_trace_ids': sorted({crossing['source_trace_id']
+                    for crossing in station['front_trace_crossings']}),
+                'source_side_trace_ids': sorted({crossing['source_trace_id']
+                    for crossing in station['side_trace_crossings']}),
+                'status': 'inferred_initial_visual_hull_section_not_observed_cut',
+                'estimated_width_m': (width * estimated_height_m
+                                      if estimated_height_m is not None else None),
+                'estimated_depth_m': (depth * estimated_height_m
+                                      if estimated_height_m is not None else None),
+            })
+            display = Image.fromarray(np.where(section, 75, 255).astype(np.uint8))
+            display = display.resize((max(1, round(overall_width * scale)),
+                                      max(1, round(overall_depth * scale))),
+                                     Image.Resampling.NEAREST)
+            section_sheet.paste(display.convert('RGB'),
+                                (round(cx - display.width / 2),
+                                 round(cy - display.height / 2)))
+            section_draw.line((cx - 75, cy, cx + 75, cy), fill='#6c8ca0')
+            section_draw.line((cx, cy - 75, cx, cy + 75), fill='#6c8ca0')
+            for x0, yy, x1, y1 in ((cx - half_w, cy - half_d, cx + half_w, cy - half_d),
+                                   (cx + half_w, cy - half_d, cx + half_w, cy + half_d),
+                                   (cx + half_w, cy + half_d, cx - half_w, cy + half_d),
+                                   (cx - half_w, cy + half_d, cx - half_w, cy - half_d)):
+                length = max(abs(x1 - x0), abs(y1 - yy))
+                for step in range(0, int(length), 12):
+                    a, b = step / length, min(step + 6, length) / length
+                    section_draw.line((x0 + (x1 - x0) * a, yy + (y1 - yy) * a,
+                                       x0 + (x1 - x0) * b, yy + (y1 - yy) * b),
+                                      fill='#a04a00', width=2)
+            section_draw.line((24, y0 + 167, 1076, y0 + 167), fill='#cccccc')
+        section_draw.text((24, section_sheet.height - 23),
+                          'Physical scale and hidden material are unobserved; no cut profile is asserted.',
+                          fill='#555555')
+        section_sheet.save(destination / 'construction-sections.png')
     columns = min(3, len(selected))
     rows = (len(selected) + columns - 1) // columns
     panel_w, panel_h = 510, 600
@@ -496,6 +698,13 @@ def infer(views, destination, construction_masks=None, opening_report=None,
               'status': 'source_observations_and_opposed_mask_openings',
               'observations': observations, 'coordinate_transforms': coordinate_transforms,
               'paired_elevation_envelopes': paired_sections,
+              'physical_scale': {'estimated_height_m': estimated_height_m,
+                                 'status': ('order_estimate_not_source_measurement'
+                                            if estimated_height_m is not None else
+                                            'unknown')},
+              'inferred_visual_hull_sections': section_records,
+              'section_envelope_sheet': (str(destination / 'construction-sections.png')
+                                         if section_records else None),
               'unresolved_view_pairs_same_source_region':
                   [['front', side]] if repeated_pair else [],
               'view_construction_use': view_use,
@@ -508,11 +717,24 @@ def infer(views, destination, construction_masks=None, opening_report=None,
               'reconciled_build_input_observations': {
                   name: build_observations[name] for name in changed_frames},
               'compiled_construction_masks': compiled_masks,
+              'construction_constraints': [
+                  {'id': f'compiled_silhouette:{name}',
+                   'kind': 'orthographic_source_mask',
+                   'build_input_sha256': item['build_input_sha256'],
+                   'mask_sha256': item['mask_sha256'],
+                   'source_trace_ids': item['outer_build_trace_ids'],
+                   'used_for_geometry': view_use[name]['used_for_geometry'],
+                   'source_pixel_map_verified': view_use[name]['source_pixel_map_verified'],
+                   'physical_interpretation': 'visible outer envelope only'}
+                  for name, item in compiled_masks.items()],
               'end_view_frame_hypotheses': frame_hypotheses,
               'geometry_inferences': [], 'build_constraints': constraints,
               'unknowns': ['internal depth', 'material or shadow versus relief',
                            'unseen geometry', 'physical scale']}
     image.save(destination / 'technical-traces.png')
+    _write_vector_sheet(destination / 'technical-traces.svg', image.size,
+                        selected, observations, coordinate_transforms)
+    report['vector_sheet'] = str(destination / 'technical-traces.svg')
     (destination / 'technical-traces.json').write_text(json.dumps(report))
     return report
 
@@ -524,7 +746,7 @@ def load_construction_masks(drawing_path, views):
     for view, path in views.items():
         record = drawing.get('compiled_construction_masks', {}).get(view)
         if record is None:
-            continue
+            raise ValueError(f'{view}: prebuild drawing lacks a compiled construction mask')
         digest = hashlib.sha256(Path(path).read_bytes()).hexdigest()
         if digest != record['build_input_sha256']:
             raise ValueError(f'{view}: build input changed after technical tracing')
@@ -542,6 +764,9 @@ def load_construction_masks(drawing_path, views):
             'original_source_path': source_use.get('original_source_path'),
             'source_pixel_map_verified': source_use.get('source_pixel_map_verified'),
             'construction_mask_path': record['path'],
+            'construction_mask_sha256': record['mask_sha256'],
+            'build_input_sha256': record['build_input_sha256'],
+            'used_for_geometry': source_use.get('used_for_geometry'),
         }
     return masks, use
 

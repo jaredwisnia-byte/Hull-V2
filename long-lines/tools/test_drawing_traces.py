@@ -3,12 +3,14 @@ import unittest
 import tempfile
 import json
 from pathlib import Path
+from xml.etree import ElementTree as ET
 from unittest.mock import patch
 
 import numpy as np
 from PIL import Image
 
 from propkit.drawing_traces import (_elevation_section, _end_frame_hypotheses,
+                                    _projected_section,
                                     _verified_build_to_source_map,
                                     audit_projected_elevations, infer,
                                     infer_sheet_regions, load_construction_masks,
@@ -17,6 +19,66 @@ from propkit.drawing_traces import (_elevation_section, _end_frame_hypotheses,
 
 
 class SourceSectionContracts(unittest.TestCase):
+    def test_prebuild_drawing_has_dimensioned_vector_and_section_provenance(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            sources = {}
+            for view, x0, x1 in [('front', 12, 52), ('right', 20, 44)]:
+                source = root / f'{view}.png'
+                pixels = np.zeros((96, 64, 3), np.uint8)
+                pixels[8:88, x0:x1] = 170
+                Image.fromarray(pixels).save(source)
+                sources[view] = str(source)
+            report = infer(sources, root / 'drawing',
+                           compile_construction_masks=True,
+                           estimated_height_m=1.2)
+            svg = ET.parse(report['vector_sheet'])
+            ns = '{http://www.w3.org/2000/svg}'
+            self.assertGreaterEqual(len(svg.findall(f'.//{ns}line')), 12)
+            self.assertEqual(len(report['construction_constraints']), 2)
+            self.assertTrue(all(item['source_trace_ids'] for item in
+                                report['construction_constraints']))
+            self.assertEqual(report['physical_scale']['status'],
+                             'order_estimate_not_source_measurement')
+            self.assertEqual(len(report['inferred_visual_hull_sections']), 5)
+            self.assertTrue(all(Path(item['mask_path']).is_file() for item in
+                                report['inferred_visual_hull_sections']))
+
+    def test_missing_compiled_mask_cannot_silently_fall_back_to_retracing(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            source = root / 'front.png'
+            pixels = np.zeros((48, 48, 3), np.uint8)
+            pixels[5:43, 8:40] = 160
+            Image.fromarray(pixels).save(source)
+            drawing_path = root / 'drawing' / 'technical-traces.json'
+            infer({'front': str(source)}, drawing_path.parent,
+                  compile_construction_masks=True)
+            vector = ET.parse(drawing_path.parent / 'technical-traces.svg')
+            self.assertTrue(vector.findall('.//{http://www.w3.org/2000/svg}path'))
+            self.assertTrue(any(path.get('data-source-id', '').startswith('front:outer:')
+                                for path in vector.findall('.//{http://www.w3.org/2000/svg}path')))
+            drawing = json.loads(drawing_path.read_text())
+            drawing['compiled_construction_masks'].clear()
+            drawing_path.write_text(json.dumps(drawing))
+            with self.assertRaisesRegex(ValueError, 'lacks a compiled construction mask'):
+                load_construction_masks(drawing_path, {'front': str(source)})
+
+    def test_inferred_section_intersects_source_masks_without_inventing_a_cut(self):
+        front = np.zeros((32, 32), bool)
+        right = np.zeros((32, 32), bool)
+        top = np.ones((32, 32), bool)
+        front[4:28, 6:26] = True
+        right[4:28, 10:22] = True
+        top[12:20, 12:20] = False
+        masks = {'front': front, 'right': right, 'top': top}
+        section = _projected_section(masks, set(masks), .5, resolution=32)
+        self.assertTrue(section[15, 8])
+        self.assertFalse(section[15, 15])
+        self.assertFalse(section[2, 8])
+        self.assertFalse(_projected_section(
+            masks, set(masks), .05, resolution=32).any())
+
     def test_compiled_drawing_mask_drives_construction_and_rejects_stale_input(self):
         with tempfile.TemporaryDirectory() as folder:
             source = Path(folder) / 'front.png'

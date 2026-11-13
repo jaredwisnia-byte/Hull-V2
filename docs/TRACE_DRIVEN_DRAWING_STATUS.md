@@ -10,6 +10,26 @@ unknowns. The resulting construction decisions must refer back to the drawing.
 
 ## Implemented and verified
 
+- The single-body automatic-depth line now saves the compiled orthographic
+  masks as part of its prebuild drawing, verifies the image and mask hashes,
+  and passes those exact saved masks to the hull constructor. The build receipt
+  names the consumed constraint and source-trace IDs. A missing or changed mask
+  fails construction rather than silently rerunning segmentation. The exact
+  prebuild JSON is preserved as `construction-contract.json` because the live
+  trace report later gains relief evidence; the receipt hashes the immutable
+  contract. This is a
+  verified silhouette handoff, not proof that internal paths have been assigned
+  physical meaning.
+- `technical-traces.svg` is an editable vector sheet of the source-derived
+  contours with path IDs and pixel dimensions. `construction-sections.png`
+  displays five measured front/side envelopes and intersected visual-hull
+  sections. Any physical millimetre values are explicitly labelled as order
+  height estimates. The gray cut shapes are inferred from the same saved masks
+  used for construction; they are not observed internal sections.
+- Synthetic tests cover vector provenance, dimensions, section/mask identity,
+  stale-input rejection, and the factory handoff. A real toaster build kept
+  its baseline geometry signature and 5,926 triangles; it also retained 32
+  prior QA failures. The drawing contract changed while model quality did not.
 - The automatic-depth factory path creates `technical-traces.png` and
   `technical-traces.json` before geometry. `drawing_traces.py` records source
   view, pixel path, tracing method, and sheet transform for every displayed

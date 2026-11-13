@@ -421,11 +421,27 @@ def run_line(order):
                         'assembly', {}).get('source_views') or original_views),
                     source_sheet_frames=order.get('source_drawings', {}).get(
                         'assembly', {}).get('source_sheet_frames'),
-                    compile_construction_masks=True)
+                    compile_construction_masks=True,
+                    estimated_height_m=height)
+                drawing_path = os.path.join(trace_folder, 'technical-traces.json')
+                construction_contract = os.path.join(
+                    trace_folder, 'construction-contract.json')
+                shutil.copyfile(drawing_path, construction_contract)
+                drawing_masks, drawing_use = drawing_traces.load_construction_masks(
+                    construction_contract, views)
+                if set(drawing_masks) != set(views):
+                    raise ValueError('Prebuild drawing did not compile every build view')
+                # Bind exactly the masks saved by the prebuild drawing to the
+                # hull constructor. No later silhouette pass may substitute a
+                # different mask without invalidating the drawing receipt.
+                hp['sil_override'] = drawing_masks
                 order.setdefault('measured', {})['source_drawing'] = {
                     'stage': 'before_geometry',
                     'sheet': os.path.join(trace_folder, 'technical-traces.png'),
-                    'traces': os.path.join(trace_folder, 'technical-traces.json'),
+                    'vector_sheet': source_drawing['vector_sheet'],
+                    'section_envelopes': source_drawing['section_envelope_sheet'],
+                    'traces': drawing_path,
+                    'construction_contract': construction_contract,
                     'geometry_inferences': 0,
                     'status': 'source contours and opposing-mask opening candidates; physical meaning unresolved',
                     'opening_candidates': source_drawing['build_constraints'],
@@ -440,13 +456,27 @@ def run_line(order):
                                            'internal': record['internal_path_count'],
                                            'opposed_mask_openings': record['opposed_mask_opening_count']}
                                     for view, record in source_drawing['observations'].items()}}
+                order['measured']['source_drawing']['construction_receipt'] = {
+                    'status': 'prepared_for_hull_constructor',
+                    'operation': 'intersect compiled orthographic silhouette masks',
+                    'drawing_sha256': hashlib.sha256(
+                        open(construction_contract, 'rb').read()).hexdigest(),
+                    'consumed_constraint_ids': [
+                        item['id'] for item in source_drawing['construction_constraints']
+                        if item['used_for_geometry']],
+                    'views': drawing_use,
+                    'unresolved': source_drawing['unknowns'],
+                    'physical_geometry_verified': False,
+                }
                 methods, section_bands = process_planner.plan_methods(geometry_views)
                 order.setdefault('measured', {})['construction_methods'] = methods
                 methods['source_drawing'] = {
                     'traces': order['measured']['source_drawing']['traces'],
-                    'consumed_constraints': [constraint['id'] for constraint in
-                                             source_drawing['build_constraints']],
-                    'reason': 'opposing-mask openings feed the base hull, but physical through-holes remain unverified; other internal traces lack physical interpretation'}
+                    'consumed_constraints': order['measured']['source_drawing'][
+                        'construction_receipt']['consumed_constraint_ids'],
+                    'opening_candidates': [constraint['id'] for constraint in
+                                           source_drawing['build_constraints']],
+                    'reason': 'compiled source silhouettes constrain the base hull; opposing-mask openings are candidates, and internal traces lack verified physical interpretation'}
                 methods['order_overrides'] = {
                     key: hp[key] for key in ('revolve', 'sections') if key in hp}
                 hp.setdefault('revolve', methods['method'].startswith('lathe_'))
@@ -520,6 +550,11 @@ def run_line(order):
         from propkit.hull import HULL_REPORT
         HULL_REPORT.pop("sections", None)
         obj = hull_prop(views, height, name=order["name"], **hp)
+        if order.get('automatic_depth'):
+            receipt = order.get('measured', {}).get('source_drawing', {}).get(
+                'construction_receipt')
+            if receipt is not None:
+                receipt['status'] = 'supplied_to_hull_constructor'
         order.setdefault('measured', {})['field'] = dict(
             HULL_REPORT.get('field', {}))
         print('RECONSTRUCTION_FIELD',
