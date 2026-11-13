@@ -394,6 +394,7 @@ def run_line(order):
                         # destructive relief correction or promoting the asset.
                         detail_plan['report']['topology'] = {
                             'status': 'rejected', 'reason': str(exc),
+                            'review': exc.report,
                             'fallback': 'unchanged base field'}
                         order.setdefault('inference_warnings', []).append(
                             'unsafe_inferred_detail_discarded')

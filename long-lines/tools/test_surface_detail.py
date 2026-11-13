@@ -60,8 +60,10 @@ class SurfaceContracts(unittest.TestCase):
         base=np.full((20,20,20),-1.,np.float32)
         base[10,10,10]=1.
         target=base.copy();target[10,10,10]=-1.
-        with self.assertRaises(Rejected):
+        with self.assertRaises(Rejected) as caught:
             preserve_components(base,target)
+        self.assertEqual(caught.exception.report['attempts'][0][
+            'lost_original_cavity_cells'], 1)
 
     def test_new_grid_cavity_is_repaired_but_original_cavity_and_open_groove_remain(self):
         from propkit.implicit import preserve_components
@@ -110,6 +112,54 @@ class SurfaceContracts(unittest.TestCase):
         with self.assertRaises(Rejected) as caught:
             preserve_components(base, target)
         self.assertEqual(caught.exception.report['decision'], 'reject_and_rollback')
+        self.assertEqual(caught.exception.report['attempts'][0][
+            'original_components'], 1)
+        self.assertGreater(caught.exception.report['attempts'][0][
+            'candidate_components'], 1)
+
+    def test_attempt_evidence_handles_unrelated_separate_solids(self):
+        from propkit.implicit import preserve_components
+        base = np.ones((24, 24, 24), np.float32)
+        base[3:10, 3:10, 3:10] = -1
+        base[14:20, 4:18, 4:18] = -1
+        target = base.copy()
+        target[14:20, 10:12, 4:18] = 1
+        from propkit.correction_review import Rejected
+        with self.assertRaises(Rejected) as caught:
+            preserve_components(base, target)
+        attempts = caught.exception.report['attempts']
+        self.assertEqual(attempts[0]['original_components'], 2)
+        self.assertGreater(attempts[0]['candidate_components'], 2)
+        self.assertFalse(attempts[0]['valid_after_local_repair'])
+        self.assertGreaterEqual(attempts[0]['original_solid_cells'], 1)
+
+    def test_large_solid_repairs_tiny_new_pocket_without_filling_original_cavity(self):
+        from propkit.implicit import preserve_components
+        base = np.ones((100, 100, 100), np.float32)
+        base[4:96, 4:96, 4:96] = -1
+        base[20:22, 20:22, 20:22] = 1  # observed original void
+        target = base.copy()
+        target[60:63, 60:63, 60:64] = 1  # 36 newly enclosed cells
+        result, report = preserve_components(base, target)
+        self.assertGreaterEqual(report['cavity_repair_limit_cells'], 36)
+        self.assertLessEqual(report['cavity_repair_limit_cells'], 64)
+        self.assertEqual(report['filled_new_cavity_cells'], 36)
+        self.assertTrue((result[20:22, 20:22, 20:22] > 0).all())
+        self.assertTrue((result[60:63, 60:63, 60:64] < 0).all())
+        self.assertEqual(report['detail_scale'], 1.)
+
+    def test_large_new_cavity_stays_outside_local_repair_budget(self):
+        from propkit.implicit import preserve_components
+        from propkit.correction_review import Rejected
+        base = np.ones((100, 100, 100), np.float32)
+        base[4:96, 4:96, 4:96] = -1
+        target = base.copy()
+        target[60:65, 60:65, 60:65] = 1  # 125 cells
+        with self.assertRaises(Rejected) as caught:
+            preserve_components(base, target)
+        first = caught.exception.report['attempts'][0]
+        self.assertEqual(first['unfilled_cavity_cells'], 125)
+        self.assertLess(first['cavity_repair_limit_cells'], 125)
 
     def test_metric_padding_preserves_exact_sampling_box_boundaries(self):
         from skimage.measure import marching_cubes
