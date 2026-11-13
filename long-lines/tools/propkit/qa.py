@@ -343,8 +343,8 @@ def check(name, views_dir=None, category_class=None, paint_only=(), solid=False,
         m["silhouette_iou_raw"] = raw_ious
         m["silhouette_raster_width"] = n
         if trim_order and trim_order.get('vision_generated'):
-            missing = set(('front', 'back', 'left',
-                          'right', 'top')) - set(ious)
+            required = set(('front', 'back', 'left', 'right', 'top')) - set(paint_only)
+            missing = required - set(ious)
             if missing:
                 fails.append(
                     'automatic reference comparison missing: ' + ', '.join(sorted(missing)))

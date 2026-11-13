@@ -68,7 +68,7 @@ class PreservationContracts(unittest.TestCase):
         self.assertTrue(report['depth_review_required'])
         self.assertFalse(report['physical_depth_verified_by_preservation'])
         self.assertEqual(len(guard['contrast_report']['probes']), 7)
-        self.assertFalse(guard['source_report']['probes'])
+        self.assertEqual(len(guard['source_report']['probes']), 7)
         count, error = simplification.decimate_to_error(obj, .0013, samples=1000, protected=guard)
         check = local_features.check_surface_features([tuple(v.co) for v in obj.data.vertices],
                                                        [tuple(p.vertices) for p in obj.data.polygons], report)

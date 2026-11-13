@@ -318,6 +318,10 @@ def run_line(order):
         if not height and order.get("handbook"):
             # human scale: the views give proportions, the handbook's contacts give the size
             height, order["measured"] = human_scale_height(order, views)
+        paint_only = tuple(hp.get('paint_only', ()))
+        order.setdefault('measured', {})['paint_only'] = list(paint_only)
+        geometry_views = {view: path for view, path in views.items()
+                          if view not in paint_only}
         if hp.pop("guides", False):
             # removable construction guides (propkit/guides.py): cross-section rings make their band round
             from propkit import guides
@@ -341,7 +345,7 @@ def run_line(order):
             order.setdefault("measured", {})["relief"] = rrep = {}
             if order.get('automatic_depth'):
                 from propkit import surface_detail, process_planner
-                methods, section_bands = process_planner.plan_methods(views)
+                methods, section_bands = process_planner.plan_methods(geometry_views)
                 order.setdefault('measured', {})['construction_methods'] = methods
                 methods['order_overrides'] = {
                     key: hp[key] for key in ('revolve', 'sections') if key in hp}
@@ -351,10 +355,10 @@ def run_line(order):
                     'revolve': bool(hp['revolve']), 'sections': bool(hp['sections'])}
                 if section_bands is not None and hp['sections']:
                     hp['section_bands'] = section_bands
-                profile_model, route = process_planner.propose(views, height)
+                profile_model, route = process_planner.propose(geometry_views, height)
                 order.setdefault('measured', {})['process_plan'] = route
                 detail_plan = surface_detail.analyse(
-                    views, (W_, D_, height), rrep,
+                    geometry_views, (W_, D_, height), rrep,
                     silhouettes=hp.get('sil_override'),
                     memory_mode=order.get('reconstruction_memory_mode', 'learning'))
                 if order.get('_frozen_source_evidence') is not None:
@@ -704,7 +708,9 @@ def _build_candidate(order, run, samples=16):
             bake.update_manifest(os.path.join(
                 library_root, "library.json"), order["name"], info)
             vd = reference_views(order)
-            result = qa.check(order["name"], vd, order.get("class"), tuple(order.get("hull", {}).get("paint_only", ())),
+            result = qa.check(order["name"], vd, order.get("class"),
+                              tuple(order.get('measured', {}).get('paint_only',
+                                    order.get("hull", {}).get("paint_only", ()))),
                               solid=order["line"] in STANDARDS["solid_lines"], mount=order.get("mount", "floor"),
                               trim_order=order, library_root=library_root)
             stages["qa"] = round(time.time() - ts, 1)
@@ -903,7 +909,9 @@ def gate(names):
         line = o.get("line") or ("painted" if n.startswith(
             ("car_coupe", "can_", "tv_painted", "range_")) else "recipe")
         try:
-            r = qa.check(n, vd, o.get("class"), tuple(o.get("hull", {}).get("paint_only", ())),
+            r = qa.check(n, vd, o.get("class"),
+                         tuple(o.get('measured', {}).get('paint_only',
+                               o.get("hull", {}).get("paint_only", ()))),
                          solid=line in STANDARDS["solid_lines"] and n not in STANDARDS["open_by_design"]["names"],
                          mount=mount_of(n), trim_order=o)
         except Exception as e:

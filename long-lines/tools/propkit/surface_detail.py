@@ -769,7 +769,8 @@ def protected_samples(obj, report, geometry_tolerance=None):
             reference.append(dict(probe, target_offsets_m=offsets))
     return {'points': np.asarray(points), 'tolerance_m': np.asarray(tolerances), 'ids': identifiers,
             'support_m': np.asarray(supports),
-            # Conflicting input fits remain in final QA. They cannot be repaired
-            # by retaining millions of triangles during reduction.
-            'source_report': {'probes': [probe for probe in report.get('probes', []) if probe['id'] not in excluded and probe['id'] not in uncertain]},
+            # Conflicting input fits remain in final QA; reduction cannot fix them.
+            # An uncertain physical depth still needs its existing dense-mesh
+            # contrast preserved so export QA and reduction use the same target.
+            'source_report': {'probes': [probe for probe in report.get('probes', []) if probe['id'] not in excluded]},
             'contrast_report': {'probes': reference}} if points else None
