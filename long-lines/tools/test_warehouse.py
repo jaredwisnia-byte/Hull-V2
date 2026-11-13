@@ -31,7 +31,7 @@ class WarehouseTests(unittest.TestCase):
             "source_hashes": {"hull.py": w.digest(self.source_file)},
             "file_hashes": {str(self.source_file): w.digest(self.source_file)},
             "required_capabilities": ["core", "blender", "godot"],
-            "runtime": {"python": "3.13.13", "packages": {"numpy": "2.5.4"},
+            "runtime": {"pass": True, "python": "3.13.13", "packages": {"numpy": "2.5.4"},
                         "blender_path": str(self.root / "blender.exe"),
                         "blender_version": "5.2.3"},
         }
@@ -141,11 +141,25 @@ class WarehouseTests(unittest.TestCase):
             self.assertEqual(json.loads((release / "library.json").read_text()),
                              {"other": {"previous": True}})
         w.atomic_json(self.qualification, original)
+        compatible = json.loads(json.dumps(original))
+        compatible["runtime"]["python"] = "3.13.14"
+        compatible["runtime"]["packages"]["rapidocr"] = "3.10.0"
+        w.atomic_json(self.qualification, compatible)
+        self.assertEqual(w.qualification_errors(json.loads(receipt.read_text()),
+                                                compatible), [])
         candidate = json.loads(receipt.read_text())
         candidate["context"]["required_capabilities"].append("vision")
         w.atomic_json(receipt, candidate)
         with self.assertRaisesRegex(ValueError, "capability requirements"):
             self.promote(receipt, release)
+
+    def test_unhealthy_builder_runtime_blocks_publication(self):
+        run_record = json.loads((self.run / "run.json").read_text())
+        run_record["context"]["runtime"]["pass"] = False
+        w.atomic_json(self.run / "run.json", run_record)
+        w.seal(self.run, self.order, self.result, self.lib)
+        with self.assertRaisesRegex(ValueError, "Python profile"):
+            self.promote(self.run / "receipt.json", self.root / "approved")
 
     def test_source_change_after_build_blocks_publication(self):
         w.seal(self.run, self.order, self.result, self.lib)
