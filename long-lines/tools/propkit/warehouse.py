@@ -326,7 +326,84 @@ def seal(run, order, result, library):
     return receipt
 
 
-def promote(receipt_path, library):
+def required_capabilities(order):
+    """Declare every registered runtime used by a published asset."""
+    required = ["core", "blender", "godot"]
+    if order.get("cad_export"):
+        required.append("cad")
+    if order.get("vision_generated"):
+        required.append("vision")
+    return required
+
+
+def qualification_errors(receipt, qualification):
+    """A passed check run must cover the exact candidate source and toolchain."""
+    if not isinstance(qualification, dict):
+        return ["Toolchain qualification is not a JSON object"]
+    context = receipt.get("context", {})
+    required = context.get("required_capabilities")
+    runtime = context.get("runtime", {})
+    checked_runtime = qualification.get("runtime", {})
+    errors = []
+    if not isinstance(required, list) or not required or not all(
+        isinstance(profile, str) and profile for profile in required
+    ):
+        errors.append("Candidate has no declared capability requirements")
+        required = []
+    try:
+        archived_order = json.loads(
+            (Path(receipt["run_directory"]) / "input-order.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        if required != required_capabilities(archived_order):
+            errors.append("Candidate capability requirements differ from archived order")
+    except (OSError, ValueError, KeyError, TypeError):
+        errors.append("Archived capability requirements are unreadable")
+    if qualification.get("pass") is not True or qualification.get(
+        "source_unchanged_during_checks"
+    ) is not True or qualification.get("repository_policy", {}).get("pass") is not True:
+        errors.append("Toolchain qualification did not pass unchanged-source checks")
+    if checked_runtime.get("pass") is not True:
+        errors.append("Qualified runtime did not pass")
+    if not set(required) <= set(qualification.get("profiles", [])) or not set(
+        required
+    ) <= set(checked_runtime.get("qualified_capabilities", [])):
+        errors.append("Required capability profiles were not qualified")
+    for profile in required:
+        checks = [check for check in qualification.get("checks", [])
+                  if check.get("capability") == profile]
+        if not checks or any(check.get("pass") is not True or
+                             check.get("exit_code") != 0 or
+                             check.get("skipped", 0) for check in checks):
+            errors.append("Required checks missing or failed: " + profile)
+    source = context.get("source_hashes")
+    if not isinstance(source, dict) or not source or source != qualification.get(
+        "source_hashes"
+    ):
+        errors.append("Candidate source/configuration differs from qualification")
+    candidate_packages = runtime.get("packages", {})
+    qualified_packages = checked_runtime.get("packages", {})
+    candidate_python = str(runtime.get("python", "")).split(".")[:2]
+    qualified_python = str(checked_runtime.get("python", "")).split(".")[:2]
+    if (runtime.get("pass") is not True or not candidate_packages or
+            len(candidate_python) != 2 or candidate_python != qualified_python or
+            not isinstance(qualified_packages, dict) or any(
+                qualified_packages.get(name) != version
+                for name, version in candidate_packages.items()
+            )):
+        errors.append("Candidate Python profile or package runtime differs from qualification")
+    if "blender" in required:
+        observed = checked_runtime.get("tools", {}).get("blender", {})
+        if (not runtime.get("blender_path") or not observed.get("path") or
+                Path(runtime["blender_path"]).resolve() != Path(observed["path"]).resolve() or
+                not runtime.get("blender_version") or
+                runtime["blender_version"] not in observed.get("version", "")):
+            errors.append("Candidate Blender runtime differs from qualification")
+    return errors
+
+
+def promote(receipt_path, library, qualification_path=None):
     """Publish an immutable version, then atomically select it in the manifest."""
     receipt_path = Path(receipt_path).resolve()
     receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
@@ -335,6 +412,15 @@ def promote(receipt_path, library):
         or not audit(receipt)["pass"]
     ):
         raise ValueError("Candidate is not qualified or its evidence changed")
+    if qualification_path is None:
+        raise ValueError("Matching toolchain qualification is required for publication")
+    qualification_path = Path(qualification_path).resolve()
+    qualification = json.loads(qualification_path.read_text(encoding="utf-8"))
+    problems = qualification_errors(receipt, qualification)
+    if problems:
+        raise ValueError("Toolchain qualification mismatch: " + "; ".join(problems))
+    qualification_sha256 = digest(qualification_path)
+    retained_qualification = receipt_path.parent / "qualification-used.json"
     source_manifest = Path(receipt["artifact_library_root"]) / "library.json"
     entry = json.loads(source_manifest.read_text(encoding="utf-8"))[receipt["name"]]
     name, run_id = asset_name(receipt["name"]), receipt["run_id"]
@@ -344,6 +430,14 @@ def promote(receipt_path, library):
     relative = Path("releases") / name / run_id
     destination = inside(library, relative)
     with library_lock(library):
+        if digest(qualification_path) != qualification_sha256 or not audit(receipt)["pass"]:
+            raise ValueError("Candidate or qualification changed during publication")
+        if retained_qualification.is_file():
+            if json.loads(retained_qualification.read_text(encoding="utf-8")) != qualification:
+                raise ValueError("A different qualification was already retained")
+        else:
+            atomic_json(retained_qualification, qualification)
+        retained_sha256 = digest(retained_qualification)
         manifest_path = library / "library.json"
         manifest = (
             json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -369,7 +463,8 @@ def promote(receipt_path, library):
             entry,
             artifact_directory=relative.as_posix(),
             release_id=run_id,
-            qualification="qa_and_artifact_audit",
+            qualification="toolchain_qa_and_artifact_audit",
+            qualification_sha256=retained_sha256,
             artifact_hashes=receipt["artifact_hashes"],
         )
         if previous != entry:
@@ -387,7 +482,8 @@ def promote(receipt_path, library):
             manifest[name] = entry
             atomic_json(manifest_path, dict(sorted(manifest.items())))
     # The pointer swap is the commit boundary; keep a recovery journal beforehand.
-    receipt.update(state="released", published_library=str(library))
+    receipt.update(state="released", published_library=str(library),
+                   qualification_sha256=retained_sha256)
     try:
         atomic_json(receipt_path, receipt)
     except OSError:

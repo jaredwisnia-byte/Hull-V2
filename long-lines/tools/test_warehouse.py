@@ -25,7 +25,31 @@ class WarehouseTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
         self.order = {"name": "test_asset"}
-        self.run = w.create(self.root / "runs", self.order)
+        self.source_file = self.root / "hull.py"
+        self.source_file.write_text("original code", encoding="utf-8")
+        self.context = {
+            "source_hashes": {"hull.py": w.digest(self.source_file)},
+            "file_hashes": {str(self.source_file): w.digest(self.source_file)},
+            "required_capabilities": ["core", "blender", "godot"],
+            "runtime": {"pass": True, "python": "3.13.13", "packages": {"numpy": "2.5.4"},
+                        "blender_path": str(self.root / "blender.exe"),
+                        "blender_version": "5.2.3"},
+        }
+        self.qualification = self.root / "qualification.json"
+        w.atomic_json(self.qualification, {
+            "pass": True, "source_unchanged_during_checks": True,
+            "repository_policy": {"pass": True},
+            "profiles": ["core", "blender", "godot"],
+            "source_hashes": self.context["source_hashes"],
+            "runtime": {"pass": True, "python": "3.13.13",
+                        "packages": {"numpy": "2.5.4"},
+                        "qualified_capabilities": ["core", "blender", "godot"],
+                        "tools": {"blender": {"path": str(self.root / "blender.exe"),
+                                              "version": "Blender 5.2.3 LTS"}}},
+            "checks": [{"id": name, "capability": name, "pass": True,
+                        "exit_code": 0, "skipped": 0} for name in ("core", "blender", "godot")],
+        })
+        self.run = w.create(self.root / "runs", self.order, self.context)
         self.lib = self.run / "attempt-001/library"
         folder = self.lib / "test_asset"
         folder.mkdir(parents=True)
@@ -92,6 +116,58 @@ class WarehouseTests(unittest.TestCase):
             "inference_warnings": [],
         }
 
+    def promote(self, receipt, release):
+        return w.promote(receipt, release, self.qualification)
+
+    def test_missing_stale_or_incomplete_qualification_cannot_publish(self):
+        w.seal(self.run, self.order, self.result, self.lib)
+        receipt = self.run / "receipt.json"
+        release = self.root / "approved"
+        w.atomic_json(release / "library.json", {"other": {"previous": True}})
+        with self.assertRaisesRegex(ValueError, "qualification is required"):
+            w.promote(receipt, release)
+        original = json.loads(self.qualification.read_text())
+        for change in (
+            lambda q: q["source_hashes"].update({"hull.py": "other-source"}),
+            lambda q: q["runtime"].update(python="3.12.0"),
+            lambda q: q.update(profiles=["core"]),
+            lambda q: q["checks"][1].update({"pass": False}),
+        ):
+            trial = json.loads(json.dumps(original))
+            change(trial)
+            w.atomic_json(self.qualification, trial)
+            with self.assertRaisesRegex(ValueError, "qualification mismatch"):
+                self.promote(receipt, release)
+            self.assertEqual(json.loads((release / "library.json").read_text()),
+                             {"other": {"previous": True}})
+        w.atomic_json(self.qualification, original)
+        compatible = json.loads(json.dumps(original))
+        compatible["runtime"]["python"] = "3.13.14"
+        compatible["runtime"]["packages"]["rapidocr"] = "3.10.0"
+        w.atomic_json(self.qualification, compatible)
+        self.assertEqual(w.qualification_errors(json.loads(receipt.read_text()),
+                                                compatible), [])
+        candidate = json.loads(receipt.read_text())
+        candidate["context"]["required_capabilities"].append("vision")
+        w.atomic_json(receipt, candidate)
+        with self.assertRaisesRegex(ValueError, "capability requirements"):
+            self.promote(receipt, release)
+
+    def test_unhealthy_builder_runtime_blocks_publication(self):
+        run_record = json.loads((self.run / "run.json").read_text())
+        run_record["context"]["runtime"]["pass"] = False
+        w.atomic_json(self.run / "run.json", run_record)
+        w.seal(self.run, self.order, self.result, self.lib)
+        with self.assertRaisesRegex(ValueError, "Python profile"):
+            self.promote(self.run / "receipt.json", self.root / "approved")
+
+    def test_source_change_after_build_blocks_publication(self):
+        w.seal(self.run, self.order, self.result, self.lib)
+        self.source_file.write_text("changed code", encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "evidence changed"):
+            self.promote(self.run / "receipt.json", self.root / "approved")
+        self.assertFalse((self.root / "approved/library.json").exists())
+
     def test_failed_or_uncertain_candidate_cannot_replace_release(self):
         release = self.root / "approved"
         w.atomic_json(release / "library.json", {"test_asset": {"previous": True}})
@@ -100,7 +176,7 @@ class WarehouseTests(unittest.TestCase):
             receipt = w.seal(self.run, self.order, result, self.lib)
             self.assertEqual(receipt["state"], "quarantined")
             with self.assertRaises(ValueError):
-                w.promote(self.run / "receipt.json", release)
+                self.promote(self.run / "receipt.json", release)
             self.assertEqual(
                 json.loads((release / "library.json").read_text()),
                 {"test_asset": {"previous": True}},
@@ -109,7 +185,7 @@ class WarehouseTests(unittest.TestCase):
     def test_release_is_immutable_and_manifest_resolves_version(self):
         w.seal(self.run, self.order, self.result, self.lib)
         release = self.root / "approved"
-        entry = w.promote(self.run / "receipt.json", release)
+        entry = self.promote(self.run / "receipt.json", release)
         self.assertEqual(entry["release_id"], self.run.name)
         self.assertTrue(
             (w.asset_directory(release, "test_asset") / "test_asset.glb").is_file()
@@ -147,7 +223,7 @@ class WarehouseTests(unittest.TestCase):
         w.atomic_json(release / "library.json", {"other": {"old": True}})
         with patch.object(w.shutil, "copytree", side_effect=OSError("disk full")):
             with self.assertRaises(OSError):
-                w.promote(self.run / "receipt.json", release)
+                self.promote(self.run / "receipt.json", release)
         self.assertEqual(
             json.loads((release / "library.json").read_text()), {"other": {"old": True}}
         )
@@ -178,9 +254,9 @@ class WarehouseTests(unittest.TestCase):
     def test_idempotent_publication_retains_original_rollback_journal(self):
         w.seal(self.run, self.order, self.result, self.lib)
         release = self.root / "approved"
-        entry = w.promote(self.run / "receipt.json", release)
+        entry = self.promote(self.run / "receipt.json", release)
         journal = (self.run / "publication.json").read_bytes()
-        self.assertEqual(entry, w.promote(self.run / "receipt.json", release))
+        self.assertEqual(entry, self.promote(self.run / "receipt.json", release))
         self.assertEqual(journal, (self.run / "publication.json").read_bytes())
         w.rollback(self.run / "receipt.json", release, self.run.name)
         self.assertNotIn(
@@ -191,7 +267,7 @@ class WarehouseTests(unittest.TestCase):
     def test_rollback_rejects_intervening_publication(self):
         w.seal(self.run, self.order, self.result, self.lib)
         release = self.root / "approved"
-        w.promote(self.run / "receipt.json", release)
+        self.promote(self.run / "receipt.json", release)
         manifest = json.loads((release / "library.json").read_text())
         manifest["test_asset"]["release_id"] = "newer"
         w.atomic_json(release / "library.json", manifest)
@@ -210,10 +286,10 @@ class WarehouseTests(unittest.TestCase):
             original(path, value)
 
         with patch.object(w, "atomic_json", side_effect=fail_receipt):
-            entry = w.promote(self.run / "receipt.json", release)
+            entry = self.promote(self.run / "receipt.json", release)
         self.assertTrue(entry["receipt_update_pending"])
         self.assertTrue(w.verify_release(release, "test_asset")["pass"])
-        w.promote(self.run / "receipt.json", release)
+        self.promote(self.run / "receipt.json", release)
         self.assertEqual(
             json.loads((self.run / "receipt.json").read_text())["state"], "released"
         )
@@ -221,10 +297,10 @@ class WarehouseTests(unittest.TestCase):
     def test_two_versions_remain_available_after_guarded_rollback(self):
         w.seal(self.run, self.order, self.result, self.lib)
         release = self.root / "approved"
-        first = w.promote(self.run / "receipt.json", release)
-        next_run = w.create(self.root / "runs", self.order)
+        first = self.promote(self.run / "receipt.json", release)
+        next_run = w.create(self.root / "runs", self.order, self.context)
         w.seal(next_run, self.order, self.result, self.lib)
-        second = w.promote(next_run / "receipt.json", release)
+        second = self.promote(next_run / "receipt.json", release)
         self.assertNotEqual(first["release_id"], second["release_id"])
         w.rollback(next_run / "receipt.json", release, second["release_id"])
         self.assertEqual(

@@ -761,8 +761,8 @@ def _build_candidate(order, run, samples=16):
 def build(order, samples=16):
     """Build isolated candidates; publish only a qualified immutable version."""
     from pathlib import Path
-    import platform
-    from propkit import warehouse
+    import bpy
+    from propkit import maintenance, warehouse
     repo = Path(ROOT).parent
     started = time.time()
     inputs = list((repo / 'long-lines/tools').rglob('*.py')) + list(Path(FACT).glob('*.json'))
@@ -773,8 +773,24 @@ def build(order, samples=16):
     source = order.get('source')
     if source and Path(source).is_file():
         inputs.append(Path(source))
-    context = {'file_hashes': {str(p.resolve()): warehouse.digest(p) for p in inputs},
-               'python': platform.python_version()}
+    required = warehouse.required_capabilities(order)
+    local_runtime = maintenance.doctor(repo, [capability for capability in required
+                                               if capability != 'godot'],
+                                       blender=bpy.app.binary_path)
+    source_hashes = maintenance.source_identity(repo)
+    file_hashes = {str(p.resolve()): warehouse.digest(p) for p in inputs}
+    file_hashes.update({str((repo / name).resolve()): digest
+                        for name, digest in source_hashes.items()})
+    context = {
+        'file_hashes': file_hashes,
+        'source_hashes': source_hashes,
+        'required_capabilities': required,
+        'runtime': {'pass': local_runtime['pass'],
+                    'python': local_runtime['python'],
+                    'packages': local_runtime['packages'],
+                    'blender_path': str(Path(bpy.app.binary_path).resolve()),
+                    'blender_version': bpy.app.version_string},
+    }
     run = warehouse.create(os.environ.get('HULL_RUN_ROOT', repo / '.hull-runs'), order, context)
     original_views_folder = order.get('views_folder')
     try:
@@ -796,8 +812,15 @@ def build(order, samples=16):
         result['run_id'] = run.name
         result['disposition'] = receipt['state']
         if receipt['state'] == 'qualified_candidate' and os.environ.get('HULL_RELEASE_POLICY', 'auto') == 'auto':
-            warehouse.promote(run / 'receipt.json', LIB)
-            result['disposition'] = 'released'
+            qualification = os.environ.get('HULL_QUALIFICATION_PATH')
+            if qualification:
+                try:
+                    warehouse.promote(run / 'receipt.json', LIB, qualification)
+                    result['disposition'] = 'released'
+                except (OSError, ValueError, RuntimeError) as error:
+                    result['release_hold_reason'] = str(error)
+            else:
+                result['release_hold_reason'] = 'Matching toolchain qualification required'
         order['status'] = 'shipped' if result['disposition'] == 'released' else ('qualified_candidate' if receipt['audit']['pass'] else 'needs_person')
     except Exception as error:
         traceback.print_exc()

@@ -44,9 +44,12 @@ def load_plan(root):
             "blender",
             "godot",
             "cad",
+            "vision",
         ):
             raise ValueError("Duplicate or unknown check capability")
         seen.add(check["id"])
+        if check.get("runner", "python") not in ("python", "blender"):
+            raise ValueError("Unknown check runner: " + check["id"])
         if (
             check.get("script")
             and not warehouse.inside(root, check["script"]).is_file()
@@ -99,6 +102,21 @@ def doctor(root, required=("core",), blender=None, godot=None):
             importlib.import_module("OCP")
         except (ImportError, OSError) as error:
             evidence["fails"].append("CAD backend required: " + str(error))
+    if "vision" in required:
+        pins = dict(re.findall(
+            r"^([\w-]+)==([^\s]+)$",
+            (root / "requirements-vision.txt").read_text(), re.M,
+        ))
+        for package, module in (("rapidocr", "rapidocr"),
+                                ("onnxruntime", "onnxruntime")):
+            try:
+                importlib.import_module(module)
+                version = importlib.metadata.version(package)
+                evidence["packages"][package] = version
+                if version != pins[package]:
+                    evidence["fails"].append(package + " differs from qualified pin")
+            except (ImportError, OSError, importlib.metadata.PackageNotFoundError) as error:
+                evidence["fails"].append(package + ": " + str(error))
     for capability, configured, expected in [
         ("blender", blender or os.environ.get("HULL_BLENDER"), "Blender 5.2.3"),
         ("godot", godot or os.environ.get("HULL_GODOT"), "4.4.1"),
@@ -136,6 +154,12 @@ def choose_profiles(paths):
     profiles = set()
     for raw in paths:
         name = raw.replace("\\", "/")
+        if name == "requirements-vision.txt" or name.startswith(
+            ("long-lines/tools/propkit/vision", "long-lines/tools/sheet_blobs")
+        ) or name.startswith(("long-lines/tools/test_automatic_intake",
+                              "long-lines/tools/test_automatic_build")):
+            profiles.update(("core", "blender", "vision"))
+            continue
         if name.startswith("long-lines/scripts/") or (
             name.startswith("long-lines/tests/") and name.endswith(".gd")
         ):
@@ -206,7 +230,8 @@ def repository_audit(root):
 
 def source_identity(root):
     """Fingerprint code and station configuration, excluding changing run records."""
-    files = [root / "hull.py", root / "requirements-core.txt"]
+    files = [root / "hull.py", root / "requirements-core.txt",
+             root / "requirements-vision.txt"]
     for directory, pattern in [
         ("long-lines/tools", "*.py"),
         ("long-lines/scripts", "*.gd"),
@@ -223,6 +248,8 @@ def source_identity(root):
 
 
 def run_checks(root, profiles, output, blender=None, godot=None):
+    if "vision" in profiles and "blender" not in profiles:
+        raise ValueError("Vision qualification requires the Blender profile")
     output = Path(output).resolve()
     output.mkdir(parents=True, exist_ok=True)
     identity = source_identity(root)
@@ -240,7 +267,7 @@ def run_checks(root, profiles, output, blender=None, godot=None):
             if check["capability"] not in profiles:
                 continue
             script = check.get("script")
-            if check["capability"] == "blender":
+            if check.get("runner") == "blender" or check["capability"] == "blender":
                 command = [
                     health["tools"]["blender"]["path"],
                     "-b",
@@ -464,6 +491,7 @@ def main(root):
     sub.add_argument("--output", type=Path, required=True)
     sub = commands.add_parser("promote")
     sub.add_argument("receipt", type=Path)
+    sub.add_argument("--qualification", type=Path, required=True)
     sub = commands.add_parser("verify-release")
     sub.add_argument("name")
     sub = commands.add_parser("rollback")
@@ -479,7 +507,9 @@ def main(root):
         if args.command == "package":
             result = package(root, args.output)
         elif args.command == "promote":
-            result = warehouse.promote(args.receipt, root / "long-lines/assets/props")
+            result = warehouse.promote(
+                args.receipt, root / "long-lines/assets/props", args.qualification
+            )
         elif args.command == "verify-release":
             result = warehouse.verify_release(
                 root / "long-lines/assets/props", args.name
@@ -501,7 +531,7 @@ def main(root):
                 if args.changed_files is not None
                 else args.profiles.split(",")
             )
-            if not set(profiles) <= {"core", "blender", "godot", "cad"}:
+            if not set(profiles) <= {"core", "blender", "godot", "cad", "vision"}:
                 raise ValueError("Unknown capability profile")
             if args.command == "doctor":
                 result = doctor(root, profiles, args.blender, args.godot)
