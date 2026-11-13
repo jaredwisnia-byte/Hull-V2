@@ -19,6 +19,15 @@ unknowns. The resulting construction decisions must refer back to the drawing.
   exact source contour and opposite-view witness. The same mask goes to the
   base hull. A stage-review finding holds release because opposing painted
   views alone do not prove a physical through-hole.
+- The drawing measures 19 horizontal contour crossings in each supplied
+  elevation and pairs front/side envelope widths by relative height. Each
+  measurement retains the exact source contour segments. It explicitly leaves
+  the intervening 3D section shape unknown. A nine-object mixed trial checked
+  684 section rows against their original masks; the maximum measured outline
+  difference was 0.5 source pixel.
+- The core and Blender check profile passed 44 checks after this change, and
+  the camera/cassette prebuild integration check passed. These checks do not
+  certify physical geometry or the unresolved internal feature interpretations.
 - Prebuild integration was checked on an instant camera and cassette recorder.
   A mixed diagnostic trial also included toaster, typewriter, hair dryer, alarm
   clock, stand mixer, a carved leg, and another camera view set. The trial
@@ -31,8 +40,8 @@ unknowns. The resulting construction decisions must refer back to the drawing.
   validated universal association of fragments into physical parts or of
   corresponding features across views. The camera lens therefore is not yet
   guaranteed to become a correct cylindrical assembly.
-- Source-derived technical sections, hidden lines, dimensioned part drawings,
-  and a construction-consumption audit are incomplete. Current section/profile
+- True cross-section shapes, hidden lines, dimensioned part drawings, and a
+  construction-consumption audit are incomplete. Current section/profile
   tools make geometric inferences from silhouettes and shading; the prebuild
   trace sheet does not yet certify their deviation from all relevant traces.
 - The opening validator can mistake a painted seam for a cut. A hair-dryer

@@ -357,6 +357,8 @@ def run_line(order):
                     'geometry_inferences': 0,
                     'status': 'source contours and opposing-mask opening candidates; physical meaning unresolved',
                     'opening_candidates': source_drawing['build_constraints'],
+                    'paired_elevation_measurements': len(
+                        source_drawing['paired_elevation_envelopes']),
                     'path_counts': {view: {'outer': record['outer_path_count'],
                                            'internal': record['internal_path_count'],
                                            'opposed_mask_openings': record['opposed_mask_opening_count']}

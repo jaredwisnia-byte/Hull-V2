@@ -23,6 +23,31 @@ def _linear_rgb(pixels):
                     ((color + .055) / 1.055) ** 2.4)
 
 
+def _elevation_section(outer, row, height_fraction):
+    """Intersect observed contour segments with one horizontal source-pixel row."""
+    crossings = []
+    for trace_index, contour in enumerate(outer):
+        for segment_index, (start, end) in enumerate(zip(contour, contour[1:])):
+            x0, y0 = start
+            x1, y1 = end
+            if (y0 <= row < y1) or (y1 <= row < y0):
+                x = x0 + (row - y0) * (x1 - x0) / (y1 - y0)
+                crossings.append({'x_source_px': float(x),
+                                  'source_trace_id': f'outer:{trace_index}',
+                                  'source_segment_index': segment_index})
+    crossings.sort(key=lambda item: item['x_source_px'])
+    parity_valid = len(crossings) % 2 == 0
+    return {
+        'height_fraction_from_top': float(height_fraction),
+        'y_source_px': float(row), 'crossings': crossings,
+        'outer_envelope_x_source_px': (
+            [crossings[0]['x_source_px'], crossings[-1]['x_source_px']]
+            if len(crossings) >= 2 and parity_valid else None),
+        'crossing_parity_valid': parity_valid,
+        'physical_cross_section_shape': 'unobserved',
+    }
+
+
 def observe(view, path, construction_mask=None, opening_witness=None):
     """Return source-pixel paths and their provenance, without geometric fitting."""
     image = Image.open(path).convert('RGB')
@@ -34,6 +59,14 @@ def observe(view, path, construction_mask=None, opening_witness=None):
     outer = [[[float(x), float(y)] for y, x in contour]
              for contour in find_contours(mask.astype(np.float32), .5)
              if len(contour) >= 8]
+    sections = []
+    if view in ('front', 'back', 'left', 'right'):
+        for fraction in np.linspace(.05, .95, 19):
+            row = box[1] + fraction * (box[3] - box[1])
+            section = _elevation_section(outer, row, fraction)
+            for crossing in section['crossings']:
+                crossing['source_trace_id'] = f"{view}:{crossing['source_trace_id']}"
+            sections.append(section)
     records = []
     for index, points in enumerate(outer):
         records.append({'id': f'{view}:outer:{index}', 'kind': 'outer_silhouette',
@@ -86,6 +119,7 @@ def observe(view, path, construction_mask=None, opening_witness=None):
             'foreground_box_px': list(map(int, box)),
             'trace_backend': traced['tracing_backend'],
             'traces': records,
+            'observed_elevation_sections': sections,
             'outer_path_count': len(outer),
             'internal_path_count': sum(r['kind'] == 'internal_intensity_boundary'
                                        for r in records),
@@ -121,6 +155,30 @@ def infer(views, destination, construction_masks=None, opening_report=None):
          'status': 'construction_candidate_in_use_physical_hole_unverified'}
         for name, observed in observations.items() for item in observed['traces']
         if item['kind'] == 'opposed_mask_opening']
+    side = 'right' if 'right' in observations else 'left'
+    paired_sections = []
+    if 'front' in observations and side in observations:
+        front = observations['front']
+        other = observations[side]
+        for front_section, side_section in zip(
+                front['observed_elevation_sections'],
+                other['observed_elevation_sections']):
+            front_span = front_section['outer_envelope_x_source_px']
+            side_span = side_section['outer_envelope_x_source_px']
+            if front_span is None or side_span is None:
+                continue
+            front_height = front['foreground_box_px'][3] - front['foreground_box_px'][1]
+            side_height = other['foreground_box_px'][3] - other['foreground_box_px'][1]
+            paired_sections.append({
+                'height_fraction_from_top': front_section['height_fraction_from_top'],
+                'front_trace_crossings': front_section['crossings'],
+                'side_view': side, 'side_trace_crossings': side_section['crossings'],
+                'width_over_height': (front_span[1] - front_span[0]) / front_height,
+                'depth_over_height': (side_span[1] - side_span[0]) / side_height,
+                'alignment_assumption': 'same object height and vertical axis in both source views',
+                'cross_section_shape': 'unobserved',
+                'status': 'paired_source_silhouette_envelopes_only',
+            })
     columns = min(3, len(selected))
     rows = (len(selected) + columns - 1) // columns
     panel_w, panel_h = 510, 600
@@ -153,6 +211,17 @@ def infer(views, destination, construction_masks=None, opening_report=None):
                      'opposed_mask_opening': '#008b51'}[item['kind']]
             draw.line(mapped, fill=color,
                       width=2 if item['kind'] != 'internal_intensity_boundary' else 1)
+        for section in record['observed_elevation_sections']:
+            if not any(abs(section['height_fraction_from_top'] - station) < .001
+                       for station in (.15, .5, .85)):
+                continue
+            span = section['outer_envelope_x_source_px']
+            if span is None:
+                continue
+            yy = oy + section['y_source_px'] * scale
+            for xx in span:
+                px = ox + xx * scale
+                draw.line((px - 5, yy, px + 5, yy), fill='#a04a00', width=2)
         draw.text((x0 + 12, y1 - 27),
                   f"{record['outer_path_count']} outer / {record['internal_path_count']} internal / "
                   f"{record['opposed_mask_opening_count']} opposed-mask openings",
@@ -162,11 +231,15 @@ def infer(views, destination, construction_masks=None, opening_report=None):
               'GREEN: OPPOSING MASKS AGREE; THROUGH-HOLE UNVERIFIED. NO INFERRED PROTRUSIONS.',
               fill='#008b51')
     draw.text((28, footer_y + 28),
+              'ORANGE TICKS: MEASURED ELEVATION WIDTHS; INTERVENING 3D SECTION UNKNOWN.',
+              fill='#a04a00')
+    draw.text((28, footer_y + 56),
               'Unseen surfaces and physical meaning of internal traces require cross-view validation.',
               fill='#333333')
     report = {'schema': 1, 'stage': 'before_geometry',
               'status': 'source_observations_and_opposed_mask_openings',
               'observations': observations, 'coordinate_transforms': coordinate_transforms,
+              'paired_elevation_envelopes': paired_sections,
               'geometry_inferences': [], 'build_constraints': constraints,
               'unknowns': ['internal depth', 'material or shadow versus relief',
                            'unseen geometry', 'physical scale']}
