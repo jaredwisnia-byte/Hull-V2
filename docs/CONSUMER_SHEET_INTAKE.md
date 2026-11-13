@@ -246,3 +246,25 @@ the fusion candidate. The trial remains disabled. Before using the existing
 final-export rollback gate to select a fusion candidate, the builds must
 start from an identical memory snapshot and verify matching source evidence.
 All three held runs are in the local `fusion-stage-isolation` experiment area.
+
+In a controlled follow-up, two typewriter baselines with reconstruction
+memory disabled produced identical 480 source features, 168 probes, 158
+missing-depth failures, and mesh signatures. The memory-disabled power-0.5
+candidate produced the same result, so it gave no measurable typewriter gain
+with a stable source cohort. This isolates the prior changing feature sets
+to the memory-enabled route in these runs; it does not establish that memory
+is the sole possible source of nondeterminism. Production still uses a shared
+mutable memory database. Retry review must compare proposals against the
+same source evidence before treating changed feature IDs as gained or lost
+geometry. The diagnostic wrapper and three held runs remain in the local
+`fusion-stage-isolation` area; the candidate code was removed again.
+
+The factory retry reviews now compare the complete source-probe cohort by
+view, anchor positions, and target offsets before considering a second
+export. Feature sequence IDs are ignored. A changed source cohort rejects
+the retry even when its aggregate QA count improves. This prevents a mutable
+memory result from being mistaken for a geometry correction; it does not yet
+freeze memory or make every retry reproducible. The guard was checked against
+the real typewriter reports: it rejects the two memory-enabled baselines as
+incomparable and accepts the memory-disabled baseline pair and controlled
+fusion pair as comparable.

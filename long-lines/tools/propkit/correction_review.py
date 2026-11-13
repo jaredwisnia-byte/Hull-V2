@@ -6,6 +6,42 @@ Callers supply measurements in declared units and explicit preservation budgets.
 import math
 
 
+def same_source_probes(before, after):
+    """Compare source-derived probe evidence without trusting sequence IDs.
+
+    A retry can renumber otherwise identical features. Conversely, mutable
+    reconstruction memory can change the measured locations or targets while
+    preserving similar counts. Neither case is a valid before/after geometry
+    comparison unless the actual source probes agree.
+    """
+    def signature(relief):
+        probes = relief.get('probes', ())
+        if not probes:
+            return None
+        records = []
+        for probe in probes:
+            view, anchors = probe.get('view'), probe.get('anchors_m')
+            offsets = probe.get('target_offsets_m', ())
+            if not view or not anchors:
+                return None
+            try:
+                record = (view,
+                          tuple(tuple(round(float(value), 8) for value in anchor)
+                                for anchor in anchors),
+                          tuple(round(float(value), 8) for value in offsets))
+            except (TypeError, ValueError):
+                return None
+            if any(not math.isfinite(value) for anchor in record[1] for value in anchor):
+                return None
+            if any(not math.isfinite(value) for value in record[2]):
+                return None
+            records.append(record)
+        return sorted(records)
+
+    old = signature(before)
+    return old is not None and old == signature(after)
+
+
 class Rejected(RuntimeError):
     def __init__(self, report):
         self.report = report

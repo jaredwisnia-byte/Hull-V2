@@ -14,22 +14,37 @@ class RetryReviewTests(unittest.TestCase):
         self.before = {'pass': False, 'fails': ['missing shading depth: groove'],
                        'metrics': metrics}
         self.after = {'pass': True, 'fails': [], 'metrics': metrics.copy()}
-        self.measured = {'relief': {'local_retry': {'applied': True}}}
+        self.before_measured = {'relief': {'probes': [
+            {'id': 'groove', 'view': 'front',
+             'anchors_m': [[0., 0., .5], [.01, 0., .5]],
+             'target_offsets_m': [.002, 0.]}]}}
+        self.measured = {'relief': {
+            'probes': [dict(self.before_measured['relief']['probes'][0])],
+            'local_retry': {'applied': True}}}
 
     def test_better_export_is_accepted(self):
         review = factory._local_retry_review(
-            self.before, self.after, self.targets, self.measured)
+            self.before, self.after, self.targets, self.before_measured, self.measured)
         self.assertTrue(review['accepted'], review)
+
+    def test_changed_source_probe_rejects_export_even_when_qa_improves(self):
+        self.measured['relief']['probes'][0]['target_offsets_m'] = [.003, 0.]
+        review = factory._local_retry_review(
+            self.before, self.after, self.targets, self.before_measured, self.measured)
+        self.assertFalse(review['accepted'])
+        self.assertEqual(review['after']['same_source_probes'], 0)
 
     def test_new_fold_or_failure_rejects_export(self):
         self.after['metrics'] = dict(self.after['metrics'],
                                      extreme_folds={'count': 80, 'per_1k': 4.})
         self.assertFalse(factory._local_retry_review(
-            self.before, self.after, self.targets, self.measured)['accepted'])
+            self.before, self.after, self.targets, self.before_measured,
+            self.measured)['accepted'])
         self.after['metrics']['extreme_folds'] = {'count': 60, 'per_1k': 3.}
         self.after['fails'] = ['new silhouette mismatch']
         self.assertFalse(factory._local_retry_review(
-            self.before, self.after, self.targets, self.measured)['accepted'])
+            self.before, self.after, self.targets, self.before_measured,
+            self.measured)['accepted'])
 
     def test_only_supported_missing_detail_can_trigger_retry(self):
         order = {'line': 'hull', 'automatic_depth': True,

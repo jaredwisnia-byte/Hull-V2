@@ -219,6 +219,7 @@ def compare_exports(baseline, candidate, baseline_measured, candidate_measured):
     A simpler candidate may retain the baseline's unresolved failures, but it
     cannot introduce any. Release still depends on the ordinary QA gate.
     """
+    from .correction_review import same_source_probes
     old = baseline.get('metrics', {})
     new = candidate.get('metrics', {})
     old_fails = set(baseline.get('fails', ()))
@@ -278,6 +279,7 @@ def compare_exports(baseline, candidate, baseline_measured, candidate_measured):
     outline_delta = min((new_outline.get(view, -1) - value
                          for view, value in old_outline.items()), default=-1.)
     checks = {
+        'same_source_probes': same_source_probes(old_relief, new_relief),
         'no_new_other_failures': not (new_other - old_other),
         'comparable_feature_evidence': comparable,
         'no_new_missing_feature_locations': new_missing <= old_missing and unmatched == 0,

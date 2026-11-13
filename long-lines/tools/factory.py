@@ -618,9 +618,9 @@ def render_trim_preview(name, library_root=None):
     return out
 
 
-def _local_retry_review(before, after, targets, measured):
+def _local_retry_review(before, after, targets, before_measured, measured):
     """Accept a second build only if exported geometry improves safely."""
-    from propkit.correction_review import assess
+    from propkit.correction_review import assess, same_source_probes
     target_ids = {item['id'] for item in targets}
 
     def target_misses(result):
@@ -635,6 +635,8 @@ def _local_retry_review(before, after, targets, measured):
                  for view, value in old_outline.items()), default=-1.)
     extra_fails = set(after.get('fails', ())) - set(before.get('fails', ()))
     retry_applied = measured.get('relief', {}).get('local_retry', {}).get('applied') is True
+    source_evidence_same = same_source_probes(
+        before_measured.get('relief', {}), measured.get('relief', {}))
     before_metrics = {'missing_target_details': len(target_misses(before))}
     after_metrics = {
         'missing_target_details': len(target_misses(after)),
@@ -644,6 +646,7 @@ def _local_retry_review(before, after, targets, measured):
         'geometric_components': new.get('geometric_components'),
         'triangle_count': new.get('tris'),
         'minimum_silhouette_delta': delta,
+        'same_source_probes': int(source_evidence_same),
         'field_retry_applied': int(retry_applied)}
     limits = {'new_final_failures': (0, 0),
               'extreme_fold_count': (0, old.get('extreme_folds', {}).get('count', -1)),
@@ -651,6 +654,7 @@ def _local_retry_review(before, after, targets, measured):
               'geometric_components': (1, old.get('geometric_components', 0)),
               'triangle_count': (0, old.get('tris', 0) * 1.05),
               'minimum_silhouette_delta': (-.005, 1.),
+              'same_source_probes': (1, 1),
               'field_retry_applied': (1, 1)}
     return assess('supported relief missing after view fusion',
                   'accept isolated local view ownership on exported asset',
@@ -711,6 +715,7 @@ def _build_candidate(order, run, samples=16):
             else:
                 review = _local_retry_review(old_result, result,
                                              order.get('relief_retry', ()),
+                                             old_measured,
                                              order.get('measured', {}))
             if not review['accepted']:
                 result = old_result

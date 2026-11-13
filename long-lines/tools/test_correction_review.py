@@ -1,6 +1,6 @@
 """A successful local fix must not authorize unrelated destructive changes."""
 import unittest
-from propkit.correction_review import assess
+from propkit.correction_review import assess, same_source_probes
 
 
 class CorrectionContracts(unittest.TestCase):
@@ -35,6 +35,17 @@ class CorrectionContracts(unittest.TestCase):
         result = assess('too many triangles', 'decimate', {'triangles': 1000},
                         {'triangles': 10}, improve=['triangles'], limits={})
         self.assertFalse(result['accepted'])
+
+    def test_source_probe_comparison_ignores_ids_but_detects_drift(self):
+        old = {'probes': [{'id': 'old', 'view': 'front',
+                           'anchors_m': [[0., 0., .5], [.01, 0., .5]],
+                           'target_offsets_m': [.002, 0.]}]}
+        same = {'probes': [{**old['probes'][0], 'id': 'renumbered'}]}
+        self.assertTrue(same_source_probes(old, same))
+        changed = {'probes': [{**same['probes'][0],
+                               'target_offsets_m': [.003, 0.]}]}
+        self.assertFalse(same_source_probes(old, changed))
+        self.assertFalse(same_source_probes(old, {}))
 
 
 if __name__ == '__main__':
