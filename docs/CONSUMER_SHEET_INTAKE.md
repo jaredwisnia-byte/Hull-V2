@@ -172,3 +172,26 @@ while retaining the `outer_body_only` build scope. The other four sheets still
 lack a supported correspondence. The remaining task is to validate part
 identity and protrusion against independent views, estimate the actual mount
 and depth, manufacture each part once, then run complete artifact QA.
+
+## Fusion crossing audit, 2026-11-13
+
+The opt-in fusion trace now stores a short depth profile around each
+source-derived probe anchor: original field, every one-view field, and the
+combined field. This is diagnostic data only and does not alter geometry.
+On the held cassette control, all 16 previously failed probes had three
+profile crossings in the expanded window. Five had fused local contrast below
+half the source-view contrast or reversed sign, while the other eleven retained
+at least half contrast at the nearby crossing. The earlier image-space
+visible-surface audit reported much broader loss. Those measurements answer
+different questions: a crossing near the original anchor may survive even if
+it is no longer the first visible surface along the camera ray. The next
+diagnostic must distinguish competing visible crossings from field attenuation
+before a new fusion rule is promoted.
+
+The same held rerun reproduced the prior cassette outcome exactly: 16 missing
+depth probes, 5,574 triangles, and 3.588 extreme folds per 1,000 triangles.
+Its full build also exposed a Blender-on-Windows file I/O limit: a 261-character
+diagnostic preview filename failed while shorter files in the same directory
+saved. Long diagnostic image paths now use Windows extended-path I/O for save
+and copy; ordinary paths remain in manifests. This was verified inside Blender
+with a 268-character path. It fixes the build interruption, not the depth QA.

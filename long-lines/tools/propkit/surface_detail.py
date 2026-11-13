@@ -443,7 +443,31 @@ def apply_field(field, plan):
                     contributions[observation['view']] = {
                         'weight': float(weight),
                         'shift_m': shifted - baseline}
-                anchors.append({'model_point_m': point, 'views': contributions})
+                # The zero crossing can move between sample centres. A weight
+                # measured only at the original anchor cannot identify which
+                # view changed the surrounding field or erased its contrast.
+                # Keep a short ray profile of the original, each one-view
+                # field, and the combined field for this diagnostic only.
+                profile = []
+                for offset in range(-12, 13):
+                    sample_index = index.copy()
+                    sample_index[probe['axis']] += offset
+
+                    def field_at(values):
+                        return float(ndimage.map_coordinates(
+                            values, sample_index[:, None], order=1,
+                            mode='nearest')[0])
+
+                    profile.append({
+                        'offset_voxels': offset,
+                        'baseline_m': field_at(field),
+                        'fused_m': field_at(result),
+                        'single_view_m': {
+                            view: field_at(values)
+                            for view, values in solo_fields.items()},
+                    })
+                anchors.append({'model_point_m': point, 'views': contributions,
+                                'field_profile': profile})
             trace[probe['id']] = {'view': probe['view'], 'anchors': anchors}
         folder = Path(plan['diagnostic_folder'])
         folder.mkdir(parents=True, exist_ok=True)

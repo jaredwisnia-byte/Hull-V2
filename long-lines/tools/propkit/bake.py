@@ -8,6 +8,7 @@ import bpy
 import numpy as np
 
 from . import core, mats
+from .pathing import io_path
 
 
 STANDARDS = json.load(open(os.path.join(os.path.dirname(
@@ -363,10 +364,10 @@ def export_textured(name, out_root, destination):
     # coverage counts are recorded in the library's texture_ownership report.
     for suffix in ('source_view', 'source_view_preview', 'source_confidence'):
         source = base.with_name(base.name + '_' + suffix + '.png')
-        if source.is_file():
+        if os.path.isfile(io_path(source)):
             import shutil
             target = destination / (suffix + '.png')
-            shutil.copy2(source, target)
+            shutil.copy2(io_path(source), io_path(target))
             result[suffix] = str(target)
     return result
 

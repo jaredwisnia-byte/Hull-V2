@@ -159,8 +159,13 @@ class SurfaceContracts(unittest.TestCase):
                                 'fusion-contributions.json').read_text())
             self.assertIn('observed_0', trace['probes'])
             self.assertEqual(len(trace['probes']['observed_0']['anchors']), 3)
-            self.assertIn('front', trace['probes']['observed_0']
-                          ['anchors'][0]['views'])
+            anchor = trace['probes']['observed_0']['anchors'][0]
+            self.assertIn('front', anchor['views'])
+            self.assertEqual([sample['offset_voxels'] for sample in
+                              anchor['field_profile']], list(range(-12, 13)))
+            self.assertAlmostEqual(anchor['field_profile'][12]['fused_m'],
+                                   anchor['field_profile'][12]
+                                   ['single_view_m']['front'], places=6)
 
     def test_profile_envelope_is_applied_after_original_detail(self):
         original = self.field(True)
