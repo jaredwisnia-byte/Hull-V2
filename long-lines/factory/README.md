@@ -26,7 +26,10 @@ reference image ─► INTAKE ─► work order ─► LINE (build) ─► BAKE/
 every step ─► factory/ledger.jsonl ─► factory/REPORT.md (KPIs)
 ```
 
-## Commands (all run inside Blender's Python)
+## Build commands (run inside Blender's Python)
+
+For environment checks, registered tests, qualification and release recovery,
+use root `hull.py` with the qualified Python profile in the root README.
 
 ```bash
 F="blender -b --factory-startup -P long-lines/tools/factory.py --"
@@ -125,3 +128,4 @@ of detail, and assemble them by rule. A tall building is many bays, not a stretc
 
 ## The assembly line
 `python3 tools/line.py --drawn` (or order names): intake (views cut from the order's `sheet` with its `sheet_spec`; guide lines removed when `hull.guides`) -> build (geometry, paint, bake, export, quality gate; ships to the prop library or flags for a person) -> render (`tools/render_turnaround.py`: six textured views and a clay view, `docs/renders/NAME.png`) -> report (`factory/REPORT.md`, `docs/renders/LINE.md`, contact sheet `docs/renders/line.png`). Every station is a separate Blender worker, timed; PYTHONHASHSEED is pinned. `"locked"` orders are rendered from their shipped files and never rebuilt.
+

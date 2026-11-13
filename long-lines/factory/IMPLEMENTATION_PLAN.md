@@ -1,7 +1,11 @@
 # Hull audit implementation and acceptance plan
 
-This is a working status document. Implemented stages below are exercised in code;
-the research backlog is not presented as completed inverse-CAD functionality.
+Historical implementation record through November 11, 2026. The measured runs
+and test counts below describe that point in time. Current tasks are tracked in
+the [Hull V2 issues](https://github.com/jaredwisnia-byte/Hull-V2/issues), and
+current verified capabilities and limits are in
+[`KNOWLEDGE_FILE.md`](../../KNOWLEDGE_FILE.md). Implemented stages below were
+exercised in code; the research backlog is not completed inverse-CAD functionality.
 The original Claude/Dirac checkout is unchanged. All runtime decisions are software
 operations; no conversational LLM supplies per-object corrections.
 
@@ -403,3 +407,4 @@ Still pending: owner decision on licensing and actual hosted branch/security
 rules, wider independent object fixtures, clean optional-backend qualifications,
 physically calibrated relief and the prior geometric/reconstruction backlog.
 Maintenance qualification is not certification of arbitrary model accuracy.
+

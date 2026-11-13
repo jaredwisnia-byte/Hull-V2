@@ -4,6 +4,11 @@ This is the operating contract. `checks.json` is the single test register;
 `standards.json` owns existing asset thresholds. Existing `correction_review`,
 `stage_review`, `qa`, `BuildMemory` and the source inventory retain their jobs.
 The factory roles below are responsibilities, not a hierarchy of runtime LLMs.
+The current task queue is the [Hull V2 GitHub issues](https://github.com/jaredwisnia-byte/Hull-V2/issues).
+The twice-daily inspection and handoff routine is in
+[`docs/MAINTENANCE_STEWARD.md`](../../docs/MAINTENANCE_STEWARD.md).
+`ledger.jsonl`, `REPORT.md` and sealed run receipts record production evidence;
+they do not assign the next development task.
 
 | Responsibility | Existing machinery / new boundary |
 | --- | --- |
@@ -80,6 +85,10 @@ recursive deletion of experimental learning records is installed.
 | Weekly during development | Review recurring defects, failed/skipped checks, slow runs, storage growth and stale instructions |
 | Monthly initially | Restore a known environment and a selected release; validate hashes and representative output |
 
+The maintenance steward inspects at 03:00 and 15:00 America/Toronto. These
+scheduled shifts supplement the change-triggered checks above; the weekly row
+remains the deeper trend and recovery review.
+
 Weekly CI checks are prepared in the workflow; GitHub schedules run on the default
 branch once merged. Local/native recovery rehearsals remain operator tasks. These
 cadences are starting policies, not claims of measured Six Sigma capability.
@@ -104,3 +113,4 @@ baking preserves a bounded result and leaves excess triangles for QA to flag.
 The gauge is a bidirectional sampled 99th-percentile distance, not an exact
 maximum or universal feature-recognition proof. Explicit budget: share remains
 a compatibility option. Compare exported silhouettes and local features as well.
+

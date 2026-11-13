@@ -45,6 +45,11 @@ Promotion cannot override failed QA or unresolved inference warnings.
 
 ## Project guide
 
+- [Current work queue](https://github.com/jaredwisnia-byte/Hull-V2/issues):
+  actionable tasks and their completion evidence. Build ledgers and reports are
+  measurements, not a competing task list.
+- [Twice-daily maintenance steward](docs/MAINTENANCE_STEWARD.md):
+  inspection, defect handoff and specialist triggers.
 - [Operations, repairs and recovery](long-lines/factory/OPERATIONS.md)
 - [Contribution and validation](CONTRIBUTING.md)
 - [Repository maintenance audit](docs/REPOSITORY_MAINTENANCE.md)
@@ -58,3 +63,4 @@ Promotion cannot override failed QA or unresolved inference warnings.
 A code-only ZIP is a reproducible source handoff, not a standalone installer: model
 assets, trained weights, dependencies, generated outputs and private run records are excluded.
 No project-wide license grant is inferred; dependency and image rights remain separate.
+

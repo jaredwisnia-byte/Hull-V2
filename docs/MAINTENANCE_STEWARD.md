@@ -12,6 +12,29 @@ The November 13 storage and code review at
 `C:/Users/jared/Documents/Codex/Hull-maintenance-validation/HULL_STORAGE_CODE_REVIEW_2026-11-13.md`
 is the initial local baseline.
 
+## Work queue and handoff
+
+The [Hull V2 GitHub issues](https://github.com/jaredwisnia-byte/Hull-V2/issues)
+are the live task queue. `checks.json` is the test register; run receipts and
+the factory ledger are evidence, not alternate backlogs. Reconcile the open
+issues with the previous shift report at the start of each shift. Before starting
+another task, give the user a concise summary of what the previous task changed,
+what was verified and what remains. Record the same handoff in the shift report.
+
+Choose the next actionable issue by user impact, release risk, dependencies and
+reproducible evidence. Finish a bounded subtask, run its relevant checks, update
+the existing issue with its outcome and next step, then continue to the next safe
+subtask while the shift has time. If a task remains unfinished, retain its owner,
+status, branch, reproducer and exact next step for the next shift. Do not mark an
+issue complete based only on a passing test count or an attractive render. Avoid
+opening duplicate issues or changing independent acceptance criteria to close one.
+
+The 03:00 inspection remains read-only for storage, databases and releases. After
+inspection, it may perform a small, isolated source or documentation repair from
+the queue with targeted checks; it must not delete data or publish assets. The
+15:00 review handles larger experiments and build defects. Neither shift promises
+unbounded work or continuous execution between scheduled starts.
+
 ## Operating rules
 
 - Detect an abnormal condition, contain its effects and preserve evidence.
@@ -134,4 +157,5 @@ physically correct model. Incidents should gain owner, severity, status,
 affected versions, reproducer and verified closure evidence. Follow
 [Google's postmortem practice](https://sre.google/workbook/postmortem-culture/)
 for escaped or recurring defects.
+
 

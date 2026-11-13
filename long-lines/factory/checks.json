@@ -134,6 +134,36 @@
       "timeout_s": 300
     },
     {
+      "id": "companion_captions",
+      "capability": "core",
+      "script": "long-lines/tools/test_companion_captions.py",
+      "timeout_s": 300
+    },
+    {
+      "id": "local_retry",
+      "capability": "core",
+      "script": "long-lines/tools/test_local_retry.py",
+      "timeout_s": 300
+    },
+    {
+      "id": "observed_openings",
+      "capability": "core",
+      "script": "long-lines/tools/test_observed_openings.py",
+      "timeout_s": 300
+    },
+    {
+      "id": "probe_review",
+      "capability": "core",
+      "script": "long-lines/tools/test_probe_review.py",
+      "timeout_s": 300
+    },
+    {
+      "id": "process_planner",
+      "capability": "core",
+      "script": "long-lines/tools/test_process_planner.py",
+      "timeout_s": 300
+    },
+    {
       "id": "guides",
       "capability": "blender",
       "script": "long-lines/tools/test_guides.py",
@@ -196,6 +226,12 @@
       "timeout_s": 600
     },
     {
+      "id": "retry_review",
+      "capability": "blender",
+      "script": "long-lines/tools/test_retry_review.py",
+      "timeout_s": 600
+    },
+    {
       "id": "ownership_blender",
       "capability": "blender",
       "script": "long-lines/tools/test_ownership_blender.py",
@@ -253,3 +289,4 @@
     }
   ]
 }
+
