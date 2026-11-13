@@ -146,3 +146,29 @@ limit; the cassette rose from 5,574 to 5,878 triangles and still failed QA.
 Neither was released. The trial rule was removed, leaving the original
 weighted fusion unchanged. A subsequent candidate must solve the remaining
 view conflicts and mesh cost before promotion.
+
+## Provisional surface contact, 2026-11-13
+
+A two-resolution correspondence audit tested all 17 captioned detail regions
+against the six assembly views on each seven-sheet pilot (102 pairs). Doubling
+the DINOv2 source/target resolution from 224/448 to 448/896 found one extra
+above-threshold match, but the unchanged part graph still produced no
+three-axis placement on any sheet. More keypoints alone cannot establish
+physical ownership or the missing depth coordinate.
+
+The intake graph now records a *contact hypothesis* for a single-view match
+when a perpendicular assembly silhouette supplies an outer-envelope witness.
+For a front/back or left/right mount, it uses the opposed horizontal views at
+the matched height; top/bottom silhouettes span all heights and can capture
+unrelated protrusions. Each hypothesis includes the proposed mount face,
+position, outward normal, witness spread, and an explicit unverified-depth
+warning. It does not count as a spatially constrained part, authorize
+manufacture, or change `needs_review`.
+
+On the saved pilot, baseline correspondence yields three provisional contacts:
+the cassette door, cassette folding handle, and typewriter carriage lever.
+A fresh cassette image-only intake records two of them in its normal report
+while retaining the `outer_body_only` build scope. The other four sheets still
+lack a supported correspondence. The remaining task is to validate part
+identity and protrusion against independent views, estimate the actual mount
+and depth, manufacture each part once, then run complete artifact QA.
