@@ -494,6 +494,13 @@ def main(root):
     sub.add_argument("database", type=Path)
     sub.add_argument("--output", type=Path, required=True)
     sub.add_argument("--verify-hashes", action="store_true")
+    sub = commands.add_parser("memory-quarantine")
+    sub.add_argument("database", type=Path)
+    sub.add_argument("--reviewed-report", type=Path, required=True)
+    sub.add_argument("--confirm-idle", action="store_true")
+    sub = commands.add_parser("memory-restore")
+    sub.add_argument("database", type=Path)
+    sub.add_argument("batch", type=Path)
     sub = commands.add_parser("promote")
     sub.add_argument("receipt", type=Path)
     sub.add_argument("--qualification", type=Path, required=True)
@@ -518,6 +525,17 @@ def main(root):
             with closing(BuildMemory(args.database)) as memory:
                 result = memory.retention_inventory(args.verify_hashes)
             warehouse.atomic_json(args.output, result)
+        elif args.command in ("memory-quarantine", "memory-restore"):
+            if not args.database.is_file():
+                raise ValueError("Memory database does not exist")
+            from .build_memory import BuildMemory
+            with closing(BuildMemory(args.database)) as memory:
+                if args.command == "memory-quarantine":
+                    result = memory.quarantine_unreferenced(
+                        args.reviewed_report, confirm_idle=args.confirm_idle
+                    )
+                else:
+                    result = memory.restore_quarantine(args.batch)
         elif args.command == "promote":
             result = warehouse.promote(
                 args.receipt, root / "long-lines/assets/props", args.qualification
