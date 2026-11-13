@@ -11,7 +11,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import factory
-from propkit import warehouse as w
+from propkit import maintenance, warehouse as w
 
 
 class FactoryStorageContracts(unittest.TestCase):
@@ -45,7 +45,14 @@ class FactoryStorageContracts(unittest.TestCase):
                 "tex": 256,
                 "views_folder": str(source),
             }
-            with patch.object(factory, "LIB", str(approved)), patch.object(
+            actual_doctor = maintenance.doctor
+
+            def fixture_doctor(*args, **kwargs):
+                evidence = actual_doctor(*args, **kwargs)
+                evidence["pass"] = True  # Storage contract fixture, not a qualification.
+                return evidence
+
+            with patch.object(maintenance, "doctor", side_effect=fixture_doctor), patch.object(factory, "LIB", str(approved)), patch.object(
                 factory, "ORDERS", str(orders)
             ), patch.object(factory, "LEDGER", str(root / "ledger.jsonl")), patch.dict(
                 os.environ,

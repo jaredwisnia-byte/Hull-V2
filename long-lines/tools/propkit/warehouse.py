@@ -382,10 +382,17 @@ def qualification_errors(receipt, qualification):
         "source_hashes"
     ):
         errors.append("Candidate source/configuration differs from qualification")
-    if (not runtime or not runtime.get("packages") or
-            runtime.get("python") != checked_runtime.get("python") or
-            runtime.get("packages") != checked_runtime.get("packages")):
-        errors.append("Candidate Python or package runtime differs from qualification")
+    candidate_packages = runtime.get("packages", {})
+    qualified_packages = checked_runtime.get("packages", {})
+    candidate_python = str(runtime.get("python", "")).split(".")[:2]
+    qualified_python = str(checked_runtime.get("python", "")).split(".")[:2]
+    if (runtime.get("pass") is not True or not candidate_packages or
+            len(candidate_python) != 2 or candidate_python != qualified_python or
+            not isinstance(qualified_packages, dict) or any(
+                qualified_packages.get(name) != version
+                for name, version in candidate_packages.items()
+            )):
+        errors.append("Candidate Python profile or package runtime differs from qualification")
     if "blender" in required:
         observed = checked_runtime.get("tools", {}).get("blender", {})
         if (not runtime.get("blender_path") or not observed.get("path") or
