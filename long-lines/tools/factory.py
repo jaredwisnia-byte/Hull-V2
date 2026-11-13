@@ -344,9 +344,24 @@ def run_line(order):
             D_ = hp.get("depth_m") or height * sm_.shape[1] / sm_.shape[0]
             order.setdefault("measured", {})["relief"] = rrep = {}
             if order.get('automatic_depth'):
-                from propkit import surface_detail, process_planner
+                from propkit import surface_detail, process_planner, drawing_traces
+                trace_folder = os.path.join(diagnostic_root(order), 'technical-traces')
+                source_drawing = drawing_traces.infer(views, trace_folder)
+                order.setdefault('measured', {})['source_drawing'] = {
+                    'stage': 'before_geometry',
+                    'sheet': os.path.join(trace_folder, 'technical-traces.png'),
+                    'traces': os.path.join(trace_folder, 'technical-traces.json'),
+                    'geometry_inferences': 0,
+                    'status': 'observed contours only; physical meaning unresolved',
+                    'path_counts': {view: {'outer': record['outer_path_count'],
+                                           'internal': record['internal_path_count']}
+                                    for view, record in source_drawing['observations'].items()}}
                 methods, section_bands = process_planner.plan_methods(geometry_views)
                 order.setdefault('measured', {})['construction_methods'] = methods
+                methods['source_drawing'] = {
+                    'traces': order['measured']['source_drawing']['traces'],
+                    'consumed_constraints': [],
+                    'reason': 'internal traces lack cross-view physical interpretation'}
                 methods['order_overrides'] = {
                     key: hp[key] for key in ('revolve', 'sections') if key in hp}
                 hp.setdefault('revolve', methods['method'].startswith('lathe_'))
