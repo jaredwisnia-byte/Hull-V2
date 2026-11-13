@@ -9,6 +9,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 from propkit import maintenance as m, warehouse as w
+from propkit import workspace_inventory
 from propkit.build_memory import BuildMemory
 import numpy as np
 
@@ -16,6 +17,49 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class MaintenanceTests(unittest.TestCase):
+    def test_workspace_inventory_growth_and_unclassified_review(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            evidence = root / "Hull-trial"
+            evidence.mkdir()
+            (evidence / "result.bin").write_bytes(b"first")
+            (root / "Hull-helper.py").write_text("pass")
+            first = workspace_inventory.scan(root)
+            self.assertEqual(first["review_candidates"], ["Hull-trial"])
+            self.assertIsNone(first["top_level"]["Hull-trial"]["delta_bytes"])
+            (evidence / "result.bin").write_bytes(b"first and second")
+            second = workspace_inventory.scan(root, {"Hull-trial": "experiment evidence"}, first)
+            self.assertEqual(second["top_level"]["Hull-trial"]["delta_bytes"], 11)
+            self.assertEqual(second["review_candidates"], [])
+            self.assertEqual(second["top_level"]["Hull-trial"]["role"],
+                             "experiment evidence")
+            with self.assertRaises(ValueError):
+                workspace_inventory.scan(root, previous=dict(first, root="elsewhere"))
+
+    def test_workspace_inventory_does_not_report_growth_for_unreadable_subtree(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            denied = root / "Hull-denied"
+            good = root / "Hull-good"
+            denied.mkdir()
+            good.mkdir()
+            (denied / "evidence.bin").write_bytes(b"old")
+            (good / "evidence.bin").write_bytes(b"old")
+            first = workspace_inventory.scan(root)
+            (good / "evidence.bin").write_bytes(b"new data")
+            actual_scandir = workspace_inventory.os.scandir
+
+            def intermittently_denied(path):
+                if Path(path) == denied:
+                    raise PermissionError("no access")
+                return actual_scandir(path)
+
+            with patch.object(workspace_inventory.os, "scandir", intermittently_denied):
+                second = workspace_inventory.scan(root, previous=first)
+            self.assertTrue(second["partial"])
+            self.assertIsNone(second["top_level"]["Hull-denied"]["delta_bytes"])
+            self.assertEqual(second["top_level"]["Hull-good"]["delta_bytes"], 5)
+
     def test_memory_inventory_command_writes_report_without_collecting(self):
         with tempfile.TemporaryDirectory() as folder:
             database = Path(folder) / 'memory.sqlite3'
