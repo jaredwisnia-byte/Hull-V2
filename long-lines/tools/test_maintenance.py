@@ -1,17 +1,37 @@
 """Operations contracts: coverage, drift, retained evidence and deterministic packaging."""
 
 import importlib.util
+from contextlib import closing
 import json
 from pathlib import Path
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
 from propkit import maintenance as m, warehouse as w
+from propkit.build_memory import BuildMemory
+import numpy as np
 
 ROOT = Path(__file__).resolve().parents[2]
 
 
 class MaintenanceTests(unittest.TestCase):
+    def test_memory_inventory_command_writes_report_without_collecting(self):
+        with tempfile.TemporaryDirectory() as folder:
+            database = Path(folder) / 'memory.sqlite3'
+            output = Path(folder) / 'inventory.json'
+            with closing(BuildMemory(database)) as memory:
+                memory.save('key', 'v1', {'status': 'accepted'}, [1],
+                            np.ones((2, 2)), np.zeros((2, 2)))
+            with patch.object(sys, 'argv', ['hull.py', 'memory-inventory',
+                                            str(database), '--output', str(output),
+                                            '--verify-hashes']):
+                self.assertEqual(m.main(ROOT), 0)
+            report = json.loads(output.read_text())
+            self.assertEqual(report['counts']['referenced'], 1)
+            self.assertTrue(report['files']['referenced'][0]['matches_record'])
+            self.assertEqual(len(list((Path(folder) / 'patches').glob('*.npz'))), 1)
+
     def test_manifest_has_explicit_native_and_core_coverage(self):
         plan = m.load_plan(ROOT)
         self.assertEqual(

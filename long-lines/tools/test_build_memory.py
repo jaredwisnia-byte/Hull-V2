@@ -11,6 +11,20 @@ import test_regional_relief as fixtures
 
 
 class MemoryContracts(unittest.TestCase):
+    def test_replaced_checkpoint_is_reported_without_collection(self):
+        with tempfile.TemporaryDirectory() as folder, closing(BuildMemory(Path(folder) / 'memory.sqlite3')) as memory:
+            record = {'status': 'accepted'}
+            memory.save('key', 'v1', record, [1], np.ones((4, 4)), np.zeros((4, 4)))
+            first = next(memory.artifacts.glob('*.npz'))
+            memory.save('key', 'v1', record, [1], np.ones((4, 4)) * 2, np.zeros((4, 4)))
+            report = memory.retention_inventory(verify_hashes=True)
+            self.assertTrue(report['snapshot_consistent'])
+            self.assertFalse(report['collection_authorized'])
+            self.assertEqual(report['counts'], {'referenced': 1, 'unreferenced': 1})
+            self.assertEqual(report['files']['unreferenced'][0]['name'], first.name)
+            self.assertTrue(first.is_file())
+            self.assertTrue(report['files']['referenced'][0]['matches_record'])
+
     def test_final_failure_is_recorded_separately_from_geometry_truth(self):
         import json
         from propkit.memory_outcomes import record
