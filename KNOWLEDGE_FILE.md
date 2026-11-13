@@ -1018,3 +1018,28 @@ OBSERVED RUN: A controlled toaster build with the prebuild packet matched an
 in-solver-tracing control exactly in geometry signature, 5,926 triangles,
 32 shading-depth QA failures, per-view boundary counts, and held-out shading
 gains. The equal failures show this handoff does not solve missing depth.
+
+## View-fusion defect isolation (2026-11-13)
+
+OBSERVED RUN: A same-source toaster rebuild with per-view fusion diagnostics
+reproduced the 5,926-triangle geometry signature and 32 final depth failures.
+Of 34 failed dense probes before reduction, 33 first lost at view fusion and
+one at mesh/probe intersection. None first failed at image resampling, the
+depth cap, construction, or topology repair. At several rounded edges, the
+feature-bearing front or top view competes with a nearly flat neighboring
+view; the current scalar field average attenuates the local contrast.
+
+EXPERIMENT REVERTED: Weighting each view by its local height contrast reduced
+the first-pass dense failures from 34 to 32 and final failures from 32 to 27;
+the trial output used 5,534 triangles. It did not pass QA or clean the planar
+body. On a fixed central front-panel measurement, area-weighted surface
+variation was 0.857 mm before and 0.859 mm after. Side-by-side renders showed
+no clear visual improvement. The trial source change was reverted. Do not
+describe this as a solved depth-transfer or planar-surface defect.
+
+OPEN: The shading selector can accept a whole view because its appearance
+prediction improves globally, even when large painted panels should remain
+flat. A useful replacement must distinguish material from relief by region,
+retain supported openings and protrusions, then reconcile orthogonal views
+without erasing local detail. Qualify it on flat manufactured, curved
+manufactured, and carved/organic sources before changing the release path.
