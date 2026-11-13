@@ -33,6 +33,13 @@ class MaintenanceTests(unittest.TestCase):
             self.assertEqual(second["review_candidates"], [])
             self.assertEqual(second["top_level"]["Hull-trial"]["role"],
                              "experiment evidence")
+            self.assertEqual(second["no_longer_at_root"], [])
+            (root / "Hull-helper.py").rename(root / "helper-archived.py")
+            moved = workspace_inventory.scan(root, previous=second)
+            self.assertEqual(moved["no_longer_at_root"], [
+                {"name": "Hull-helper.py", "prior_bytes": 4,
+                 "prior_role": None, "prior_partial": False}])
+            self.assertIn("helper-archived.py", moved["top_level"])
             with self.assertRaises(ValueError):
                 workspace_inventory.scan(root, previous=dict(first, root="elsewhere"))
 
@@ -59,6 +66,11 @@ class MaintenanceTests(unittest.TestCase):
             self.assertTrue(second["partial"])
             self.assertIsNone(second["top_level"]["Hull-denied"]["delta_bytes"])
             self.assertEqual(second["top_level"]["Hull-good"]["delta_bytes"], 5)
+
+            with patch.object(workspace_inventory.os, "scandir", side_effect=PermissionError("root unreadable")):
+                unknown = workspace_inventory.scan(root, previous=first)
+            self.assertTrue(unknown["partial"])
+            self.assertIsNone(unknown["no_longer_at_root"])
 
     def test_memory_inventory_command_writes_report_without_collecting(self):
         with tempfile.TemporaryDirectory() as folder:
