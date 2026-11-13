@@ -26,9 +26,10 @@ The factory roles below are responsibilities, not a hierarchy of runtime LLMs.
 4. Seal the candidate with QA, input/source hashes and payload hashes. The storage
    auditor checks required file containers and triangle counts independently of
    the QA disposition. It does **not** prove the reconstruction physically correct.
-5. Only a passing, non-uncertain candidate can publish. `HULL_RELEASE_POLICY=hold`
-   keeps qualified experiments outside the library. Normal builds preserve the
-   previous automatic publication policy, now through this gate.
+5. Only a passing, non-uncertain candidate with a matching passed toolchain
+   qualification can publish. `HULL_RELEASE_POLICY=hold` keeps experiments
+   outside the library. Automatic publication requires `HULL_QUALIFICATION_PATH`;
+   without it, the candidate remains available for inspection.
 6. Copy into an immutable version directory; verify the copy; atomically replace
    the manifest pointer under an exclusive writer lock. Retain previous versions.
 
@@ -87,6 +88,12 @@ Do not automatically upgrade production dependencies or repeat every expensive
 asset build after a documentation change.
 
 ## Qualification limits
+
+`qualify` defaults to core, Blender and Godot checks. Add `vision` for image-only
+intake and `cad` for CAD export, for example `--profiles core,blender,godot,vision`.
+Vision qualification requires the pinned OCR and inference runtime and executes
+automatic intake and Blender build guards. Missing capabilities and skipped
+required checks fail qualification.
 
 A report names its selected capabilities; it never implies untested optional
 features passed. CI qualifies core contracts, not Blender, Godot, OCR, CAD or

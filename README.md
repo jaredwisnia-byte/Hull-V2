@@ -40,7 +40,10 @@ Each factory build keeps its order, diagnostics, QA and candidate exports under
 Passing candidates receive an artifact audit before publication into immutable
 `long-lines/assets/props/releases/<name>/<run-id>/` versions. `library.json` selects
 the active version; legacy asset paths still load. Set `HULL_RELEASE_POLICY=hold`
-for experiments, then use `python hull.py promote RECEIPT.json` when qualified.
+for experiments, then use `python hull.py promote RECEIPT.json --qualification
+PATH/qualification.json` when qualified. Automatic publication requires
+`HULL_QUALIFICATION_PATH` to identify a matching passed qualification;
+otherwise the candidate stays available for inspection.
 Promotion cannot override failed QA or unresolved inference warnings.
 
 ## Project guide

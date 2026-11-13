@@ -250,6 +250,19 @@
       "id": "cad-roundtrip",
       "capability": "cad",
       "script": "long-lines/tools/test_cad_export.py"
+    },
+    {
+      "id": "automatic-intake",
+      "capability": "vision",
+      "script": "long-lines/tools/test_automatic_intake.py",
+      "timeout_s": 300
+    },
+    {
+      "id": "automatic-build-guards",
+      "capability": "vision",
+      "script": "long-lines/tools/test_automatic_build.py",
+      "runner": "blender",
+      "timeout_s": 600
     }
   ]
 }

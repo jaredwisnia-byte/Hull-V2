@@ -49,7 +49,8 @@ class FactoryStorageContracts(unittest.TestCase):
                 factory, "ORDERS", str(orders)
             ), patch.object(factory, "LEDGER", str(root / "ledger.jsonl")), patch.dict(
                 os.environ,
-                {"HULL_RUN_ROOT": str(root / "runs"), "HULL_RELEASE_POLICY": "hold"},
+                {"HULL_RUN_ROOT": str(root / "runs"), "HULL_RELEASE_POLICY": "auto",
+                 "HULL_QUALIFICATION_PATH": ""},
             ), patch.object(
                 factory, "run_line", side_effect=cube
             ):
@@ -68,11 +69,36 @@ class FactoryStorageContracts(unittest.TestCase):
                 self.assertEqual(
                     candidate["disposition"], "qualified_candidate", candidate
                 )
+                self.assertIn("qualification", candidate["release_hold_reason"])
                 self.assertNotIn(
                     order["name"], json.loads((approved / "library.json").read_text())
                 )
                 receipt = Path(candidate["candidate_receipt"])
-                entry = w.promote(receipt, approved)
+                context = json.loads(receipt.read_text())["context"]
+                required = context["required_capabilities"]
+                runtime = context["runtime"]
+                qualification = root / "qualification.json"
+                w.atomic_json(qualification, {
+                    "pass": True,
+                    "source_unchanged_during_checks": True,
+                    "repository_policy": {"pass": True},
+                    "profiles": required,
+                    "source_hashes": context["source_hashes"],
+                    "runtime": {
+                        "pass": True,
+                        "python": runtime["python"],
+                        "packages": runtime["packages"],
+                        "qualified_capabilities": required,
+                        "tools": {"blender": {
+                            "path": runtime["blender_path"],
+                            "version": runtime["blender_version"],
+                        }},
+                    },
+                    "checks": [{"id": profile, "capability": profile,
+                                "pass": True, "exit_code": 0, "skipped": 0}
+                               for profile in required],
+                })
+                entry = w.promote(receipt, approved, qualification)
                 self.assertTrue(w.verify_release(approved, order["name"])["pass"])
                 selected = (approved / "library.json").read_bytes()
                 # The public QA loader must follow the newly versioned directory.
