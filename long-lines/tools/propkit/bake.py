@@ -8,7 +8,7 @@ import bpy
 import numpy as np
 
 from . import core, mats
-from .pathing import io_path
+from .pathing import check_blender_export_paths, io_path
 
 
 STANDARDS = json.load(open(os.path.join(os.path.dirname(
@@ -117,6 +117,7 @@ def combine_high_sources(parts, name):
 def finish(name, out_root, tex=1024, samples=24, tags=(), owned_projection=False):
     """Bakes albedo / normal / ORM maps for everything built since core.reset()
     and writes <out_root>/<name>/<name>.glb plus textures. Returns manifest info."""
+    check_blender_export_paths(out_root, name)
     out = os.path.join(out_root, name)
     os.makedirs(out, exist_ok=True)
     parts = [p for p in core.PARTS if p.name in bpy.data.objects]

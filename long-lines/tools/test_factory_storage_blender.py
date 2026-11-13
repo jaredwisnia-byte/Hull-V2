@@ -11,10 +11,28 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import factory
-from propkit import maintenance, warehouse as w
+from propkit import bake, maintenance, warehouse as w
 
 
 class FactoryStorageContracts(unittest.TestCase):
+    def test_export_path_budget_runs_before_bake_setup(self):
+        with tempfile.TemporaryDirectory() as folder, patch.object(
+                bake, 'combine_high_sources') as high:
+            name = 'camera_' + 'x' * 150
+            with self.assertRaisesRegex(ValueError, 'Windows-safe budget'):
+                from propkit.pathing import check_blender_export_paths
+                check_blender_export_paths(folder, name, windows=True)
+            if os.name == 'nt':
+                with self.assertRaisesRegex(ValueError, 'Windows-safe budget'):
+                    bake.finish(name, folder)
+                high.assert_not_called()
+                order = {'name': name, 'category': 'fixture', 'line': 'recipe'}
+                with patch.object(factory, 'run_line') as build_geometry:
+                    result = factory._build_candidate(order, Path(folder))
+                build_geometry.assert_not_called()
+                self.assertIn('Windows-safe budget', result['fails'][0])
+                self.assertEqual(result['attempts'], 1)
+
     def test_native_candidate_promotion_failure_containment_and_recovery(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)

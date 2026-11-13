@@ -15,6 +15,13 @@ only qualified, non-uncertain artifacts enter versioned releases selected throug
 is a station overview; publication happens after QA and the artifact audit.
 Root `hull.py` supplies maintenance, qualification, recovery and code packaging.
 
+On Windows, the factory checks the longest Blender texture/export filename
+before geometry or baking. A candidate exceeding the conservative 247-character
+operator path budget is flagged with the required number of characters to
+remove from the run root or asset name. The asset name and manifest filenames
+are not silently shortened. Python-only diagnostic files can still use extended
+paths through `propkit.pathing.io_path`.
+
 ## Flow
 
 ```

@@ -718,6 +718,8 @@ def _build_candidate(order, run, samples=16):
         library_root = str(run / ("attempt-%03d" % attempt) / "library")
         order["run_directory"] = str(run / ("attempt-%03d" % attempt))
         try:
+            from propkit.pathing import check_blender_export_paths
+            check_blender_export_paths(library_root, order['name'])
             if order.get('_input_views_snapshot'):
                 working = run / ("attempt-%03d" % attempt) / 'inputs'
                 shutil.copytree(order['_input_views_snapshot'], working)

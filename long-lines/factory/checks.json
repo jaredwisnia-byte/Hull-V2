@@ -2,6 +2,11 @@
   "schema": 1,
   "checks": [
     {
+      "id": "pathing",
+      "capability": "core",
+      "script": "long-lines/tools/test_pathing.py"
+    },
+    {
       "id": "sectioning",
       "capability": "core",
       "script": "long-lines/tools/test_sectioning.py",
