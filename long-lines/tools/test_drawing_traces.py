@@ -12,6 +12,7 @@ from propkit.drawing_traces import (_elevation_section, _end_frame_hypotheses,
                                     _verified_build_to_source_map,
                                     audit_projected_elevations, infer,
                                     infer_sheet_regions, load_construction_masks,
+                                    compile_relief_trace, load_relief_trace,
                                     observe)
 
 
@@ -29,6 +30,32 @@ class SourceSectionContracts(unittest.TestCase):
                 {'front': str(source)})
             self.assertEqual(masks['front'][0].shape, (60, 40))
             self.assertTrue(masks['front'][0].all())
+            valid = masks['front'][0].copy()
+            valid[:3] = False
+            compiled = compile_relief_trace(
+                Path(folder) / 'drawing' / 'technical-traces.json',
+                'front', str(source), masks['front'][0], valid,
+                masks['front'][1])
+            loaded = load_relief_trace(
+                Path(folder) / 'drawing' / 'technical-traces.json',
+                'front', str(source), masks['front'][0], valid)
+            packet = json.loads((Path(folder) / 'drawing' /
+                                 'technical-traces.json').read_text())[
+                                     'compiled_construction_masks']['front']['relief_trace']
+            self.assertTrue(Path(packet['overlay']).is_file())
+            self.assertTrue(np.array_equal(compiled['boundaries'],
+                                           loaded['boundaries']))
+            with self.assertRaisesRegex(ValueError, 'valid region differs'):
+                load_relief_trace(
+                    Path(folder) / 'drawing' / 'technical-traces.json',
+                    'front', str(source), masks['front'][0],
+                    masks['front'][0])
+            tiny = np.zeros_like(valid)
+            tiny[10:12, 10:12] = True
+            self.assertIsNone(compile_relief_trace(
+                Path(folder) / 'drawing' / 'technical-traces.json',
+                'front', str(source), masks['front'][0], tiny,
+                masks['front'][1]))
             self.assertEqual(use['front']['build_trace_ids'],
                              [trace['id'] for trace in
                               report['observations']['front']['traces']

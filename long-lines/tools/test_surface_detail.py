@@ -12,6 +12,35 @@ from propkit.implicit import bounded_field, pad_field
 
 
 class SurfaceContracts(unittest.TestCase):
+    def test_relief_solver_consumes_boundaries_saved_by_prebuild_drawing(self):
+        from propkit.drawing_traces import infer, load_relief_trace
+        with tempfile.TemporaryDirectory() as folder:
+            source = Path(folder) / 'front.png'
+            pixels = np.zeros((72, 72, 3), np.uint8)
+            pixels[8:64, 12:60] = 150
+            pixels[20:52, 31:34] = 70
+            Image.fromarray(pixels).save(source)
+            drawing = Path(folder) / 'drawing'
+            infer({'front': str(source)}, drawing,
+                  compile_construction_masks=True)
+            plan = analyse({'front': str(source)}, (1, 1, 1), {},
+                           drawing_path=drawing / 'technical-traces.json',
+                           memory_mode='off')
+            observation = plan['shading_inputs']['front']
+            self.assertIsNotNone(observation['drawing_trace'])
+            from propkit.silhouette import silhouette
+            mask, _ = silhouette(str(source))
+            loaded = load_relief_trace(
+                drawing / 'technical-traces.json', 'front', str(source),
+                mask, observation['valid'])
+            np.testing.assert_array_equal(
+                loaded['boundaries'], observation['drawing_trace']['boundaries'])
+            with patch('propkit.shading.reconstruct',
+                       return_value=(np.zeros(mask.shape), {})) as solve:
+                shading_view(np.zeros((8, 8)), 'front', plan, (8, 8, 8))
+            self.assertIs(solve.call_args.kwargs['traced_override'],
+                          observation['drawing_trace'])
+
     def test_retry_reuses_first_source_estimate_and_checks_coarse_field(self):
         base = self.field(True)
         height = np.full((48, 48), -.01)

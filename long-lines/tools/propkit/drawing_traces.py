@@ -287,7 +287,7 @@ def infer(views, destination, construction_masks=None, opening_report=None,
         mask_folder = destination / 'construction-masks'
         mask_folder.mkdir(exist_ok=True)
         for name in selected:
-            mask, _, box = silhouette(views[name], with_box=True)
+            mask, painting, box = silhouette(views[name], with_box=True)
             if name in construction_masks:
                 supplied = construction_masks[name][0]
                 if supplied.shape != mask.shape:
@@ -544,6 +544,88 @@ def load_construction_masks(drawing_path, views):
             'construction_mask_path': record['path'],
         }
     return masks, use
+
+
+def compile_relief_trace(drawing_path, view, image_path, mask, valid, painting):
+    """Record the exact post-exclusion shading boundaries before meshing."""
+    drawing_path = Path(drawing_path)
+    drawing = json.loads(drawing_path.read_text())
+    record = drawing['compiled_construction_masks'][view]
+    if hashlib.sha256(Path(image_path).read_bytes()).hexdigest() != record['build_input_sha256']:
+        raise ValueError(f'{view}: build input changed after technical tracing')
+    mask_path = Path(record['path'])
+    if hashlib.sha256(mask_path.read_bytes()).hexdigest() != record['mask_sha256']:
+        raise ValueError(f'{view}: compiled drawing mask changed after tracing')
+    saved_mask = np.asarray(Image.open(mask_path).convert('L')) > 127
+    if not np.array_equal(saved_mask, mask):
+        raise ValueError(f'{view}: relief input mask differs from prebuild drawing')
+    if valid.shape != mask.shape or np.any(valid & ~mask):
+        raise ValueError(f'{view}: valid shading region lies outside drawing mask')
+    if np.count_nonzero(valid) < 25:
+        record.pop('relief_trace', None)
+        drawing_path.write_text(json.dumps(drawing))
+        return None
+    from .joint_shading import prepare_image_trace
+    traced = prepare_image_trace(painting, valid)['traced']
+    arrays = {key: value for key, value in traced.items()
+              if isinstance(value, np.ndarray)}
+    metadata = {key: value for key, value in traced.items()
+                if not isinstance(value, np.ndarray)}
+    arrays_path = mask_path.with_name(f'{view}-relief-trace.npz')
+    metadata_path = mask_path.with_name(f'{view}-relief-trace.json')
+    np.savez_compressed(arrays_path, **arrays)
+    metadata_path.write_text(json.dumps(metadata))
+    overlay_path = mask_path.with_name(f'{view}-relief-boundaries.png')
+    overlay = np.asarray(painting.convert('RGB').resize(
+        arrays['boundaries'].shape[::-1])).copy()
+    overlay[arrays['appearance_boundaries']] = [255, 150, 40]
+    overlay[arrays['relief_boundaries']] = [40, 255, 130]
+    overlay[arrays['fine_candidates']] = [55, 205, 255]
+    Image.fromarray(overlay).save(overlay_path)
+    record['relief_trace'] = {
+        'arrays': str(arrays_path), 'metadata': str(metadata_path),
+        'arrays_sha256': hashlib.sha256(arrays_path.read_bytes()).hexdigest(),
+        'metadata_sha256': hashlib.sha256(metadata_path.read_bytes()).hexdigest(),
+        'valid_mask_sha256': hashlib.sha256(np.packbits(valid).tobytes()).hexdigest(),
+        'input_mask_shape': list(mask.shape),
+        'boundary_pixel_count': int(arrays['boundaries'].sum()),
+        'overlay': str(overlay_path),
+        'legend': {'green': 'persistent achromatic boundary; depth sign unresolved',
+                   'orange': 'boundary with colour ambiguity',
+                   'cyan': 'fine candidate; weak curvature evidence only'},
+        'role': 'prebuild internal boundaries guide shading regularization; depth sign unresolved',
+    }
+    drawing_path.write_text(json.dumps(drawing))
+    return traced
+
+
+def load_relief_trace(drawing_path, view, image_path, mask, valid):
+    """Load prebuild boundary evidence only in its measured image frame."""
+    drawing = json.loads(Path(drawing_path).read_text())
+    record = drawing['compiled_construction_masks'][view]
+    packet = record.get('relief_trace')
+    if packet is None:
+        return None
+    if hashlib.sha256(Path(image_path).read_bytes()).hexdigest() != record['build_input_sha256']:
+        raise ValueError(f'{view}: build input changed after technical tracing')
+    mask_path = Path(record['path'])
+    if hashlib.sha256(mask_path.read_bytes()).hexdigest() != record['mask_sha256']:
+        raise ValueError(f'{view}: compiled drawing mask changed after tracing')
+    saved_mask = np.asarray(Image.open(mask_path).convert('L')) > 127
+    if not np.array_equal(saved_mask, mask):
+        raise ValueError(f'{view}: relief input mask differs from prebuild drawing')
+    if valid.shape != mask.shape or list(valid.shape) != packet['input_mask_shape']:
+        raise ValueError(f'{view}: shading valid region has wrong drawing frame')
+    if hashlib.sha256(np.packbits(valid).tobytes()).hexdigest() != packet['valid_mask_sha256']:
+        raise ValueError(f'{view}: shading valid region differs from prebuild trace')
+    arrays_path, metadata_path = Path(packet['arrays']), Path(packet['metadata'])
+    if (hashlib.sha256(arrays_path.read_bytes()).hexdigest() != packet['arrays_sha256'] or
+            hashlib.sha256(metadata_path.read_bytes()).hexdigest() != packet['metadata_sha256']):
+        raise ValueError(f'{view}: prebuild relief trace changed after tracing')
+    with np.load(arrays_path, allow_pickle=False) as saved:
+        result = {key: saved[key] for key in saved.files}
+    result.update(json.loads(metadata_path.read_text()))
+    return result
 
 
 def infer_sheet_regions(sheet_path, records, regions, destination):

@@ -1003,3 +1003,18 @@ consumed masks for seven and two part groups, respectively, while retaining
 their previous geometry signatures. Phone QA still failed normals and
 front/top outlines; television QA still failed normals. This validates the
 outer-mask handoff without implying that those assets are qualified.
+
+SOURCE-VERIFIED: Automatic-depth analysis now compiles its internal boundary
+array after applying the valid-image erosion and part exclusions. The packet
+is stored with the prebuild technical record and an overlay. The joint shading
+solver reloads it after checking image, mask, valid-region, and packet hashes.
+The same training-only pixel preparation is used by the drawing station and
+solver; withheld intensities do not leak into traced geometry evidence.
+These boundaries guide regularization and region selection, not depth sign or
+physical-part classification. Single-body Hull and multipart `parts` layout
+use this handoff; other multipart layouts remain outside it.
+
+OBSERVED RUN: A controlled toaster build with the prebuild packet matched an
+in-solver-tracing control exactly in geometry signature, 5,926 triangles,
+32 shading-depth QA failures, per-view boundary counts, and held-out shading
+gains. The equal failures show this handoff does not solve missing depth.

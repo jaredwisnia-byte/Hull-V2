@@ -24,6 +24,18 @@ def fixture():
 
 
 class JointTests(unittest.TestCase):
+    def test_prebuild_trace_is_consumed_without_retracing(self):
+        image, mask, base, _, _ = fixture()
+        traced = joint_shading.prepare_image_trace(image, mask)['traced']
+        from propkit import feature_regions
+        with patch.object(feature_regions, 'trace', side_effect=AssertionError(
+                'solver retraced instead of consuming drawing')):
+            height, report = joint_shading.reconstruct(
+                image, mask, base, 6, iterations=8,
+                traced_override=traced)
+        self.assertEqual(height.shape, mask.shape)
+        self.assertEqual(report['boundary_pixels'], int(traced['boundaries'].sum()))
+
     def test_black_pixels_keep_material_fit_finite(self):
         rgb = np.full((12, 12, 3), .2)
         rgb[3:7, 4:8] = 0

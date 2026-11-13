@@ -212,7 +212,50 @@ def fit_height(base, initial, basis, material, observed, training, lighting, mas
                     'objective': float(fit.fun), 'controls': list(basis.controls)}, fit.x.reshape(basis.controls)
 
 
-def reconstruct(image, mask, base, max_depth_px, light=None, albedo=None, iterations=160, diagnostics=None, memory_path=None, boundary_mode='all'):
+def prepare_image_trace(image, mask, traced_override=None):
+    """Trace the training-only pixels before any shape or material fit.
+
+    The same preparation is used by the drawing station and the solver so a
+    prebuild trace cannot silently become a different set of boundaries.
+    """
+    from PIL import Image
+    mask = np.asarray(mask, bool)
+    maximum = min(max(mask.shape), 768)
+    finest_shape = tuple(max(8, round(n * maximum / max(mask.shape)))
+                         for n in mask.shape)
+    reference_rgb = np.maximum(linear_image(image.resize(
+        finest_shape[::-1], Image.Resampling.LANCZOS)), 1e-5)
+    reference_mask = ndimage.zoom(
+        mask, np.asarray(finest_shape) / mask.shape, order=0)
+    from .pixel_folds import balanced
+    reference_fold = balanced(finest_shape)
+    reference_training = reference_mask & (reference_fold >= 3)
+    reference_acceptance = reference_mask & (reference_fold == 2)
+    reference_validation = reference_mask & (reference_fold == 0)
+    reference_testing = reference_mask & (reference_fold == 1)
+    nearest = ndimage.distance_transform_edt(
+        ~reference_training, return_distances=False, return_indices=True)
+    fitting_rgb = reference_rgb[nearest[0], nearest[1]]
+    if traced_override is None:
+        from .feature_regions import trace
+        traced = trace(fitting_rgb, reference_mask)
+    else:
+        traced = traced_override
+        for key in ('labels', 'boundaries', 'relief_boundaries',
+                    'appearance_boundaries', 'fine_candidates',
+                    'structural_score', 'phase_score'):
+            if key not in traced or np.shape(traced[key]) != finest_shape:
+                raise ValueError('Prebuild tracing does not match the solver image frame')
+    return {'maximum': maximum, 'finest_shape': finest_shape,
+            'reference_rgb': reference_rgb, 'reference_mask': reference_mask,
+            'reference_fold': reference_fold, 'reference_training': reference_training,
+            'reference_acceptance': reference_acceptance,
+            'reference_validation': reference_validation,
+            'reference_testing': reference_testing,
+            'fitting_rgb': fitting_rgb, 'traced': traced}
+
+
+def reconstruct(image, mask, base, max_depth_px, light=None, albedo=None, iterations=160, diagnostics=None, memory_path=None, boundary_mode='all', traced_override=None):
     """Alternate shape/light/material fits through actual resolution refinement."""
     from PIL import Image
     mask = np.asarray(mask, bool)
@@ -229,26 +272,18 @@ def reconstruct(image, mask, base, max_depth_px, light=None, albedo=None, iterat
     previous_material = None
     final_coefficients = None
     initial_identifiability = None
-    maximum = min(max(mask.shape), 768)
-    finest_shape = tuple(max(8, round(n * maximum / max(mask.shape)))
-                         for n in mask.shape)
-    reference_rgb = np.maximum(linear_image(image.resize(
-        finest_shape[::-1], Image.Resampling.LANCZOS)), 1e-5)
-    reference_mask = ndimage.zoom(
-        mask, np.asarray(finest_shape) / mask.shape, order=0)
-    from .pixel_folds import balanced
-    reference_fold = balanced(finest_shape)
-    reference_training = reference_mask & (reference_fold >= 3)
-    reference_acceptance = reference_mask & (reference_fold == 2)
-    reference_validation = reference_mask & (reference_fold == 0)
-    reference_testing = reference_mask & (reference_fold == 1)
-    # Remove withheld intensities before making any lower-resolution image.
-    # Otherwise the coarse initialization leaks test pixels into fitted shape.
-    nearest = ndimage.distance_transform_edt(
-        ~reference_training, return_distances=False, return_indices=True)
-    fitting_rgb = reference_rgb[nearest[0], nearest[1]]
-    from .feature_regions import trace
-    traced = trace(fitting_rgb, reference_mask)
+    prepared = prepare_image_trace(image, mask, traced_override)
+    maximum = prepared['maximum']
+    finest_shape = prepared['finest_shape']
+    reference_rgb = prepared['reference_rgb']
+    reference_mask = prepared['reference_mask']
+    reference_fold = prepared['reference_fold']
+    reference_training = prepared['reference_training']
+    reference_acceptance = prepared['reference_acceptance']
+    reference_validation = prepared['reference_validation']
+    reference_testing = prepared['reference_testing']
+    fitting_rgb = prepared['fitting_rgb']
+    traced = prepared['traced']
     # Preserve observed internal boundaries within one continuous surface;
     # segmentation does not split/cap the mesh or prescribe a depth sign.
     if boundary_mode not in ('all', 'achromatic'):

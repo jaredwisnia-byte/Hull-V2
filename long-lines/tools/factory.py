@@ -420,7 +420,8 @@ def run_line(order):
                     source_views=(order.get('source_drawings', {}).get(
                         'assembly', {}).get('source_views') or original_views),
                     source_sheet_frames=order.get('source_drawings', {}).get(
-                        'assembly', {}).get('source_sheet_frames'))
+                        'assembly', {}).get('source_sheet_frames'),
+                    compile_construction_masks=True)
                 order.setdefault('measured', {})['source_drawing'] = {
                     'stage': 'before_geometry',
                     'sheet': os.path.join(trace_folder, 'technical-traces.png'),
@@ -459,7 +460,8 @@ def run_line(order):
                 detail_plan = surface_detail.analyse(
                     geometry_views, (W_, D_, height), rrep,
                     silhouettes=hp.get('sil_override'),
-                    memory_mode=order.get('reconstruction_memory_mode', 'learning'))
+                    memory_mode=order.get('reconstruction_memory_mode', 'learning'),
+                    drawing_path=order['measured']['source_drawing']['traces'])
                 if order.get('_frozen_source_evidence') is not None:
                     detail_plan['frozen_source_evidence'] = order['_frozen_source_evidence']
                 else:

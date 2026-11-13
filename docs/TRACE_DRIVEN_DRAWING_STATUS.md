@@ -87,6 +87,19 @@ unknowns. The resulting construction decisions must refer back to the drawing.
   review explicitly holds that view; the prepared trace cannot claim to be
   original-source evidence. Other multipart layouts still record drawings but
   do not yet consume their compiled masks.
+- The automatic-depth path now saves its training-only internal boundary
+  packet in the prebuild drawing record after the final valid shading region
+  is known and before meshing. The relief solver consumes that exact packet,
+  with input, mask, and packet checksums. An image overlay shows persistent
+  achromatic boundaries, colour-ambiguous boundaries, and weak fine candidates.
+  This applies to single-body automatic Hull and to parts-layout body and
+  companions. Boundaries affect curvature regularization and region selection;
+  they do not by themselves assert a groove, raised part, bore, or depth sign.
+- A controlled automatic toaster build using the saved trace had the same
+  geometry signature, 5,926 triangles, 32 shading-depth QA failures, boundary
+  counts, and held-out shading gains as an otherwise identical run that traced
+  inside the solver. The handoff preserved behavior; those depth failures
+  remain open.
 - A real blender rebuild retained its prior geometry signature and 3,652
   triangles after this handoff. Mixed rotary-phone and CRT-television builds
   consumed prebuild masks for seven and two part groups respectively; their
@@ -102,16 +115,18 @@ unknowns. The resulting construction decisions must refer back to the drawing.
 
 ## Still open
 
-- Internal traces are observations, not construction constraints. There is no
+- Internal source path IDs are observations, not verified physical construction
+  constraints. Compiled boundary arrays guide shading regularization. There is no
   validated universal association of fragments into physical parts or of
   corresponding features across views. The camera lens therefore is not yet
   guaranteed to become a correct cylindrical assembly.
 - Multipart construction now consumes compiled outer masks from the prepared
-  drawing on the `parts` layout and uses the inferred part plan. The source
-  drawings record the original observations and the assembly envelope is
-  audited after export, but the builder does not yet consume internal trace
-  IDs as constraints. Some prepared views have altered pixels or unverified
-  direction labels; their source relationship remains explicitly unresolved.
+  drawing on the `parts` layout and uses the inferred part plan. The shading
+  solver also consumes saved internal boundary arrays. It does not yet turn
+  source path IDs into verified physical features, cutting volumes, or
+  dimensioned hidden sections. Some prepared views have altered pixels or
+  unverified direction labels; their source relationship remains explicitly
+  unresolved.
 - True cross-section shapes, hidden lines, dimensioned part drawings, and a
   complete construction-consumption audit are incomplete. Current section/profile
   tools make geometric inferences from silhouettes and shading; the width audit

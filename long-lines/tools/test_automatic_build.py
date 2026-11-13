@@ -53,6 +53,14 @@ class BuildGuards(unittest.TestCase):
                                         cut_holes=False, defer=[], drawing_masks=masks)
             self.assertIs(builder.call_args.kwargs['sil_override']['front'][0],
                           masks['front'][0])
+            from propkit import surface_detail
+            drawing_path = root / 'drawing' / 'technical-traces.json'
+            with patch.object(parts_layout, 'hull_prop', return_value=object()), \
+                    patch.object(surface_detail, 'analyse', return_value={}) as analyse:
+                parts_layout.build_part(views, .1, .1, .2, 'generic_detail', str(root),
+                                        cut_holes=False, defer=[], automatic_depth=True,
+                                        drawing_masks=masks, drawing_path=drawing_path)
+            self.assertEqual(analyse.call_args.kwargs['drawing_path'], drawing_path)
 
     def test_parts_line_draws_supplied_views_before_geometry(self):
         with tempfile.TemporaryDirectory() as folder:

@@ -63,7 +63,7 @@ def chart_frame(view, dimensions):
 
 
 def analyse(views, dimensions, report, exclusions=(), silhouettes=None,
-            memory_mode='learning'):
+            memory_mode='learning', drawing_path=None):
     """Prepare pixel observations. Geometry is inferred after the base field exists.
 
     No circle recognition, primitive selection or fixed groove profiles run here.
@@ -92,9 +92,15 @@ def analyse(views, dimensions, report, exclusions=(), silhouettes=None,
                 hh, ww = mask.shape
                 valid[max(0, int(b * hh) - 2):min(hh, int(np.ceil(d * hh)) + 2),
                       max(0, int(a * ww) - 2):min(ww, int(np.ceil(c * ww)) + 2)] = False
+        drawing_trace = None
+        if drawing_path:
+            from .drawing_traces import compile_relief_trace, load_relief_trace
+            compile_relief_trace(drawing_path, view, path, mask, valid, image)
+            drawing_trace = load_relief_trace(drawing_path, view, path, mask, valid)
         maps[view] = np.zeros(mask.shape)
         inputs[view] = {'image': image, 'valid': valid,
-                        'path': path, 'crop_box': box}
+                        'path': path, 'crop_box': box,
+                        'drawing_trace': drawing_trace}
     report.update(features=[], views={}, method='continuous pixel shading/height inference',
                   reconstruction_memory_mode=memory_mode,
                   physical_separation='physical ownership only; shading contours do not create parts',
@@ -128,7 +134,10 @@ def shading_view(root, view, plan, shape):
                    'reconstruction.sqlite3' if plan.get('memory_mode', 'learning') == 'learning'
                    else None)
     height, evidence = shading.reconstruct(
-        observation['image'], mask, base, bound, diagnostics=diagnostics,memory_path=memory_path)
+        observation['image'], mask, base, bound, diagnostics=diagnostics,
+        memory_path=memory_path, traced_override=observation.get('drawing_trace'))
+    if observation.get('drawing_trace') is not None:
+        evidence['prebuild_boundary_trace'] = 'consumed from technical drawing before geometry'
     diagnostics['metres_per_pixel'] = np.asarray(pixel)
     plan.setdefault('diagnostics', {})[view] = diagnostics
     plan['report']['views'][view] = evidence
