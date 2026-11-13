@@ -216,3 +216,17 @@ it must pass final-mesh QA, not only an intermediate field ratio. Local records
 are retained under
 `C:/Users/jared/Documents/Codex/Hull-maintenance-validation/experiments/fusion-stage-isolation/cv1`
 and `cv2`.
+
+A separate relative-activity trial reduced the vote of a view whose shifted
+3D field was nearly flat beside another view's supported displacement. At a
+shared power of 0.5, first-attempt cassette depth failures fell from 18 to 15
+with 5,438 triangles (baseline 5,572); toaster failures fell from 36 to 28
+with 5,028 triangles (baseline 5,026). Both remained under their 6,000-triangle
+limit, but the toaster gained one new source-supported depth failure and both
+still failed full QA. Power 1 reduced cassette depth failures to 11 but raised
+it to 7,414 triangles, over budget. The accepted source-height arrays were
+identical between baseline and power-0.5 trial in all six views for both
+objects, isolating the difference to fusion. The experiment was removed from
+the engine and its patch and held results are retained under the same local
+`fusion-stage-isolation` area. Any future automatic fusion choice must be
+judged on final exported depth, new failures, folds, and triangle budget.
