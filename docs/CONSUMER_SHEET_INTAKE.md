@@ -230,3 +230,15 @@ objects, isolating the difference to fusion. The experiment was removed from
 the engine and its patch and held results are retained under the same local
 `fusion-stage-isolation` area. Any future automatic fusion choice must be
 judged on final exported depth, new failures, folds, and triangle budget.
+
+A third object, the typewriter, rules out choosing that same power from the
+aggregate depth-failure count. On identical held first-attempt work orders,
+the baseline had 158 missing-depth failures and the power-0.5 candidate 157.
+The candidate resolved 87 individual failures but introduced 86 different
+ones; triangles and extreme-fold rate were unchanged at 1,410 and 9.929 per
+1,000. This is a substantial per-feature regression despite the one-count
+total improvement. The existing factory correction review already compares
+new final failures by identity and can roll back a second attempt. Any fusion
+candidate must use that final-export gate, and the trial remains disabled.
+The two held typewriter runs and comparison are recorded in the local
+`fusion-stage-isolation` experiment area.
