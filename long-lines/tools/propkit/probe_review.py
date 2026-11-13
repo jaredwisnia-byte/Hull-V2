@@ -58,7 +58,7 @@ def classify(report, dimensions, diagnostic_folder):
         source = selection.get(view, {}).get(region_id, {})
         matched = cross.get((view, region_id), {})
         supported = bool(source.get('initially_supported') and source.get('applied')
-                         and source.get('final_test_gain', 0) > 0)
+                         and (source.get('final_test_gain') or 0) > 0)
         status = ('supported_unmet' if supported else
                   'unsupported_source' if source else 'unclassified')
         dense = measured.get(identifier, {})

@@ -10,6 +10,18 @@ from propkit import probe_review
 
 
 class ProbeReviewTests(unittest.TestCase):
+    def test_unknown_final_gain_is_not_treated_as_supported(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            report = {'probes': [{'id': 'unknown', 'view': 'front',
+                                  'anchors_m': [[0, 0, .5]],
+                                  'target_offsets_m': [0]}],
+                      'unmet_before_reduction': ['unknown'],
+                      'views': {'front': {'relief_selection': {'regions': [
+                          {'region_id': 0, 'initially_supported': True,
+                           'applied': True, 'final_test_gain': None}]}}}}
+            records = probe_review.classify(report, (1., 1., 1.), temporary)
+            self.assertEqual(records[0]['status'], 'unsupported_source')
+
     def test_region_provenance_and_overview_are_recorded(self):
         with tempfile.TemporaryDirectory() as temporary:
             folder = Path(temporary) / 'shading'

@@ -113,13 +113,20 @@ def generic_order(report, image, background, output, assembly, groups):
     # excessive texel density. Three hand-widths is an explicit generic prior,
     # still not a physical measurement or object classification.
     scale = 3*sizing.facts()['hand_width']/1000/front.width
+    side = image.crop(assembly['right']['box'])
+    dimensions = (front.width*scale, front.height*scale,
+                  front.height*scale*side.width/side.height)
+    standards = json.loads((Path(__file__).resolve().parents[2]
+                            /'factory/standards.json').read_text())
+    size_class = next((name for name, rule in standards['size_classes'].items()
+                       if max(dimensions) <= rule['max_dim_m']), 'building')
     unresolved = [region['id'] for region in report['regions']
                   if region['id'] not in {item['id'] for item in assembly.values()}
                   and region['view'] != 'perspective']
     asset = 'vision_' + __import__('re').sub('[^a-z0-9]+', '_',
                                             Path(report['image']).stem.lower()).strip('_')
     order = {'name': asset, 'category': 'appliance', 'line': 'hull',
-             'status': 'pending', 'class': 'small', 'tex': 2048,
+             'status': 'pending', 'class': size_class, 'tex': 2048,
              'views_folder': str(source), 'views': list(assembly),
              'height_m': front.height*scale, 'budget': 'screen', 'rough': .65,
              'hull': {'paint': 'project', 'relief': True},

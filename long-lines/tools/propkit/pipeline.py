@@ -84,6 +84,7 @@ def _build_image(image, output, *, build_order, library_root, render_script, exp
         result["inference_warnings"] = warnings
         build_started_ns = time.time_ns()
         result["qa"] = build_order(order)
+        warnings.extend(order.get('inference_warnings', []))
         warnings.extend(result['qa'].get('inference_warnings', []))
         library_root = result['qa'].get('artifact_library_root', library_root)
         from .warehouse import asset_directory

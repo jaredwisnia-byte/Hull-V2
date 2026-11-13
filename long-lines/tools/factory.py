@@ -360,8 +360,21 @@ def run_line(order):
                         lambda base, detailed: detailed +
                         process_planner.replace_envelope(
                             base, profile_model, (W_, D_, height)) - base)
+                from propkit.correction_review import Rejected
                 def build_detail_field(field):
-                    detailed = surface_detail.apply_field(field, detail_plan)
+                    try:
+                        detailed = surface_detail.apply_field(field, detail_plan)
+                    except Rejected as exc:
+                        if order.get('build_scope') != 'outer_body_only':
+                            raise
+                        # Keep a diagnostic body without silently accepting a
+                        # destructive relief correction or promoting the asset.
+                        detail_plan['report']['topology'] = {
+                            'status': 'rejected', 'reason': str(exc),
+                            'fallback': 'unchanged base field'}
+                        order.setdefault('inference_warnings', []).append(
+                            'unsafe_inferred_detail_discarded')
+                        detailed = field
                     if profile_model is not None and not use_profile:
                         preflight = process_planner.preflight_field(
                             field, detailed, profile_model, (W_, D_, height))

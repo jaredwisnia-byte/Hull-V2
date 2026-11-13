@@ -97,6 +97,7 @@ class VisionTests(unittest.TestCase):
             self.assertEqual(order['line'],'hull')
             self.assertEqual(len(order['views']),5)
             self.assertGreater(order['height_m'], .2)
+            self.assertEqual(order['class'],'medium')
             evidence=json.loads((__import__('pathlib').Path(folder)/'vision-report.json').read_text())
             self.assertEqual(evidence['unresolved_component_groups'],['knob'])
 
