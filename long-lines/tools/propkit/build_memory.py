@@ -4,11 +4,56 @@ An accepted numerical fit is never labelled verified physical geometry.
 """
 import hashlib
 import json
+from contextlib import contextmanager
+from functools import wraps
+import os
 from pathlib import Path
 import sqlite3
 import tempfile
 import time
+import uuid
 import numpy as np
+
+
+@contextmanager
+def checkpoint_lock(path, timeout=30):
+    """One interprocess lock for checkpoint readers, writers and retention."""
+    path = Path(path)
+    with path.open('a+b') as stream:
+        if stream.tell() == 0:
+            stream.write(b'0')
+            stream.flush()
+        deadline = time.monotonic() + timeout
+        while True:
+            try:
+                if os.name == 'nt':
+                    import msvcrt
+                    stream.seek(0)
+                    msvcrt.locking(stream.fileno(), msvcrt.LK_NBLCK, 1)
+                else:
+                    import fcntl
+                    fcntl.flock(stream.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                break
+            except OSError:
+                if time.monotonic() >= deadline:
+                    raise TimeoutError('Checkpoint lock is held by another process')
+                time.sleep(.05)
+        try:
+            yield
+        finally:
+            if os.name == 'nt':
+                stream.seek(0)
+                msvcrt.locking(stream.fileno(), msvcrt.LK_UNLCK, 1)
+            else:
+                fcntl.flock(stream.fileno(), fcntl.LOCK_UN)
+
+
+def locked_checkpoint(method):
+    @wraps(method)
+    def wrapped(self, *args, **kwargs):
+        with checkpoint_lock(self.path.parent / 'patches.lock'):
+            return method(self, *args, **kwargs)
+    return wrapped
 
 
 def fingerprint(*values):
@@ -58,6 +103,7 @@ class BuildMemory:
             self.db.execute('INSERT INTO events(key,state,detail,created) VALUES(?,?,?,?)',
                             (key, state, json.dumps(detail, sort_keys=True), time.time()))
 
+    @locked_checkpoint
     def load(self, key, version):
         row = self.db.execute('SELECT record,artifact,digest FROM patches WHERE key=? AND version=?',
                               (key, version)).fetchone()
@@ -79,6 +125,7 @@ class BuildMemory:
         self.event(key, 'resumed', {'status': record['status']})
         return height, material, record
 
+    @locked_checkpoint
     def save(self, key, version, record, descriptor, height, material):
         # Immutable artifact first, then transactional metadata. Interrupted
         # writes cannot turn a partially written patch into a valid checkpoint.
@@ -169,3 +216,67 @@ class BuildMemory:
                       for kind, items in groups.items()},
             'files': groups,
         }
+
+    @locked_checkpoint
+    def quarantine_unreferenced(self, reviewed_report, confirm_idle=False):
+        """Move only reviewed orphans into a recoverable, same-volume batch."""
+        from . import warehouse
+        if not confirm_idle:
+            raise ValueError('Confirm legacy checkpoint workers are idle')
+        reviewed = json.loads(Path(reviewed_report).read_text(encoding='utf-8'))
+        current = self.retention_inventory(verify_hashes=True)
+        if (reviewed.get('database') != str(self.path) or
+                not reviewed.get('snapshot_consistent') or
+                not current['snapshot_consistent']):
+            raise ValueError('Checkpoint inventory is incomplete or belongs to another database')
+        for group in ('referenced', 'unreferenced'):
+            expected = {item['name']: item.get('sha256') for item in
+                        reviewed.get('files', {}).get(group, [])}
+            observed = {item['name']: item.get('sha256') for item in current['files'][group]}
+            if expected != observed or any(not item.get('stable_during_hash')
+                                           for item in current['files'][group]):
+                raise ValueError('Checkpoint inventory changed since review')
+        orphans = current['files']['unreferenced']
+        if not orphans:
+            return {'moved': [], 'status': 'nothing_to_quarantine'}
+        batch = self.path.parent / 'patches-quarantine' / uuid.uuid4().hex
+        batch.mkdir(parents=True)
+        journal = {'schema': 1, 'database': str(self.path), 'status': 'prepared',
+                   'files': [{key: item[key] for key in ('name', 'bytes', 'sha256')}
+                             for item in orphans]}
+        warehouse.atomic_json(batch / 'journal.json', journal)
+        for item in journal['files']:
+            (self.artifacts / item['name']).replace(batch / item['name'])
+        journal['status'] = 'quarantined'
+        warehouse.atomic_json(batch / 'journal.json', journal)
+        return {'batch': str(batch), 'moved': journal['files'], 'status': 'quarantined'}
+
+    @locked_checkpoint
+    def restore_quarantine(self, batch):
+        """Restore a reviewed batch, including an interrupted partial move."""
+        from . import warehouse
+        batch = Path(batch).resolve()
+        if batch.parent != (self.path.parent / 'patches-quarantine').resolve():
+            raise ValueError('Batch is outside this memory quarantine')
+        journal = json.loads((batch / 'journal.json').read_text(encoding='utf-8'))
+        if journal.get('database') != str(self.path):
+            raise ValueError('Batch belongs to another memory database')
+        referenced = {row[0] for row in self.db.execute(
+            'SELECT artifact FROM patches WHERE artifact IS NOT NULL')}
+        for item in journal['files']:
+            name = Path(item['name']).name
+            if name != item['name'] or name in referenced:
+                raise ValueError('Unsafe checkpoint restore: ' + str(item['name']))
+            source, target = batch / name, self.artifacts / name
+            if source.is_file() == target.is_file():
+                raise ValueError('Checkpoint location is ambiguous: ' + name)
+            present = source if source.is_file() else target
+            if hashlib.sha256(present.read_bytes()).hexdigest() != item['sha256']:
+                raise ValueError('Checkpoint changed in quarantine: ' + name)
+        for item in journal['files']:
+            source = batch / item['name']
+            if source.is_file():
+                source.replace(self.artifacts / item['name'])
+        journal['status'] = 'restored'
+        warehouse.atomic_json(batch / 'journal.json', journal)
+        return journal

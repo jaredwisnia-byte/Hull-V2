@@ -1,16 +1,101 @@
 """Resume, provenance, cache isolation and corrupted-checkpoint recovery."""
 import tempfile
 import unittest
+import json
+import threading
 from pathlib import Path
 from contextlib import closing
 from unittest.mock import patch
 import numpy as np
-from propkit.build_memory import BuildMemory
+from propkit.build_memory import BuildMemory, checkpoint_lock
 from propkit import regional_relief
 import test_regional_relief as fixtures
 
 
 class MemoryContracts(unittest.TestCase):
+    def test_checkpoint_writer_waits_for_retention_lock(self):
+        with tempfile.TemporaryDirectory() as folder:
+            database = Path(folder) / 'memory.sqlite3'
+            started, finished = threading.Event(), threading.Event()
+            errors = []
+
+            def writer():
+                started.set()
+                try:
+                    with closing(BuildMemory(database)) as memory:
+                        memory.save('key', 'v1', {'status': 'accepted'}, [1],
+                                    np.ones((2, 2)), np.zeros((2, 2)))
+                except Exception as error:
+                    errors.append(error)
+                finally:
+                    finished.set()
+
+            with checkpoint_lock(Path(folder) / 'patches.lock'):
+                thread = threading.Thread(target=writer)
+                thread.start()
+                self.assertTrue(started.wait(2))
+                self.assertFalse(finished.wait(.2))
+            thread.join(5)
+            self.assertFalse(errors)
+            self.assertTrue(finished.is_set())
+
+    def test_reviewed_orphan_quarantine_and_restore(self):
+        with tempfile.TemporaryDirectory() as folder, closing(BuildMemory(Path(folder) / 'memory.sqlite3')) as memory:
+            record = {'status': 'accepted'}
+            memory.save('key', 'v1', record, [1], np.ones((3, 3)), np.zeros((3, 3)))
+            old = next(memory.artifacts.glob('*.npz'))
+            memory.save('key', 'v1', record, [1], np.ones((3, 3)) * 2, np.zeros((3, 3)))
+            report = Path(folder) / 'review.json'
+            report.write_text(json.dumps(memory.retention_inventory(True)))
+            with self.assertRaisesRegex(ValueError, 'Confirm legacy'):
+                memory.quarantine_unreferenced(report)
+            moved = memory.quarantine_unreferenced(report, confirm_idle=True)
+            self.assertEqual(moved['status'], 'quarantined')
+            self.assertFalse(old.exists())
+            self.assertEqual(memory.retention_inventory()['counts']['referenced'], 1)
+            restored = memory.restore_quarantine(moved['batch'])
+            self.assertEqual(restored['status'], 'restored')
+            self.assertTrue(old.is_file())
+
+    def test_changed_review_cannot_move_checkpoint(self):
+        with tempfile.TemporaryDirectory() as folder, closing(BuildMemory(Path(folder) / 'memory.sqlite3')) as memory:
+            record = {'status': 'accepted'}
+            memory.save('key', 'v1', record, [1], np.ones((3, 3)), np.zeros((3, 3)))
+            memory.save('key', 'v1', record, [1], np.ones((3, 3)) * 2, np.zeros((3, 3)))
+            report = Path(folder) / 'review.json'
+            report.write_text(json.dumps(memory.retention_inventory(True)))
+            memory.save('key', 'v1', record, [1], np.ones((3, 3)) * 3, np.zeros((3, 3)))
+            before = sorted(path.name for path in memory.artifacts.glob('*.npz'))
+            with self.assertRaisesRegex(ValueError, 'changed since review'):
+                memory.quarantine_unreferenced(report, confirm_idle=True)
+            self.assertEqual(before, sorted(path.name for path in memory.artifacts.glob('*.npz')))
+
+    def test_interrupted_quarantine_can_restore_partial_batch(self):
+        with tempfile.TemporaryDirectory() as folder, closing(BuildMemory(Path(folder) / 'memory.sqlite3')) as memory:
+            record = {'status': 'accepted'}
+            for scale in (1, 2, 3):
+                memory.save('key', 'v1', record, [1], np.ones((3, 3)) * scale,
+                            np.zeros((3, 3)))
+            report = Path(folder) / 'review.json'
+            report.write_text(json.dumps(memory.retention_inventory(True)))
+            original = Path.replace
+            moves = [0]
+
+            def interrupted(path, destination):
+                if path.parent == memory.artifacts:
+                    moves[0] += 1
+                    if moves[0] == 2:
+                        raise OSError('interrupted move')
+                return original(path, destination)
+
+            with patch.object(Path, 'replace', interrupted):
+                with self.assertRaisesRegex(OSError, 'interrupted move'):
+                    memory.quarantine_unreferenced(report, confirm_idle=True)
+            batch = next((Path(folder) / 'patches-quarantine').iterdir())
+            self.assertEqual(memory.restore_quarantine(batch)['status'], 'restored')
+            self.assertEqual(memory.retention_inventory()['counts'],
+                             {'referenced': 1, 'unreferenced': 2})
+
     def test_replaced_checkpoint_is_reported_without_collection(self):
         with tempfile.TemporaryDirectory() as folder, closing(BuildMemory(Path(folder) / 'memory.sqlite3')) as memory:
             record = {'status': 'accepted'}
