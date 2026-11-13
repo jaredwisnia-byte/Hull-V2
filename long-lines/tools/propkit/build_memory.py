@@ -118,3 +118,54 @@ class BuildMemory:
         return {'path': str(self.path), 'patches': sum(statuses.values()), 'statuses': statuses,
                 'events': self.db.execute('SELECT count(*) FROM events').fetchone()[0],
                 'physical_geometry_verified': False}
+
+    def retention_inventory(self, verify_hashes=False):
+        """Report referenced and unreferenced checkpoints without moving files.
+
+        This is a live observation, not permission to collect an orphan: another
+        process may be writing a checkpoint while the directory is scanned.
+        """
+        rows_before = self.db.execute(
+            'SELECT artifact,digest FROM patches WHERE artifact IS NOT NULL ORDER BY artifact'
+        ).fetchall()
+        referenced = {name: digest for name, digest in rows_before}
+        files = sorted(self.artifacts.glob('*.npz'))
+        missing_referenced = sorted(set(referenced) - {path.name for path in files})
+        groups = {'referenced': [], 'unreferenced': []}
+        errors = []
+        for path in files:
+            try:
+                stat_before = path.stat()
+                entry = {'name': path.name, 'bytes': stat_before.st_size}
+                if verify_hashes:
+                    digest = hashlib.sha256()
+                    with path.open('rb') as stream:
+                        for chunk in iter(lambda: stream.read(1024 * 1024), b''):
+                            digest.update(chunk)
+                    entry['sha256'] = digest.hexdigest()
+                    stat_after = path.stat()
+                    entry['stable_during_hash'] = (
+                        stat_before.st_size == stat_after.st_size and
+                        stat_before.st_mtime_ns == stat_after.st_mtime_ns
+                    )
+                    if path.name in referenced:
+                        entry['matches_record'] = entry['sha256'] == referenced[path.name]
+                group = 'referenced' if path.name in referenced else 'unreferenced'
+                groups[group].append(entry)
+            except OSError as error:
+                errors.append({'name': path.name, 'error': str(error)})
+        rows_after = self.db.execute(
+            'SELECT artifact,digest FROM patches WHERE artifact IS NOT NULL ORDER BY artifact'
+        ).fetchall()
+        return {
+            'database': str(self.path),
+            'snapshot_consistent': rows_before == rows_after and not errors
+                                   and not missing_referenced,
+            'collection_authorized': False,
+            'scan_errors': errors,
+            'missing_referenced': missing_referenced,
+            'counts': {kind: len(items) for kind, items in groups.items()},
+            'bytes': {kind: sum(item['bytes'] for item in items)
+                      for kind, items in groups.items()},
+            'files': groups,
+        }

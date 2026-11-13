@@ -89,6 +89,13 @@ asset build after a documentation change.
 
 ## Qualification limits
 
+`python hull.py memory-inventory PATH/memory.sqlite3 --output PATH/report.json
+--verify-hashes` records referenced and unreferenced checkpoint sizes and hashes.
+It never moves or deletes a checkpoint. A live inventory is not a safe deletion
+list: a writer may be creating a file while the scan runs. Review the report,
+repeat it after the workload is idle, and preserve the database plus recovery
+evidence before any separately approved retention action.
+
 `qualify` defaults to core, Blender and Godot checks. Add `vision` for image-only
 intake and `cad` for CAD export, for example `--profiles core,blender,godot,vision`.
 Vision qualification requires the pinned OCR and inference runtime and executes
