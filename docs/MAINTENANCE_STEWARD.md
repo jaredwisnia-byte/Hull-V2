@@ -125,12 +125,12 @@ they run from the default branch and may be delayed or dropped under load
 
 ## Escalation and release gap
 
-Hull already has candidate QA, immutable warehouse versions and rollback
-guards. The current automatic promotion path does **not** bind a passing,
-matching capability qualification to the candidate. Until that code gap is
-resolved, the steward reports it and keeps uncertain experiments under the
-existing hold policy; it does not claim that artifact integrity proves a
-physically correct model. Incidents should gain owner, severity, status,
+Hull has candidate QA, immutable warehouse versions and rollback guards.
+Publication requires a passed capability qualification matching the candidate's
+source and runtime; without one, the candidate remains inspectable and unselected.
+This gate does not establish that a model is physically correct. The steward
+reports missing or stale qualifications and keeps uncertain experiments under
+the existing hold policy. Incidents should gain owner, severity, status,
 affected versions, reproducer and verified closure evidence. Follow
 [Google's postmortem practice](https://sre.google/workbook/postmortem-culture/)
 for escaped or recurring defects.
