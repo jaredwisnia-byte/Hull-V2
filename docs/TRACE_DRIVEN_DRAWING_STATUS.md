@@ -37,8 +37,12 @@ unknowns. The resulting construction decisions must refer back to the drawing.
 - When reconciliation changes a build view, the sheet traces the original
   supplied image and stores the altered construction image separately. Its
   build-input contour IDs cannot masquerade as source contour IDs. Stage review
-  holds the result until a source-to-build pixel mapping exists. A CRT television
-  with a flipped right view exercised this path; the raw path stayed intact.
+  holds the result until a build-to-source pixel mapping exists. Hull now records
+  each reconciliation operation. A lossless horizontal flip receives a mapping
+  only after the processed pixels exactly match the flipped source; opening
+  candidate coordinates can then be mapped back. A CRT television's right view
+  was both flipped and partly erased. Its raw trace stayed intact, but the
+  altered build trace remains unresolved because erasure can create new edges.
 - Prebuild integration was checked on an instant camera and cassette recorder.
   A mixed diagnostic trial also included toaster, typewriter, hair dryer, alarm
   clock, stand mixer, a carved leg, and another camera view set. The trial
@@ -63,9 +67,9 @@ unknowns. The resulting construction decisions must refer back to the drawing.
   may be explained by a rotated view or a core-mask measurement, so the next
   correction must compare the source frame, full silhouette, and resulting
   mesh on the mixed set before adopting a view transformation or exclusion.
-- Reconciled build-input paths have no inverse mapping to original source pixels.
-  They remain usable as construction evidence only with an explicit provenance
-  gap, and release review holds them pending that mapping.
+- Reconciled build-input paths with erased or otherwise modified pixels still
+  lack a complete original-source correspondence. They remain construction
+  evidence with an explicit provenance gap, and release review holds them.
 
 ## Next acceptance gate
 

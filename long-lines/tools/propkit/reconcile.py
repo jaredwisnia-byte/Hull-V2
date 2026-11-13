@@ -76,7 +76,19 @@ def run(views, printed_mm=None, tmp=None):
     if tmp is None:
         tmp = os.path.join(tempfile.gettempdir(), "_reconcile")
     os.makedirs(tmp, exist_ok=True)
-    rep = {"views": {}, "decisions": []}
+    rep = {"views": {}, "decisions": [], "pixel_frames": {}}
+    for name, path in views.items():
+        if name not in ("front", "back", "left", "right", "top", "bottom"):
+            continue
+        with Image.open(path) as source:
+            width, height = source.size
+        rep["pixel_frames"][name] = {
+            "source_size_px": [width, height],
+            "build_to_source_xy": {"scale_xy": [1, 1], "offset_xy": [0, 0]},
+            "operations": [],
+            "appearance_modifications": [],
+            "coordinate_convention": "pixel centers; continuous contour coordinates",
+        }
     m = {k: _box(p) for k, p in views.items() if k in ("front", "back", "left", "right", "top", "bottom")}
     r_wh = {k: m[k][1] / m[k][2] for k in ("front", "back") if k in m}           # width / height
     r_dh = {k: m[k][1] / m[k][2] for k in ("left", "right") if k in m}           # depth / height
@@ -118,6 +130,10 @@ def run(views, printed_mm=None, tmp=None):
                 q = os.path.join(tmp, "v_%s.png" % k)
                 Image.open(views[k]).transpose(Image.FLIP_LEFT_RIGHT).save(q)
                 out[k] = q
+                width = rep["pixel_frames"][k]["source_size_px"][0]
+                rep["pixel_frames"][k]["build_to_source_xy"] = {
+                    "scale_xy": [-1, 1], "offset_xy": [width - 1, 0]}
+                rep["pixel_frames"][k]["operations"].append("horizontal_flip")
                 m[k] = _box(q)
                 rep["decisions"].append("%s view drawn mirrored (it matches the top view only when flipped: %.2f vs %.2f): flipped" % (
                     k, flipped, as_drawn))
@@ -152,6 +168,10 @@ def run(views, printed_mm=None, tmp=None):
         bg = np.median(np.concatenate([a_img[0], a_img[-1]]), axis=0).astype(np.uint8)
         a_img[:, :c0] = bg
         a_img[:, c1:] = bg
+        rep["pixel_frames"][a]["appearance_modifications"].append({
+            "kind": "background_erasure_outside_x_interval",
+            "retained_build_x_interval_px": [int(c0), int(c1)],
+            "source_mapping": "coordinates_preserved; erased pixels have no source appearance"})
         q = os.path.join(tmp, "v_%s.png" % a)
         Image.fromarray(a_img).save(q)
         out[a] = q

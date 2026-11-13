@@ -83,6 +83,28 @@ def _end_frame_hypotheses(observations):
     return result
 
 
+def _verified_build_to_source_map(source_path, build_path, frame):
+    """Accept only a lossless, pixel-checked identity or horizontal flip."""
+    if not frame or frame.get('appearance_modifications'):
+        return None
+    mapping = frame.get('build_to_source_xy', {})
+    with Image.open(source_path) as original, Image.open(build_path) as built:
+        source = np.asarray(original.convert('RGBA'))
+        candidate = np.asarray(built.convert('RGBA'))
+    height, width = source.shape[:2]
+    if candidate.shape != source.shape or frame.get('source_size_px') != [width, height]:
+        return None
+    scale = mapping.get('scale_xy')
+    offset = mapping.get('offset_xy')
+    if (scale, offset) == ([1, 1], [0, 0]):
+        expected = source
+    elif (scale, offset) == ([-1, 1], [width - 1, 0]):
+        expected = source[:, ::-1]
+    else:
+        return None
+    return mapping if np.array_equal(candidate, expected) else None
+
+
 def observe(view, path, construction_mask=None, opening_witness=None):
     """Return source-pixel paths and their provenance, without geometric fitting."""
     image = Image.open(path).convert('RGB')
@@ -186,6 +208,14 @@ def infer(views, destination, construction_masks=None, opening_report=None,
         for name in selected}
     changed_frames = [name for name in selected
                       if str(source_views.get(name, views[name])) != str(views[name])]
+    verified_maps = {}
+    for name in changed_frames:
+        mapping = _verified_build_to_source_map(
+            source_views[name], views[name],
+            view_consistency.get('pixel_frames', {}).get(name))
+        if mapping is not None:
+            verified_maps[name] = mapping
+    unresolved_frames = [name for name in changed_frames if name not in verified_maps]
     for name in changed_frames:
         for item in build_observations[name]['traces']:
             item['id'] = f"build_input:{item['id']}"
@@ -209,7 +239,10 @@ def infer(views, destination, construction_masks=None, opening_report=None,
             'original_source_path': str(source_views.get(name, views[name])),
             'build_input_path': str(views[name]),
             'build_input_differs_from_source': name in changed_frames,
-            'source_to_build_pixel_map': 'unresolved' if name in changed_frames else 'identity',
+            'build_to_source_pixel_map': (
+                verified_maps.get(name) if name in changed_frames else
+                {'scale_xy': [1, 1], 'offset_xy': [0, 0]}),
+            'source_pixel_map_verified': name not in unresolved_frames,
         }
         observations[name]['construction_use'] = view_use[name]
     conflicts = [name for name, status in view_use.items()
@@ -224,6 +257,11 @@ def infer(views, destination, construction_masks=None, opening_report=None,
          'area_build_input_px': item['area_source_px'] if name in changed_frames else None,
          'measurement_pixel_frame': ('reconciled_build_input' if name in changed_frames
                                      else 'original_source'),
+         'mapped_original_source_xy': (
+             [[mapping['scale_xy'][0] * x + mapping['offset_xy'][0],
+               mapping['scale_xy'][1] * y + mapping['offset_xy'][1]]
+              for x, y in item.get('points_source_xy', ())]
+             if (mapping := verified_maps.get(name)) is not None else None),
          'appearance_median_rgb': item['appearance_median_rgb'],
          'appearance_std_rgb': item['appearance_std_rgb'],
          'status': ('construction_candidate_in_use_physical_hole_unverified'
@@ -276,7 +314,9 @@ def infer(views, destination, construction_masks=None, opening_report=None,
                       fill='#b00020')
         if name in changed_frames:
             draw.text((x0 + 12, y0 + 45),
-                      'ORIGINAL SOURCE SHOWN; BUILD INPUT WAS ALTERED',
+                      ('ORIGINAL SOURCE SHOWN; BUILD FLIP PIXELS VERIFIED'
+                       if name in verified_maps else
+                       'ORIGINAL SOURCE SHOWN; BUILD PIXEL MAP UNRESOLVED'),
                       fill='#b00020')
         record = observations[name]
         w, h = record['source_size_px']
@@ -327,7 +367,11 @@ def infer(views, destination, construction_masks=None, opening_report=None,
               'paired_elevation_envelopes': paired_sections,
               'view_construction_use': view_use,
               'view_conflicts_in_use': conflicts,
-              'reconciled_views_without_source_pixel_map': changed_frames,
+              'reconciled_views_without_source_pixel_map': unresolved_frames,
+              'reconciled_views_with_verified_source_pixel_map': list(verified_maps),
+              'reconciliation_pixel_frames': {
+                  name: view_consistency.get('pixel_frames', {}).get(name)
+                  for name in changed_frames},
               'reconciled_build_input_observations': {
                   name: build_observations[name] for name in changed_frames},
               'end_view_frame_hypotheses': frame_hypotheses,
