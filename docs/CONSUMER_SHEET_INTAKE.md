@@ -282,3 +282,25 @@ remaining depth failures. The build remains unqualified. This fixes retry
 comparability within one build; separate builds can still start from
 different shared-memory states and must record that state for reproducible
 cross-run experiments.
+
+## Repeatable comparison mode
+
+An automatic-depth work order may set `"reconstruction_memory_mode": "off"`
+for controlled A/B runs. The default `"learning"` continues using Hull's
+shared reconstruction memory. The mode is recorded in the relief report,
+along with `source_evidence_sha256`, a fingerprint of the coarse field,
+accepted source height maps, and source feature observations before view
+fusion. Matching fingerprints show that two builds compared the same source
+estimates; they do not prove either estimate is physically correct. The
+memory-off mode skips cache retrieval and strategy hints, so its output can
+differ from the normal learning mode. It is an experiment setting, not a
+replacement for learning or a release quality gate.
+
+Two held typewriter builds using the explicit memory-off order matched on
+source fingerprint, 168 probes, failure set, 1,410 triangles, and exported
+geometry signature. They also matched an earlier memory-disabled diagnostic
+baseline. The example work order and held outputs are in the local
+`fusion-stage-isolation` experiment area. This makes cross-run comparisons
+repeatable for this tested input; a later memory snapshot or source-evidence
+replay format would be needed to reproduce a specific learning-mode build
+without disabling memory.

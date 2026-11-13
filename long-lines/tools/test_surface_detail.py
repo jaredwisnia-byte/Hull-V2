@@ -7,7 +7,7 @@ from unittest.mock import patch
 import numpy as np
 from PIL import Image
 from scipy import ndimage
-from propkit.surface_detail import apply_field, visible_root
+from propkit.surface_detail import analyse, apply_field, shading_view, visible_root
 from propkit.implicit import bounded_field, pad_field
 
 
@@ -30,12 +30,29 @@ class SurfaceContracts(unittest.TestCase):
             repeated = apply_field(base, retry)
         np.testing.assert_array_equal(repeated, result)
         self.assertTrue(retry['report']['source_evidence_reused'])
+        self.assertEqual(first['report']['source_evidence_sha256'],
+                         retry['report']['source_evidence_sha256'])
         changed = base.copy()
         changed[0, 0, 0] += .001
         with self.assertRaisesRegex(ValueError, 'coarse source field'):
             apply_field(changed, {'dimensions': (1, 1, 1), 'maps': {'front': height},
                                   'report': {'features': [], 'views': {}},
                                   'frozen_source_evidence': evidence[0]})
+
+    def test_memory_off_mode_is_explicit_and_skips_shared_database(self):
+        with self.assertRaisesRegex(ValueError, 'memory mode'):
+            analyse({}, (1, 1, 1), {}, memory_mode='unknown')
+        self.assertEqual(analyse({}, (1, 1, 1), {},
+                                 memory_mode='off')['memory_mode'], 'off')
+        mask = np.ones((8, 8), bool)
+        plan = {'dimensions': (1, 1, 1), 'memory_mode': 'off',
+                'shading_inputs': {'front': {'image': Image.new('RGB', (8, 8)),
+                                             'valid': mask}},
+                'report': {'features': [], 'views': {}}}
+        with patch('propkit.shading.reconstruct',
+                   return_value=(np.zeros((8, 8)), {})) as solve:
+            shading_view(np.zeros((8, 8)), 'front', plan, (8, 8, 8))
+        self.assertIsNone(solve.call_args.kwargs['memory_path'])
 
     def test_unobserved_original_cavity_cannot_be_filled_by_a_skin_correction(self):
         from propkit.implicit import preserve_components

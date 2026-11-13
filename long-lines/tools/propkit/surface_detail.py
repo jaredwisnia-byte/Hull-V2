@@ -62,12 +62,15 @@ def chart_frame(view, dimensions):
             'bottom': ([-w / 2, -d / 2, 0], [w, 0, 0], [0, d, 0], [0, 0, -1])}[view]
 
 
-def analyse(views, dimensions, report, exclusions=(), silhouettes=None):
+def analyse(views, dimensions, report, exclusions=(), silhouettes=None,
+            memory_mode='learning'):
     """Prepare pixel observations. Geometry is inferred after the base field exists.
 
     No circle recognition, primitive selection or fixed groove profiles run here.
     The visible field supplies the initial surface and boundary conditions.
     """
+    if memory_mode not in ('learning', 'off'):
+        raise ValueError('reconstruction memory mode must be learning or off')
     from .silhouette import silhouette
     maps, inputs, excluded_opening_pixels = {}, {}, {}
     silhouettes = silhouettes or {}
@@ -93,12 +96,15 @@ def analyse(views, dimensions, report, exclusions=(), silhouettes=None):
         inputs[view] = {'image': image, 'valid': valid,
                         'path': path, 'crop_box': box}
     report.update(features=[], views={}, method='continuous pixel shading/height inference',
+                  reconstruction_memory_mode=memory_mode,
                   physical_separation='physical ownership only; shading contours do not create parts',
                   dimensions_m=list(dimensions),
                   excluded_opening_pixels=excluded_opening_pixels,
                   source_views={view: str(inputs[view]['path']) for view in inputs})
     return {'maps': maps, 'fine_maps': {}, 'shading_inputs': inputs,
             'capture_fusion_contributions': os.environ.get('HULL_TRACE_FUSION') == '1',
+            'capture_source_fingerprint': True,
+            'memory_mode': memory_mode,
             'dimensions': tuple(dimensions), 'report': report}
 
 
@@ -118,7 +124,9 @@ def shading_view(root, view, plan, shape):
     bound = min(plan['dimensions']) * .04 / pixel
     diagnostics = {}
     from pathlib import Path
-    memory_path=Path(__file__).resolve().parents[3]/'.hull-memory'/'reconstruction.sqlite3'
+    memory_path = (Path(__file__).resolve().parents[3] / '.hull-memory' /
+                   'reconstruction.sqlite3' if plan.get('memory_mode', 'learning') == 'learning'
+                   else None)
     height, evidence = shading.reconstruct(
         observation['image'], mask, base, bound, diagnostics=diagnostics,memory_path=memory_path)
     diagnostics['metres_per_pixel'] = np.asarray(pixel)
@@ -208,7 +216,8 @@ def apply_field(field, plan):
     dimensions = plan['dimensions']
     frozen = plan.get('frozen_source_evidence')
     source_field_hash = None
-    if frozen is not None or plan.get('source_evidence_sink'):
+    if (frozen is not None or plan.get('source_evidence_sink') or
+            plan.get('capture_source_fingerprint')):
         source_field_hash = hashlib.sha256(
             repr((field.shape, tuple(dimensions))).encode() +
             np.ascontiguousarray(field).tobytes()).hexdigest()
@@ -347,6 +356,17 @@ def apply_field(field, plan):
             'diagnostics': copy.deepcopy(plan.get('diagnostics', {})),
             'features': copy.deepcopy(plan['report']['features']),
             'views': copy.deepcopy(plan['report']['views'])})
+    if source_field_hash is not None:
+        source_digest = hashlib.sha256(source_field_hash.encode())
+        for view in sorted(plan['maps']):
+            height = np.ascontiguousarray(plan['maps'][view])
+            source_digest.update(view.encode())
+            source_digest.update(repr((height.shape, height.dtype.str)).encode())
+            source_digest.update(height.tobytes())
+        import json
+        source_digest.update(json.dumps(plan['report']['features'],
+                                        sort_keys=True, default=str).encode())
+        plan['report']['source_evidence_sha256'] = source_digest.hexdigest()
     # Fuse observations of the same surface instead of sequentially carving
     # it once per camera. Facing/skin support excludes the opposite surface.
     from .implicit import pad_field

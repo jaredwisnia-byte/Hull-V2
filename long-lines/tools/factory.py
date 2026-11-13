@@ -355,7 +355,8 @@ def run_line(order):
                 order.setdefault('measured', {})['process_plan'] = route
                 detail_plan = surface_detail.analyse(
                     views, (W_, D_, height), rrep,
-                    silhouettes=hp.get('sil_override'))
+                    silhouettes=hp.get('sil_override'),
+                    memory_mode=order.get('reconstruction_memory_mode', 'learning'))
                 if order.get('_frozen_source_evidence') is not None:
                     detail_plan['frozen_source_evidence'] = order['_frozen_source_evidence']
                 else:
