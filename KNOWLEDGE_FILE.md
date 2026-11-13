@@ -3,6 +3,18 @@
 Last audited: 2026-11-11. Read this before proposing a new reconstruction module.
 Update it when verified behaviour, inputs, call paths or test results change.
 
+## Godot qualification import gate (2026-11-13)
+
+An earlier first qualification on an unimported worktree failed the Godot unit
+script with unresolved project class names, then timed out the smoke test at
+300 seconds. The same checks passed after a manual headless import. The Godot
+profile now registers `godot-import` before unit and smoke checks. Both tests
+depend on that import; a failed import records them as blocked and fails the
+qualification instead of starting them against an unprepared cache. The
+qualification record retains all three steps. This is a toolchain setup fix,
+not a change to asset geometry or a claim that the full cold-cache run has
+been retested in this worktree.
+
 ## Windows Blender export path budget (2026-11-13)
 
 Ticket #20 reproduced a Blender albedo-save failure at a 261-character path.

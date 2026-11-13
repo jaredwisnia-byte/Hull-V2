@@ -277,8 +277,17 @@
       "script": "long-lines/tools/test_preflight.py"
     },
     {
+      "id": "godot-import",
+      "capability": "godot",
+      "args": [
+        "--import"
+      ],
+      "timeout_s": 600
+    },
+    {
       "id": "godot-unit",
       "capability": "godot",
+      "requires": ["godot-import"],
       "args": [
         "--script",
         "res://tests/run_tests.gd"
@@ -287,6 +296,7 @@
     {
       "id": "godot-smoke",
       "capability": "godot",
+      "requires": ["godot-import"],
       "args": [
         "--",
         "--smoke"

@@ -48,6 +48,8 @@ def load_plan(root):
             "vision",
         ):
             raise ValueError("Duplicate or unknown check capability")
+        if not set(check.get("requires", ())) <= seen:
+            raise ValueError("Check requires an unknown or later prerequisite: " + check["id"])
         seen.add(check["id"])
         if check.get("runner", "python") not in ("python", "blender"):
             raise ValueError("Unknown check runner: " + check["id"])
@@ -266,6 +268,20 @@ def run_checks(root, profiles, output, blender=None, godot=None):
     if health["pass"]:
         for check in plan["checks"]:
             if check["capability"] not in profiles:
+                continue
+            blocked_by = [prerequisite for prerequisite in check.get("requires", ())
+                          if not any(result["id"] == prerequisite and result["pass"]
+                                     for result in results)]
+            if blocked_by:
+                reason = "Blocked by failed or absent prerequisite: " + ", ".join(blocked_by)
+                (output / (check["id"] + ".log")).write_text(reason, encoding="utf-8")
+                results.append({
+                    "id": check["id"], "capability": check["capability"],
+                    "pass": False, "exit_code": None, "skipped": 0,
+                    "seconds": 0, "log": check["id"] + ".log",
+                    "blocked_by": blocked_by,
+                })
+                print(check["id"], "BLOCKED", flush=True)
                 continue
             script = check.get("script")
             if check.get("runner") == "blender" or check["capability"] == "blender":

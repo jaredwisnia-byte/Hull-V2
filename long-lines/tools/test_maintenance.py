@@ -147,7 +147,34 @@ class MaintenanceTests(unittest.TestCase):
             self.assertEqual(registered[f"long-lines/tools/test_{name}.py"], "core")
         self.assertEqual(registered["long-lines/tools/test_retry_review.py"],
                          "blender")
+        godot_checks = [check for check in plan["checks"]
+                        if check["capability"] == "godot"]
+        self.assertEqual([check["id"] for check in godot_checks],
+                         ["godot-import", "godot-unit", "godot-smoke"])
+        self.assertEqual(godot_checks[0]["args"], ["--import"])
+        self.assertTrue(all(check["requires"] == ["godot-import"]
+                            for check in godot_checks[1:]))
         self.assertTrue(m.repository_audit(ROOT)["pass"])
+
+    def test_failed_import_blocks_godot_tests_without_qualifying(self):
+        with tempfile.TemporaryDirectory() as folder, patch.object(
+            m, "doctor", return_value={"pass": True,
+                                        "tools": {"godot": {"path": "godot"}}}
+        ), patch.object(m, "repository_audit", return_value={"pass": True}), patch.object(
+            m, "load_plan", return_value={"checks": [
+                {"id": "import", "capability": "godot", "args": ["--import"]},
+                {"id": "unit", "capability": "godot", "args": ["--script", "test.gd"],
+                 "requires": ["import"]},
+            ]}
+        ), patch.object(
+            m.subprocess, "run",
+            return_value=m.subprocess.CompletedProcess([], 1, "import failed", ""),
+        ) as run:
+            report = m.run_checks(ROOT, ["godot"], folder)
+            self.assertFalse(report["pass"])
+            self.assertEqual(report["checks"][1]["blocked_by"], ["import"])
+            self.assertFalse(report["checks"][1]["pass"])
+            self.assertEqual(run.call_count, 1)
 
     def test_change_profiles_do_not_ignore_dependency_configuration_or_loader(self):
         self.assertEqual(m.choose_profiles(["README.md"]), [])
