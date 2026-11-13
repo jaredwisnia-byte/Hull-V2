@@ -24,7 +24,6 @@ import numpy as np
 from PIL import Image
 from scipy import ndimage
 from skimage.measure import marching_cubes
-from skimage.morphology import convex_hull_image
 from skimage.feature import canny
 from skimage.transform import hough_circle, hough_circle_peaks
 
@@ -33,58 +32,7 @@ from .core import cyl
 
 from . import mats as M
 from .core import apply_mods, link, smooth
-
-
-def silhouette(path, thresh=30, convex=False, with_box=False):
-    """Mask of the object in a view: differs from the border colour, biggest connected
-    shape plus small shapes just beside it (legs, feet), holes filled.
-    Returns (mask, cropped colour image), and the crop box (x0, y0, x1, y1) if with_box."""
-    im = Image.open(path).convert("RGB")
-    a = np.asarray(im).astype(np.int32)
-    border = np.concatenate([a[0], a[-1], a[:, 0], a[:, -1]])
-    bg = np.median(border, axis=0)
-    m = np.abs(a - bg).sum(2) > thresh
-    m = ndimage.binary_closing(m, iterations=2)
-    lab, n = ndimage.label(m)
-    if n == 0:
-        raise ValueError("no object found in " + path)
-    sizes = ndimage.sum(m, lab, range(1, n + 1))
-    main = int(np.argmax(sizes)) + 1
-    keep = lab == main
-    # Legs, feet and knobs often sit apart from the body behind a dark gap in the painting:
-    # keep small shapes that touch the body's span and lie within a short gap of it.
-    ys_, xs_ = np.nonzero(keep)
-    my0, my1, mx0, mx1 = ys_.min(), ys_.max(), xs_.min(), xs_.max()
-    gap = max(4, int(0.06 * (my1 - my0)))
-    for i, sl in enumerate(ndimage.find_objects(lab), 1):
-        if i == main or sizes[i - 1] < 0.002 * sizes[main - 1]:
-            continue
-        y0_, y1_, x0_, x1_ = sl[0].start, sl[0].stop - \
-            1, sl[1].start, sl[1].stop - 1
-        near_y = y0_ <= my1 + gap and y1_ >= my0 - gap
-        near_x = x0_ <= mx1 + gap and x1_ >= mx0 - gap
-        if near_x and near_y:
-            keep |= lab == i
-    m = keep
-    # Dark parts of an object (screens, back panels) can match a dark sheet
-    # background. Treat anything bounded by the object both along its row and
-    # its column as solid; outer notches (between legs, under a lip) stay open.
-    rows = np.zeros_like(m)
-    cols = np.zeros_like(m)
-    for i in np.nonzero(m.any(1))[0]:
-        xs = np.nonzero(m[i])[0]
-        rows[i, xs[0]:xs[-1] + 1] = True
-    for j in np.nonzero(m.any(0))[0]:
-        ys = np.nonzero(m[:, j])[0]
-        cols[ys[0]:ys[-1] + 1, j] = True
-    m = ndimage.binary_fill_holes(m | (rows & cols))
-    if convex:
-        m = convex_hull_image(m)
-    ys, xs = np.nonzero(m)
-    box = (xs.min(), ys.min(), xs.max() + 1, ys.max() + 1)
-    if with_box:
-        return m[box[1]:box[3], box[0]:box[2]], im.crop(box), box
-    return m[box[1]:box[3], box[0]:box[2]], im.crop(box)
+from .silhouette import silhouette
 
 
 def detect_circles(img, min_score=0.5):
@@ -288,7 +236,7 @@ HULL_REPORT = {}     # what the last hull_prop call carved with blades
 def hull_prop(views, height, res=110, smooth_iters=4, decimate=0.35, rough=0.5, name="hull",
               convex=False, paint_only=(), features=True, sil_override=None, depth_m=None, grime=0.25,
               paint=True, width_m=None, blades=False, voxel_hook=None, mesh_hook=None, revolve=True, blur=0.7,
-              field=None, sections=None, field_hook=None):
+              field=None, sections=None, field_hook=None, section_bands=None):
     """convex: fill each outline to its convex shape (boxy objects; dark areas can't
     punch holes). paint_only: views used for texture but not trusted to carve (e.g. a
     dark back panel on a dark sheet). width_m: the real width (views painted out of
@@ -336,13 +284,14 @@ def hull_prop(views, height, res=110, smooth_iters=4, decimate=0.35, rough=0.5, 
     field = field or _os.environ.get("HULL_FIELD", "sdf")
     # the plain hull, before any carving step
     keep0 = keep.copy()
+    HULL_REPORT.pop("revolve", None)
+    HULL_REPORT.pop("sections", None)
     if blades:
         from . import blades as _blades
         HULL_REPORT.clear()
         keep = _blades.carve(keep, carve, HULL_REPORT)
     if revolve:
         from . import revolve as _revolve
-        HULL_REPORT.pop("revolve", None)
         keep = _revolve.voxel_hook(HULL_REPORT)(keep, carve, W, D, H)
     # sections: how round each height band is, inferred from the painting (propkit/sections.py). On by
     # default (it rounds only with two witnesses, or an end view); "sections": false in an order or
@@ -357,7 +306,7 @@ def hull_prop(views, height, res=110, smooth_iters=4, decimate=0.35, rough=0.5, 
         if _os.path.exists(bp):
             sv["bottom"] = bp
         HULL_REPORT["sections"] = srep = {}
-        keep = _sections.hook(sv, srep)(keep, carve, W, D, H)
+        keep = _sections.hook(sv, srep, bands=section_bands)(keep, carve, W, D, H)
         print("SECTIONS %s %s" % (name, srep.get("curved_runs")))
     if voxel_hook is not None:
         keep = voxel_hook(keep, carve, W, D, H)

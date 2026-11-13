@@ -334,6 +334,16 @@ def run_line(order):
             order.setdefault("measured", {})["relief"] = rrep = {}
             if order.get('automatic_depth'):
                 from propkit import surface_detail, process_planner
+                methods, section_bands = process_planner.plan_methods(views)
+                order.setdefault('measured', {})['construction_methods'] = methods
+                methods['order_overrides'] = {
+                    key: hp[key] for key in ('revolve', 'sections') if key in hp}
+                hp.setdefault('revolve', methods['method'].startswith('lathe_'))
+                hp.setdefault('sections', methods['method'] == 'sectioned_field')
+                methods['effective_operations'] = {
+                    'revolve': bool(hp['revolve']), 'sections': bool(hp['sections'])}
+                if section_bands is not None and hp['sections']:
+                    hp['section_bands'] = section_bands
                 profile_model, route = process_planner.propose(views, height)
                 order.setdefault('measured', {})['process_plan'] = route
                 detail_plan = surface_detail.analyse(

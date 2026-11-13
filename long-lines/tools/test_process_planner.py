@@ -1,12 +1,88 @@
 """A simple profile can replace an envelope without creating a part seam."""
 import unittest
 import json
+import tempfile
 import numpy as np
+from pathlib import Path
+from PIL import Image, ImageDraw
 
 from propkit import process_planner
 
 
 class ProcessPlannerTests(unittest.TestCase):
+    def test_one_view_reports_missing_geometry_evidence(self):
+        plan, _ = process_planner.plan_methods({'front': 'one.png'})
+        self.assertEqual(plan['method'], 'insufficient_views')
+        self.assertIsNone(plan['base'])
+
+    def test_round_and_box_images_choose_different_tools_without_names(self):
+        def sheet(folder, round_top):
+            folder.mkdir()
+            views = {}
+            for view in ('front', 'right', 'top'):
+                image = Image.new('RGB', (120, 120), (0, 0, 0))
+                draw = ImageDraw.Draw(image)
+                if view == 'top' and round_top:
+                    draw.ellipse((22, 22, 98, 98), fill=(180, 140, 90))
+                else:
+                    draw.rectangle((22, 22, 98, 98), fill=(180, 140, 90))
+                path = folder / f'v_{view}.png'
+                image.save(path)
+                views[view] = str(path)
+            return views
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            round_views = sheet(root / 'looks_like_a_box', True)
+            square_views = sheet(root / 'looks_like_a_vase', False)
+            round_plan, _ = process_planner.plan_methods(round_views)
+            box_plan, _ = process_planner.plan_methods(square_views)
+        self.assertEqual(round_plan['method'], 'lathe_vertical')
+        self.assertEqual(box_plan['method'], 'continuous_field')
+        self.assertFalse(round_plan['uses_object_name'])
+        self.assertFalse(box_plan['uses_object_name'])
+        json.dumps(round_plan, allow_nan=False)
+        json.dumps(box_plan, allow_nan=False)
+
+    def test_sectional_evidence_routes_without_a_round_end(self):
+        from unittest.mock import patch
+        with patch('propkit.silhouette.silhouette', return_value=(np.ones((80, 80), bool), None)), \
+                patch('propkit.revolve.round_body', return_value=None), \
+                patch('propkit.sections.infer', return_value=['bands']) as infer, \
+                patch('propkit.sections.curved_runs', return_value=[{'v_top': .2, 'v_bottom': .7}]):
+            plan, bands = process_planner.plan_methods({'front': 'unused', 'right': 'unused'})
+        self.assertEqual(plan['method'], 'sectioned_field')
+        self.assertEqual(bands, ['bands'])
+        infer.assert_called_once()
+
+    def test_section_planning_uses_the_bottom_view_builder_will_use(self):
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as tmp:
+            bottom = Path(tmp) / 'v_bottom.png'
+            bottom.touch()
+            views = {'front': str(Path(tmp) / 'v_front.png'),
+                     'right': str(Path(tmp) / 'v_right.png')}
+            with patch('propkit.silhouette.silhouette',
+                       return_value=(np.ones((80, 80), bool), None)), \
+                    patch('propkit.revolve.round_body', return_value=None), \
+                    patch('propkit.sections.infer', return_value=[]) as infer:
+                process_planner.plan_methods(views)
+        self.assertEqual(infer.call_args.args[0]['bottom'], str(bottom))
+
+    def test_local_profile_is_examined_inside_a_wide_whole_image(self):
+        from unittest.mock import patch
+        from propkit import construction
+        mask = np.ones((80, 80), bool)
+        image = Image.new('RGB', (80, 80), (140, 90, 50))
+        report = {'status': 'fitted', 'band': [.2, .8],
+                  'features': [], 'regions': []}
+        with patch('propkit.silhouette.silhouette', return_value=(mask, image)), \
+                patch('propkit.profile_inference.analyse', return_value=(report, {})), \
+                patch('propkit.profile_inference.feature_identities', return_value=[]):
+            model = construction.infer({'front': 'unused', 'right': 'unused'}, 1.)
+        self.assertIsNotNone(model)
+        self.assertEqual(model['report']['band'], [.2, .8])
+
     def test_complete_candidate_requires_gain_without_new_damage(self):
         def result(tris, folds, misses, outline=.95):
             return {'fails': misses,

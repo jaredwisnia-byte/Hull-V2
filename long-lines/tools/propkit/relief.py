@@ -27,8 +27,8 @@ from PIL import Image
 from scipy import ndimage
 
 from .hull import silhouette
+from .image_signals import CAVITY_SIGMA, masked_luminance, masked_local_mean
 
-CAVITY_SIGMA = 6.0      # px: the neighbourhood a crease is darker than
 CREASE = 0.35           # share of the 95th-percentile cavity that counts as a crease
 DOME = 0.6              # dome height / region half width (1.0 = hemisphere)
 # a region whose half width exceeds this share of the view's width is base surface
@@ -52,13 +52,11 @@ ELEVATIONS = ("front", "back", "right", "left")
 
 
 def _lum(img, m):
-    a = np.asarray(img.convert("RGB")).astype(float) / 255
-    L = a @ [0.299, 0.587, 0.114]
-    return np.where(m, L, 0)
+    return masked_luminance(img, m)
 
 
 def _local_mean(x, m, sigma):
-    return ndimage.gaussian_filter(np.where(m, x, 0), sigma) / np.maximum(ndimage.gaussian_filter(m.astype(float), sigma), 1e-3)
+    return masked_local_mean(x, m, sigma)
 
 
 def _regions(m, cn):

@@ -9,13 +9,11 @@ from . import profile_inference
 
 
 def infer(views, height_m, guide_band=None):
-    from .hull import silhouette
+    from .silhouette import silhouette
     profiles = {}
     for name, path in views.items():
         if name in ('front', 'back', 'left', 'right'):
             mask, image = silhouette(path)
-            if mask.shape[0] / mask.shape[1] < 2.5:
-                return None
             profiles[name] = profile_inference.elevation(mask, image)
     if 'front' not in profiles or not ('right' in profiles or 'left' in profiles):
         return None

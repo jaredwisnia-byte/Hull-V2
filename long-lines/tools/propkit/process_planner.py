@@ -4,8 +4,66 @@ The profile candidate replaces only the smooth envelope of a supported long
 region. The ordinary depth solver still owns its local surface relief. A caller
 must compare the complete candidate against the ordinary build before adoption.
 """
-import numpy as np
 import math
+import os
+import numpy as np
+
+
+def plan_methods(views):
+    """Choose existing envelope tools from image evidence, without object labels.
+
+    Every route keeps the signed-distance hull as its base. A lathe or inferred
+    sections may constrain that hull; unsupported shapes keep the plain field.
+    The profile specialist is proposed separately for a supported local span.
+    """
+    if 'front' not in views or not ({'right', 'left'} & set(views)):
+        return {'method': 'insufficient_views', 'base': None,
+                'reason': 'front and one side view are required for a 3D hull',
+                'evidence': {}, 'section_runs': [],
+                'uses_object_name': False}, None
+    from .silhouette import silhouette
+    from .revolve import round_body
+    from . import sections
+
+    evidence = {}
+    for axis, view in (('vertical', 'top'), ('front_to_back', 'front')):
+        if view not in views or not ({'front', 'right', 'left'} - {view}) & set(views):
+            continue
+        try:
+            fitted = round_body(silhouette(views[view])[0])
+        except Exception as error:
+            evidence[axis] = {'available': False,
+                              'reason': type(error).__name__ + ': ' + str(error)}
+            continue
+        evidence[axis] = ({'iou': float(fitted['iou']),
+                           'tilt': float(fitted['tilt']),
+                           'share': float(fitted['share']),
+                           'round': bool(fitted['round'])}
+                          if fitted else {'available': False})
+        if fitted and fitted['round']:
+            return {'method': 'lathe_' + axis,
+                    'base': 'continuous_signed_distance_field',
+                    'evidence': evidence, 'section_runs': [],
+                    'uses_object_name': False}, None
+
+    section_views = dict(views)
+    if 'front' in views and 'bottom' not in section_views:
+        bottom = os.path.join(os.path.dirname(views['front']), 'v_bottom.png')
+        if os.path.isfile(bottom):
+            section_views['bottom'] = bottom
+    try:
+        bands = sections.infer(section_views)
+        runs = sections.curved_runs(bands)
+    except Exception as error:
+        return {'method': 'continuous_field',
+                'base': 'continuous_signed_distance_field',
+                'evidence': evidence, 'section_runs': [],
+                'section_error': type(error).__name__ + ': ' + str(error),
+                'uses_object_name': False}, None
+    return {'method': 'sectioned_field' if runs else 'continuous_field',
+            'base': 'continuous_signed_distance_field',
+            'evidence': evidence, 'section_runs': runs,
+            'uses_object_name': False}, bands if runs else None
 
 
 def propose(views, height_m):
@@ -24,7 +82,7 @@ def _propose(views, height_m):
     stability = {}
     if views:
         from PIL import Image
-        from .hull import silhouette
+        from .silhouette import silhouette
         for name, path in views.items():
             if name not in ('front', 'back', 'left', 'right'):
                 continue
