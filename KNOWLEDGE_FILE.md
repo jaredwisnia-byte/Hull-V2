@@ -20,6 +20,10 @@ pixel-checked mappings. A changed view with erased pixels remains under review
 because those edges may not exist in the supplied image. A CRT TV right view
 exercised both flip and erasure; its original trace remains intact and its
 build-input contours remain unresolved.
+The exported-mesh QA now compares orthographic width profiles at the drawing's
+measured source contour crossings and records trace IDs for local failures.
+This is an outer-envelope check only; it does not validate carving depth,
+cross-view part identity or hidden sections.
 See [drawing status](docs/TRACE_DRIVEN_DRAWING_STATUS.md) for the acceptance gate.
 
 ## Consumer sheet intake pilot (2026-11-12)

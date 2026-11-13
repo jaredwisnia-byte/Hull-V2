@@ -34,6 +34,20 @@ def inspect(result, measured, diagnostics=None):
              'Opposing source masks agree, but the accepted cuts may also be painted gaps',
              {'drawing': drawing.get('sheet'), 'candidates': openings},
              'Inspect each source region and clay cut from multiple views before treating it as a verified through-opening.')
+    section_audit = result.get('metrics', {}).get('drawing_section_audit', {})
+    divergent = {
+        view: {'outside_tolerance_count': data['outside_tolerance_count'],
+               'severe_outlier_count': data.get('severe_outlier_count', 0),
+               'sample_count': data['sample_count'],
+               'max_error_in_height_units': data['max_error_in_height_units']}
+        for view, data in section_audit.get('views', {}).items()
+        if data.get('outside_tolerance_count', 0) >= 3 or
+           data.get('severe_outlier_count', 0) >= 1}
+    if divergent:
+        flag('export_diverges_from_traced_sections', 15, 'review',
+             'Exported width profiles differ persistently from source contour measurements',
+             {'views': divergent, 'drawing': section_audit.get('drawing_path')},
+             'Inspect the listed source trace IDs and exported silhouette rows; resolve view calibration or geometry before release.')
     relief = measured.get('relief', {})
     for view, report in relief.get('views', {}).items():
         policy = report.get('boundary_policy')

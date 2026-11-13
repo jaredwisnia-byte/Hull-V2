@@ -348,6 +348,17 @@ def check(name, views_dir=None, category_class=None, paint_only=(), solid=False,
             if missing:
                 fails.append(
                     'automatic reference comparison missing: ' + ', '.join(sorted(missing)))
+    drawing_path = (trim_order or {}).get('measured', {}).get('source_drawing', {}).get('traces')
+    if drawing_path and trim_order.get('automatic_depth') and trim_order.get('line') == 'hull':
+        from .drawing_traces import audit_projected_elevations
+        try:
+            with open(drawing_path, encoding='utf-8') as stream:
+                source_drawing = json.load(stream)
+            m['drawing_section_audit'] = audit_projected_elevations(
+                source_drawing, sil, (size.x, size.y, size.z))
+            m['drawing_section_audit']['drawing_path'] = drawing_path
+        except (OSError, ValueError, KeyError, TypeError) as exc:
+            fails.append('source drawing section audit failed: %s' % exc)
     # The generic gate only checks v_front/v_side reference views. Trim orders
     # are produced from p_section/p_strip/p_front and need their own checks.
     if trim_order is None:

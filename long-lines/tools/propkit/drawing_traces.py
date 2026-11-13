@@ -105,6 +105,73 @@ def _verified_build_to_source_map(source_path, build_path, frame):
     return mapping if np.array_equal(candidate, expected) else None
 
 
+def audit_projected_elevations(drawing, projected_masks, size_xyz_m):
+    """Compare exported width profiles with observed source contour crossings.
+
+    The comparison is in width/height units and is insensitive to left/right
+    mirroring. It checks the outer envelope only; no internal 3D section is
+    inferred. Views lacking a source-to-build pixel map are left unresolved.
+    """
+    axes = {'front': 0, 'back': 0, 'left': 1, 'right': 1}
+    unresolved = set(drawing.get('reconciled_views_without_source_pixel_map', ()))
+    view_use = drawing.get('view_construction_use', {})
+    audit = {'status': 'measured', 'views': {}, 'unresolved_views': sorted(unresolved),
+             'comparison': 'source outer contour width versus exported orthographic silhouette'}
+    for view, record in drawing.get('observations', {}).items():
+        if view not in axes or view not in projected_masks:
+            continue
+        if view in unresolved or view_use.get(view, {}).get('used_for_geometry') is False:
+            continue
+        mask = np.asarray(projected_masks[view], bool)
+        if mask.ndim != 2 or not mask.size:
+            continue
+        x0, y0, x1, y1 = record['foreground_box_px']
+        source_height = y1 - y0
+        mesh_height = float(size_xyz_m[2])
+        mesh_width = float(size_xyz_m[axes[view]])
+        if source_height <= 0 or mesh_height <= 0 or mesh_width <= 0:
+            continue
+        samples = []
+        for section in record.get('observed_elevation_sections', ()):
+            span = section.get('outer_envelope_x_source_px')
+            if span is None or not section.get('crossing_parity_valid', False):
+                continue
+            fraction = section['height_fraction_from_top']
+            row = min(mask.shape[0] - 1, max(0, round(fraction * mask.shape[0] - .5)))
+            occupied = np.flatnonzero(mask[row])
+            source_ratio = (span[1] - span[0]) / source_height
+            exported_ratio = (float(np.ptp(occupied) + 1) / mask.shape[1] *
+                              mesh_width / mesh_height) if len(occupied) else 0.0
+            tolerance = (.02 + 2 / source_height +
+                         2 * mesh_width / (mask.shape[1] * mesh_height))
+            samples.append({
+                'height_fraction_from_top': fraction,
+                'source_width_over_height': source_ratio,
+                'exported_width_over_height': exported_ratio,
+                'absolute_error_in_height_units': abs(exported_ratio - source_ratio),
+                'resolution_tolerance_in_height_units': tolerance,
+                'outside_resolution_tolerance': abs(exported_ratio - source_ratio) > tolerance,
+                'severe_outlier': abs(exported_ratio - source_ratio) > 3 * tolerance,
+                'source_trace_ids': sorted({crossing['source_trace_id']
+                                            for crossing in section['crossings']}),
+                'exported_raster_row': row,
+            })
+        if samples:
+            errors = [item['absolute_error_in_height_units'] for item in samples]
+            audit['views'][view] = {
+                'sample_count': len(samples),
+                'outside_tolerance_count': sum(item['outside_resolution_tolerance']
+                                               for item in samples),
+                'severe_outlier_count': sum(item['severe_outlier'] for item in samples),
+                'max_error_in_height_units': max(errors),
+                'median_error_in_height_units': float(np.median(errors)),
+                'samples': samples,
+            }
+    if not audit['views']:
+        audit['status'] = 'no_comparable_elevation_views'
+    return audit
+
+
 def observe(view, path, construction_mask=None, opening_witness=None):
     """Return source-pixel paths and their provenance, without geometric fitting."""
     image = Image.open(path).convert('RGB')

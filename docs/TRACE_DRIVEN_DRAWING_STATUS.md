@@ -43,6 +43,23 @@ unknowns. The resulting construction decisions must refer back to the drawing.
   candidate coordinates can then be mapped back. A CRT television's right view
   was both flipped and partly erased. Its raw trace stayed intact, but the
   altered build trace remains unresolved because erasure can create new edges.
+- Export QA now consumes the drawing's measured elevation crossings. At each
+  retained source height it compares the source outer-contour width/height with
+  the exported mesh's orthographic width/height. The report keeps each source
+  trace ID and raster row; persistent disagreements or an isolated error over
+  three times the resolution allowance enter stage review. Views
+  without a verified pixel map and views held out of geometry are not compared.
+  This checks the outer envelope, not carving depth or hidden section shape.
+  The current check applies to the single-body automatic Hull line. Multipart
+  assets need per-part source ownership before an assembly-sheet width can be
+  compared meaningfully with one exported part.
+- On four archived single-body exports, the carved leg had 0/19 out-of-budget
+  height samples in each elevation, the toaster had 2/19 in front, the camera
+  had 6/19 in back, and the car had 11/19 on the left plus isolated severe
+  front/back misses. The camera's previous back silhouette IoU was 0.975 and
+  the car's left IoU was 0.996, showing that a high global score can hide local
+  width or aspect errors. These trials audited archived meshes; they did not
+  rebuild them with the current engine or validate internal relief.
 - Prebuild integration was checked on an instant camera and cassette recorder.
   A mixed diagnostic trial also included toaster, typewriter, hair dryer, alarm
   clock, stand mixer, a carved leg, and another camera view set. The trial
@@ -56,9 +73,9 @@ unknowns. The resulting construction decisions must refer back to the drawing.
   corresponding features across views. The camera lens therefore is not yet
   guaranteed to become a correct cylindrical assembly.
 - True cross-section shapes, hidden lines, dimensioned part drawings, and a
-  construction-consumption audit are incomplete. Current section/profile
-  tools make geometric inferences from silhouettes and shading; the prebuild
-  trace sheet does not yet certify their deviation from all relevant traces.
+  complete construction-consumption audit are incomplete. Current section/profile
+  tools make geometric inferences from silhouettes and shading; the width audit
+  only covers sampled outer envelopes, not all relevant internal traces.
 - The opening validator can mistake a painted seam for a cut. A hair-dryer
   false protrusion rejected an earlier isolated circle-to-cylinder prototype;
   do not promote that prototype or special-case the camera.

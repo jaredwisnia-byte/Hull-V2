@@ -8,7 +8,8 @@ import numpy as np
 from PIL import Image
 
 from propkit.drawing_traces import (_elevation_section, _end_frame_hypotheses,
-                                    _verified_build_to_source_map, infer)
+                                    _verified_build_to_source_map,
+                                    audit_projected_elevations, infer)
 
 
 class SourceSectionContracts(unittest.TestCase):
@@ -179,6 +180,32 @@ class SourceSectionContracts(unittest.TestCase):
         self.assertEqual(report['reconciliation_pixel_frames']['front'], frame)
         self.assertEqual(report['build_constraints'][0]['mapped_original_source_xy'],
                          [[2.5, 1.0], [1.5, 1.0]])
+
+    def test_export_audit_compares_measured_sections_not_global_overlap(self):
+        sections = [{
+            'height_fraction_from_top': fraction,
+            'outer_envelope_x_source_px': [25., 75.],
+            'crossing_parity_valid': True,
+            'crossings': [{'source_trace_id': 'front:outer:0'}],
+        } for fraction in (.25, .5, .75)]
+        drawing = {'observations': {'front': {
+            'foreground_box_px': [0, 0, 100, 100],
+            'observed_elevation_sections': sections}},
+            'view_construction_use': {'front': {'used_for_geometry': True}}}
+        matched = np.zeros((100, 100), bool)
+        matched[:, 25:75] = True
+        narrower = np.zeros_like(matched)
+        narrower[:, 35:65] = True
+        good = audit_projected_elevations(drawing, {'front': matched}, [1, 1, 1])
+        bad = audit_projected_elevations(drawing, {'front': narrower}, [1, 1, 1])
+        self.assertEqual(good['views']['front']['outside_tolerance_count'], 0)
+        self.assertEqual(bad['views']['front']['outside_tolerance_count'], 3)
+        self.assertEqual(bad['views']['front']['severe_outlier_count'], 3)
+        self.assertEqual(bad['views']['front']['samples'][0]['source_trace_ids'],
+                         ['front:outer:0'])
+        drawing['reconciled_views_without_source_pixel_map'] = ['front']
+        unresolved = audit_projected_elevations(drawing, {'front': narrower}, [1, 1, 1])
+        self.assertEqual(unresolved['status'], 'no_comparable_elevation_views')
 
 
 if __name__ == '__main__':

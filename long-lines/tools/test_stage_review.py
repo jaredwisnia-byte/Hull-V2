@@ -99,6 +99,26 @@ class ReviewContracts(unittest.TestCase):
         self.assertEqual(review['findings'][0]['code'],
                          'reconciled_view_lacks_source_pixel_map')
 
+    def test_persistent_export_section_error_requires_review(self):
+        result = {'pass': True, 'fails': [], 'metrics': {'drawing_section_audit': {
+            'drawing_path': 'technical-traces.json', 'views': {'front': {
+                'outside_tolerance_count': 3, 'sample_count': 19,
+                'max_error_in_height_units': .13}}}}}
+        review = inspect(result, {'source_drawing': {}})
+        self.assertEqual(review['status'], 'needs_review')
+        self.assertEqual(review['findings'][0]['code'],
+                         'export_diverges_from_traced_sections')
+
+    def test_one_error_far_beyond_raster_tolerance_requires_review(self):
+        result = {'pass': True, 'fails': [], 'metrics': {'drawing_section_audit': {
+            'views': {'front': {'outside_tolerance_count': 1,
+                                'severe_outlier_count': 1,
+                                'sample_count': 19,
+                                'max_error_in_height_units': .22}}}}}
+        review = inspect(result, {'source_drawing': {}})
+        self.assertEqual(review['findings'][0]['code'],
+                         'export_diverges_from_traced_sections')
+
     def test_separate_part_evidence_is_also_checked(self):
         measured = {'surface_details': {'handle': {
             'pre_reduction_validation': {'probes': [{'id': 'a', 'retained': True}]}}}}
