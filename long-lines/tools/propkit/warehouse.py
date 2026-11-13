@@ -299,6 +299,55 @@ def create(root, order, context=None):
     return run
 
 
+def run_evidence_manifest(run, budget_bytes=None):
+    """Measure retained run files; report pressure without discarding evidence."""
+    run = Path(run).resolve()
+    warnings = []
+    if budget_bytes is None:
+        raw = os.environ.get("HULL_RUN_EVIDENCE_BUDGET_BYTES", "2147483648")
+        try:
+            budget_bytes = int(raw)
+            if budget_bytes < 0:
+                raise ValueError("negative budget")
+        except ValueError:
+            budget_bytes = 2147483648
+            warnings.append("Invalid evidence budget; using 2 GiB default")
+    groups = {}
+    entries = []
+    for path in sorted(run.rglob("*")):
+        relative = path.relative_to(run).as_posix()
+        if relative == "retention-manifest.json":
+            continue
+        if path.is_symlink():
+            warnings.append("Symlink not measured: " + relative)
+            continue
+        if not path.is_file():
+            continue
+        try:
+            size = path.stat().st_size
+        except OSError as error:
+            warnings.append("File not measured: " + relative + ": " + str(error))
+            continue
+        group = Path(relative).parts[0]
+        groups[group] = groups.get(group, 0) + size
+        entries.append({"path": relative, "bytes": size})
+    total = sum(entry["bytes"] for entry in entries)
+    report = {
+        "schema": 1,
+        "run": str(run),
+        "budget_bytes": budget_bytes,
+        "total_bytes": total,
+        "over_budget": total > budget_bytes,
+        "groups_bytes": dict(sorted(groups.items())),
+        "largest_files": sorted(entries, key=lambda item: -item["bytes"])[:20],
+        "file_count": len(entries),
+        "warnings": warnings,
+        "collection_authorized": False,
+    }
+    atomic_json(run / "retention-manifest.json", report)
+    return report
+
+
 def seal(run, order, result, library):
     run, library = Path(run), Path(library).resolve()
     folder = inside(library, asset_name(order["name"]))
@@ -323,6 +372,7 @@ def seal(run, order, result, library):
         "qualified_candidate" if receipt["audit"]["pass"] else "quarantined"
     )
     atomic_json(run / "receipt.json", receipt)
+    run_evidence_manifest(run)
     return receipt
 
 

@@ -96,6 +96,11 @@ list: a writer may be creating a file while the scan runs. Review the report,
 repeat it after the workload is idle, and preserve the database plus recovery
 evidence before any separately approved retention action.
 
+Each sealed build writes `retention-manifest.json` beside its receipt. It records
+run size, top-level contributors and largest files. The default warning budget is
+2 GiB; set `HULL_RUN_EVIDENCE_BUDGET_BYTES` to tune it. Exceeding the budget is
+reported without changing QA, publication, or any retained diagnostic file.
+
 `qualify` defaults to core, Blender and Godot checks. Add `vision` for image-only
 intake and `cad` for CAD export, for example `--profiles core,blender,godot,vision`.
 Vision qualification requires the pinned OCR and inference runtime and executes
