@@ -114,6 +114,21 @@ class SurfaceContracts(unittest.TestCase):
         np.testing.assert_allclose(apply_field(
             original, plan), original, atol=2e-8)
 
+    def test_diagnostic_captures_fusion_before_component_repair(self):
+        original = self.field(True)
+        plan = {'dimensions': (1, 1, 1),
+                'maps': {'front': np.full((48, 48), -.02)},
+                'report': {'features': []},
+                'diagnostic_folder': 'unused',
+                'diagnostics': {'front': {'mask': np.ones((48, 48), bool),
+                                          'metres_per_pixel': 1 / 48}}}
+        apply_field(original, plan)
+        chart = plan['diagnostics']['front']
+        self.assertEqual(chart['fused_height_px'].shape, (48, 48))
+        self.assertEqual(chart['post_topology_height_px'].shape, (48, 48))
+        np.testing.assert_allclose(chart['fused_height_px'],
+                                   chart['post_topology_height_px'], atol=1e-5)
+
     def test_profile_envelope_is_applied_after_original_detail(self):
         original = self.field(True)
         height = np.full((48, 48), -.01)

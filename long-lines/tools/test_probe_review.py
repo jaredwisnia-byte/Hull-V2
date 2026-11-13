@@ -85,6 +85,32 @@ class ProbeReviewTests(unittest.TestCase):
             self.assertAlmostEqual(record['stage_contrasts_m']['shared_field_m'], -.004)
             self.assertEqual(record['first_observed_loss'], 'shared_field_or_repair')
 
+    def test_locates_supported_contrast_lost_at_view_fusion(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            accepted = np.zeros((64, 64), dtype=float)
+            fused = np.zeros_like(accepted)
+            accepted[:, 15:17] = -2.
+            fused[:, 15:17] = -.4
+            np.savez_compressed(Path(temporary) / 'front.npz',
+                                feature_labels=np.ones((64, 64), dtype=np.uint8),
+                                accepted_height_px=accepted,
+                                fused_height_px=fused,
+                                post_construction_height_px=fused,
+                                post_topology_height_px=fused,
+                                final_shared_height_px=fused,
+                                coarse_height_px=np.zeros_like(accepted),
+                                metres_per_pixel=.01)
+            probe = {'view': 'front', 'anchors_m': [[-.25, -.2, .5],
+                     [-.375, -.2, .5], [-.125, -.2, .5]]}
+            with np.load(Path(temporary) / 'front.npz') as arrays:
+                contrasts = probe_review.stage_contrasts(arrays, probe,
+                                                          (1., 1., 1.))
+            self.assertAlmostEqual(contrasts['accepted_m'], -.02)
+            self.assertAlmostEqual(contrasts['fused_m'], -.004)
+            self.assertAlmostEqual(contrasts['post_construction_m'], -.004)
+            self.assertEqual(probe_review.first_observed_loss(
+                -.02, -.003, contrasts), 'view_fusion')
+
 
 if __name__ == '__main__':
     unittest.main()

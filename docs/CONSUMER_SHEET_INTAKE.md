@@ -89,3 +89,23 @@ These measurements diagnose the failure; they do not relax the geometry QA
 gate or change the construction field. The next candidate change should be
 tested against these local gauges and final mesh/outline/fold checks on more
 than one object family.
+
+### View-fusion checkpoint
+
+A controlled toaster rerun saved the field immediately after view fusion,
+after construction reconstruction, and after component preservation. At 28
+of 29 failed source-supported probes, the first half-contrast or sign loss
+was already present immediately after view fusion. The later field stages
+kept nearly the same sampled contrast. One probe retained sufficient field
+contrast and failed at the dense-mesh measurement. These are first measured
+losses against source-derived targets, not verified physical-depth errors.
+
+Increasing only the field resolution from 110 to 160 did not resolve the
+failure: 31 of 31 source-supported failed probes first lost contrast at view
+fusion, missing-depth probes rose from 36 to 38, and triangles rose from
+5,026 to 6,782 against a 6,000 budget. The resolution experiment was not
+adopted. Diagnostic NPZ files and probe review now expose the intermediate
+field contrasts and preserve the older broad classification when prior run
+archives lack these checkpoints. The remaining fix must address transfer
+between views while preserving source support, silhouettes, folds, and the
+triangle budget across multiple object families.

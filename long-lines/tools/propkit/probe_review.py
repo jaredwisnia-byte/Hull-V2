@@ -28,7 +28,7 @@ def image_uv(anchor, view, dimensions):
 
 
 def stage_contrasts(arrays, probe, dimensions):
-    """Sample the same three anchors in accepted and shared image-space depth."""
+    """Sample the same three anchors at each saved depth-transfer checkpoint."""
     needed = {'accepted_height_px', 'coarse_height_px',
               'final_shared_height_px', 'metres_per_pixel'}
     if not needed <= set(arrays.files) or len(probe['anchors_m']) != 3:
@@ -36,7 +36,8 @@ def stage_contrasts(arrays, probe, dimensions):
     from scipy.ndimage import map_coordinates
     view = probe['view']
     accepted = arrays['accepted_height_px']
-    shared = arrays['final_shared_height_px'] - arrays['coarse_height_px']
+    coarse = arrays['coarse_height_px']
+    shared = arrays['final_shared_height_px'] - coarse
     if accepted.shape != shared.shape or accepted.ndim != 2:
         return None
     height, width = accepted.shape
@@ -53,7 +54,14 @@ def stage_contrasts(arrays, probe, dimensions):
         samples = map_coordinates(values, pixels, order=1, mode='nearest')
         return float((samples[0] - samples[1:].mean()) * pixel_m)
 
-    return {'accepted_m': contrast(accepted), 'shared_field_m': contrast(shared)}
+    result = {'accepted_m': contrast(accepted)}
+    for key, label in (('fused_height_px', 'fused_m'),
+                       ('post_construction_height_px', 'post_construction_m'),
+                       ('post_topology_height_px', 'post_topology_m'),
+                       ('final_shared_height_px', 'shared_field_m')):
+        if key in arrays.files and arrays[key].shape == accepted.shape:
+            result[label] = contrast(arrays[key] - coarse)
+    return result
 
 
 def first_observed_loss(expected, dense, contrasts):
@@ -61,11 +69,19 @@ def first_observed_loss(expected, dense, contrasts):
     if expected is None or not contrasts or abs(expected) < 1e-9:
         return 'unresolved'
     accepted = contrasts['accepted_m']
-    shared = contrasts['shared_field_m']
     if accepted * expected <= 0 or abs(accepted) < .5 * abs(expected):
         return 'accepted_height'
-    if shared * expected <= 0 or abs(shared) < .5 * abs(expected):
-        return 'shared_field_or_repair'
+    for key, label in (('fused_m', 'view_fusion'),
+                       ('post_construction_m', 'construction_repair'),
+                       ('post_topology_m', 'component_repair'),
+                       ('shared_field_m', 'post_topology_or_retry')):
+        if key not in contrasts:
+            continue
+        value = contrasts[key]
+        if value * expected <= 0 or abs(value) < .5 * abs(expected):
+            if key == 'shared_field_m' and 'fused_m' not in contrasts:
+                return 'shared_field_or_repair'
+            return label
     if dense is None or dense * expected <= 0 or abs(dense) < .5 * abs(expected):
         return 'mesh_or_probe_intersection'
     return 'unresolved'
@@ -247,8 +263,10 @@ def write(report, dimensions, source_views=None, obj=None, tree=None):
     summary['supported_first_loss_counts'] = {
         stage: sum(item['status'] == 'supported_unmet' and
                    item['first_observed_loss'] == stage for item in records)
-        for stage in ('accepted_height', 'shared_field_or_repair',
-                      'mesh_or_probe_intersection', 'unresolved')}
+        for stage in ('accepted_height', 'view_fusion', 'construction_repair',
+                      'component_repair', 'post_topology_or_retry',
+                      'shared_field_or_repair', 'mesh_or_probe_intersection',
+                      'unresolved')}
     illustrated = [item for item in records if item.get('image')]
     if illustrated:
         rows = (len(illustrated) + 1) // 2

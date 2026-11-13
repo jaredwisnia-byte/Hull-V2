@@ -367,10 +367,25 @@ def apply_field(field, plan):
     plan['report']['field'] = {'mode': 'signed_field_detail_before_meshing', 'isovalue': 0.,
                                'depth_limit': '30% of observed local solid thickness; openings remain silhouette constraints',
                                'grid_shape': list(field.shape), 'spacing_m': [dimensions[i] / field.shape[i] for i in range(3)]}
+
+    def capture_stage(key, current):
+        if not plan.get('diagnostic_folder'):
+            return
+        for view, values in plan.get('diagnostics', {}).items():
+            if 'mask' not in values:
+                continue
+            axis, reverse = VIEWS[view]
+            root, _, _, _ = visible_root(current, axis, reverse, dimensions[axis])
+            values[key] = (-root_image(root, view, dimensions, current.shape,
+                                       values['mask'].shape) /
+                           float(values['metres_per_pixel'])).astype(np.float32)
+
+    capture_stage('fused_height_px', result)
     if 'shading_inputs' in plan:
         from .construction_fields import reconstruct
         result, plan['report']['construction_volumes'] = reconstruct(
             field, result)
+        capture_stage('post_construction_height_px', result)
         from .relief_consistency import compare
         charts = {}
         for view, values in plan.get('diagnostics', {}).items():
@@ -387,6 +402,7 @@ def apply_field(field, plan):
     # solver already supplies a continuous integrable surface, so keep it whole.
     from .implicit import preserve_components
     candidate, plan['report']['topology'] = preserve_components(field, result)
+    capture_stage('post_topology_height_px', candidate)
     if plan.get('retry_targets'):
         from . import local_retry
         candidate, plan['report']['local_retry'] = local_retry.attempt(
