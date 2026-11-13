@@ -99,10 +99,23 @@ def doctor(root, required=("core",), blender=None, godot=None):
             ) as error:
                 evidence["fails"].append(package + ": " + str(error))
     if "cad" in required:
-        try:
-            importlib.import_module("OCP")
-        except (ImportError, OSError) as error:
-            evidence["fails"].append("CAD backend required: " + str(error))
+        pins = dict(re.findall(
+            r"^([\w-]+)==([^\s]+)$",
+            (root / "requirements-cad.txt").read_text(encoding="utf-8"), re.M,
+        ))
+        for package, module in (("cadquery-ocp", "OCP"),
+                                ("cadquery-ocp-proxy", None),
+                                ("vtk", "vtk")):
+            try:
+                if module:
+                    importlib.import_module(module)
+                version = importlib.metadata.version(package)
+                evidence["packages"][package] = version
+                if version != pins.get(package):
+                    evidence["fails"].append(package + " differs from qualified pin")
+            except (ImportError, OSError,
+                    importlib.metadata.PackageNotFoundError) as error:
+                evidence["fails"].append(package + ": " + str(error))
     if "vision" in required:
         pins = dict(re.findall(
             r"^([\w-]+)==([^\s]+)$",
@@ -155,6 +168,9 @@ def choose_profiles(paths):
     profiles = set()
     for raw in paths:
         name = raw.replace("\\", "/")
+        if name == "requirements-cad.txt":
+            profiles.update(("core", "cad"))
+            continue
         if name == "requirements-vision.txt" or name.startswith(
             ("long-lines/tools/propkit/vision", "long-lines/tools/sheet_blobs")
         ) or name.startswith(("long-lines/tools/test_automatic_intake",
@@ -232,7 +248,7 @@ def repository_audit(root):
 def source_identity(root):
     """Fingerprint code and station configuration, excluding changing run records."""
     files = [root / "hull.py", root / "requirements-core.txt",
-             root / "requirements-vision.txt"]
+             root / "requirements-cad.txt", root / "requirements-vision.txt"]
     for directory, pattern in [
         ("long-lines/tools", "*.py"),
         ("long-lines/scripts", "*.gd"),

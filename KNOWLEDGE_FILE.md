@@ -34,6 +34,16 @@ Codex workspace. The maintenance runbook directs a fast metadata check each
 shift and a full hash check weekly; the recurring schedule still needs a
 confirmed Toronto-local trigger.
 
+## CAD dependency qualification (2026-11-13)
+
+The source fingerprint now includes `requirements-cad.txt`; changes to it
+recommend core and CAD checks. CAD runtime inspection imports OCP and VTK and
+compares the installed `cadquery-ocp`, `cadquery-ocp-proxy` and `vtk` versions
+with the pinned file. Those versions enter the candidate and qualification
+runtime records, so a stale CAD environment cannot satisfy a matching release
+qualification. The optional CAD round-trip still needs its actual capability
+check; import and version inspection alone do not qualify geometry export.
+
 ## Source-traced drawing checkpoint (2026-11-13)
 
 The automatic-depth factory now produces a prebuild trace sheet from source

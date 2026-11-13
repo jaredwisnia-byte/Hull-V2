@@ -157,6 +157,8 @@ class MaintenanceTests(unittest.TestCase):
     def test_change_profiles_do_not_ignore_dependency_configuration_or_loader(self):
         self.assertEqual(m.choose_profiles(["README.md"]), [])
         self.assertEqual(m.choose_profiles(["requirements-core.txt"]), ["core"])
+        self.assertEqual(m.choose_profiles(["requirements-cad.txt"]),
+                         ["cad", "core"])
         self.assertEqual(m.choose_profiles(["requirements-vision.txt"]),
                          ["blender", "core", "vision"])
         self.assertEqual(
@@ -178,6 +180,31 @@ class MaintenanceTests(unittest.TestCase):
             m.importlib, "import_module", side_effect=ImportError("unavailable")
         ):
             self.assertFalse(m.doctor(ROOT, ["cad"])["pass"])
+
+    def test_cad_dependency_pin_is_qualified_and_source_fingerprinted(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            for name in ("hull.py", "requirements-core.txt",
+                         "requirements-vision.txt"):
+                (root / name).write_text("", encoding="utf-8")
+            cad = root / "requirements-cad.txt"
+            cad.write_text("cadquery-ocp==1\ncadquery-ocp-proxy==2\nvtk==3\n",
+                           encoding="utf-8")
+            before = m.source_identity(root)
+            self.assertIn("requirements-cad.txt", before)
+            with patch.object(m.importlib, "import_module"), patch.object(
+                m.importlib.metadata, "version", side_effect=lambda package: {
+                    "cadquery-ocp": "1", "cadquery-ocp-proxy": "2", "vtk": "3"
+                }[package]
+            ):
+                self.assertTrue(m.doctor(root, ["cad"])["pass"])
+            with patch.object(m.importlib, "import_module"), patch.object(
+                m.importlib.metadata, "version", return_value="wrong"
+            ):
+                self.assertFalse(m.doctor(root, ["cad"])["pass"])
+            cad.write_text("cadquery-ocp==4\ncadquery-ocp-proxy==2\nvtk==3\n",
+                           encoding="utf-8")
+            self.assertNotEqual(before, m.source_identity(root))
 
     def test_required_skips_fail_qualification(self):
         with tempfile.TemporaryDirectory() as folder, patch.object(
