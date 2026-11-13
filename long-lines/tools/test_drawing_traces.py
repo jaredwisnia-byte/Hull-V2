@@ -9,10 +9,25 @@ from PIL import Image
 
 from propkit.drawing_traces import (_elevation_section, _end_frame_hypotheses,
                                     _verified_build_to_source_map,
-                                    audit_projected_elevations, infer)
+                                    audit_projected_elevations, infer, observe)
 
 
 class SourceSectionContracts(unittest.TestCase):
+    def test_sheet_dimensions_come_from_source_pixels(self):
+        with tempfile.TemporaryDirectory() as folder:
+            source = Path(folder) / 'front.png'
+            pixels = np.full((100, 120, 3), 255, np.uint8)
+            pixels[15:85, 20:95] = 10
+            Image.fromarray(pixels).save(source)
+            record = observe('front', source)
+        self.assertEqual(record['foreground_box_px'], [20, 15, 95, 85])
+        self.assertEqual(record['observed_bbox_dimensions']['width_source_px'], 75)
+        self.assertEqual(record['observed_bbox_dimensions']['height_source_px'], 70)
+        self.assertEqual(record['observed_bbox_dimensions']['source_trace_ids'],
+                         ['front:outer:0'])
+        self.assertIn('physical scale unknown',
+                      record['observed_bbox_dimensions']['units'])
+
     def test_rectangle_uses_the_two_contour_crossings(self):
         contour = [[2., 1.], [12., 1.], [12., 21.],
                    [2., 21.], [2., 1.]]

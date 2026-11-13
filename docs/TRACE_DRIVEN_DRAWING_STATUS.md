@@ -25,6 +25,11 @@ unknowns. The resulting construction decisions must refer back to the drawing.
   the intervening 3D section shape unknown. A nine-object mixed trial checked
   684 section rows against their original masks; the maximum measured outline
   difference was 0.5 source pixel.
+- The prebuild sheet displays overall source-mask dimensions and three sampled
+  contour widths alongside its orthographic paths. These dimensions are in
+  source pixels and retain outer-trace IDs in JSON; physical dimensions remain
+  unknown without a calibrated scale. The sheet is still an observational
+  drawing, not a manufacturing drawing with verified hidden geometry.
 - The core and Blender check profile passed 44 checks after this change, and
   the camera/cassette prebuild integration check passed. These checks do not
   certify physical geometry or the unresolved internal feature interpretations.

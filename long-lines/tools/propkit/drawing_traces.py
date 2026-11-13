@@ -241,6 +241,13 @@ def observe(view, path, construction_mask=None, opening_witness=None):
     return {'view': view, 'source_path': str(path),
             'source_size_px': [image.width, image.height],
             'foreground_box_px': list(map(int, box)),
+            'observed_bbox_dimensions': {
+                'width_source_px': int(box[2] - box[0]),
+                'height_source_px': int(box[3] - box[1]),
+                'units': 'source image pixels; physical scale unknown',
+                'method': 'foreground mask bounding box',
+                'source_trace_ids': [f'{view}:outer:{index}'
+                                     for index in range(len(outer))]},
             'trace_backend': traced['tracing_backend'],
             'traces': records,
             'observed_elevation_sections': sections,
@@ -388,9 +395,9 @@ def infer(views, destination, construction_masks=None, opening_report=None,
         record = observations[name]
         w, h = record['source_size_px']
         header_height = 70 if name in changed_frames else 40
-        scale = min((x1 - x0 - 42) / w, (y1 - y0 - header_height - 40) / h)
+        scale = min((x1 - x0 - 58) / w, (y1 - y0 - header_height - 112) / h)
         ox = x0 + (x1 - x0 - w * scale) / 2
-        oy = y0 + header_height + (y1 - y0 - header_height - 40 - h * scale) / 2
+        oy = y0 + header_height + (y1 - y0 - header_height - 112 - h * scale) / 2
         coordinate_transforms[name] = {'sheet_xy_from_source_xy':
                                         {'scale': scale, 'offset_xy': [ox, oy]}}
         for item in record['traces']:
@@ -414,6 +421,29 @@ def infer(views, destination, construction_masks=None, opening_report=None,
             for xx in span:
                 px = ox + xx * scale
                 draw.line((px - 5, yy, px + 5, yy), fill='#a04a00', width=2)
+        bx0, by0, bx1, by1 = record['foreground_box_px']
+        left, right = ox + bx0 * scale, ox + bx1 * scale
+        top, bottom = oy + by0 * scale, oy + by1 * scale
+        dimension_x = max(x0 + 8, left - 14)
+        dimension_y = min(y1 - 86, bottom + 12)
+        draw.line((dimension_x, top, dimension_x, bottom), fill='#555555')
+        draw.line((dimension_x - 4, top, dimension_x + 4, top), fill='#555555')
+        draw.line((dimension_x - 4, bottom, dimension_x + 4, bottom), fill='#555555')
+        draw.line((left, dimension_y, right, dimension_y), fill='#555555')
+        draw.line((left, dimension_y - 4, left, dimension_y + 4), fill='#555555')
+        draw.line((right, dimension_y - 4, right, dimension_y + 4), fill='#555555')
+        measured_widths = []
+        for station in (.15, .5, .85):
+            section = next((item for item in record['observed_elevation_sections']
+                            if abs(item['height_fraction_from_top'] - station) < .001), None)
+            span = section.get('outer_envelope_x_source_px') if section else None
+            measured_widths.append('?' if span is None else f'{span[1] - span[0]:.1f}')
+        draw.text((x0 + 12, y1 - 75),
+                  f'SOURCE BBOX: W {bx1 - bx0} px  H {by1 - by0} px', fill='#333333')
+        if record['observed_elevation_sections']:
+            draw.text((x0 + 12, y1 - 59),
+                      'TRACE WIDTHS @ 15/50/85% H: ' + ' / '.join(measured_widths) + ' px',
+                      fill='#a04a00')
         draw.text((x0 + 12, y1 - 27),
                   f"{record['outer_path_count']} outer / {record['internal_path_count']} internal / "
                   f"{record['opposed_mask_opening_count']} opposed-mask openings",
@@ -426,7 +456,7 @@ def infer(views, destination, construction_masks=None, opening_report=None,
               'ORANGE TICKS: MEASURED ELEVATION WIDTHS; INTERVENING 3D SECTION UNKNOWN.',
               fill='#a04a00')
     draw.text((28, footer_y + 56),
-              'Unseen surfaces and physical meaning of internal traces require cross-view validation.',
+              'Source-pixel dimensions only; physical scale and unseen surfaces remain unknown.',
               fill='#333333')
     report = {'schema': 1, 'stage': 'before_geometry',
               'status': 'source_observations_and_opposed_mask_openings',
