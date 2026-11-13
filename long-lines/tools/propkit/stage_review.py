@@ -43,6 +43,12 @@ def inspect(result, measured, diagnostics=None):
              'One source drawing supplies multiple assigned directions for a companion part',
              {'parts': repeated_sources, 'drawing': drawing.get('sheet')},
              'Confirm orientation or obtain an independent view before treating those directions as separate 3D evidence.')
+    unmapped = drawing.get('construction_unmapped_views', {})
+    if unmapped:
+        flag('construction_view_source_map_unverified', 7, 'review',
+             'Prepared construction views have no verified pixel map to their original source crops',
+             {'views_by_part': unmapped, 'drawing': drawing.get('sheet')},
+             'Compare the original crop and prepared view before attributing built geometry to the original pixels.')
     section_audit = result.get('metrics', {}).get('drawing_section_audit', {})
     divergent = {
         view: {'outside_tolerance_count': data['outside_tolerance_count'],

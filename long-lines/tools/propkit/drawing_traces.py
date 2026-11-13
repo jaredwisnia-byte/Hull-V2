@@ -5,6 +5,7 @@ cross-view solver may consume these paths, but must record its own inferences.
 """
 
 import json
+import hashlib
 import math
 from pathlib import Path
 
@@ -260,7 +261,7 @@ def observe(view, path, construction_mask=None, opening_witness=None):
 
 def infer(views, destination, construction_masks=None, opening_report=None,
           view_consistency=None, geometry_views=None, source_views=None,
-          source_sheet_frames=None):
+          source_sheet_frames=None, compile_construction_masks=False):
     """Create the first-station drawing and JSON from arbitrary labelled views."""
     destination = Path(destination)
     destination.mkdir(parents=True, exist_ok=True)
@@ -281,6 +282,25 @@ def infer(views, destination, construction_masks=None, opening_report=None,
                       opposites.get(name) if opening_report.get('accepted', {}).get(name, 0)
                       else None)
         for name in selected}
+    compiled_masks = {}
+    if compile_construction_masks:
+        mask_folder = destination / 'construction-masks'
+        mask_folder.mkdir(exist_ok=True)
+        for name in selected:
+            mask, _, box = silhouette(views[name], with_box=True)
+            if name in construction_masks:
+                supplied = construction_masks[name][0]
+                if supplied.shape != mask.shape:
+                    raise ValueError(f'{name}: construction mask differs from drawing frame')
+                mask = supplied
+            mask_path = mask_folder / f'{name}.png'
+            Image.fromarray(mask.astype(np.uint8) * 255).save(mask_path)
+            compiled_masks[name] = {
+                'path': str(mask_path), 'build_input_path': str(views[name]),
+                'build_input_sha256': hashlib.sha256(Path(views[name]).read_bytes()).hexdigest(),
+                'mask_sha256': hashlib.sha256(mask_path.read_bytes()).hexdigest(),
+                'foreground_box_px': list(map(int, box)),
+            }
     changed_frames = [name for name in selected
                       if str(source_views.get(name, views[name])) != str(views[name])]
     verified_maps = {}
@@ -297,6 +317,10 @@ def infer(views, destination, construction_masks=None, opening_report=None,
         for section in build_observations[name]['observed_elevation_sections']:
             for crossing in section['crossings']:
                 crossing['source_trace_id'] = f"build_input:{crossing['source_trace_id']}"
+    for name in compiled_masks:
+        compiled_masks[name]['outer_build_trace_ids'] = [
+            item['id'] for item in build_observations[name]['traces']
+            if item['kind'] == 'outer_silhouette']
     observations = dict(build_observations)
     for name in changed_frames:
         observations[name] = observe(name, source_views[name])
@@ -483,6 +507,7 @@ def infer(views, destination, construction_masks=None, opening_report=None,
                   for name in changed_frames},
               'reconciled_build_input_observations': {
                   name: build_observations[name] for name in changed_frames},
+              'compiled_construction_masks': compiled_masks,
               'end_view_frame_hypotheses': frame_hypotheses,
               'geometry_inferences': [], 'build_constraints': constraints,
               'unknowns': ['internal depth', 'material or shadow versus relief',
@@ -490,6 +515,35 @@ def infer(views, destination, construction_masks=None, opening_report=None,
     image.save(destination / 'technical-traces.png')
     (destination / 'technical-traces.json').write_text(json.dumps(report))
     return report
+
+
+def load_construction_masks(drawing_path, views):
+    """Use recorded prebuild silhouettes only for unchanged, matching input pixels."""
+    drawing = json.loads(Path(drawing_path).read_text())
+    masks, use = {}, {}
+    for view, path in views.items():
+        record = drawing.get('compiled_construction_masks', {}).get(view)
+        if record is None:
+            continue
+        digest = hashlib.sha256(Path(path).read_bytes()).hexdigest()
+        if digest != record['build_input_sha256']:
+            raise ValueError(f'{view}: build input changed after technical tracing')
+        if hashlib.sha256(Path(record['path']).read_bytes()).hexdigest() != record['mask_sha256']:
+            raise ValueError(f'{view}: compiled drawing mask changed after tracing')
+        box = record['foreground_box_px']
+        mask = np.asarray(Image.open(record['path']).convert('L')) > 127
+        if mask.shape != (box[3] - box[1], box[2] - box[0]):
+            raise ValueError(f'{view}: compiled drawing mask has wrong dimensions')
+        painting = Image.open(path).convert('RGB').crop(tuple(box))
+        masks[view] = (mask, painting)
+        source_use = drawing.get('view_construction_use', {}).get(view, {})
+        use[view] = {
+            'build_trace_ids': record['outer_build_trace_ids'],
+            'original_source_path': source_use.get('original_source_path'),
+            'source_pixel_map_verified': source_use.get('source_pixel_map_verified'),
+            'construction_mask_path': record['path'],
+        }
+    return masks, use
 
 
 def infer_sheet_regions(sheet_path, records, regions, destination):

@@ -11,10 +11,46 @@ from PIL import Image
 from propkit.drawing_traces import (_elevation_section, _end_frame_hypotheses,
                                     _verified_build_to_source_map,
                                     audit_projected_elevations, infer,
-                                    infer_sheet_regions, observe)
+                                    infer_sheet_regions, load_construction_masks,
+                                    observe)
 
 
 class SourceSectionContracts(unittest.TestCase):
+    def test_compiled_drawing_mask_drives_construction_and_rejects_stale_input(self):
+        with tempfile.TemporaryDirectory() as folder:
+            source = Path(folder) / 'front.png'
+            pixels = np.zeros((80, 80, 3), np.uint8)
+            pixels[10:70, 20:60] = 180
+            Image.fromarray(pixels).save(source)
+            report = infer({'front': str(source)}, Path(folder) / 'drawing',
+                           compile_construction_masks=True)
+            masks, use = load_construction_masks(
+                Path(folder) / 'drawing' / 'technical-traces.json',
+                {'front': str(source)})
+            self.assertEqual(masks['front'][0].shape, (60, 40))
+            self.assertTrue(masks['front'][0].all())
+            self.assertEqual(use['front']['build_trace_ids'],
+                             [trace['id'] for trace in
+                              report['observations']['front']['traces']
+                              if trace['kind'] == 'outer_silhouette'])
+            original = Path(folder) / 'original.png'
+            Image.fromarray(pixels).save(original)
+            infer({'front': str(source)}, Path(folder) / 'reconciled',
+                  source_views={'front': str(original)},
+                  compile_construction_masks=True)
+            _, changed_use = load_construction_masks(
+                Path(folder) / 'reconciled' / 'technical-traces.json',
+                {'front': str(source)})
+            self.assertTrue(all(trace_id.startswith('build_input:') for trace_id
+                                in changed_use['front']['build_trace_ids']))
+            self.assertFalse(changed_use['front']['source_pixel_map_verified'])
+            pixels[25, 25] = 90
+            Image.fromarray(pixels).save(source)
+            with self.assertRaisesRegex(ValueError, 'changed after technical tracing'):
+                load_construction_masks(
+                    Path(folder) / 'drawing' / 'technical-traces.json',
+                    {'front': str(source)})
+
     def test_original_sheet_crops_keep_absolute_pixel_provenance(self):
         with tempfile.TemporaryDirectory() as folder:
             sheet = Path(folder) / 'sheet.png'

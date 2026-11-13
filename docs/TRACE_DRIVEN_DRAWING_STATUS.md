@@ -78,6 +78,21 @@ unknowns. The resulting construction decisions must refer back to the drawing.
   and hair dryer. A reused crop assigned to two directions is reported as one
   observation, not two independent measurements. Supplied part-view orders
   also receive prebuild trace sheets.
+- For `layout: parts`, a second prebuild drawing records the prepared views
+  actually supplied to construction. Its compiled silhouette masks now feed
+  body and companion `hull_prop` calls. The builder checks both input-image
+  and compiled-mask hashes and reports the consumed build trace IDs for each
+  part. It will fail if an input changes after tracing. If the prepared image
+  differs from the original sheet crop without a verified pixel map, stage
+  review explicitly holds that view; the prepared trace cannot claim to be
+  original-source evidence. Other multipart layouts still record drawings but
+  do not yet consume their compiled masks.
+- A real blender rebuild retained its prior geometry signature and 3,652
+  triangles after this handoff. Mixed rotary-phone and CRT-television builds
+  consumed prebuild masks for seven and two part groups respectively; their
+  geometry signatures also remained unchanged. Both still failed pre-existing
+  mesh QA (phone: normals and front/top outline; TV: normals). These trials
+  verify the handoff and regression behavior, not finished asset quality.
 - An archived multipart blender export was audited against the source assembly
   drawing: front 2/19, right 9/19, left 11/19, and back 17/19 sampled widths
   exceeded the source-resolution allowance; six back samples were severe.
@@ -91,12 +106,12 @@ unknowns. The resulting construction decisions must refer back to the drawing.
   validated universal association of fragments into physical parts or of
   corresponding features across views. The camera lens therefore is not yet
   guaranteed to become a correct cylindrical assembly.
-- Multipart construction currently consumes prepared view masks and the
-  inferred part plan. The source drawings record those observations and the
-  assembly envelope is audited after export, but the builder does not yet
-  consume internal trace IDs as constraints. Some prepared views may have
-  altered pixels or unverified direction labels; their source relationship
-  remains explicitly unresolved.
+- Multipart construction now consumes compiled outer masks from the prepared
+  drawing on the `parts` layout and uses the inferred part plan. The source
+  drawings record the original observations and the assembly envelope is
+  audited after export, but the builder does not yet consume internal trace
+  IDs as constraints. Some prepared views have altered pixels or unverified
+  direction labels; their source relationship remains explicitly unresolved.
 - True cross-section shapes, hidden lines, dimensioned part drawings, and a
   complete construction-consumption audit are incomplete. Current section/profile
   tools make geometric inferences from silhouettes and shading; the width audit

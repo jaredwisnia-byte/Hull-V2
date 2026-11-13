@@ -987,3 +987,19 @@ outside the source-resolution allowance, with six severe back deviations.
 This audit does not qualify the part geometry. Internal trace IDs still do not
 drive multipart construction, and some prepared builder views may have altered
 pixels or uncertain direction assignments. Those remain open evidence gaps.
+
+SOURCE-VERIFIED: On the `layout: parts` line, the factory now compiles the
+prepared view silhouettes into prebuild drawing masks. Body and companion
+hulls consume those masks, and the builder reports their build-trace IDs.
+Input and mask hashes guard against changes after tracing. When the prepared
+view has no verified map to the original crop, stage review holds that source
+claim. Internal traces remain observational; they do not yet determine holes,
+curves, protrusions or relief. Other multipart layouts do not yet consume
+compiled drawing masks.
+
+OBSERVED RUN: The archived blender rebuilt with the same geometry signature
+and 3,652 triangles. Rotary phone and CRT television multipart rebuilds
+consumed masks for seven and two part groups, respectively, while retaining
+their previous geometry signatures. Phone QA still failed normals and
+front/top outlines; television QA still failed normals. This validates the
+outer-mask handoff without implying that those assets are qualified.

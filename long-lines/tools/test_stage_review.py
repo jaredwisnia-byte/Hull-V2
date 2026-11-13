@@ -127,6 +127,14 @@ class ReviewContracts(unittest.TestCase):
         self.assertEqual(review['findings'][0]['code'],
                          'companion_view_evidence_reused')
 
+    def test_prepared_view_without_source_map_is_held_for_review(self):
+        measured = {'source_drawing': {'construction_unmapped_views': {
+            'body': ['front', 'right']}}}
+        review = inspect({'metrics': {}}, measured)
+        self.assertEqual(review['status'], 'needs_review')
+        self.assertIn('construction_view_source_map_unverified',
+                      [finding['code'] for finding in review['findings']])
+
     def test_separate_part_evidence_is_also_checked(self):
         measured = {'surface_details': {'handle': {
             'pre_reduction_validation': {'probes': [{'id': 'a', 'retained': True}]}}}}

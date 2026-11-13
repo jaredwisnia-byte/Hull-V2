@@ -283,25 +283,43 @@ def run_line(order):
         from propkit import drawing_traces
         measured = order.setdefault('measured', {})
         source_drawings = dict(order.get('source_drawings', {}))
+        construction_drawings = {}
+        unmapped_construction_views = {}
         root = os.path.join(SRC, order['views_folder'])
-        plan = order.get('parts') or {}
+        plan = order.get('parts')
+        if not plan and order.get('handbook'):
+            from propkit import handbook
+            plan = (handbook.entry(order['handbook']) or {}).get('assembly')
+        plan = plan or {}
         folders = ({order['assembly']} |
                    ({spec['views'] for spec in plan if spec.get('views')}
                     if isinstance(plan, list) else set(plan.values())))
-        for folder in sorted(folders - source_drawings.keys()):
+        for folder in sorted(folders):
             views = {view: path for view, path in
                      part_views(os.path.join(root, folder)).items()
                      if view in ('front', 'back', 'left', 'right', 'top', 'bottom')}
             if not views:
                 continue
             drawing_folder = os.path.join(diagnostic_root(order),
-                                          'technical-traces', folder)
-            drawing_traces.infer(views, drawing_folder, geometry_views=views)
-            source_drawings[folder] = {
-                'sheet': os.path.join(drawing_folder, 'technical-traces.png'),
-                'traces': os.path.join(drawing_folder, 'technical-traces.json'),
-                'source_kind': 'supplied part-view file',
-            }
+                                          'construction-traces', folder)
+            source = source_drawings.get(folder, {})
+            construction = drawing_traces.infer(
+                views, drawing_folder, geometry_views=views,
+                source_views=source.get('source_views'),
+                source_sheet_frames=source.get('source_sheet_frames'),
+                compile_construction_masks=True)
+            if construction['reconciled_views_without_source_pixel_map']:
+                unmapped_construction_views[folder] = construction[
+                    'reconciled_views_without_source_pixel_map']
+            construction_drawings[folder] = os.path.join(
+                drawing_folder, 'technical-traces.json')
+            if folder not in source_drawings:
+                source_drawings[folder] = {
+                    'sheet': os.path.join(drawing_folder, 'technical-traces.png'),
+                    'traces': construction_drawings[folder],
+                    'source_kind': 'supplied part-view file',
+                }
+        order['construction_drawings'] = construction_drawings
         assembly_drawing = source_drawings.get(order.get('assembly'))
         if assembly_drawing:
             measured['source_drawing'] = {
@@ -316,7 +334,12 @@ def run_line(order):
                                             'reused_source_regions', [])}
                                   for name, item in source_drawings.items()
                                   if name != order.get('assembly')},
-                'construction_use': 'assembly envelope and part placement use prepared views; raw source traces are checked after export',
+                'construction_drawings': construction_drawings,
+                'construction_unmapped_views': unmapped_construction_views,
+                'construction_use': (
+                    'compiled prebuild masks constrain part hull geometry'
+                    if order.get('layout') == 'parts' else
+                    'prebuild drawings recorded; this layout has no compiled-mask handoff'),
             }
         built = hull_parts_build(order, SRC)
         measured.update(built)
