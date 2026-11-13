@@ -68,7 +68,9 @@ def file_hash(paths):
     h = hashlib.sha1()
     for p in sorted(paths):
         if os.path.exists(p):
-            h.update(open(p, "rb").read())
+            with open(p, "rb") as stream:
+                for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+                    h.update(chunk)
     return h.hexdigest()[:12]
 
 
