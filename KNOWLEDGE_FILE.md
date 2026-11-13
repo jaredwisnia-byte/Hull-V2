@@ -169,7 +169,9 @@ path. It uses Hull's existing `feature_regions.trace` and
 produced sheets for a camera, a carved leg and seven consumer objects. Black
 silhouettes and blue internal marks come from source pixels and carry source-view
 coordinates. The factory records this sheet in its process report; no internal
-trace is yet promoted to a physical construction constraint.
+trace is yet promoted to a physical construction constraint. A Blender station
+check confirmed the drawing is written before construction planning and before
+any mesh object exists.
 The marks are observations only: a circle can be a bore, protrusion, decal or
 shadow. The earlier Hough-circle-to-cylinder prototype made a plausible camera
 lens but falsely classified a mark on a hair-dryer handle as a major protrusion;
