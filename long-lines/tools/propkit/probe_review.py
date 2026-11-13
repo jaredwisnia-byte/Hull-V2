@@ -29,16 +29,14 @@ def image_uv(anchor, view, dimensions):
 
 def stage_contrasts(arrays, probe, dimensions):
     """Sample the same three anchors at each saved depth-transfer checkpoint."""
-    needed = {'accepted_height_px', 'coarse_height_px',
-              'final_shared_height_px', 'metres_per_pixel'}
+    needed = {'accepted_height_px', 'coarse_height_px', 'metres_per_pixel'}
     if not needed <= set(arrays.files) or len(probe['anchors_m']) != 3:
         return None
     from scipy.ndimage import map_coordinates
     view = probe['view']
     accepted = arrays['accepted_height_px']
     coarse = arrays['coarse_height_px']
-    shared = arrays['final_shared_height_px'] - coarse
-    if accepted.shape != shared.shape or accepted.ndim != 2:
+    if accepted.shape != coarse.shape or accepted.ndim != 2:
         return None
     height, width = accepted.shape
     uv = np.asarray([image_uv(anchor, view, dimensions)
@@ -69,7 +67,7 @@ def stage_contrasts(arrays, probe, dimensions):
     return result
 
 
-def first_observed_loss(expected, dense, contrasts):
+def first_observed_loss(expected, dense, contrasts, fallback=None):
     """Locate the first measured loss without treating source depth as truth."""
     if expected is None or not contrasts or abs(expected) < 1e-9:
         return 'unresolved'
@@ -94,6 +92,8 @@ def first_observed_loss(expected, dense, contrasts):
             if key == 'shared_field_m' and 'fused_m' not in contrasts:
                 return 'shared_field_or_repair'
             return label
+    if fallback == 'unchanged base field':
+        return 'rejected_detail_fallback'
     if dense is None or dense * expected <= 0 or abs(dense) < .5 * abs(expected):
         return 'mesh_or_probe_intersection'
     return 'unresolved'
@@ -171,7 +171,8 @@ def classify(report, dimensions, diagnostic_folder):
                         'dense_contrast_m': measured_contrast,
                         'stage_contrasts_m': contrasts,
                         'first_observed_loss': first_observed_loss(
-                            expected, measured_contrast, contrasts),
+                            expected, measured_contrast, contrasts,
+                            report.get('topology', {}).get('fallback')),
                         'anchors_m': probe['anchors_m'],
                         'target_offsets_m': probe['target_offsets_m']})
         if identifier in traces:
@@ -265,12 +266,19 @@ def write(report, dimensions, source_views=None, obj=None, tree=None):
             continue
         with np.load(path, allow_pickle=False) as arrays:
             needed = {'hypothesis_height_px', 'accepted_height_px',
-                      'coarse_height_px', 'final_shared_height_px'}
+                      'coarse_height_px'}
             if not needed <= set(arrays.files):
                 continue
             proposal = arrays['hypothesis_height_px']
             accepted = arrays['accepted_height_px']
-            applied = arrays['final_shared_height_px'] - arrays['coarse_height_px']
+            last_key = next((key for key in (
+                'final_shared_height_px', 'post_topology_height_px',
+                'post_construction_height_px', 'fused_height_px')
+                if key in arrays.files), None)
+            last = (arrays[last_key] - arrays['coarse_height_px']
+                    if last_key is not None else accepted)
+            last_label = ('Shared field' if last_key == 'final_shared_height_px'
+                          else 'Last saved field (not exported)')
             source_path = (source_views or {}).get(item['view'])
             if source_path and Path(source_path).is_file():
                 source = Image.open(source_path).convert('RGB')
@@ -280,11 +288,11 @@ def write(report, dimensions, source_views=None, obj=None, tree=None):
                 source = Image.fromarray(gray).convert('RGB')
             limit = max(float(np.percentile(abs(proposal), 99)), 1)
             panels = [source, _height_image(proposal, limit),
-                      _height_image(accepted, limit), _height_image(applied, limit)]
+                      _height_image(accepted, limit), _height_image(last, limit)]
             canvas = Image.new('RGB', (4 * 256, 450), '#e9edf1')
             draw = ImageDraw.Draw(canvas)
             for index, (label, panel) in enumerate(zip(
-                    ('Source', 'Proposed', 'Accepted', 'Shared field'), panels)):
+                    ('Source', 'Proposed', 'Accepted', last_label), panels)):
                 canvas.paste(_crop(panel, item['center_uv']), (index * 256, 34))
                 draw.text((index * 256 + 8, 9), label, fill='#1b2a38')
             draw.text((8, 292), 'First measured loss: ' + item['first_observed_loss'],
@@ -308,7 +316,8 @@ def write(report, dimensions, source_views=None, obj=None, tree=None):
                       'view_fusion',
                       'construction_repair',
                       'component_repair', 'post_topology_or_retry',
-                      'shared_field_or_repair', 'mesh_or_probe_intersection',
+                      'shared_field_or_repair', 'rejected_detail_fallback',
+                      'mesh_or_probe_intersection',
                       'unresolved')}
     summary['supported_competing_view_probes'] = sum(
         item['status'] == 'supported_unmet' and

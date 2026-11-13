@@ -135,6 +135,49 @@ class ProbeReviewTests(unittest.TestCase):
                           'fused_m': -.004, 'shared_field_m': -.004}),
             'single_view_field_transfer')
 
+    def test_rejected_repair_keeps_partial_checkpoints_and_names_fallback(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            accepted = np.zeros((64, 64), dtype=float)
+            accepted[:, 15:17] = -2.
+            np.savez_compressed(Path(temporary) / 'front.npz',
+                                feature_labels=np.ones((64, 64), dtype=np.uint8),
+                                hypothesis_height_px=accepted,
+                                accepted_height_px=accepted,
+                                sampled_height_px=accepted,
+                                clipped_height_px=accepted,
+                                fused_height_px=accepted,
+                                post_construction_height_px=accepted,
+                                coarse_height_px=np.zeros_like(accepted),
+                                observed_log_luminance=np.full((64, 64), -1.),
+                                metres_per_pixel=.01)
+            probe = {'id': 'groove', 'view': 'front',
+                     'anchors_m': [[-.25, -.2, .5],
+                                   [-.375, -.2, .5], [-.125, -.2, .5]],
+                     'target_offsets_m': [-.02, 0., 0.]}
+            report = {'diagnostic_folder': temporary,
+                      'dimensions_m': [1., 1., 1.],
+                      'probes': [probe], 'unmet_before_reduction': ['groove'],
+                      'topology': {'status': 'rejected',
+                                   'fallback': 'unchanged base field'},
+                      'pre_reduction_validation': {'probes': [
+                          {'id': 'groove', 'expected_contrast_m': -.02,
+                           'measured_contrast_m': 0.}]},
+                      'views': {'front': {'relief_selection': {'regions': [
+                          {'region_id': 1, 'initially_supported': True,
+                           'applied': True, 'final_test_gain': .2}]}}}}
+            record = probe_review.classify(report, (1., 1., 1.), temporary)[0]
+            self.assertAlmostEqual(record['stage_contrasts_m']['accepted_m'], -.02)
+            self.assertAlmostEqual(record['stage_contrasts_m']['fused_m'], -.02)
+            self.assertNotIn('shared_field_m', record['stage_contrasts_m'])
+            self.assertEqual(record['first_observed_loss'], 'rejected_detail_fallback')
+            faded = dict(record['stage_contrasts_m'], fused_m=-.003)
+            self.assertEqual(probe_review.first_observed_loss(
+                -.02, 0., faded, 'unchanged base field'), 'single_view_or_fusion')
+            summary = probe_review.write(report, (1., 1., 1.))
+            self.assertEqual(summary['supported_first_loss_counts'][
+                'rejected_detail_fallback'], 1)
+            self.assertTrue(Path(summary['probes'][0]['image']).is_file())
+
     def test_fusion_trace_flags_competing_view_without_claiming_depth(self):
         with tempfile.TemporaryDirectory() as temporary:
             trace = {'fusion_weight_floor': 1e-4, 'probes': {'groove': {
