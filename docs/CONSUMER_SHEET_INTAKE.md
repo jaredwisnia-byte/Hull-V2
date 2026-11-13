@@ -30,8 +30,12 @@ independent validation of companion-part placement remain separate gates. The sc
 for the generic path is an explicit unmeasured three-hand-width prior. A first
 end-to-end toaster trial at one hand-width generated a 91 mm-wide model; QA rejected
 it for extreme local surface folds (37.4 per 1,000 triangles) and excessive texel
-density (14,407 px/m). A rescaled repeat is being run separately. The image-only
-path therefore must not report a complete multipart model from this pilot.
+density (14,407 px/m). The rescaled repeat produced a 272 x 152 x 111 mm model
+with 4,890 triangles and removed that texel-density failure. QA still rejected
+it for 36 missing shading-depth probes. The visual render is retained at
+`C:/Users/jared/Documents/Codex/Hull-dataset-100/build-check/001_toaster_rescaled/vision_001_toaster.png`.
+The image-only path therefore must not report a complete multipart model from
+this pilot.
 
 ## Remaining tickets
 
