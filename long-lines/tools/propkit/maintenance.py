@@ -43,7 +43,6 @@ def load_plan(root):
         if check["id"] in seen or check["capability"] not in (
             "core",
             "blender",
-            "godot",
             "cad",
             "vision",
         ):
@@ -59,7 +58,7 @@ def load_plan(root):
     return plan
 
 
-def doctor(root, required=("core",), blender=None, godot=None):
+def doctor(root, required=("core",), blender=None):
     evidence = {
         "python": sys.version.split()[0],
         "packages": {},
@@ -120,7 +119,6 @@ def doctor(root, required=("core",), blender=None, godot=None):
                 evidence["fails"].append(package + ": " + str(error))
     for capability, configured, expected in [
         ("blender", blender or os.environ.get("HULL_BLENDER"), "Blender 5.2.3"),
-        ("godot", godot or os.environ.get("HULL_GODOT"), "4.4.1"),
     ]:
         if capability not in required:
             continue
@@ -161,11 +159,7 @@ def choose_profiles(paths):
                               "long-lines/tools/test_automatic_build")):
             profiles.update(("core", "blender", "vision"))
             continue
-        if name.startswith("long-lines/scripts/") or (
-            name.startswith("long-lines/tests/") and name.endswith(".gd")
-        ):
-            profiles.add("godot")
-        elif name.startswith("long-lines/tools/") or (
+        if name.startswith("long-lines/tools/") or (
             name.startswith("long-lines/factory/") and name.endswith(".json")
         ):
             profiles.add("core")
@@ -235,8 +229,7 @@ def source_identity(root):
              root / "requirements-vision.txt"]
     for directory, pattern in [
         ("long-lines/tools", "*.py"),
-        ("long-lines/scripts", "*.gd"),
-        ("long-lines/tests", "*.gd"),
+        ("long-lines/tests", "*.py"),
         (".github", "*.yml"),
     ]:
         files.extend((root / directory).rglob(pattern))
@@ -248,13 +241,13 @@ def source_identity(root):
     }
 
 
-def run_checks(root, profiles, output, blender=None, godot=None):
+def run_checks(root, profiles, output, blender=None):
     if "vision" in profiles and "blender" not in profiles:
         raise ValueError("Vision qualification requires the Blender profile")
     output = Path(output).resolve()
     output.mkdir(parents=True, exist_ok=True)
     identity = source_identity(root)
-    health = doctor(root, profiles, blender, godot)
+    health = doctor(root, profiles, blender)
     plan = load_plan(root)
     missing = set(profiles) - {check["capability"] for check in plan["checks"]}
     if missing:
@@ -280,14 +273,6 @@ def run_checks(root, profiles, output, blender=None, godot=None):
                     "3",
                     "-P",
                     str(root / script),
-                ]
-            elif check["capability"] == "godot":
-                command = [
-                    health["tools"]["godot"]["path"],
-                    "--headless",
-                    "--path",
-                    str(root / "long-lines"),
-                    *check["args"],
                 ]
             elif check.get("args"):
                 command = [sys.executable, *check["args"]]
@@ -370,11 +355,8 @@ def package(root, destination):
             name.startswith(
                 (
                     "long-lines/tools/",
-                    "long-lines/scripts/",
                     "long-lines/tests/",
                     "long-lines/data/",
-                    "long-lines/shaders/",
-                    "long-lines/scenes/",
                     "long-lines/factory/",
                     ".github/",
                 )
@@ -390,7 +372,6 @@ def package(root, destination):
                 ".gitignore",
                 "CLAUDE.md",
                 "KNOWLEDGE_FILE.md",
-                "long-lines/project.godot",
                 "long-lines/README.md",
                 "long-lines/CLAUDE.md",
                 "long-lines/docs/LESSONS.md",
@@ -405,16 +386,12 @@ def package(root, destination):
                 path.suffix.lower()
                 in (
                     ".py",
-                    ".gd",
                     ".json",
                     ".md",
                     ".txt",
                     ".yml",
                     ".yaml",
                     ".cmd",
-                    ".godot",
-                    ".gdshader",
-                    ".tscn",
                 )
                 or name in ("LICENSE", ".gitignore", ".github/CODEOWNERS")
             )
@@ -484,10 +461,9 @@ def main(root):
     for name in ("doctor", "check", "qualify", "audit"):
         sub = commands.add_parser(name)
         sub.add_argument(
-            "--profiles", default="core,blender,godot" if name == "qualify" else "core"
+            "--profiles", default="core,blender" if name == "qualify" else "core"
         )
         sub.add_argument("--blender")
-        sub.add_argument("--godot")
         sub.add_argument(
             "--output", type=Path, default=root / ".hull-maintenance/latest"
         )
@@ -584,13 +560,13 @@ def main(root):
                 if args.changed_files is not None
                 else args.profiles.split(",")
             )
-            if not set(profiles) <= {"core", "blender", "godot", "cad", "vision"}:
+            if not set(profiles) <= {"core", "blender", "cad", "vision"}:
                 raise ValueError("Unknown capability profile")
             if args.command == "doctor":
-                result = doctor(root, profiles, args.blender, args.godot)
+                result = doctor(root, profiles, args.blender)
             else:
                 result = run_checks(
-                    root, profiles, args.output, args.blender, args.godot
+                    root, profiles, args.output, args.blender
                 )
         if args.command == "workspace-inventory":
             print(json.dumps({key: result[key] for key in

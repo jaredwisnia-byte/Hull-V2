@@ -6,7 +6,7 @@ SPEC: {"source_dir": "...", "surfaces": {name: {"src": file, "box": [x0,y0,x1,y1
        "kind": "floor"|"wall", "repeat_m": metres per tile, "grid": [cols, rows, inset]?}}}
 A "grid" entry splits a swatch board into name_00, name_01, ... Each tile is cropped
 square, edge-blended so it repeats without seams, saved to assets/surfaces/<name>.png
-and recorded in data/surfaces.json, which the game reads (Geo.mat looks names up there).
+and recorded in data/surfaces.json, where recipes look them up by name (mats.painted, facade).
 """
 import json
 import os
@@ -88,7 +88,7 @@ def make(name, im, kind, repeat_m, catalog, size=1024, periodic=False):
     os.makedirs(OUT, exist_ok=True)
     # JPEG: painted tiles show no visible loss and are a fifth the size of PNG.
     tile.save(os.path.join(OUT, name + ".jpg"), quality=90)
-    catalog[name] = {"file": "res://assets/surfaces/%s.jpg" % name, "kind": kind, "repeat_m": repeat_m,
+    catalog[name] = {"file": "assets/surfaces/%s.jpg" % name, "kind": kind, "repeat_m": repeat_m,
                      "wear": WEAR.get(kind, WEAR["floor"])}
 
 

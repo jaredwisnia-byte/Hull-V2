@@ -7,8 +7,7 @@ a public issue. Rotate exposed credentials before treating log removal as a fix.
 
 Run unfamiliar reference-processing code in an isolated environment. Files and
 models are untrusted inputs. Keep dependencies pinned and review updates before
-qualification. GitHub workflow tokens default to read-only; only the explicitly
-requested legacy collector publication job receives write access.
+qualification. GitHub workflow tokens are read-only.
 
 The core checks are not a penetration test, dependency vulnerability audit, license
 clearance or physical-accuracy certification. Hosted security settings must be

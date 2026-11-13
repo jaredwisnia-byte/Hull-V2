@@ -839,9 +839,7 @@ def build(order, samples=16):
         for check in maintenance.load_plan(repo)['checks']
         if check['capability'] in required
     ]
-    local_runtime = maintenance.doctor(repo, [capability for capability in required
-                                               if capability != 'godot'],
-                                       blender=bpy.app.binary_path)
+    local_runtime = maintenance.doctor(repo, required, blender=bpy.app.binary_path)
     source_hashes = maintenance.source_identity(repo)
     file_hashes = {str(p.resolve()): warehouse.digest(p) for p in inputs}
     file_hashes.update({str((repo / name).resolve()): digest

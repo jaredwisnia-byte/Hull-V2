@@ -1,14 +1,13 @@
 # Status
 
 ## Done
-- Apartment slice: systems, rooms, dressing, street, tests (39 unit, 45 smoke).
 - Factory v1 (Nov 9): work orders, intake (view splitting, category sizing), lines (hull, car,
   can, surface, recipe), export standardization, quality gate, ledger, report, condition
   variants. Library gate: 118/118 at the minimum standard. See factory/REPORT.md.
 
 - Drive batch 2 (Nov 8): Exteriors, appliances and interior trim sheets processed through
   three new lines (facade, atlas, extrude) plus 18 exterior wall surfaces. Sheet specs in
-  `factory/sheets_*.json`; Sullivan Street now uses facade-line buildings.
+  `factory/sheets_*.json`.
 
 - Sheetset line (Nov 8): first v2 sheet set (fridge_1 from ChatGPT: painted + depth + part map +
   section + manifest) builds through `intake_set`. Assembly rules from ChatGPT's review are in
@@ -28,5 +27,3 @@
 4. Sheetset: openable doors need separate nodes in the GLB plus hinge markers (ties in with
    orientation/snap markers); the section image is not used yet; make the catalogue's "why"
    computable from human/object constants (finger, hand, glass, insulation).
-5. Place trim pieces in the apartment (baseboards / crown along walls, casings on doorways)
-   and appliances in the kitchen in place of the recipe ones.

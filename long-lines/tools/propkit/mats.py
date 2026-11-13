@@ -342,7 +342,7 @@ SURFACES = os.path.normpath(os.path.join(
 def painted(name, repeat_m=None, rough=0.6, edge=0.2, grime=0.4, dust=0.15, metal_v=0.0):
     """A painted surface tile (assets/surfaces/<name>.png, made by tools/make_tiles.py)
     wrapped onto any shape with box projection, plus the shared weathering. The same
-    tiles dress walls and floors in the game, so props and rooms share one look."""
+    tiles are shared by every recipe, so props built from them share one look."""
     key = "painted_%s_%s" % (name, repeat_m)
     if _cached(key):
         return _cached(key)

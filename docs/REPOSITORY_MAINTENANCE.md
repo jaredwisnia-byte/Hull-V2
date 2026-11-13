@@ -9,8 +9,7 @@ it does not claim new reconstruction accuracy.
 
 | Finding | Countermeasure |
 | --- | --- |
-| Root introduction described an unrelated clock app | Hull front page; old instructions preserved under `docs/legacy` |
-| Five-minute clock collector and broad write token | Manual opt-in collector; job-only write permission |
+| Root introduction described an unrelated application | Hull front page; the unrelated application was removed |
 | Floating action tags and unpinned Python dependencies | Verified full action commit IDs; qualified core dependency pins |
 | Path-filtered checks skipped changes to other configuration | Required core workflow on every push/PR |
 | Different local and CI Python versions | Explicit Python 3.13 profile and native capability declarations |
@@ -63,11 +62,8 @@ company-specific sources, dates and limits behind these recommendations.
 
 ## Follow-up archive audit — 2026-11-12
 
-The unrelated web application, npm manifests, icons, service worker, collector
-and workflow are preserved under deprecated/midnight-watch. Search of active
-Hull/Godot code and workflows found no consumers; only the archived collector
-used those app files. Its workflow is outside GitHub's active workflow directory.
-DESCRIPTION.md explains the current software. Hosted About metadata is separate:
+The unrelated web application and the Godot game were removed from this
+repository on 2026-11-13; their history remains in Git. DESCRIPTION.md explains the current software. Hosted About metadata is separate:
 the connector has no repository-settings mutation and the browser is signed out.
 No claim is made that hosted About/default-branch content changed.
 

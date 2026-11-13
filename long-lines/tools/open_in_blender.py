@@ -1,7 +1,7 @@
 """Open a library prop in Blender's window with its textures connected.
 
-Library GLBs carry placeholder materials (the game applies the baked albedo/normal/ORM maps
-itself), so a plain File > Import shows them grey. This script imports the GLB and wires the
+Library GLBs carry placeholder materials (the baked albedo/normal/ORM maps
+are separate PNGs), so a plain File > Import shows them grey. This script imports the GLB and wires the
 three maps beside it into a normal Principled material.
 
     blender --python long-lines/tools/open_in_blender.py -- fridge_1_set

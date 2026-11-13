@@ -305,7 +305,7 @@ def finish(name, out_root, tex=1024, samples=24, tags=(), owned_projection=False
     tris = sum(len(p.vertices) - 2 for p in me.polygons)
     save_mesh_ownership(obj, physical_owners,
                         os.path.join(out, name + '_parts.json'), source_glb=os.path.join(out, name + '.glb'))
-    # Godot axes: x = x, y = z, z = -y
+    # glTF axes (Y up): x = x, y = z, z = -y
     return {"size": [round(dims.x, 4), round(dims.z, 4), round(dims.y, 4)],
             "min": [round(lo[0], 4), round(lo[2], 4), round(-hi[1], 4)],
             "max": [round(hi[0], 4), round(hi[2], 4), round(-lo[1], 4)],

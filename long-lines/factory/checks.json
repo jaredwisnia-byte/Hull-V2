@@ -277,23 +277,6 @@
       "script": "long-lines/tools/test_preflight.py"
     },
     {
-      "id": "godot-unit",
-      "capability": "godot",
-      "args": [
-        "--script",
-        "res://tests/run_tests.gd"
-      ]
-    },
-    {
-      "id": "godot-smoke",
-      "capability": "godot",
-      "args": [
-        "--",
-        "--smoke"
-      ],
-      "timeout_s": 300
-    },
-    {
       "id": "cad-roundtrip",
       "capability": "cad",
       "script": "long-lines/tools/test_cad_export.py"

@@ -139,7 +139,7 @@ class MaintenanceTests(unittest.TestCase):
         plan = m.load_plan(ROOT)
         self.assertEqual(
             {c["capability"] for c in plan["checks"]},
-            {"core", "blender", "godot", "cad", "vision"},
+            {"core", "blender", "cad", "vision"},
         )
         registered = {c.get("script"): c["capability"] for c in plan["checks"]}
         for name in ("companion_captions", "local_retry", "observed_openings",
@@ -161,7 +161,7 @@ class MaintenanceTests(unittest.TestCase):
             m.choose_profiles(["long-lines/tools/propkit/bake.py"]), ["blender", "core"]
         )
         self.assertEqual(
-            m.choose_profiles(["long-lines/scripts/world/prop_factory.gd"]), ["godot"]
+            m.choose_profiles(["long-lines/tests/test_trim_checks.py"]), ["core"]
         )
         self.assertEqual(
             m.choose_profiles(["long-lines/assets/source_textures/new.png"]),

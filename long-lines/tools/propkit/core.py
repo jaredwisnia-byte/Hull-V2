@@ -1,7 +1,7 @@
 """Geometry building blocks for prop recipes.
 
 Every function adds one part to the current prop and returns the Blender object.
-Units are metres, Z is up, the prop's front faces -Y (it becomes +Z in Godot),
+Units are metres, Z is up, the prop's front faces -Y (+Z in the Y-up GLB export),
 and the prop's origin is its bottom centre (floor contact at z = 0).
 """
 

@@ -396,8 +396,7 @@ Implemented: common check manifest/CLI; explicit core/Blender/Godot/CAD profiles
 pinned core dependencies and full action identities; all-change required CI;
 qualification evidence; manual source packaging; contribution/security/repair
 runbooks, owner routing, issue/PR templates and reviewed dependency update proposals.
-Root documentation identifies Hull; legacy clock documentation/code is preserved.
-The proposed legacy collector is opt-in rather than scheduled every five minutes.
+Root documentation identifies Hull; the unrelated application was later removed.
 
 Still pending: owner decision on licensing and actual hosted branch/security
 rules, wider independent object fixtures, clean optional-backend qualifications,

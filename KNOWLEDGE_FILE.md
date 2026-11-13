@@ -82,7 +82,7 @@ Binary textures/GLBs were counted, not exhaustively visually audited.
 
 The accompanying [machine-readable inventory](long-lines/docs/CODEBASE_INVENTORY.json)
 records 483 source/configuration/documentation files, all 154 tracked Python files,
-36 Godot scripts, module descriptions, definitions/line numbers, imports, static
+module descriptions, definitions/line numbers, imports, static
 calls, JSON shapes, documentation headings and content hashes. All Python files
 parsed successfully; JSON parsing found no errors. Static calls are not a resolved
 runtime call graph. Counts include the currently staged new reconstruction tools.
@@ -108,7 +108,7 @@ journal support guarded rollback. Legacy entries still resolve to their original
 paths and are reported unqualified by integrity verification. Direct legacy
 recipe tools are not newly certified publication paths.
 
-QA, package/export, previews, inspection renderers and Godot's PropFactory resolve
+QA, package/export, previews and inspection renderers resolve
 `artifact_directory`. Inspection output stays outside immutable release payloads.
 The existing asset-regression runner now copies inputs/code into a retained
 sandbox, never restores over production state, and writes unreviewed baseline
@@ -119,11 +119,10 @@ failures and inverse-shading uncertainty.
 
 The required core workflow covers all pushes/PRs, uses pinned action identities
 and Python 3.13 dependency versions, and retains qualification evidence. Native
-Blender/Godot and optional CAD are explicit profiles. Required skips fail; the
+Blender and optional CAD are explicit profiles. Required skips fail; the
 single native displacement test was split from the pure suite so it runs in its
 actual Blender capability. Source/config changes during checks invalidate a run.
-The unrelated clock collector is manual opt-in in the proposed workflow; hosted
-behavior changes only after the branch is merged. Public hosted audit found no
+Public hosted audit found no
 protected branches or rulesets; no hosted setting was changed.
 
 ## Supervised corrections and adaptive reduction (2026-11-11)
@@ -646,10 +645,11 @@ It parses source without importing builders and excludes its generated JSON outp
 
 ## Repository identity and boundaries
 
-- This repository contains **two products**: root Midnight Watch (static web app and
-  RSS/push collector), and Long Lines (Godot game plus the Blender asset factory).
-  Hull is the reconstruction/factory toolchain inside Long Lines, not a standalone
-  root Python package.
+- This repository holds one product: Hull, the Blender asset factory, in
+  long-lines/tools with its standards and orders in long-lines/factory and its
+  output library in long-lines/assets. The directory keeps its historical name;
+  the Godot game that once lived beside it was removed on 2026-11-13. Exported
+  GLBs are engine-neutral (glTF, Y-up).
 - User-designated original is jaredwisnia-byte/claude, branch
   claude/trusting-dirac-bxfmv6, commit
   9d8df082dfbef7d5a508be3578d78d7c488561ab. Keep it untouched.
@@ -836,8 +836,6 @@ current or previously generated assets are acceptable.
 - tests/test_trim_checks.py: Blender-independent trim checks; trim-qa workflow
   installs dependencies, syntax-checks selected files and runs these tests.
   It is not CI coverage of all reconstruction routes.
-- Godot tests/run_tests.gd, smoke_test.gd and screenshots.gd cover the game.
-  Passing game tests cannot prove image reconstruction is correct.
 - docs/benchmarks/sheetfirst_vs_legacy contains preparers, renders and stress tests.
   Its prepared inputs are benchmark assistance, not production auto-intake.
   Do not silently promote those scripts or a historical alternate pipeline.
@@ -877,26 +875,6 @@ assets and original sources. Do not “fix” uncertainty by silently discarding
 contradictory observations, changing thresholds for one image or treating a
 generated section as independent evidence.
 
-## Root web application and Godot game boundaries
-
-Root README/package.json/app.js/config.js/sw.js/index.html/style.css and
-scripts/collect.mjs belong to Midnight Watch. The collector uses RSS parsing and
-Web Push dependencies. .github/workflows/collect.yml is its scheduled collector.
-Do not change its configuration, publishing or notifications to improve Hull.
-
-long-lines/project.godot launches scenes/main.tscn and autoloads Data/Game.
-scripts/core manages configuration/state; scripts/sim covers clock, climate,
-air, needs, inventory, radio, cold chain and fridge systems.
-scripts/world handles apartment construction, player/interactions and prop
-behaviour. PropFactory places library props, swaps model visuals and applies
-condition/snow/frost. It is in prop_factory.gd, not a separate prop_library.gd file.
-scripts/world/props contains gameplay nodes for doors, containers, fixtures,
-radio/phone, stove, sink/tub, windows and decorative/interactable items.
-scripts/ui/hud.gd is game UI, not a reconstruction UI.
-data/*.json defines the apartment, objects, documents, events, tuning and surfaces.
-shaders include baked-prop state effects. Imported visual assets do not imply
-matching reconstruction code ran or succeeded.
-
 ## Runtime, reproducibility and working safely
 
 Blender Python is required for bpy/bmesh/mathutils modules. Pure sizing, map or
@@ -922,7 +900,7 @@ setup, not a portable installer. Some old scripts assume Linux paths/fonts or a
 blender command on PATH; inspect their worker environment before running.
 
 Builds mutate assets/props, source_textures, orders, library.json, ledger and REPORT.
-Godot imports can alter many .import files. Generated trial assets and odd-named
+Generated trial assets and odd-named
 untracked directories exist locally; do not delete/move them as incidental cleanup.
 Stage explicit intended source/documentation paths, never a blanket git add.
 Shell Git HTTPS previously failed Windows credential acquisition; connector pushes
@@ -954,8 +932,7 @@ and leaves any over-budget result for QA. Explicit budget: share remains a
 deprecated compatibility setting. The 99th-percentile sampled surface gauge
 is approximate, not an exact maximum-error or semantic-feature guarantee.
 
-The unrelated web app and collector workflow moved under deprecated/midnight-watch
-after a runtime reference search. Dynamic recipe modules, existing sizing tools,
+Dynamic recipe modules, existing sizing tools,
 fixtures and optional backends were retained rather than declared unused.
 See DESCRIPTION.md for the current project description.
 

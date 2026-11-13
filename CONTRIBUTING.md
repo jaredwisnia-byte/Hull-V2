@@ -15,7 +15,7 @@ Do not reorganize unrelated files just to meet a line-count target.
 Run `python hull.py check --changed-files PATH ...` for a suggested check profile.
 The complete required core suite runs on every push and pull request, including
 configuration/dependency changes. Geometry, baking, library-loader and runtime
-changes also need local `python hull.py qualify --blender PATH --godot PATH`.
+changes also need local `python hull.py qualify --blender PATH`.
 Optional capability claims require their profile; skipped tests do not qualify it.
 Source changes during a qualification must be rerun. Keep the qualification report.
 

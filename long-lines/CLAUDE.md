@@ -1,86 +1,68 @@
-# Long Lines: working notes for Claude
+# Hull factory: working notes for Claude
 
-Read this first. It is the handoff between sessions.
+Read the root `AGENTS.md` first (current priority and how to judge a change). This file is
+the factory's handoff between sessions.
 
-## The project
-- Story-driven survival game: lower Manhattan after a comet strike, Oct 31 1975.
-- Design doc (owner: Jared): Claude Docs artifact https://claude.ai/artifact/AVAcC1buutbPDkVeQBtNZK
-  ("Long Lines: Game Design Document"). Read it with the Claude Docs connector.
-- Art direction: The Long Dark style (chunky, bevelled, painted wear, warm lights against
-  teal shadows) applied to 1970s New York tenement interiors. Jared approved the TV prop
-  (`docs/props/`) as "exactly what I wanted": that is the fidelity bar for every prop.
-- Current milestone: the apartment vertical slice (Nick's flat, 4A Sullivan St).
+## The product
+- Jared's directive: industrialize asset production. The factory is the product.
+- Input: painted reference sheets (1970s New York objects, hand-painted survival-game style:
+  chunky, bevelled, painted wear). Output: textured, correctly sized props in
+  `assets/props/` as engine-neutral GLBs.
+- Jared approved the TV prop (`docs/props/`) as "exactly what I wanted": that is the
+  fidelity bar for every prop.
+- Jared does not want to spend money: no paid image-to-3D services.
+- Real brands, trademarks and real people's words are never used; invent period names.
 
 ## The factory (start here for any new asset)
-Jared's directive: industrialize asset production. The factory is the product.
 `factory/README.md` is the manual: work orders, production lines, the quality gate at a
 **minimum acceptable standard** (one automatic correction, then flag, never polish),
 standards (`factory/standards.json`, `categories.json`), the input spec
 (`factory/REFERENCE_SPEC.md`), the ledger and KPIs (`factory/REPORT.md`).
 `blender -b --factory-startup -P long-lines/tools/factory.py -- intake|intake_sheet|build|qa|report ...`
-**The assembly line:** `python3 long-lines/tools/line.py --drawn` (or order names) runs each order through
+**The assembly line:** `python long-lines/tools/line.py --drawn` (or order names) runs each order through
 intake (views cut from its sheet, guide lines removed) -> build + quality gate -> final renders
 (`docs/renders/NAME.png`, contact sheet `docs/renders/line.png`, run log `docs/renders/LINE.md`).
 Orders marked `"locked"` (approved assets, e.g. the TV) are rendered, never rebuilt.
-Lines: hull (multiview sheets), atlas (appliance part atlases), extrude (trim sheets:
-mouldings and casings), facade (building elevations), car, can, surface, recipe. Sheets that
-hold many assets get a sheet spec (`factory/sheets_*.json`, label panels with
-`tools/label_panels.py`) and go through `intake_sheet`.
+Lines: hull (multiview sheets), hull_parts (parts sheets), sheetset, atlas (appliance part
+atlases), extrude (trim sheets: mouldings and casings), facade (building elevations), car,
+can, surface, recipe. Sheets that hold many assets get a sheet spec (`factory/sheets_*.json`,
+label panels with `tools/label_panels.py`) and go through `intake_sheet`.
 
 ## Doctrine: interchangeable parts
-Build once, reuse everywhere. Do not hand-code one-off geometry in game code.
+Build once, reuse everywhere.
 - **Props** are Blender recipes in `tools/props/*.py` built with the shared kit
   `tools/propkit/`. `tools/build_props.py` builds, bakes and exports them to
   `assets/props/<name>/` and records each one in `assets/props/library.json`.
-- **Godot loads props by name**: `PropLibrary` / `PropFactory` (`scripts/world/`).
-  A scene places a library prop with `{"type": "lib", "prop": "<name>", "kind": ...}`
-  in its layout JSON. Kinds: static, fixture, carry, container, readable.
-- **Rooms and walls** come from data (`data/apartment.json`) through
-  `ApartmentBuilder`. New buildings should reuse the builder with new JSON.
-- **Simulation** lives in pure classes (`scripts/sim/`), tuned by `data/*.json`.
-- Real brands, trademarks and real people's words are never used; invent period names.
+- **Shared parts**: `tools/propkit/parts.py` (wheel, sheet_box, rolled_rim, rails). Check here
+  before modelling anything a second time. Change shared parts rather than patching recipes.
 
 ## Reuse first
-- Shared parts: `tools/propkit/parts.py` (wheel, sheet_box, rolled_rim, rails). Check here
-  before modelling anything a second time.
 - Painted sheets: `tools/prepare_sheet.py IMAGE LAYOUT NAME` with layouts in `tools/layouts/`
   (car_v1, range_v1, wallpaper_v1). A new sheet with a known layout needs no new code: cars
   are one line in `CARS` (`tools/props/cars_painted.py`), cans one line in `goods_painted.py`.
-- Wall materials: any tiling image becomes a wall finish via a palette entry with pattern 13
-  in `scripts/world/geo.gd`; the shader layers grime, cracks, peeling and stains on top.
 - Surfaces: `tools/make_tiles.py tools/tile_specs/<batch>.json` turns painted images into
-  seamless tiles in `assets/surfaces/` and registers them in `data/surfaces.json`. Rooms use
-  them by name (`"floor"`/`"wall"` in `data/apartment.json`); props use them through
-  `mats.painted(name)` in recipes. 75 surfaces so far: floors, carpets, ~36 wallpapers,
-  furniture materials (`mat_*`), exterior walls (`ext_*`: brick, stone, stucco, siding).
+  seamless tiles in `assets/surfaces/` and registers them in `data/surfaces.json`. Recipes use
+  them through `mats.painted(name)`; the facade line uses the `ext_*` walls.
 - Visual hull: `tools/propkit/hull.py` builds a textured prop from orthographic painted views
-  (front/right/left/back/top). Register one line in `HULLS` (`tools/props/hull_props.py`):
-  views live in `assets/source_textures/<folder>/v_<view>.png`. Free (scipy/skimage via apt).
-  Jared does not want to spend money: no paid image-to-3D services.
+  (front/right/left/back/top). Views live in `assets/source_textures/<folder>/v_<view>.png`.
+- What a hull can build: anything that shows in some view's outline (a camera's bellows
+  pleats, a TV's bezel step). What it cannot: detail that exists only as painted shading
+  inside the outline (carving); that belongs in the texture and normal map.
 - **Critique every prop** with `tools/critique.py` (turnaround + automatic checks) and
   follow `docs/CRITIQUE.md`. Part knowledge (how far knobs stick out, etc.) lives in
-  `tools/propkit/part_rules.py`; the hull builder uses it to give painted parts real depth.
+  `tools/propkit/part_rules.py`.
 - **Sizes come from `factory/sizing_manual.json`** (read `factory/SIZING.md`): facts, part
   formulas, placement rules, object envelopes. Fix a wrong size there, not in code.
-  Tests: `python3 tools/test_sizing.py`.
 - **Read `docs/LESSONS.md`** before starting; add to it when something goes wrong.
 
 ## How to work here
-- Jared has Blender on his own PC. To inspect a library prop with its textures:
+- Jared has Blender 5.2 on his own Windows PC. To inspect a library prop with its textures:
   `blender --python long-lines/tools/open_in_blender.py -- <name>` (library GLBs carry placeholder
-  materials; the maps are separate PNGs). To run the factory locally, Blender's Python needs:
-  `<blender python> -m pip install scipy scikit-image pillow`.
-- Godot binary: download Godot 4.4.1 (Linux x86_64) from GitHub releases into the
-  scratchpad. First run on a checkout: `godot --headless --path long-lines --import`.
-- Tests: `godot --headless --path long-lines --script res://tests/run_tests.gd`
-  and `godot --headless --path long-lines -- --smoke`. Both must pass before pushing.
-- Screenshots (needs Vulkan): `apt-get install mesa-vulkan-drivers`, then
-  `xvfb-run -a -s "-screen 0 1280x720x24" godot --path long-lines -- --shots=DIR [--only=PREFIX]`.
-- Blender: `apt-get install blender python3-numpy` (4.0 works). Cycles bakes come out
-  black unless denoising is off; the kit handles it.
-  Build props: `blender -b --factory-startup -P long-lines/tools/build_props.py -- <names|all>`.
-  Contact sheet of built props: `tools/contact_sheet.py` (same invocation style).
-- Look at every visual change in a rendered screenshot before calling it done.
+  materials; the maps are separate PNGs).
+- Setup: Python 3.13 with `requirements-core.txt`; `python hull.py doctor`, then
+  `python hull.py check` (see the root README). In a cloud container without a Blender
+  download, `pip install bpy==5.2.3` provides the same Blender as a Python module.
+- Look at every visual change in a rendered turnaround before calling it done.
 - Commit and push after each step (branch named in the session prompt).
 
 ## Status and next steps

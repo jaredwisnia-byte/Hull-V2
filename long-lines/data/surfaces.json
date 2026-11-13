@@ -1,6 +1,6 @@
 {
  "ext_brick_brown": {
-  "file": "res://assets/surfaces/ext_brick_brown.jpg",
+  "file": "assets/surfaces/ext_brick_brown.jpg",
   "kind": "wall",
   "repeat_m": 1.2,
   "wear": {
@@ -12,7 +12,7 @@
   }
  },
  "ext_brick_charcoal_peel": {
-  "file": "res://assets/surfaces/ext_brick_charcoal_peel.jpg",
+  "file": "assets/surfaces/ext_brick_charcoal_peel.jpg",
   "kind": "wall",
   "repeat_m": 1.6,
   "wear": {
@@ -24,7 +24,7 @@
   }
  },
  "ext_brick_painted": {
-  "file": "res://assets/surfaces/ext_brick_painted.jpg",
+  "file": "assets/surfaces/ext_brick_painted.jpg",
   "kind": "wall",
   "repeat_m": 1.2,
   "wear": {
@@ -36,7 +36,7 @@
   }
  },
  "ext_brick_red": {
-  "file": "res://assets/surfaces/ext_brick_red.jpg",
+  "file": "assets/surfaces/ext_brick_red.jpg",
   "kind": "wall",
   "repeat_m": 1.4,
   "wear": {
@@ -48,7 +48,7 @@
   }
  },
  "ext_brick_red_b": {
-  "file": "res://assets/surfaces/ext_brick_red_b.jpg",
+  "file": "assets/surfaces/ext_brick_red_b.jpg",
   "kind": "wall",
   "repeat_m": 1.2,
   "wear": {
@@ -60,7 +60,7 @@
   }
  },
  "ext_brick_red_bright": {
-  "file": "res://assets/surfaces/ext_brick_red_bright.jpg",
+  "file": "assets/surfaces/ext_brick_red_bright.jpg",
   "kind": "wall",
   "repeat_m": 1.4,
   "wear": {
@@ -72,7 +72,7 @@
   }
  },
  "ext_brick_yellow": {
-  "file": "res://assets/surfaces/ext_brick_yellow.jpg",
+  "file": "assets/surfaces/ext_brick_yellow.jpg",
   "kind": "wall",
   "repeat_m": 1.2,
   "wear": {
@@ -84,7 +84,7 @@
   }
  },
  "ext_clapboard_charcoal": {
-  "file": "res://assets/surfaces/ext_clapboard_charcoal.jpg",
+  "file": "assets/surfaces/ext_clapboard_charcoal.jpg",
   "kind": "wall",
   "repeat_m": 1.6,
   "wear": {
@@ -96,7 +96,7 @@
   }
  },
  "ext_clapboard_cream": {
-  "file": "res://assets/surfaces/ext_clapboard_cream.jpg",
+  "file": "assets/surfaces/ext_clapboard_cream.jpg",
   "kind": "wall",
   "repeat_m": 1.6,
   "wear": {
@@ -108,7 +108,7 @@
   }
  },
  "ext_concrete": {
-  "file": "res://assets/surfaces/ext_concrete.jpg",
+  "file": "assets/surfaces/ext_concrete.jpg",
   "kind": "wall",
   "repeat_m": 2.0,
   "wear": {
@@ -120,7 +120,7 @@
   }
  },
  "ext_concrete_c": {
-  "file": "res://assets/surfaces/ext_concrete_c.jpg",
+  "file": "assets/surfaces/ext_concrete_c.jpg",
   "kind": "wall",
   "repeat_m": 2.0,
   "wear": {
@@ -132,7 +132,7 @@
   }
  },
  "ext_concrete_dark": {
-  "file": "res://assets/surfaces/ext_concrete_dark.jpg",
+  "file": "assets/surfaces/ext_concrete_dark.jpg",
   "kind": "wall",
   "repeat_m": 2.0,
   "wear": {
@@ -144,7 +144,7 @@
   }
  },
  "ext_corrugated_rust": {
-  "file": "res://assets/surfaces/ext_corrugated_rust.jpg",
+  "file": "assets/surfaces/ext_corrugated_rust.jpg",
   "kind": "wall",
   "repeat_m": 1.4,
   "wear": {
@@ -156,7 +156,7 @@
   }
  },
  "ext_limestone": {
-  "file": "res://assets/surfaces/ext_limestone.jpg",
+  "file": "assets/surfaces/ext_limestone.jpg",
   "kind": "wall",
   "repeat_m": 2.4,
   "wear": {
@@ -168,7 +168,7 @@
   }
  },
  "ext_sandstone": {
-  "file": "res://assets/surfaces/ext_sandstone.jpg",
+  "file": "assets/surfaces/ext_sandstone.jpg",
   "kind": "wall",
   "repeat_m": 2.4,
   "wear": {
@@ -180,7 +180,7 @@
   }
  },
  "ext_siding_painted": {
-  "file": "res://assets/surfaces/ext_siding_painted.jpg",
+  "file": "assets/surfaces/ext_siding_painted.jpg",
   "kind": "wall",
   "repeat_m": 1.5,
   "wear": {
@@ -192,7 +192,7 @@
   }
  },
  "ext_stucco_beige": {
-  "file": "res://assets/surfaces/ext_stucco_beige.jpg",
+  "file": "assets/surfaces/ext_stucco_beige.jpg",
   "kind": "wall",
   "repeat_m": 2.0,
   "wear": {
@@ -204,7 +204,7 @@
   }
  },
  "ext_stucco_cream": {
-  "file": "res://assets/surfaces/ext_stucco_cream.jpg",
+  "file": "assets/surfaces/ext_stucco_cream.jpg",
   "kind": "wall",
   "repeat_m": 2.0,
   "wear": {
@@ -216,7 +216,7 @@
   }
  },
  "floor_boards_honey": {
-  "file": "res://assets/surfaces/floor_boards_honey.jpg",
+  "file": "assets/surfaces/floor_boards_honey.jpg",
   "kind": "floor",
   "repeat_m": 1.4,
   "wear": {
@@ -224,7 +224,7 @@
   }
  },
  "floor_carpet_beige": {
-  "file": "res://assets/surfaces/floor_carpet_beige.jpg",
+  "file": "assets/surfaces/floor_carpet_beige.jpg",
   "kind": "carpet",
   "repeat_m": 0.8,
   "wear": {
@@ -232,7 +232,7 @@
   }
  },
  "floor_carpet_beige_2": {
-  "file": "res://assets/surfaces/floor_carpet_beige_2.jpg",
+  "file": "assets/surfaces/floor_carpet_beige_2.jpg",
   "kind": "carpet",
   "repeat_m": 0.8,
   "wear": {
@@ -240,7 +240,7 @@
   }
  },
  "floor_carpet_brown": {
-  "file": "res://assets/surfaces/floor_carpet_brown.jpg",
+  "file": "assets/surfaces/floor_carpet_brown.jpg",
   "kind": "carpet",
   "repeat_m": 0.8,
   "wear": {
@@ -248,7 +248,7 @@
   }
  },
  "floor_check_mustard": {
-  "file": "res://assets/surfaces/floor_check_mustard.jpg",
+  "file": "assets/surfaces/floor_check_mustard.jpg",
   "kind": "floor",
   "repeat_m": 1.2,
   "wear": {
@@ -256,7 +256,7 @@
   }
  },
  "floor_check_olive": {
-  "file": "res://assets/surfaces/floor_check_olive.jpg",
+  "file": "assets/surfaces/floor_check_olive.jpg",
   "kind": "floor",
   "repeat_m": 0.9,
   "wear": {
@@ -264,7 +264,7 @@
   }
  },
  "floor_check_teal": {
-  "file": "res://assets/surfaces/floor_check_teal.jpg",
+  "file": "assets/surfaces/floor_check_teal.jpg",
   "kind": "floor",
   "repeat_m": 1.2,
   "wear": {
@@ -272,7 +272,7 @@
   }
  },
  "floor_herringbone": {
-  "file": "res://assets/surfaces/floor_herringbone.jpg",
+  "file": "assets/surfaces/floor_herringbone.jpg",
   "kind": "floor",
   "repeat_m": 1.0,
   "wear": {
@@ -280,7 +280,7 @@
   }
  },
  "floor_lino_cream": {
-  "file": "res://assets/surfaces/floor_lino_cream.jpg",
+  "file": "assets/surfaces/floor_lino_cream.jpg",
   "kind": "floor",
   "repeat_m": 1.0,
   "wear": {
@@ -288,7 +288,7 @@
   }
  },
  "floor_lino_olive_geo": {
-  "file": "res://assets/surfaces/floor_lino_olive_geo.jpg",
+  "file": "assets/surfaces/floor_lino_olive_geo.jpg",
   "kind": "floor",
   "repeat_m": 1.2,
   "wear": {
@@ -296,7 +296,7 @@
   }
  },
  "floor_parquet_oak": {
-  "file": "res://assets/surfaces/floor_parquet_oak.jpg",
+  "file": "assets/surfaces/floor_parquet_oak.jpg",
   "kind": "floor",
   "repeat_m": 1.2,
   "wear": {
@@ -304,7 +304,7 @@
   }
  },
  "floor_planks_honey_oak": {
-  "file": "res://assets/surfaces/floor_planks_honey_oak.jpg",
+  "file": "assets/surfaces/floor_planks_honey_oak.jpg",
   "kind": "floor",
   "repeat_m": 1.0,
   "wear": {
@@ -312,7 +312,7 @@
   }
  },
  "floor_terracotta": {
-  "file": "res://assets/surfaces/floor_terracotta.jpg",
+  "file": "assets/surfaces/floor_terracotta.jpg",
   "kind": "floor",
   "repeat_m": 0.9,
   "wear": {
@@ -320,7 +320,7 @@
   }
  },
  "floor_terrazzo_cream": {
-  "file": "res://assets/surfaces/floor_terrazzo_cream.jpg",
+  "file": "assets/surfaces/floor_terrazzo_cream.jpg",
   "kind": "floor",
   "repeat_m": 1.0,
   "wear": {
@@ -328,7 +328,7 @@
   }
  },
  "floor_terrazzo_warm": {
-  "file": "res://assets/surfaces/floor_terrazzo_warm.jpg",
+  "file": "assets/surfaces/floor_terrazzo_warm.jpg",
   "kind": "floor",
   "repeat_m": 1.0,
   "wear": {
@@ -336,7 +336,7 @@
   }
  },
  "mat_burlap": {
-  "file": "res://assets/surfaces/mat_burlap.jpg",
+  "file": "assets/surfaces/mat_burlap.jpg",
   "kind": "material",
   "repeat_m": 0.6,
   "wear": {
@@ -344,7 +344,7 @@
   }
  },
  "mat_leather_tan": {
-  "file": "res://assets/surfaces/mat_leather_tan.jpg",
+  "file": "assets/surfaces/mat_leather_tan.jpg",
   "kind": "material",
   "repeat_m": 0.5,
   "wear": {
@@ -352,7 +352,7 @@
   }
  },
  "mat_upholstery_orange": {
-  "file": "res://assets/surfaces/mat_upholstery_orange.jpg",
+  "file": "assets/surfaces/mat_upholstery_orange.jpg",
   "kind": "material",
   "repeat_m": 0.8,
   "wear": {
@@ -360,7 +360,7 @@
   }
  },
  "mat_wood_honey": {
-  "file": "res://assets/surfaces/mat_wood_honey.jpg",
+  "file": "assets/surfaces/mat_wood_honey.jpg",
   "kind": "material",
   "repeat_m": 0.6,
   "wear": {
@@ -368,7 +368,7 @@
   }
  },
  "mat_wood_plank": {
-  "file": "res://assets/surfaces/mat_wood_plank.jpg",
+  "file": "assets/surfaces/mat_wood_plank.jpg",
   "kind": "material",
   "repeat_m": 0.6,
   "wear": {
@@ -376,7 +376,7 @@
   }
  },
  "mat_wood_walnut": {
-  "file": "res://assets/surfaces/mat_wood_walnut.jpg",
+  "file": "assets/surfaces/mat_wood_walnut.jpg",
   "kind": "material",
   "repeat_m": 0.7,
   "wear": {
@@ -384,7 +384,7 @@
   }
  },
  "wall_atomic": {
-  "file": "res://assets/surfaces/wall_atomic.jpg",
+  "file": "assets/surfaces/wall_atomic.jpg",
   "kind": "wall",
   "repeat_m": 0.9,
   "wear": {
@@ -396,7 +396,7 @@
   }
  },
  "wall_floral_mustard": {
-  "file": "res://assets/surfaces/wall_floral_mustard.jpg",
+  "file": "assets/surfaces/wall_floral_mustard.jpg",
   "kind": "wall",
   "repeat_m": 0.7,
   "wear": {
@@ -408,7 +408,7 @@
   }
  },
  "wall_floral_orange": {
-  "file": "res://assets/surfaces/wall_floral_orange.jpg",
+  "file": "assets/surfaces/wall_floral_orange.jpg",
   "kind": "wall",
   "repeat_m": 0.9,
   "wear": {
@@ -420,7 +420,7 @@
   }
  },
  "wall_leaf_cream": {
-  "file": "res://assets/surfaces/wall_leaf_cream.jpg",
+  "file": "assets/surfaces/wall_leaf_cream.jpg",
   "kind": "wall",
   "repeat_m": 0.7,
   "wear": {
@@ -432,7 +432,7 @@
   }
  },
  "wall_retro_wave": {
-  "file": "res://assets/surfaces/wall_retro_wave.jpg",
+  "file": "assets/surfaces/wall_retro_wave.jpg",
   "kind": "wall",
   "repeat_m": 0.9,
   "wear": {
@@ -444,7 +444,7 @@
   }
  },
  "wall_sample_00": {
-  "file": "res://assets/surfaces/wall_sample_00.jpg",
+  "file": "assets/surfaces/wall_sample_00.jpg",
   "kind": "wall",
   "repeat_m": 0.6,
   "wear": {
@@ -456,7 +456,7 @@
   }
  },
  "wall_sample_01": {
-  "file": "res://assets/surfaces/wall_sample_01.jpg",
+  "file": "assets/surfaces/wall_sample_01.jpg",
   "kind": "wall",
   "repeat_m": 0.6,
   "wear": {
@@ -468,7 +468,7 @@
   }
  },
  "wall_sample_02": {
-  "file": "res://assets/surfaces/wall_sample_02.jpg",
+  "file": "assets/surfaces/wall_sample_02.jpg",
   "kind": "wall",
   "repeat_m": 0.6,
   "wear": {
@@ -480,7 +480,7 @@
   }
  },
  "wall_sample_03": {
-  "file": "res://assets/surfaces/wall_sample_03.jpg",
+  "file": "assets/surfaces/wall_sample_03.jpg",
   "kind": "wall",
   "repeat_m": 0.6,
   "wear": {
@@ -492,7 +492,7 @@
   }
  },
  "wall_sample_04": {
-  "file": "res://assets/surfaces/wall_sample_04.jpg",
+  "file": "assets/surfaces/wall_sample_04.jpg",
   "kind": "wall",
   "repeat_m": 0.6,
   "wear": {
@@ -504,7 +504,7 @@
   }
  },
  "wall_sample_05": {
-  "file": "res://assets/surfaces/wall_sample_05.jpg",
+  "file": "assets/surfaces/wall_sample_05.jpg",
   "kind": "wall",
   "repeat_m": 0.6,
   "wear": {
@@ -516,7 +516,7 @@
   }
  },
  "wall_sample_06": {
-  "file": "res://assets/surfaces/wall_sample_06.jpg",
+  "file": "assets/surfaces/wall_sample_06.jpg",
   "kind": "wall",
   "repeat_m": 0.6,
   "wear": {
@@ -528,7 +528,7 @@
   }
  },
  "wall_sample_07": {
-  "file": "res://assets/surfaces/wall_sample_07.jpg",
+  "file": "assets/surfaces/wall_sample_07.jpg",
   "kind": "wall",
   "repeat_m": 0.6,
   "wear": {
@@ -540,7 +540,7 @@
   }
  },
  "wall_sample_08": {
-  "file": "res://assets/surfaces/wall_sample_08.jpg",
+  "file": "assets/surfaces/wall_sample_08.jpg",
   "kind": "wall",
   "repeat_m": 0.6,
   "wear": {
@@ -552,7 +552,7 @@
   }
  },
  "wall_sample_09": {
-  "file": "res://assets/surfaces/wall_sample_09.jpg",
+  "file": "assets/surfaces/wall_sample_09.jpg",
   "kind": "wall",
   "repeat_m": 0.6,
   "wear": {
@@ -564,7 +564,7 @@
   }
  },
  "wall_sample_10": {
-  "file": "res://assets/surfaces/wall_sample_10.jpg",
+  "file": "assets/surfaces/wall_sample_10.jpg",
   "kind": "wall",
   "repeat_m": 0.6,
   "wear": {
@@ -576,7 +576,7 @@
   }
  },
  "wall_sample_11": {
-  "file": "res://assets/surfaces/wall_sample_11.jpg",
+  "file": "assets/surfaces/wall_sample_11.jpg",
   "kind": "wall",
   "repeat_m": 0.6,
   "wear": {
@@ -588,7 +588,7 @@
   }
  },
  "wall_sample_12": {
-  "file": "res://assets/surfaces/wall_sample_12.jpg",
+  "file": "assets/surfaces/wall_sample_12.jpg",
   "kind": "wall",
   "repeat_m": 0.6,
   "wear": {
@@ -600,7 +600,7 @@
   }
  },
  "wall_sample_13": {
-  "file": "res://assets/surfaces/wall_sample_13.jpg",
+  "file": "assets/surfaces/wall_sample_13.jpg",
   "kind": "wall",
   "repeat_m": 0.6,
   "wear": {
@@ -612,7 +612,7 @@
   }
  },
  "wall_sample_14": {
-  "file": "res://assets/surfaces/wall_sample_14.jpg",
+  "file": "assets/surfaces/wall_sample_14.jpg",
   "kind": "wall",
   "repeat_m": 0.6,
   "wear": {
@@ -624,7 +624,7 @@
   }
  },
  "wall_swatch_00": {
-  "file": "res://assets/surfaces/wall_swatch_00.jpg",
+  "file": "assets/surfaces/wall_swatch_00.jpg",
   "kind": "wall",
   "repeat_m": 0.6,
   "wear": {
@@ -636,7 +636,7 @@
   }
  },
  "wall_swatch_01": {
-  "file": "res://assets/surfaces/wall_swatch_01.jpg",
+  "file": "assets/surfaces/wall_swatch_01.jpg",
   "kind": "wall",
   "repeat_m": 0.6,
   "wear": {
@@ -648,7 +648,7 @@
   }
  },
  "wall_swatch_02": {
-  "file": "res://assets/surfaces/wall_swatch_02.jpg",
+  "file": "assets/surfaces/wall_swatch_02.jpg",
   "kind": "wall",
   "repeat_m": 0.6,
   "wear": {
@@ -660,7 +660,7 @@
   }
  },
  "wall_swatch_03": {
-  "file": "res://assets/surfaces/wall_swatch_03.jpg",
+  "file": "assets/surfaces/wall_swatch_03.jpg",
   "kind": "wall",
   "repeat_m": 0.6,
   "wear": {
@@ -672,7 +672,7 @@
   }
  },
  "wall_swatch_04": {
-  "file": "res://assets/surfaces/wall_swatch_04.jpg",
+  "file": "assets/surfaces/wall_swatch_04.jpg",
   "kind": "wall",
   "repeat_m": 0.6,
   "wear": {
@@ -684,7 +684,7 @@
   }
  },
  "wall_swatch_05": {
-  "file": "res://assets/surfaces/wall_swatch_05.jpg",
+  "file": "assets/surfaces/wall_swatch_05.jpg",
   "kind": "wall",
   "repeat_m": 0.6,
   "wear": {
@@ -696,7 +696,7 @@
   }
  },
  "wall_swatch_06": {
-  "file": "res://assets/surfaces/wall_swatch_06.jpg",
+  "file": "assets/surfaces/wall_swatch_06.jpg",
   "kind": "wall",
   "repeat_m": 0.6,
   "wear": {
@@ -708,7 +708,7 @@
   }
  },
  "wall_swatch_07": {
-  "file": "res://assets/surfaces/wall_swatch_07.jpg",
+  "file": "assets/surfaces/wall_swatch_07.jpg",
   "kind": "wall",
   "repeat_m": 0.6,
   "wear": {
@@ -720,7 +720,7 @@
   }
  },
  "wall_swatch_08": {
-  "file": "res://assets/surfaces/wall_swatch_08.jpg",
+  "file": "assets/surfaces/wall_swatch_08.jpg",
   "kind": "wall",
   "repeat_m": 0.6,
   "wear": {
@@ -732,7 +732,7 @@
   }
  },
  "wall_swatch_09": {
-  "file": "res://assets/surfaces/wall_swatch_09.jpg",
+  "file": "assets/surfaces/wall_swatch_09.jpg",
   "kind": "wall",
   "repeat_m": 0.6,
   "wear": {
@@ -744,7 +744,7 @@
   }
  },
  "wall_swatch_10": {
-  "file": "res://assets/surfaces/wall_swatch_10.jpg",
+  "file": "assets/surfaces/wall_swatch_10.jpg",
   "kind": "wall",
   "repeat_m": 0.6,
   "wear": {
@@ -756,7 +756,7 @@
   }
  },
  "wall_swatch_11": {
-  "file": "res://assets/surfaces/wall_swatch_11.jpg",
+  "file": "assets/surfaces/wall_swatch_11.jpg",
   "kind": "wall",
   "repeat_m": 0.6,
   "wear": {
@@ -768,7 +768,7 @@
   }
  },
  "wall_swatch_12": {
-  "file": "res://assets/surfaces/wall_swatch_12.jpg",
+  "file": "assets/surfaces/wall_swatch_12.jpg",
   "kind": "wall",
   "repeat_m": 0.6,
   "wear": {
@@ -780,7 +780,7 @@
   }
  },
  "wall_swatch_13": {
-  "file": "res://assets/surfaces/wall_swatch_13.jpg",
+  "file": "assets/surfaces/wall_swatch_13.jpg",
   "kind": "wall",
   "repeat_m": 0.6,
   "wear": {
@@ -792,7 +792,7 @@
   }
  },
  "wall_swatch_14": {
-  "file": "res://assets/surfaces/wall_swatch_14.jpg",
+  "file": "assets/surfaces/wall_swatch_14.jpg",
   "kind": "wall",
   "repeat_m": 0.6,
   "wear": {
@@ -804,7 +804,7 @@
   }
  },
  "wall_swirl": {
-  "file": "res://assets/surfaces/wall_swirl.jpg",
+  "file": "assets/surfaces/wall_swirl.jpg",
   "kind": "wall",
   "repeat_m": 0.9,
   "wear": {

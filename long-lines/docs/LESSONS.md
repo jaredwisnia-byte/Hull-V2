@@ -43,16 +43,6 @@ add to it whenever something goes wrong.
 - Painted sheets have light and shadow painted in; in-game lighting darkens them further.
   Keep painted props' lighting gentle.
 
-## Godot
-- A RefCounted test runner whose coroutine awaits must be held by a variable, or it is freed
-  and the await silently never returns (the smoke test hung).
-- `:=` from a Variant is a parse error by default: type it explicitly.
-- `Control.set_anchors_preset` does not move offsets: centre controls with anchors 0.5 and
-  explicit offsets (`hud._center`).
-- `HUD.close_panel()` unpauses the sim; tests that drive time must re-pause.
-- Ties in raycasts go to the other body: give interactive surfaces (the window sill) a
-  millimetre of margin.
-
 ## Process
 - Look at a rendered image after every visual change; numbers alone hid black bakes and
   floating wheels.

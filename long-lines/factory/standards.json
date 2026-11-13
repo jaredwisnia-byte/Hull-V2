@@ -2,7 +2,7 @@
  "_note": "The factory's gauges. Every asset is built to these and checked against them. Change a number here, not in code.",
  "conventions": {
   "units": "metres",
-  "axes": "Blender Z-up, front faces -Y; exported GLB is Y-up, front faces +Z in Godot",
+  "axes": "Blender Z-up, front faces -Y; exported GLB is Y-up (glTF), front faces +Z",
   "origin": "bottom centre: the object stands on z = 0",
   "naming": "lowercase <category>_<descriptor>[_<variant>]; pre-factory names are grandfathered",
   "files": "assets/props/<name>/<name>.glb + _albedo.png + _normal.png + _orm.png (R=1, G=roughness, B=metal)",

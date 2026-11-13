@@ -21,7 +21,7 @@ def git(*args): return subprocess.check_output(
 tracked = git('ls-files').splitlines()
 extensions = Counter(Path(p).suffix.lower() for p in tracked)
 sources = set(p for p in tracked if Path(p).suffix.lower() in ('.py', '.gd', '.js', '.mjs',
-              '.ts', '.md', '.json', '.yml', '.yaml', '.godot', '.tscn', '.gdshader', '.html', '.css'))
+              '.ts', '.md', '.json', '.yml', '.yaml', '.html', '.css'))
 sources.update(p.relative_to(root).as_posix() for p in (
     root / 'long-lines/tools').rglob('*.py') if '__pycache__' not in str(p))
 sources.discard('long-lines/docs/CODEBASE_INVENTORY.json')  # Exclude this generated output.

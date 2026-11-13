@@ -34,11 +34,9 @@ regression deliberately detaches a foot to ensure this cannot hide missing suppo
 
 ## Archive audit
 
-The unrelated root web application and collector move to deprecated/midnight-watch.
-An active-runtime/workflow reference search found no Hull/Godot consumers. Its
-workflow is outside .github/workflows and cannot execute on this branch. Historical
-commits and original model assets remain intact. Main/default-branch cleanup takes
-effect only after review and merge; this work does not silently merge feature code.
+Historical commits and original model assets remain intact. Main/default-branch
+cleanup takes effect only after review and merge; this work does not silently merge
+feature code.
 
 The proportional share option remains in code as deprecated compatibility behavior.
 Dynamically dispatched reconstruction engines, sizing tools, fixtures and optional

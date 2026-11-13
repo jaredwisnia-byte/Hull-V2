@@ -76,7 +76,7 @@ recursive deletion of experimental learning records is installed.
 | --- | --- |
 | Setup / toolchain change | Doctor: pinned imports, Python and required native tool versions |
 | Every change | Syntax, repository policy and relevant registered tests; required CI core checks on all changes |
-| Geometry / export / loader change | Blender contracts, Godot unit/smoke and isolated representative asset regression |
+| Geometry / export / loader change | Blender contracts and isolated representative asset regression |
 | Release / dependency or model upgrade | Full claimed capability qualification, benchmark comparison and rollback rehearsal |
 | Weekly during development | Review recurring defects, failed/skipped checks, slow runs, storage growth and stale instructions |
 | Monthly initially | Restore a known environment and a selected release; validate hashes and representative output |
@@ -121,14 +121,14 @@ run size, top-level contributors and largest files. The default warning budget i
 2 GiB; set `HULL_RUN_EVIDENCE_BUDGET_BYTES` to tune it. Exceeding the budget is
 reported without changing QA, publication, or any retained diagnostic file.
 
-`qualify` defaults to core, Blender and Godot checks. Add `vision` for image-only
-intake and `cad` for CAD export, for example `--profiles core,blender,godot,vision`.
+`qualify` defaults to core and Blender checks. Add `vision` for image-only
+intake and `cad` for CAD export, for example `--profiles core,blender,vision`.
 Vision qualification requires the pinned OCR and inference runtime and executes
 automatic intake and Blender build guards. Missing capabilities and skipped
 required checks fail qualification.
 
 A report names its selected capabilities; it never implies untested optional
-features passed. CI qualifies core contracts, not Blender, Godot, OCR, CAD or
+features passed. CI qualifies core contracts, not Blender, OCR, CAD or
 arbitrary-object depth. Current reference fixtures include known defects; a
 baseline means a measured comparison, not a golden quality approval. Photo
 brightness and a good-looking height map remain ambiguous about shape, lighting

@@ -2,8 +2,9 @@
 
 Image references → geometric reconstruction → textured models → measured inspection.
 
-Hull is the asset-production software in `long-lines/tools`; the Long Lines Godot
-project supplies its original asset library and a consumer for exported props.
+Hull is the asset-production software in `long-lines/tools`. Standards, work orders
+and the ledger are in `long-lines/factory`; the prop library it builds is in
+`long-lines/assets/props` as engine-neutral GLBs (glTF, Y-up) with separate maps.
 The reconstruction pipeline runs in software, without a runtime LLM. It supports
 orthographic views, parts sheets, inferred sections, local relief hypotheses,
 texture ownership, inspection drawings and optional CAD surface exchange.
@@ -24,11 +25,11 @@ For a local dependency folder use `python -m pip install --target .hull-runtime 
 ```text
 python hull.py audit
 python hull.py check --profiles core
-python hull.py qualify --blender "PATH/TO/blender.exe" --godot "PATH/TO/godot.exe"
+python hull.py qualify --blender "PATH/TO/blender.exe"
 python hull.py package --output "PATH/TO/Hull-V2-source.zip"
 ```
 
-`qualify` requires core, Blender and Godot checks; `--profiles core,blender,godot,cad`
+`qualify` requires core and Blender checks; `--profiles core,blender,cad`
 also requires a working optional Open CASCADE backend. Missing capabilities and
 skipped required checks fail qualification. OCR, neural models and CAD dependencies
 are separate capabilities; installing core does not install them.
@@ -39,11 +40,11 @@ Each factory build keeps its order, diagnostics, QA and candidate exports under
 `.hull-runs/<run-id>/`. Failed or uncertain candidates remain inspectable.
 Passing candidates receive an artifact audit before publication into immutable
 `long-lines/assets/props/releases/<name>/<run-id>/` versions. `library.json` selects
-the active version; legacy asset paths still load. Set `HULL_RELEASE_POLICY=hold`
-for experiments, then use `python hull.py promote RECEIPT.json --qualification
-PATH/qualification.json` when qualified. Automatic publication requires
-`HULL_QUALIFICATION_PATH` to identify a matching passed qualification;
-otherwise the candidate stays available for inspection.
+the active version; legacy asset paths still load. A candidate that passes QA and
+its artifact audit publishes automatically. Set `HULL_RELEASE_POLICY=hold` for
+experiments, then use `python hull.py promote RECEIPT.json` to publish. To tie
+every release to a qualified toolchain, set `HULL_REQUIRE_QUALIFICATION=1` and
+`HULL_QUALIFICATION_PATH` to a passed `hull.py qualify` report.
 Promotion cannot override failed QA or unresolved inference warnings.
 
 ## Project guide
@@ -55,8 +56,7 @@ Promotion cannot override failed QA or unresolved inference warnings.
 - [Current machinery and limitations](KNOWLEDGE_FILE.md)
 - [Factory manual and sizing](long-lines/factory/README.md)
 - [Security reporting](SECURITY.md)
-- [Long Lines game](long-lines/README.md)
-- [Archived unrelated components](deprecated/README.md)
+- [Factory overview and commands](long-lines/README.md)
 
 A code-only ZIP is a reproducible source handoff, not a standalone installer: model
 assets, trained weights, dependencies, generated outputs and private run records are excluded.

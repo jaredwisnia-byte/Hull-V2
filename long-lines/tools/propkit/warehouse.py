@@ -124,7 +124,7 @@ def snapshot(folder):
             raise ValueError("Symlinks are not candidate artifacts")
         if path.is_file():
             if path.suffix == ".import":
-                continue  # Godot-generated import metadata is not a payload.
+                continue  # engine import metadata (e.g. Godot) is not a payload.
             relative = path.relative_to(folder).as_posix()
             inside(folder, relative)
             files[relative] = digest(path)
@@ -378,7 +378,7 @@ def seal(run, order, result, library):
 
 def required_capabilities(order):
     """Declare every registered runtime used by a published asset."""
-    required = ["core", "blender", "godot"]
+    required = ["core", "blender"]
     if order.get("cad_export"):
         required.append("cad")
     if order.get("vision_generated"):

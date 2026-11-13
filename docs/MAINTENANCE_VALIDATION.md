@@ -49,5 +49,5 @@ uncalibrated inverse-shading depths; this work does not claim to resolve them.
 Public metadata reported 14 unprotected branches, no rulesets, a size of 737,585 KiB,
 and no project license. Repository files prepare review routing, checks and runbooks;
 they do not activate hosted branch/security settings. The original branches and
-history remain in place. Weekly CI and the legacy collector change are proposed
+history remain in place. Weekly CI is proposed
 on the review branch, not activated on the unchanged default branch.

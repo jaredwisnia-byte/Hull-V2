@@ -6,8 +6,8 @@ PROPS = {}
 
 
 def prop(name, tex=1024, tags=(), desc="", kind="static"):
-    """Registers a recipe. tex is the baked texture size; kind is the default
-    Godot behaviour (static, fixture, carry, container, readable)."""
+    """Registers a recipe. tex is the baked texture size; kind is a default
+    behaviour hint recorded in library.json (static, fixture, carry, container, readable)."""
     def wrap(fn):
         PROPS[name] = {"fn": fn, "tex": tex, "tags": list(tags), "desc": desc or (fn.__doc__ or "").strip(), "kind": kind}
         return fn
