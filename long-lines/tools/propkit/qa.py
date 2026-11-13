@@ -258,6 +258,34 @@ def check(name, views_dir=None, category_class=None, paint_only=(), solid=False,
     holes = ndimage.binary_fill_holes(sil["front"]) & ~sil["front"]
     m["front_hole_fraction"] = round(float(holes.mean()), 4)
     allow = MIN["max_hole_fraction"]
+    observed = None
+    if views_dir and trim_order and trim_order.get('build_scope') == 'outer_body_only':
+        from .silhouette import observed_silhouettes, opening_occlusion
+        paths = {view: os.path.join(views_dir, 'v_' + view + '.png')
+                 for view in ('front', 'back', 'left', 'right', 'top', 'bottom')
+                 if os.path.exists(os.path.join(views_dir, 'v_' + view + '.png'))}
+        observed, opening_report = observed_silhouettes(paths)
+        m['observed_openings'] = opening_report
+        m['opening_occlusion'] = {}
+        for view, (expected, _) in observed.items():
+            if view not in sil or not opening_report['accepted'].get(view):
+                continue
+            blocked = opening_occlusion(expected, sil[view])
+            if blocked is None:
+                continue
+            m['opening_occlusion'][view] = round(blocked, 3)
+            if blocked > 0.35:
+                fails.append('%s observed opening is %.0f%% blocked by exported mesh' %
+                             (view, blocked * 100))
+        if 'front' in observed:
+            expected = observed['front'][0]
+            expected_holes = ndimage.binary_fill_holes(expected) & ~expected
+            expected_fraction = float(expected_holes.mean())
+            m['reference_hole_fraction'] = round(expected_fraction, 4)
+            allow = max(allow, expected_fraction * 1.5 + 0.002)
+            if expected_fraction > MIN['max_hole_fraction'] and \
+                    holes.mean() < expected_fraction * 0.5:
+                fails.append('observed front opening missing from exported mesh')
     man = os.path.join(views_dir, "manifest.json") if views_dir else None
     # a sheet set: compare with the holes the reference really has
     if man and os.path.exists(man):
@@ -283,7 +311,7 @@ def check(name, views_dir=None, category_class=None, paint_only=(), solid=False,
             p = os.path.join(views_dir, "v_%s.png" % k)
             if k in paint_only or not os.path.exists(p):
                 continue
-            mask, _ = silhouette(p)
+            mask = observed[k][0] if observed and k in observed else silhouette(p)[0]
             ref = np.asarray(Image.fromarray(mask.astype(
                 np.uint8) * 255).resize((got.shape[1], got.shape[0]))) > 127
             raw_ious[k] = round(

@@ -357,7 +357,18 @@ def export_textured(name, out_root, destination):
         destination / 'model.glb'), export_format='GLB', use_selection=True)
     bpy.ops.file.pack_all()
     bpy.ops.wm.save_as_mainfile(filepath=str(destination / 'model.blend'))
-    return {'model': str(destination / 'model.glb'), 'blend': str(destination / 'model.blend')}
+    result = {'model': str(destination / 'model.glb'),
+              'blend': str(destination / 'model.blend')}
+    # Diagnostic maps travel with the standalone asset. Their codes and
+    # coverage counts are recorded in the library's texture_ownership report.
+    for suffix in ('source_view', 'source_view_preview', 'source_confidence'):
+        source = base.with_name(base.name + '_' + suffix + '.png')
+        if source.is_file():
+            import shutil
+            target = destination / (suffix + '.png')
+            shutil.copy2(source, target)
+            result[suffix] = str(target)
+    return result
 
 
 def update_manifest(path, name, entry):

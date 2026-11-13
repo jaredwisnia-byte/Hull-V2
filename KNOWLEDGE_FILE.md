@@ -872,3 +872,44 @@ The unrelated web app and collector workflow moved under deprecated/midnight-wat
 after a runtime reference search. Dynamic recipe modules, existing sizing tools,
 fixtures and optional backends were retained rather than declared unused.
 See DESCRIPTION.md for the current project description.
+
+## Finger openings and seven-sheet intake (2026-11-13)
+
+SOURCE-VERIFIED: `propkit/human_scale.py` estimates physical scale from human
+contact dimensions. `parts_layout.repeated_holes` reads the companion part's
+`h_front.png` opening mask and treats repeated opening diameter as one scale
+anchor. `parts_layout.build_part` cuts supported openings; `hull_assembly`
+checks opposite-view evidence. The saved wall-phone dial detects 11 repeated
+opening components. Its human-size anchor was outvoted by other contacts in
+the historical order, so the feature is a consistency check, not a guaranteed
+finger-hole classifier.
+
+SOURCE-VERIFIED: Whole-object intake previously filled enclosed holes in the
+silhouette before construction. `observed_silhouettes` now keeps sufficiently
+large openings that appear in opposed source masks. QA measures obstruction
+of each supported opening in every available orthographic view. This applies
+to any through-opening with opposed evidence; a single dark painted patch is
+not enough.
+
+OBSERVED RUN: New cassette build: front/back opening obstruction 6.5%/6.6%,
+4,784 triangles. New mixer build: left/right opening obstruction 2.0%/2.6%,
+2,044 triangles. Both still failed unrelated local shading-depth probes and
+were left `needs_review`. The mixer bowl interior remains materially and
+geometrically weak. These are partial outer-body builds, not qualified assets.
+
+SOURCE-VERIFIED: OCR companion captions now name unassigned detail regions
+across all seven local consumer-object sheets, including stacked direction
+labels and side-panel detail headings. `part_graph` records each candidate
+and why it lacks a supported 3D placement. OBSERVED RUN: all seven sheets
+produced candidate part names, but zero parts passed cross-view spatial
+constraints at the current confidence rule. Lowering the correspondence
+threshold to 0.08 produced two apparently constrained cases, including a
+cassette handle matched spuriously to the bottom view. Do not lower the rule
+globally or claim automatic companion manufacture from these results.
+
+SOURCE-VERIFIED: Projected texture atlases now carry an indexed source-view
+map, a colour preview, and the existing source-confidence map. The strongest
+*surviving* view after colour-consistency filtering owns each recorded texel.
+Standalone exports copy these maps for inspection. The screen-space triangle
+tolerance can now take an explicit viewing distance. Neither change estimates
+physical detail absent from the input.

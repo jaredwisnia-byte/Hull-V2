@@ -137,6 +137,9 @@ def refine_albedo(obj, sources, output_path, shift=(0, 0, 0)):
     occupied = np.zeros((height, width), bool)
     atlas_owners = np.full((height, width), -1, np.int32)
     confidence = np.zeros((height, width), np.float32)
+    view_codes = {'front': 1, 'back': 2, 'left': 3,
+                  'right': 4, 'top': 5, 'bottom': 6}
+    source_view = np.zeros((height, width), np.uint8)
     material_sources = {}
     camera_cache = {}
     for material_index, material in enumerate(mesh.materials):
@@ -234,11 +237,16 @@ def refine_albedo(obj, sources, output_path, shift=(0, 0, 0)):
         weights[disagreement] = 0
         total = weights.sum(1)
         valid = total > 0
+        # The original leading camera may have failed colour consistency.
+        # Record the strongest surviving source, not that rejected candidate.
+        selected = np.argmax(weights, axis=1)
         predicted = np.einsum(
             'ij,ijk->ik', weights, linear_rgb(colours)) / np.maximum(total[:, None], 1e-9)
         image[yy[valid], xx[valid]] = np.uint8(
             np.clip(srgb(predicted[valid]), 0, 1) * 255)
         covered[yy[valid], xx[valid]] = True
+        camera_codes = np.asarray([view_codes[camera['name']] for camera in cameras], np.uint8)
+        source_view[yy[valid], xx[valid]] = camera_codes[selected[valid]]
         confidence[yy, xx] = np.maximum(
             confidence[yy, xx], weights.max(1) / np.maximum(total, 1e-9))
         unknown += int((~valid).sum())
@@ -256,6 +264,7 @@ def refine_albedo(obj, sources, output_path, shift=(0, 0, 0)):
             indices = ndimage.distance_transform_edt(
                 ~known, return_distances=False, return_indices=True)
             image[missing] = image[indices[0][missing], indices[1][missing]]
+            source_view[missing] = 254  # same-owner colour, no direct source view
             filled += int(missing.sum())
         else:
             unresolved += int(missing.sum())
@@ -269,8 +278,24 @@ def refine_albedo(obj, sources, output_path, shift=(0, 0, 0)):
     Image.fromarray(image).save(output_path)
     Image.fromarray(np.uint8(confidence * 255)).save(
         str(output_path).replace('_albedo.png', '_source_confidence.png'))
+    Image.fromarray(source_view).save(
+        str(output_path).replace('_albedo.png', '_source_view.png'))
+    palette = np.zeros((256, 3), np.uint8)
+    view_colours = {'front': (225, 89, 89), 'back': (75, 150, 232),
+                    'left': (91, 185, 123), 'right': (241, 190, 68),
+                    'top': (174, 105, 218), 'bottom': (220, 135, 72)}
+    for view, colour in view_colours.items():
+        palette[view_codes[view]] = colour
+    palette[254] = (160, 160, 160)
+    Image.fromarray(palette[source_view]).save(
+        str(output_path).replace('_albedo.png', '_source_view_preview.png'))
     return {'mode': 'per_texel_owned_projection', 'processed_samples': processed,
             'unseen_source_samples': unknown, 'unseen_pixels_filled_from_same_owner': filled,
             'unresolved_projected_pixels': unresolved, 'needs_review': bool(unresolved),
             'rejected_colour_samples': disagreements,
-            'covered_atlas_pixels': int(covered.sum()), 'source_selection': 'visibility + ownership + facing + colour consistency; linear-light blend'}
+            'covered_atlas_pixels': int(covered.sum()),
+            'source_view_legend': {**view_codes, 'same_owner_fill': 254},
+            'source_view_preview_rgb': view_colours,
+            'source_view_pixels': {view: int((source_view == code).sum())
+                                   for view, code in view_codes.items()},
+            'source_selection': 'visibility + ownership + facing + colour consistency; linear-light blend'}

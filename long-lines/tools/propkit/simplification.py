@@ -37,13 +37,16 @@ def refresh_normals(obj, sharp_angle=35, planar=False):
                 mesh.polygons[int(index)].use_smooth = False
 
 
-def screen_tolerance(standards, kind):
+def screen_tolerance(standards, kind, distance_m=None):
     """The surface error (m) a mesh may have: error_px pixels at the kind's near viewing distance."""
     import math
     sb = standards.get("screen_error_budget")
     if not sb:
         return None
-    d = sb["near_m"].get(kind, sb["near_m"]["static"])
+    d = (float(distance_m) if distance_m is not None else
+         sb["near_m"].get(kind, sb["near_m"]["static"]))
+    if d <= 0:
+        raise ValueError('viewing distance must be positive')
     px_per_m = sb["screen_px"][1] / \
         (2 * d * math.tan(math.radians(sb["vertical_fov_deg"]) / 2))
     return sb["error_px"] / px_per_m

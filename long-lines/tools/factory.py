@@ -142,11 +142,12 @@ def intake(image, name, category, height=None, notes=""):
     return order
 
 
-def automatic_build(image, output, cad_export=False):
+def automatic_build(image, output, cad_export=False, view_distance_m=None):
     """Compatibility entry point for the image-only orchestration station."""
     from propkit.pipeline import build_image
     return build_image(
-        image, output, cad_export=cad_export, build_order=build, library_root=LIB,
+        image, output, cad_export=cad_export, view_distance_m=view_distance_m,
+        build_order=build, library_root=LIB,
         render_script=os.path.join(HERE, "render_turnaround.py"),
         export_model=bake.export_textured,
     )
@@ -394,6 +395,10 @@ def run_line(order):
                 hp["mesh_hook"] = relief.hook(views, W_, D_, height, rrep)
         from propkit.hull import HULL_REPORT
         HULL_REPORT.pop("sections", None)
+        if order.get('build_scope') == 'outer_body_only':
+            from propkit.silhouette import observed_silhouettes
+            hp['sil_override'], openings_report = observed_silhouettes(views)
+            order.setdefault('measured', {})['observed_openings'] = openings_report
         obj = hull_prop(views, height, name=order["name"], **hp)
         order.setdefault('measured', {})['field'] = dict(
             HULL_REPORT.get('field', {}))
@@ -426,7 +431,7 @@ def run_line(order):
         if blended and (order.get("automatic_depth") or order.get("budget") == "screen"):
             from propkit.simplification import screen_tolerance, decimate_to_error, refresh_normals
             tolerance = screen_tolerance(
-                STANDARDS, order.get("kind", "static"))
+                STANDARDS, order.get("kind", "static"), order.get('view_distance_m'))
             totals = {}
             if tolerance:
                 for part in manufactured:
@@ -930,7 +935,9 @@ if __name__ == "__main__":
     a = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     cmd, rest = (a[0], a[1:]) if a else ("report", [])
     if cmd == 'auto':
-        result = automatic_build(rest[0], rest[rest.index('--output') + 1], cad_export='--cad' in rest)
+        distance = float(rest[rest.index('--view-distance') + 1]) if '--view-distance' in rest else None
+        result = automatic_build(rest[0], rest[rest.index('--output') + 1],
+                                 cad_export='--cad' in rest, view_distance_m=distance)
         sys.exit(0 if result['status'] == 'complete' else 2)
     elif cmd == "intake":
         kw = {}

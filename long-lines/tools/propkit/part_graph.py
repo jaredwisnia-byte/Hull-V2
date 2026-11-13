@@ -188,6 +188,23 @@ def from_report(report):
                                  'source_region': region['id'], 'assembly_region': target['id'], 'view': match['view'],
                                  'box_unit': box, 'confidence': float(confidence), 'affine_2d': match.get('affine_2d')})
     result = associate(observations)
+    candidates = []
+    for region in report['regions']:
+        if region['part'] == 'assembly':
+            continue
+        supported = [node for node in result['parts']
+                     if any(item['source_region'] == region['id']
+                            for item in node['observations'])]
+        candidates.append({
+            'source_region': region['id'], 'label': region['part'],
+            'matched_physical_ids': [node['id'] for node in supported],
+            'status': ('spatially_constrained' if any(node['spatially_constrained']
+                                                     for node in supported) else
+                       'single_axis_or_insufficient_correspondence' if supported else
+                       'insufficient_correspondence')})
+    result['candidate_regions'] = candidates
+    result['needs_review'] = result['needs_review'] or any(
+        item['status'] != 'spatially_constrained' for item in candidates)
     result['source'] = 'existing learned dense correspondences; no object-role vocabulary'
     result['confidence_kind'] = 'heuristic support score; not calibrated probability'
     return result

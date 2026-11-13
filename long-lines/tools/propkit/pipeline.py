@@ -42,7 +42,8 @@ def render_asset(name, destination, render_script, library_root=None):
     return None
 
 
-def _build_image(image, output, *, build_order, library_root, render_script, export_model, cad_export=False):
+def _build_image(image, output, *, build_order, library_root, render_script, export_model,
+                 cad_export=False, view_distance_m=None):
     """Intake -> native work order -> build/QA -> fresh exports -> diagnostics."""
     from sheet_blobs import automatic
     from . import engineering
@@ -64,6 +65,10 @@ def _build_image(image, output, *, build_order, library_root, render_script, exp
     else:
         order = json.loads(Path(intake["work_order"]).read_text())
         order['cad_export'] = bool(cad_export)
+        if view_distance_m is not None:
+            if not 0.1 <= float(view_distance_m) <= 100:
+                raise ValueError('viewing distance must be between 0.1 and 100 metres')
+            order['view_distance_m'] = float(view_distance_m)
         name = order["name"]
         result["assumptions"] = order["assumptions"]
         warnings = [part["name"] for part in order.get("parts", [])

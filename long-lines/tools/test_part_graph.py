@@ -4,7 +4,7 @@ import tempfile
 from pathlib import Path
 import numpy as np
 from PIL import Image
-from propkit.part_graph import associate, ownership, export_ownership
+from propkit.part_graph import associate, ownership, export_ownership, from_report
 
 
 def observation(identifier, view, box, label='unfamiliar mechanism', source=None):
@@ -13,6 +13,14 @@ def observation(identifier, view, box, label='unfamiliar mechanism', source=None
 
 
 class PartGraphTests(unittest.TestCase):
+    def test_unmatched_detail_is_reported_even_without_dense_matches(self):
+        graph = from_report({'regions': [
+            {'id': 0, 'part': 'assembly', 'view': 'front', 'box': [0, 0, 100, 100]},
+            {'id': 1, 'part': 'control_knob', 'view': None, 'box': [0, 0, 20, 20]}]})
+        self.assertTrue(graph['needs_review'])
+        self.assertEqual(graph['candidate_regions'][0]['status'],
+                         'insufficient_correspondence')
+
     def test_repeated_instances_are_not_duplicated_by_an_ambiguous_side_view(self):
         observations = [observation('f1', 'front', [.1, .5, .2, .6]),
                         observation('f2', 'front', [.7, .5, .8, .6]),

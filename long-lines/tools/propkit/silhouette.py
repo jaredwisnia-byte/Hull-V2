@@ -1,5 +1,6 @@
 """Image-only silhouette extraction shared by planning and Blender construction."""
 
+import os
 import numpy as np
 from PIL import Image
 from scipy import ndimage
@@ -52,3 +53,61 @@ def silhouette(path, thresh=30, convex=False, with_box=False):
     if with_box:
         return m[box[1]:box[3], box[0]:box[2]], im.crop(box), box
     return m[box[1]:box[3], box[0]:box[2]], im.crop(box)
+
+
+def observed_silhouettes(views, min_fraction=0.003, agreement=0.6):
+    """Keep large, opposed background openings in a whole-object build.
+
+    A dark painted patch is not an opening. Require the provided hole masks on
+    opposite views to agree before subtracting either from the visual hull.
+    Return both the construction masks and an evidence report for QA.
+    """
+    opposite = {'front': 'back', 'back': 'front',
+                'left': 'right', 'right': 'left'}
+    base = {view: silhouette(path, with_box=True) for view, path in views.items()}
+    holes = {}
+    for view, path in views.items():
+        mask, _, box = base[view]
+        hp = os.path.join(os.path.dirname(path), 'h_' + view + '.png')
+        if not os.path.exists(hp):
+            continue
+        raw = np.asarray(Image.open(hp).convert('L').crop(box)) > 127
+        if raw.shape == mask.shape:
+            holes[view] = raw & mask
+    result = {}
+    report = {'accepted': {}, 'rejected': {}}
+    for view, (mask, painting, _) in base.items():
+        candidate = holes.get(view)
+        other = opposite.get(view)
+        if candidate is None or other not in holes:
+            result[view] = (mask, painting)
+            continue
+        witness = holes[other][:, ::-1]
+        witness = np.asarray(Image.fromarray(witness).resize(
+            (mask.shape[1], mask.shape[0]), Image.Resampling.NEAREST)) > 0
+        witness = ndimage.binary_dilation(witness, iterations=3)
+        labels, count = ndimage.label(candidate)
+        accepted = np.zeros_like(mask)
+        rejected = 0
+        for index in range(1, count + 1):
+            region = labels == index
+            if region.sum() >= min_fraction * mask.sum() and \
+                    (region & witness).sum() >= agreement * region.sum():
+                accepted |= region
+            else:
+                rejected += 1
+        result[view] = (mask & ~accepted, painting)
+        report['accepted'][view] = int(accepted.sum())
+        report['rejected'][view] = rejected
+    return result, report
+
+
+def opening_occlusion(expected, projected):
+    """Fraction of a supported source opening blocked by the built mesh."""
+    opening = ndimage.binary_fill_holes(expected) & ~expected
+    if not opening.any():
+        return None
+    opening = np.asarray(Image.fromarray(opening).resize(
+        (projected.shape[1], projected.shape[0]),
+        Image.Resampling.NEAREST), bool)
+    return float((opening & projected).sum() / max(1, opening.sum()))

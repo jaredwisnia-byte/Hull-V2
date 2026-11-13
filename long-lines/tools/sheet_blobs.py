@@ -145,6 +145,72 @@ def caption_regions(boxes, labels, image_height):
     return result
 
 
+def assign_companion_captions(regions, labels, image_height):
+    """Name uncaptioned detail drawings from nearby headings or view captions.
+
+    This records a candidate physical part. Matching and the part graph still
+    decide whether it belongs in an assembly; a caption alone never builds it.
+    """
+    def part_name(text):
+        text = re.sub(r'\s*\((?:FRONT|BACK|LEFT|RIGHT|SIDE)(?:\s+DETAIL)?\)\s*$',
+                      '', text.upper()).strip(' :')
+        if not text or text in VIEW_LABELS or text in ('DETAIL', 'PART'):
+            return None
+        return re.sub('[^a-z0-9]+', '_', text.lower()).strip('_')
+
+    def caption_part(label):
+        text = label['text']
+        if re.search(r'\((?:FRONT|BACK|LEFT|RIGHT|SIDE)(?:\s+DETAIL)?\)\s*$', text):
+            name = part_name(text)
+            if name:
+                return name
+        elif not re.match(r'^(?:FRONT|BACK|LEFT|RIGHT|SIDE)\s*\(DETAIL\)$', text):
+            return None
+        # The direction can be on its own OCR line below the part name.
+        above = [item for item in labels if item is not label
+                 and abs((item['box'][0] + item['box'][2]) / 2 -
+                         (label['box'][0] + label['box'][2]) / 2) < image_height * .09
+                 and -image_height * .005 <= label['box'][1] - item['box'][3] < image_height * .04
+                 and part_name(item['text'])]
+        if above:
+            return part_name(min(above, key=lambda item: label['box'][1] - item['box'][3])['text'])
+        return 'unnamed_detail' if 'DETAIL' in text else None
+
+    detail_heads = sorted((label for label in labels if label['text'].strip() == 'DETAIL:'),
+                          key=lambda label: label['box'][0])
+    panels = []
+    for head in detail_heads:
+        following = [label for label in labels if label is not head
+                     and abs(label['box'][0] - head['box'][0]) < image_height * .04
+                     and -image_height * .02 <= label['box'][1] - head['box'][3] < image_height * .045
+                     and part_name(label['text'])]
+        if following:
+            title = min(following, key=lambda label: label['box'][1])
+            panels.append((head['box'][0], head['box'][1], part_name(title['text'])))
+
+    for region in regions:
+        if region['view'] is not None:
+            continue
+        x0, y0, x1, y1 = region['box']
+        center = (x0 + x1) / 2
+        matching = [panel for index, panel in enumerate(panels)
+                    if panel[0] <= center < (panels[index + 1][0] if index + 1 < len(panels) else float('inf'))
+                    and y0 >= panel[1] - image_height * .1]
+        if matching:
+            region.update(part=matching[-1][2], status='companion_heading_candidate')
+            continue
+        if region['part'] != 'assembly':
+            continue
+        candidates = [label for label in labels
+                      if x0 <= (label['box'][0] + label['box'][2]) / 2 <= x1
+                      and -image_height * .02 <= label['box'][1] - y1 <= image_height * .12
+                      and caption_part(label)]
+        if candidates:
+            label = min(candidates, key=lambda item: abs(item['box'][1] - y1))
+            region.update(part=caption_part(label), status='companion_caption_candidate')
+    return regions
+
+
 def automatic(sheet, output):
     """Image-only inspection stage. Ambiguous views stay unresolved, not guessed."""
     sheet=Path(sheet).resolve()
@@ -190,6 +256,7 @@ def automatic(sheet, output):
             continue
         region=min(candidates,key=lambda r:y0-r['box'][3])
         region.update(view=label['view'],status='caption_assigned',confidence=label['confidence'])
+    assign_companion_captions(regions, labels, image.height)
     assembly=[r for r in regions if r['part']=='assembly' and r['view'] not in (None,'perspective')]
     cv=__import__('cv2'); cv.setNumThreads(1)
     from propkit.vision import DenseVision, compact_parts

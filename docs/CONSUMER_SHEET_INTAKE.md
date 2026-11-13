@@ -43,3 +43,29 @@ Issue #5 stays open until generic physical-part ownership and placement, correct
 scale estimation, full-build QA across object families, and visual comparison against
 the reference sheets are verified. The 100-sheet dataset is also incomplete; these
 seven sheets are a pilot, not a training benchmark or ground truth geometry.
+
+## Follow-up: openings and companion evidence, 2026-11-13
+
+The original wall-phone parts route detects repeated holes in the dial's
+`h_front.png`, cuts them in `parts_layout.build_part`, and tests their diameter
+against human-scale contacts. That mechanism was not used by the generic
+outer-body route. The generic route now carries source openings into its
+visual hull only when opposed views agree. Its quality check measures how
+much of each supported opening the exported mesh blocks. A cassette trial
+blocked 6.5%/6.6% of its front/back handle opening; a mixer trial blocked
+2.0%/2.6% of its left/right gap. Both exports remain `needs_review` because
+local depth probes still fail.
+
+Companion labels split across OCR lines or set beside a `DETAIL:` heading now
+name candidate regions without an object-specific vocabulary. In the seven
+sheet intake rerun, every sheet had named companion candidates, but none had
+a part with independently supported placement in three dimensions. The part
+graph records each unresolved candidate. Lowering its match threshold from
+0.25 to 0.08 creates false cross-view associations, including a cassette
+handle matched to the bottom view, so the acceptance threshold was retained.
+
+Projected textures now export an indexed source-view map, a colour preview,
+and the source-confidence map. The screen-space mesh budget accepts an
+explicit `--view-distance` value in metres for `factory.py auto`; the default
+remains the category's configured near distance. These are diagnostics and
+budget controls, not new evidence for hidden geometry.
