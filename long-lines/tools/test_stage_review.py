@@ -84,6 +84,13 @@ class ReviewContracts(unittest.TestCase):
         self.assertEqual(finding['evidence']['candidates'], [candidate])
         self.assertFalse(review['physical_geometry_verified'])
 
+    def test_preflight_view_conflict_cannot_pass_stage_review(self):
+        review = inspect({'pass': True, 'fails': []}, {'source_drawing': {
+            'sheet': 'technical-traces.png', 'view_conflicts_in_use': ['top']}})
+        self.assertEqual(review['status'], 'needs_review')
+        self.assertEqual(review['findings'][0]['code'],
+                         'preflight_view_conflict_used_for_geometry')
+
     def test_separate_part_evidence_is_also_checked(self):
         measured = {'surface_details': {'handle': {
             'pre_reduction_validation': {'probes': [{'id': 'a', 'retained': True}]}}}}

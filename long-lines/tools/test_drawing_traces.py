@@ -1,7 +1,10 @@
 """Measured drafting stations must retain source contours and uncertainty."""
 import unittest
+import tempfile
+from pathlib import Path
+from unittest.mock import patch
 
-from propkit.drawing_traces import _elevation_section
+from propkit.drawing_traces import _elevation_section, _end_frame_hypotheses, infer
 
 
 class SourceSectionContracts(unittest.TestCase):
@@ -38,6 +41,37 @@ class SourceSectionContracts(unittest.TestCase):
         self.assertEqual(len(section['crossings']), 3)
         self.assertIsNone(section['outer_envelope_x_source_px'])
         self.assertFalse(section['crossing_parity_valid'])
+
+    def test_preflight_conflict_is_distinct_from_actual_construction_use(self):
+        def observed(view, path, *unused):
+            return {'source_size_px': [20, 20], 'foreground_box_px': [2, 2, 18, 18],
+                    'observed_elevation_sections': [], 'traces': [],
+                    'outer_path_count': 0, 'internal_path_count': 0,
+                    'opposed_mask_opening_count': 0}
+
+        with tempfile.TemporaryDirectory() as folder, patch(
+                'propkit.drawing_traces.observe', side_effect=observed):
+            views = {'front': 'front.png', 'top': 'top.png'}
+            preflight = {'paint_only': ['top'], 'views': {'top': {'off_pct': 184.1}}}
+            used = infer(views, Path(folder) / 'used',
+                         view_consistency=preflight, geometry_views=views)
+            held = infer(views, Path(folder) / 'held',
+                         view_consistency=preflight, geometry_views={'front': 'front.png'})
+        self.assertEqual(used['view_conflicts_in_use'], ['top'])
+        self.assertEqual(used['view_construction_use']['top']['preflight_proportion_off_pct'],
+                         184.1)
+        self.assertFalse(held['view_conflicts_in_use'])
+        self.assertFalse(held['view_construction_use']['top']['used_for_geometry'])
+
+    def test_end_frame_evidence_does_not_choose_a_rotation(self):
+        observations = {'front': {'foreground_box_px': [0, 0, 40, 100]},
+                        'right': {'foreground_box_px': [0, 0, 80, 100]},
+                        'top': {'foreground_box_px': [0, 0, 100, 50]}}
+        top = _end_frame_hypotheses(observations)['top']
+        self.assertAlmostEqual(top['axis_residual_log']['90_or_270_degrees'], 0)
+        self.assertGreater(top['axis_residual_log']['0_or_180_degrees'], 1)
+        self.assertIn('unresolved', top['status'])
+        self.assertEqual(top['construction_use'], 'diagnostic_only')
 
 
 if __name__ == '__main__':

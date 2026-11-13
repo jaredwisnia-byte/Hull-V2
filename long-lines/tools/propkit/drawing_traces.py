@@ -5,6 +5,7 @@ cross-view solver may consume these paths, but must record its own inferences.
 """
 
 import json
+import math
 from pathlib import Path
 
 import numpy as np
@@ -46,6 +47,40 @@ def _elevation_section(outer, row, height_fraction):
         'crossing_parity_valid': parity_valid,
         'physical_cross_section_shape': 'unobserved',
     }
+
+
+def _end_frame_hypotheses(observations):
+    """Compare end-view frame axes with the measured elevation extents.
+
+    Aspect alone cannot decide 0 versus 180 degrees or prove camera pose. Keep
+    both residuals as source evidence; this function never rotates an image.
+    """
+    side = 'right' if 'right' in observations else 'left'
+    if 'front' not in observations or side not in observations:
+        return {}
+
+    def ratio(name):
+        x0, y0, x1, y1 = observations[name]['foreground_box_px']
+        return (x1 - x0) / (y1 - y0)
+
+    width_over_depth = ratio('front') / ratio(side)
+    result = {}
+    for end in ('top', 'bottom'):
+        if end not in observations:
+            continue
+        observed = ratio(end)
+        result[end] = {
+            'source_elevation_views': ['front', side],
+            'expected_width_over_depth_from_elevations': width_over_depth,
+            'observed_end_view_width_over_depth': observed,
+            'axis_residual_log': {
+                '0_or_180_degrees': abs(math.log(observed / width_over_depth)),
+                '90_or_270_degrees': abs(math.log(observed * width_over_depth)),
+            },
+            'status': 'aspect_only; rotation, mirror and camera pose unresolved',
+            'construction_use': 'diagnostic_only',
+        }
+    return result
 
 
 def observe(view, path, construction_mask=None, opening_witness=None):
@@ -127,7 +162,8 @@ def observe(view, path, construction_mask=None, opening_witness=None):
                                            for r in records)}
 
 
-def infer(views, destination, construction_masks=None, opening_report=None):
+def infer(views, destination, construction_masks=None, opening_report=None,
+          view_consistency=None, geometry_views=None):
     """Create the first-station drawing and JSON from arbitrary labelled views."""
     destination = Path(destination)
     destination.mkdir(parents=True, exist_ok=True)
@@ -137,6 +173,8 @@ def infer(views, destination, construction_masks=None, opening_report=None):
         raise ValueError('At least one labelled source view is required')
     construction_masks = construction_masks or {}
     opening_report = opening_report or {}
+    view_consistency = view_consistency or {}
+    proposed_paint_only = set(view_consistency.get('paint_only', ()))
     opposites = {'front': 'back', 'back': 'front',
                  'left': 'right', 'right': 'left'}
     observations = {
@@ -145,6 +183,22 @@ def infer(views, destination, construction_masks=None, opening_report=None):
                       opposites.get(name) if opening_report.get('accepted', {}).get(name, 0)
                       else None)
         for name in selected}
+    view_use = {}
+    for name in selected:
+        used = None if geometry_views is None else name in geometry_views
+        proposed = name in proposed_paint_only
+        view_use[name] = {
+            'used_for_geometry': used,
+            'preflight_proposes_paint_only': proposed,
+            'preflight_proportion_off_pct': view_consistency.get(
+                'views', {}).get(name, {}).get('off_pct'),
+            'conflict_in_use': bool(used and proposed),
+            'preflight_is_diagnostic_only': bool(view_consistency),
+        }
+        observations[name]['construction_use'] = view_use[name]
+    conflicts = [name for name, status in view_use.items()
+                 if status['conflict_in_use']]
+    frame_hypotheses = _end_frame_hypotheses(observations)
     constraints = [
         {'id': item['id'], 'kind': 'opposed_mask_opening',
          'source_view': name, 'cross_view_witness': item['cross_view_witness'],
@@ -194,6 +248,10 @@ def infer(views, destination, construction_masks=None, opening_report=None):
         x1, y1 = x0 + panel_w - 36, y0 + panel_h - 25
         draw.rectangle((x0, y0, x1, y1), outline='#444444', width=2)
         draw.text((x0 + 12, y0 + 12), f'{name.upper()} / SOURCE TRACE', fill='#111111')
+        if view_use[name]['conflict_in_use']:
+            draw.text((x0 + 12, y0 + 29),
+                      'PREFLIGHT CONFLICT: VIEW STILL USED FOR GEOMETRY',
+                      fill='#b00020')
         record = observations[name]
         w, h = record['source_size_px']
         scale = min((x1 - x0 - 42) / w, (y1 - y0 - 80) / h)
@@ -240,6 +298,9 @@ def infer(views, destination, construction_masks=None, opening_report=None):
               'status': 'source_observations_and_opposed_mask_openings',
               'observations': observations, 'coordinate_transforms': coordinate_transforms,
               'paired_elevation_envelopes': paired_sections,
+              'view_construction_use': view_use,
+              'view_conflicts_in_use': conflicts,
+              'end_view_frame_hypotheses': frame_hypotheses,
               'geometry_inferences': [], 'build_constraints': constraints,
               'unknowns': ['internal depth', 'material or shadow versus relief',
                            'unseen geometry', 'physical scale']}

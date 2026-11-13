@@ -16,6 +16,12 @@ def inspect(result, measured, diagnostics=None):
         findings.append(dict(code=code, station=station, severity=severity, summary=summary,
                              evidence=evidence, next_check=next_check))
     drawing = measured.get('source_drawing', {})
+    conflicts = drawing.get('view_conflicts_in_use', [])
+    if conflicts:
+        flag('preflight_view_conflict_used_for_geometry', 5, 'review',
+             'Preflight questions source views that the builder still uses for geometry',
+             {'views': conflicts, 'drawing': drawing.get('sheet')},
+             'Resolve source orientation or proportion, then rebuild and compare traced outlines before using these views as construction constraints.')
     openings = drawing.get('opening_candidates', [])
     if openings:
         flag('opening_mask_physical_meaning_unverified', 5, 'review',

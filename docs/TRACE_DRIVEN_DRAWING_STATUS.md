@@ -28,6 +28,12 @@ unknowns. The resulting construction decisions must refer back to the drawing.
 - The core and Blender check profile passed 44 checks after this change, and
   the camera/cassette prebuild integration check passed. These checks do not
   certify physical geometry or the unresolved internal feature interpretations.
+- The sheet now distinguishes a preflight view conflict from actual build use.
+  The seven consumer pilot orders each have at least one view that preflight
+  proposed for paint only while the builder still uses it for geometry. Stage
+  review flags this contradiction. Source-aspect residuals for 0/180 versus
+  90/270 degree end-view axes are saved as diagnostic hypotheses, not applied
+  rotations; aspect cannot resolve flips or camera pose.
 - Prebuild integration was checked on an instant camera and cassette recorder.
   A mixed diagnostic trial also included toaster, typewriter, hair dryer, alarm
   clock, stand mixer, a carved leg, and another camera view set. The trial
@@ -47,6 +53,11 @@ unknowns. The resulting construction decisions must refer back to the drawing.
 - The opening validator can mistake a painted seam for a cut. A hair-dryer
   false protrusion rejected an earlier isolated circle-to-cylinder prototype;
   do not promote that prototype or special-case the camera.
+- View reconciliation is diagnostic in the automatic-image path. Its proposed
+  paint-only list is not currently applied to construction. Some proposals
+  may be explained by a rotated view or a core-mask measurement, so the next
+  correction must compare the source frame, full silhouette, and resulting
+  mesh on the mixed set before adopting a view transformation or exclusion.
 
 ## Next acceptance gate
 

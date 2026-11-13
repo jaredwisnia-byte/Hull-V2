@@ -3,6 +3,19 @@
 Last audited: 2026-11-11. Read this before proposing a new reconstruction module.
 Update it when verified behaviour, inputs, call paths or test results change.
 
+## Source-traced drawing checkpoint (2026-11-13)
+
+The automatic-depth factory now produces a prebuild trace sheet from source
+silhouettes and internal pixel paths. It measures 19 contour-crossing sections
+per elevation and pairs front/side envelopes while leaving the intervening 3D
+section unknown. A nine-object diagnostic trial measured 684 section rows with
+at most 0.5 source-pixel outline difference. The sheet and stage review now
+report when a view proposed for paint only is still used for geometry; all seven
+consumer pilot orders have at least one such conflict. End-view aspect evidence
+is recorded without rotating or excluding any view. These are diagnostics, not
+validated cross-view feature identities, physical sections or corrected meshes.
+See [drawing status](docs/TRACE_DRIVEN_DRAWING_STATUS.md) for the acceptance gate.
+
 ## Consumer sheet intake pilot (2026-11-12)
 
 See [consumer sheet intake](docs/CONSUMER_SHEET_INTAKE.md) and

@@ -349,7 +349,10 @@ def run_line(order):
                 source_drawing = drawing_traces.infer(
                     views, trace_folder,
                     construction_masks=hp.get('sil_override'),
-                    opening_report=order['measured'].get('observed_openings'))
+                    opening_report=order['measured'].get('observed_openings'),
+                    view_consistency=(order['measured'].get('reconcile') or
+                                      order.get('view_consistency')),
+                    geometry_views=geometry_views)
                 order.setdefault('measured', {})['source_drawing'] = {
                     'stage': 'before_geometry',
                     'sheet': os.path.join(trace_folder, 'technical-traces.png'),
@@ -357,6 +360,7 @@ def run_line(order):
                     'geometry_inferences': 0,
                     'status': 'source contours and opposing-mask opening candidates; physical meaning unresolved',
                     'opening_candidates': source_drawing['build_constraints'],
+                    'view_conflicts_in_use': source_drawing['view_conflicts_in_use'],
                     'paired_elevation_measurements': len(
                         source_drawing['paired_elevation_envelopes']),
                     'path_counts': {view: {'outer': record['outer_path_count'],
