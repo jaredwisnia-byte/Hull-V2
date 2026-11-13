@@ -81,6 +81,9 @@ shift's evidence folder. Omit `--previous` only when there is no earlier report.
 Compare complete top-level growth deltas and review unclassified `Hull-*`
 directories with an owner before proposing any move. An unreadable subtree has
 an unknown delta; it must not be counted as a size reduction or an orphan.
+Review `no_longer_at_root` against the move journal and current destinations.
+Absence at the root alone does not establish deletion; a `null` list means the
+root could not be scanned and no absence conclusion is available.
 
 ### 15:00 — foreman review and controlled improvement
 

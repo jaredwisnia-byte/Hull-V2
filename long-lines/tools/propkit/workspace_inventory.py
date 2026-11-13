@@ -63,6 +63,14 @@ def scan(root, classification=None, previous=None):
         bucket["delta_bytes"] = (bucket["bytes"] - prior
                                  if prior is not None and not bucket["partial"]
                                  and not old[name].get("partial") else None)
+    # Absence at the root is evidence of a change, not evidence of deletion.
+    # If the root itself could not be scanned, even that observation is unknown.
+    removed_top_level = None if "[root]" in incomplete else [
+        {"name": name, "prior_bytes": old[name].get("bytes"),
+         "prior_role": old[name].get("role"),
+         "prior_partial": old[name].get("partial", False)}
+        for name in sorted(set(old) - set(top))
+    ]
     return {
         "schema": 1,
         "captured_utc": datetime.now(timezone.utc).isoformat(),
@@ -73,9 +81,10 @@ def scan(root, classification=None, previous=None):
         "partial": partial,
         "errors": errors,
         "top_level": dict(sorted(top.items())),
+        "no_longer_at_root": removed_top_level,
         "review_candidates": sorted(
             name for name, item in top.items() if item["kind"] == "directory"
             and name.startswith("Hull-") and name not in classification
         ),
-        "notes": "Review candidates have no assigned role; they are not verified orphans."
+        "notes": "Review candidates have no assigned role; they are not verified orphans. Items no longer at the root may have been moved and are not verified deletions."
     }
