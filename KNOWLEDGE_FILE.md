@@ -22,6 +22,18 @@ instruction. The workspace-specific classification file assigns known active
 scripts and references their roles; inaccessible subtrees still leave size
 deltas unknown rather than implying a reduction.
 
+## Stage evidence retention manifest (2026-11-13)
+
+`hull.py retention-verify` checks an owner-reviewed set of NumPy stage arrays
+against expected paths, sizes and an exact logical-byte budget. With
+`--verify-hashes` it also checks SHA-256. The initial local manifest covers 27
+table-leg experiment arrays across five evidence directories; a complete hash
+pass found no changed or unlisted array. Metadata checks do not certify file
+contents, and this manifest does not authorize collection or cover the entire
+Codex workspace. The maintenance runbook directs a fast metadata check each
+shift and a full hash check weekly; the recurring schedule still needs a
+confirmed Toronto-local trigger.
+
 ## Source-traced drawing checkpoint (2026-11-13)
 
 The automatic-depth factory now produces a prebuild trace sheet from source

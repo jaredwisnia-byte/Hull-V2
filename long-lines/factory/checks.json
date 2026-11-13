@@ -7,6 +7,11 @@
       "script": "long-lines/tools/test_pathing.py"
     },
     {
+      "id": "retention_manifest",
+      "capability": "core",
+      "script": "long-lines/tools/test_retention_manifest.py"
+    },
+    {
       "id": "sectioning",
       "capability": "core",
       "script": "long-lines/tools/test_sectioning.py",

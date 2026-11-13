@@ -87,6 +87,11 @@ scan must not be presented as total physical drive usage.
 Review `no_longer_at_root` against the move journal and current destinations.
 Absence at the root alone does not establish deletion; a `null` list means the
 root could not be scanned and no absence conclusion is available.
+Verify the reviewed stage-array retention set with
+`hull.py retention-verify C:/Users/jared/Documents/Codex/Hull-maintenance-validation/workspace-organization/stage-retention-manifest.json
+--output REPORT.json`. This metadata pass reports missing, changed-size and
+unlisted arrays without moving them. A failed or incomplete result requires
+owner review before any retention action.
 
 ### 15:00 — foreman review and controlled improvement
 
@@ -130,7 +135,8 @@ publication. Continue safe diagnostic work.
 | `factory_standards` | Quarterly primary-source check | Changes to relevant factory practice |
 | `software_standards` | Quarterly primary-source check | Changes to code, CI and incident practice |
 
-Weekly: run full supported core and native contracts in a controlled runtime;
+Weekly: rerun that retention command with `--verify-hashes`, then run full
+supported core and native contracts in a controlled runtime;
 review recurring defects, skipped checks, storage trends and one recovery
 scenario. Monthly: verify a selected immutable release from a clean environment
 and rehearse guarded rollback in a disposable library. Broader tests run less

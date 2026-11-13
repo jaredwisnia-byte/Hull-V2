@@ -505,6 +505,10 @@ def main(root):
     sub.add_argument("--previous", type=Path)
     sub.add_argument("--allocated", action="store_true",
                      help="also measure Windows allocated file bytes, including compression")
+    sub = commands.add_parser("retention-verify")
+    sub.add_argument("manifest", type=Path)
+    sub.add_argument("--output", type=Path, required=True)
+    sub.add_argument("--verify-hashes", action="store_true")
     sub = commands.add_parser("memory-quarantine")
     sub.add_argument("database", type=Path)
     sub.add_argument("--reviewed-report", type=Path, required=True)
@@ -540,6 +544,17 @@ def main(root):
             result = workspace_inventory.scan(
                 args.workspace, classification, previous,
                 include_allocated=args.allocated)
+            warehouse.atomic_json(args.output, result)
+        elif args.command == "retention-verify":
+            from . import retention_manifest
+            report_path = args.output.resolve()
+            if report_path == args.manifest.resolve() or report_path.exists():
+                raise ValueError("Retention report must use a new path")
+            result = retention_manifest.verify(args.manifest, args.verify_hashes)
+            if any(report_path.is_relative_to(
+                    Path(result["root"]).joinpath(*relative.split("/")))
+                   for relative in result["managed_roots"]):
+                raise ValueError("Retention report must be outside managed evidence")
             warehouse.atomic_json(args.output, result)
         elif args.command == "memory-inventory":
             if not args.database.is_file():
