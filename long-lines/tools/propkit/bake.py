@@ -158,6 +158,13 @@ def finish(name, out_root, tex=1024, samples=24, tags=(), owned_projection=False
     lo0 = [min(v.co[i] for v in obj.data.vertices)
            for i in range(3)] if high else None
     tex, std_notes = standardize(obj, name, tex, tags)
+    # Blender 4.1+ has no auto smooth: sharp edges are marked once, when each part is
+    # smoothed. Joining, repairs and decimation change the topology afterwards, so the marks
+    # no longer match the final faces and corners export shaded smooth (normals up to 90
+    # degrees off their faces: dark streaks and the QA normal check). Mark them once more on
+    # the final mesh, before UVs and the tangent-space bake.
+    if not obj.data.has_custom_normals:
+        core.smooth(obj)
     if high:
         # the dense relief moves with the mesh it was made from (standardize seats it on the floor/wall)
         lo1 = [min(v.co[i] for v in obj.data.vertices) for i in range(3)]

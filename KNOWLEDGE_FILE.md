@@ -1,7 +1,34 @@
 # Hull knowledge file
 
-Last audited: 2026-11-11. Read this before proposing a new reconstruction module.
+Last audited: 2026-11-13. Read this before proposing a new reconstruction module.
 Update it when verified behaviour, inputs, call paths or test results change.
+
+## Drawn-set rebuild under Blender 5.2.3 (2026-11-13)
+
+All eight buildable drawn orders (car, coffee maker, two CRT TVs, sofa, two table
+legs, wall phone) were rebuilt with `tools/line.py` on Nov 9 `main` and on this
+branch, in Blender 5.2.3, and their turnarounds compared side by side.
+
+- Appearance is effectively unchanged between the two. This branch's screen-space
+  budget keeps that appearance at far fewer triangles: CRT TV 908 vs 22,998, sofa
+  6,644 vs 38,000, coffee maker 1,012 vs 5,700; car, TV 2 and legs are equal.
+- Two regressions were found and fixed:
+  1. Normal disagreement on multi-part props (wall phone 3.6%, CRT TV 1.7%):
+     Blender 4.1+ has no auto smooth, so sharp-edge marks went stale after joining
+     and decimation. `bake.finish` re-marks them on the final mesh. All eight now
+     measure 0.0 (gate 1%; the legs were 0.4-0.6% before). See LESSONS.md.
+  2. A build that passed QA never reached the library unless a toolchain
+     qualification file was supplied, so `line.py` rendered stale assets and
+     reported "flagged". Passing candidates now publish by default with
+     `qualification: qa_and_artifact_audit`; `HULL_REQUIRE_QUALIFICATION=1` restores
+     the strict gate. Failed or uncertain candidates still cannot publish.
+- Result: 7/8 ship. The wall phone fails front/top outline match (74%/70%). This is
+  a reference-sheet conflict, not a pipeline fault: the assembly top view omits the
+  handset and the front view draws a longer cord than the parts sheet. Fix the sheet
+  rather than loosen the gate. (Nov 9 `main` passed it only because its QA skipped
+  silhouette comparison for parts orders.)
+- No in-repo order enables `automatic_depth`; the depth-from-shading machinery is
+  exercised only by the image-only pilot sheets, which live outside the repository.
 
 ## Windows Blender export path budget (2026-11-13)
 

@@ -739,3 +739,17 @@ a QA issue, not permission to loosen error limits.
 Parallel benchmark copies also shared tempfile names derived only from asset
 name. Give each worker its own TMP/TEMP/TMPDIR; reject collided experiments
 rather than compare their output. Preserve those failure records.
+
+## Blender 4.1+ has no auto smooth: re-mark sharp edges on the final mesh (2026-11-13)
+- The wall phone and the CRT TV failed the normal-disagreement gate (3.6% and 1.7%) under
+  Blender 5.2 while passing under 4.0. The faces were not reversed: corners steeper than
+  72 degrees were shaded smooth. In Blender 4.0 `use_auto_smooth` was a mesh property that
+  the glTF exporter applied to whatever topology existed at export time. From 4.1,
+  `set_sharp_from_angle` marks edges once, when `core.smooth` runs on each part; joining,
+  mesh repair and decimation afterwards leave the marks stale.
+- `bake.finish` now calls `core.smooth` on the joined, standardized mesh before unwrapping and
+  baking (skipped when the mesh has custom normals). Both props pass with 0.0 disagreement and
+  unchanged triangle counts.
+- Rule: a failure that appears after a Blender upgrade is a toolchain change until proven
+  otherwise. Rebuild the same order on both versions before calling it an inherited geometry
+  defect.

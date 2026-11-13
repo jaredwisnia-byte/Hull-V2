@@ -1,5 +1,18 @@
 # Hull V2 working guide
 
+## Current priority (2026-11-13)
+
+Better models, not more machinery. Storage, release qualification, maintenance
+roles, workspace inventory and other process tooling are frozen until a change
+shows a model-quality gain. Judge every reconstruction change by rebuilding the
+drawn set and comparing the contact sheet before and after:
+
+    python long-lines/tools/line.py car_sedan_tan coffee_maker_drip electronics_tv_crt electronics_tv_crt2 sofa_olive_suede table_leg_carved table_leg_guided wallphone_rotary
+
+`docs/renders/line.png` is the before/after evidence; a change that makes any of
+these worse is not done. Pick one problem, finish it, merge it. Do not open a new
+branch per session.
+
 Read `CONTRIBUTING.md` and `KNOWLEDGE_FILE.md` before changing the factory. The
 reconstruction engine is in `long-lines/tools/propkit/`; orchestration is in
 `long-lines/tools/factory.py`. The factory manual is

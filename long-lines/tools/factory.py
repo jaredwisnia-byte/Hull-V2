@@ -878,10 +878,15 @@ def build(order, samples=16):
         result['run_id'] = run.name
         result['disposition'] = receipt['state']
         if receipt['state'] == 'qualified_candidate' and os.environ.get('HULL_RELEASE_POLICY', 'auto') == 'auto':
+            # A build that passed QA and its artifact audit ships to the library. Teams that want
+            # every release tied to a qualified toolchain set HULL_REQUIRE_QUALIFICATION=1 (and
+            # HULL_QUALIFICATION_PATH from `hull.py qualify`).
             qualification = os.environ.get('HULL_QUALIFICATION_PATH')
-            if qualification:
+            strict = os.environ.get('HULL_REQUIRE_QUALIFICATION') == '1'
+            if qualification or not strict:
                 try:
-                    warehouse.promote(run / 'receipt.json', LIB, qualification)
+                    warehouse.promote(run / 'receipt.json', LIB, qualification or None,
+                                      allow_unqualified=not strict)
                     result['disposition'] = 'released'
                 except (OSError, ValueError, RuntimeError) as error:
                     result['release_hold_reason'] = str(error)

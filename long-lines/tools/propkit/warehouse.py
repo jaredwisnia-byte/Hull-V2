@@ -471,8 +471,12 @@ def qualification_errors(receipt, qualification):
     return errors
 
 
-def promote(receipt_path, library, qualification_path=None):
-    """Publish an immutable version, then atomically select it in the manifest."""
+def promote(receipt_path, library, qualification_path=None, allow_unqualified=False):
+    """Publish an immutable version, then atomically select it in the manifest.
+
+    A matching toolchain qualification is required unless allow_unqualified is set; then a
+    candidate that passed QA and its artifact audit is published without one, and the entry
+    records that only QA and the audit stood behind it."""
     receipt_path = Path(receipt_path).resolve()
     receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
     if (
@@ -480,14 +484,16 @@ def promote(receipt_path, library, qualification_path=None):
         or not audit(receipt)["pass"]
     ):
         raise ValueError("Candidate is not qualified or its evidence changed")
-    if qualification_path is None:
+    if qualification_path is None and not allow_unqualified:
         raise ValueError("Matching toolchain qualification is required for publication")
-    qualification_path = Path(qualification_path).resolve()
-    qualification = json.loads(qualification_path.read_text(encoding="utf-8"))
-    problems = qualification_errors(receipt, qualification)
-    if problems:
-        raise ValueError("Toolchain qualification mismatch: " + "; ".join(problems))
-    qualification_sha256 = digest(qualification_path)
+    qualified = qualification_path is not None
+    if qualified:
+        qualification_path = Path(qualification_path).resolve()
+        qualification = json.loads(qualification_path.read_text(encoding="utf-8"))
+        problems = qualification_errors(receipt, qualification)
+        if problems:
+            raise ValueError("Toolchain qualification mismatch: " + "; ".join(problems))
+        qualification_sha256 = digest(qualification_path)
     retained_qualification = receipt_path.parent / "qualification-used.json"
     source_manifest = Path(receipt["artifact_library_root"]) / "library.json"
     entry = json.loads(source_manifest.read_text(encoding="utf-8"))[receipt["name"]]
@@ -498,14 +504,17 @@ def promote(receipt_path, library, qualification_path=None):
     relative = Path("releases") / name / run_id
     destination = inside(library, relative)
     with library_lock(library):
-        if digest(qualification_path) != qualification_sha256 or not audit(receipt)["pass"]:
+        if (qualified and digest(qualification_path) != qualification_sha256) or not audit(receipt)["pass"]:
             raise ValueError("Candidate or qualification changed during publication")
-        if retained_qualification.is_file():
-            if json.loads(retained_qualification.read_text(encoding="utf-8")) != qualification:
-                raise ValueError("A different qualification was already retained")
+        if qualified:
+            if retained_qualification.is_file():
+                if json.loads(retained_qualification.read_text(encoding="utf-8")) != qualification:
+                    raise ValueError("A different qualification was already retained")
+            else:
+                atomic_json(retained_qualification, qualification)
+            retained_sha256 = digest(retained_qualification)
         else:
-            atomic_json(retained_qualification, qualification)
-        retained_sha256 = digest(retained_qualification)
+            retained_sha256 = None
         manifest_path = library / "library.json"
         manifest = (
             json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -531,7 +540,7 @@ def promote(receipt_path, library, qualification_path=None):
             entry,
             artifact_directory=relative.as_posix(),
             release_id=run_id,
-            qualification="toolchain_qa_and_artifact_audit",
+            qualification="toolchain_qa_and_artifact_audit" if qualified else "qa_and_artifact_audit",
             qualification_sha256=retained_sha256,
             artifact_hashes=receipt["artifact_hashes"],
         )

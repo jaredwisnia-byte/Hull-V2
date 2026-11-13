@@ -175,6 +175,20 @@ class WarehouseTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "capability requirements"):
             self.promote(receipt, release)
 
+    def test_unqualified_publication_needs_passing_qa_and_is_recorded(self):
+        release = self.root / "approved"
+        failed = w.seal(self.run, self.order, dict(self.result, **{"pass": False}), self.lib)
+        self.assertEqual(failed["state"], "quarantined")
+        with self.assertRaises(ValueError):
+            w.promote(self.run / "receipt.json", release, None, allow_unqualified=True)
+        self.assertFalse((release / "library.json").exists())
+        w.seal(self.run, self.order, self.result, self.lib)
+        entry = w.promote(self.run / "receipt.json", release, None, allow_unqualified=True)
+        self.assertEqual(entry["qualification"], "qa_and_artifact_audit")
+        self.assertIsNone(entry["qualification_sha256"])
+        self.assertFalse((self.run / "qualification-used.json").exists())
+        self.assertTrue(w.verify_release(release, "test_asset")["pass"])
+
     def test_unhealthy_builder_runtime_blocks_publication(self):
         run_record = json.loads((self.run / "run.json").read_text())
         run_record["context"]["runtime"]["pass"] = False

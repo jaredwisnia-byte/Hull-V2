@@ -75,7 +75,7 @@ class FactoryStorageContracts(unittest.TestCase):
             ), patch.object(factory, "LEDGER", str(root / "ledger.jsonl")), patch.dict(
                 os.environ,
                 {"HULL_RUN_ROOT": str(root / "runs"), "HULL_RELEASE_POLICY": "auto",
-                 "HULL_QUALIFICATION_PATH": ""},
+                 "HULL_QUALIFICATION_PATH": "", "HULL_REQUIRE_QUALIFICATION": "1"},
             ), patch.object(
                 factory, "run_line", side_effect=cube
             ):
