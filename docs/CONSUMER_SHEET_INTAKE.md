@@ -69,3 +69,23 @@ and the source-confidence map. The screen-space mesh budget accepts an
 explicit `--view-distance` value in metres for `factory.py auto`; the default
 remains the category's configured near distance. These are diagnostics and
 budget controls, not new evidence for hidden geometry.
+
+## Local depth transfer audit, 2026-11-13
+
+Saved first-attempt diagnostics for the cassette and toaster were sampled at
+the exact source-derived three-point probes that failed on the dense mesh.
+The accepted image-space height retained the target sign and at least half
+its contrast at 14/15 cassette and 28/29 toaster probes classified as
+source-supported. Those same 42 probes fell below half contrast, or reversed
+sign, in the final shared field before mesh reduction. This local evidence
+locates most observed loss in view fusion or the following field repair; a
+global least-squares transfer score did not expose it. It does not establish
+that every source shading feature is physical depth. The mixer fallback did
+not save a final shared-height chart, so it cannot support this comparison.
+
+The probe review now records accepted, shared-field and dense contrasts at
+the same model-space anchors, plus the first stage where a loss is measured.
+These measurements diagnose the failure; they do not relax the geometry QA
+gate or change the construction field. The next candidate change should be
+tested against these local gauges and final mesh/outline/fold checks on more
+than one object family.

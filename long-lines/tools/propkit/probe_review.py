@@ -27,6 +27,50 @@ def image_uv(anchor, view, dimensions):
     return float(u), float(v)
 
 
+def stage_contrasts(arrays, probe, dimensions):
+    """Sample the same three anchors in accepted and shared image-space depth."""
+    needed = {'accepted_height_px', 'coarse_height_px',
+              'final_shared_height_px', 'metres_per_pixel'}
+    if not needed <= set(arrays.files) or len(probe['anchors_m']) != 3:
+        return None
+    from scipy.ndimage import map_coordinates
+    view = probe['view']
+    accepted = arrays['accepted_height_px']
+    shared = arrays['final_shared_height_px'] - arrays['coarse_height_px']
+    if accepted.shape != shared.shape or accepted.ndim != 2:
+        return None
+    height, width = accepted.shape
+    uv = np.asarray([image_uv(anchor, view, dimensions)
+                     for anchor in probe['anchors_m']])
+    if not np.isfinite(uv).all() or (uv < 0).any() or (uv > 1).any():
+        return None
+    pixels = np.vstack((uv[:, 1] * height - .5, uv[:, 0] * width - .5))
+    pixel_m = float(arrays['metres_per_pixel'])
+    if not np.isfinite(pixel_m) or pixel_m <= 0:
+        return None
+
+    def contrast(values):
+        samples = map_coordinates(values, pixels, order=1, mode='nearest')
+        return float((samples[0] - samples[1:].mean()) * pixel_m)
+
+    return {'accepted_m': contrast(accepted), 'shared_field_m': contrast(shared)}
+
+
+def first_observed_loss(expected, dense, contrasts):
+    """Locate the first measured loss without treating source depth as truth."""
+    if expected is None or not contrasts or abs(expected) < 1e-9:
+        return 'unresolved'
+    accepted = contrasts['accepted_m']
+    shared = contrasts['shared_field_m']
+    if accepted * expected <= 0 or abs(accepted) < .5 * abs(expected):
+        return 'accepted_height'
+    if shared * expected <= 0 or abs(shared) < .5 * abs(expected):
+        return 'shared_field_or_repair'
+    if dense is None or dense * expected <= 0 or abs(dense) < .5 * abs(expected):
+        return 'mesh_or_probe_intersection'
+    return 'unresolved'
+
+
 def classify(report, dimensions, diagnostic_folder):
     """Pair every unmet dense probe with its source region and held-out evidence."""
     failed = set(report.get('unmet_before_reduction', ()))
@@ -47,6 +91,7 @@ def classify(report, dimensions, diagnostic_folder):
         view = probe['view']
         uv = image_uv(probe['anchors_m'][0], view, dimensions)
         region_id = 0
+        contrasts = None
         path = folder / (view + '.npz')
         if path.is_file():
             with np.load(path, allow_pickle=False) as arrays:
@@ -55,6 +100,7 @@ def classify(report, dimensions, diagnostic_folder):
                     row = int(np.clip(uv[1] * labels.shape[0], 0, labels.shape[0] - 1))
                     col = int(np.clip(uv[0] * labels.shape[1], 0, labels.shape[1] - 1))
                     region_id = int(labels[row, col])
+                contrasts = stage_contrasts(arrays, probe, dimensions)
         source = selection.get(view, {}).get(region_id, {})
         matched = cross.get((view, region_id), {})
         supported = bool(source.get('initially_supported') and source.get('applied')
@@ -62,14 +108,19 @@ def classify(report, dimensions, diagnostic_folder):
         status = ('supported_unmet' if supported else
                   'unsupported_source' if source else 'unclassified')
         dense = measured.get(identifier, {})
+        expected = dense.get('expected_contrast_m')
+        measured_contrast = dense.get('measured_contrast_m')
         records.append({'id': identifier, 'view': view, 'center_uv': list(uv),
                         'region_id': region_id, 'status': status,
                         'selection_gain': source.get('selection_gain'),
                         'acceptance_gain': source.get('acceptance_gain'),
                         'final_test_gain': source.get('final_test_gain'),
                         'cross_view_status': matched.get('status', 'unknown'),
-                        'expected_contrast_m': dense.get('expected_contrast_m'),
-                        'dense_contrast_m': dense.get('measured_contrast_m'),
+                        'expected_contrast_m': expected,
+                        'dense_contrast_m': measured_contrast,
+                        'stage_contrasts_m': contrasts,
+                        'first_observed_loss': first_observed_loss(
+                            expected, measured_contrast, contrasts),
                         'anchors_m': probe['anchors_m'],
                         'target_offsets_m': probe['target_offsets_m']})
     return records
@@ -181,6 +232,8 @@ def write(report, dimensions, source_views=None, obj=None, tree=None):
                     ('Source', 'Proposed', 'Accepted', 'Shared field'), panels)):
                 canvas.paste(_crop(panel, item['center_uv']), (index * 256, 34))
                 draw.text((index * 256 + 8, 9), label, fill='#1b2a38')
+            draw.text((8, 292), 'First measured loss: ' + item['first_observed_loss'],
+                      fill='#1b2a38')
             _section_panel(draw, item, 305)
             image_path = target / (item['id'] + '.png')
             canvas.save(image_path)
@@ -191,6 +244,11 @@ def write(report, dimensions, source_views=None, obj=None, tree=None):
                'supported_unmet': sum(item['status'] == 'supported_unmet' for item in records),
                'unsupported_source': sum(item['status'] == 'unsupported_source' for item in records),
                'probes': records}
+    summary['supported_first_loss_counts'] = {
+        stage: sum(item['status'] == 'supported_unmet' and
+                   item['first_observed_loss'] == stage for item in records)
+        for stage in ('accepted_height', 'shared_field_or_repair',
+                      'mesh_or_probe_intersection', 'unresolved')}
     illustrated = [item for item in records if item.get('image')]
     if illustrated:
         rows = (len(illustrated) + 1) // 2

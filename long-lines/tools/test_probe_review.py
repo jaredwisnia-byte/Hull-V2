@@ -51,8 +51,39 @@ class ProbeReviewTests(unittest.TestCase):
             summary = probe_review.write(report, (1., 1., 1.))
             self.assertEqual(summary['supported_unmet'], 1)
             self.assertEqual(summary['unsupported_source'], 1)
+            self.assertEqual(summary['supported_first_loss_counts']['unresolved'], 1)
             self.assertTrue(Path(summary['overview_image']).is_file())
             self.assertTrue(Path(summary['path']).is_file())
+
+    def test_locates_supported_contrast_lost_in_shared_field(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            accepted = np.zeros((64, 64), dtype=float)
+            shared = np.zeros_like(accepted)
+            accepted[:, 15:17] = -2.
+            shared[:, 15:17] = -.4
+            np.savez_compressed(Path(temporary) / 'front.npz',
+                                feature_labels=np.ones((64, 64), dtype=np.uint8),
+                                accepted_height_px=accepted,
+                                final_shared_height_px=shared,
+                                coarse_height_px=np.zeros_like(accepted),
+                                metres_per_pixel=.01)
+            report = {'probes': [{'id': 'groove', 'view': 'front',
+                                  'anchors_m': [[-.25, -.2, .5],
+                                                [-.375, -.2, .5],
+                                                [-.125, -.2, .5]],
+                                  'target_offsets_m': [-.02, 0., 0.]}],
+                      'unmet_before_reduction': ['groove'],
+                      'pre_reduction_validation': {'probes': [
+                          {'id': 'groove', 'expected_contrast_m': -.02,
+                           'measured_contrast_m': -.003}]},
+                      'views': {'front': {'relief_selection': {'regions': [
+                          {'region_id': 1, 'initially_supported': True,
+                           'applied': True, 'final_test_gain': .2}]}}}}
+            record = probe_review.classify(report, (1., 1., 1.), temporary)[0]
+            self.assertEqual(record['status'], 'supported_unmet')
+            self.assertAlmostEqual(record['stage_contrasts_m']['accepted_m'], -.02)
+            self.assertAlmostEqual(record['stage_contrasts_m']['shared_field_m'], -.004)
+            self.assertEqual(record['first_observed_loss'], 'shared_field_or_repair')
 
 
 if __name__ == '__main__':

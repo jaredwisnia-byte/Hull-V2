@@ -82,6 +82,7 @@ def inspect(result, measured, diagnostics=None):
              {'probe_ids': relief['unmet_before_reduction'],
               'supported_unmet': audit.get('supported_unmet'),
               'unsupported_source': audit.get('unsupported_source'),
+              'supported_first_loss_counts': audit.get('supported_first_loss_counts'),
               'diagnostic': audit.get('path')},
              'Inspect each source/proposal/shared-field/mesh cross-section. Retry only supported regions with an isolated quality gate.')
     post = result.get('metrics', {}).get(
