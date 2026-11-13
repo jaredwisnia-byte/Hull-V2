@@ -9,6 +9,11 @@ import os
 BLENDER_WINDOWS_PATH_LIMIT = 247
 
 
+def _windows_code_units(path):
+    """Measure a Windows path in UTF-16 code units, including surrogate pairs."""
+    return len(path.encode('utf-16-le', 'surrogatepass')) // 2
+
+
 def check_blender_export_paths(out_root, name, windows=None):
     """Reject an unsupported output path before creating a costly asset.
 
@@ -23,14 +28,15 @@ def check_blender_export_paths(out_root, name, windows=None):
     filenames = (name + suffix for suffix in
                  ('_albedo.png', '_normal.png', '_orm.png', '.glb'))
     longest = max((os.path.join(folder, filename) for filename in filenames),
-                  key=len)
-    excess = len(longest) - BLENDER_WINDOWS_PATH_LIMIT
+                  key=_windows_code_units)
+    units = _windows_code_units(longest)
+    excess = units - BLENDER_WINDOWS_PATH_LIMIT
     if excess > 0:
         raise ValueError(
-            'Blender export path is %d characters; Windows-safe budget is %d. '
-            'Shorten the run root or asset name by at least %d characters before '
+            'Blender export path is %d UTF-16 code units; Windows-safe budget is %d. '
+            'Shorten the run root or asset name by at least %d UTF-16 code units before '
             'building. Target: %s' %
-            (len(longest), BLENDER_WINDOWS_PATH_LIMIT, excess, longest))
+            (units, BLENDER_WINDOWS_PATH_LIMIT, excess, longest))
 
 
 def io_path(path):
@@ -40,7 +46,7 @@ def io_path(path):
     file I/O only; Blender operators may not accept the extended prefix.
     """
     value = os.fspath(path)
-    if os.name != 'nt' or value.startswith('\\\\?\\') or len(value) < 248:
+    if os.name != 'nt' or value.startswith('\\\\?\\') or _windows_code_units(value) < 248:
         return value
     absolute = os.path.abspath(value)
     if absolute.startswith('\\\\'):

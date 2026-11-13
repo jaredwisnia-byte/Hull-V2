@@ -7,9 +7,10 @@ Update it when verified behaviour, inputs, call paths or test results change.
 
 Ticket #20 reproduced a Blender albedo-save failure at a 261-character path.
 The factory and direct bake entry point now check all Blender-written texture
-and GLB filenames against a conservative 247-character Windows budget before
-geometry or baking. An over-budget build reports the target and minimum number
-of characters to remove; it does not rename public assets or change geometry.
+and GLB filenames against a conservative 247 UTF-16-code-unit Windows budget
+before geometry or baking. An over-budget build reports the target and minimum
+number of code units to remove; it does not rename public assets or change geometry.
+Non-BMP characters count as two units, matching Windows path accounting.
 Ordinary Python diagnostics retain their existing extended-path handling.
 
 ## Source-traced drawing checkpoint (2026-11-13)

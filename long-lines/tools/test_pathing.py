@@ -4,7 +4,8 @@ import os
 import unittest
 
 from propkit.pathing import (BLENDER_WINDOWS_PATH_LIMIT,
-                             check_blender_export_paths, io_path)
+                             _windows_code_units, check_blender_export_paths,
+                             io_path)
 
 
 class IOPathContracts(unittest.TestCase):
@@ -43,6 +44,25 @@ class IOPathContracts(unittest.TestCase):
 
     def test_short_export_path_is_accepted(self):
         check_blender_export_paths('C:/hull/runs', 'camera', windows=True)
+
+    def test_non_bmp_characters_consume_two_windows_path_units(self):
+        symbol = chr(0x1F4F7)
+        self.assertEqual(_windows_code_units('A' + symbol), 3)
+        name = symbol * 100
+        target = os.path.abspath(os.path.join('C:/hull', name,
+                                              name + '_albedo.png'))
+        if os.name == 'nt':
+            self.assertLess(len(target), BLENDER_WINDOWS_PATH_LIMIT)
+        with self.assertRaisesRegex(ValueError, 'UTF-16 code units') as error:
+            check_blender_export_paths('C:/hull', name, windows=True)
+        self.assertIn(str(_windows_code_units(target)), str(error.exception))
+
+    @unittest.skipUnless(os.name == 'nt', 'Windows path contract')
+    def test_non_bmp_python_io_path_uses_extended_prefix(self):
+        path = os.path.join('C:/hull', chr(0x1F4F7) * 130)
+        self.assertLess(len(path), 248)
+        self.assertGreaterEqual(_windows_code_units(path), 248)
+        self.assertTrue(io_path(path).startswith('\\\\?\\'))
 
 
 if __name__ == '__main__':
