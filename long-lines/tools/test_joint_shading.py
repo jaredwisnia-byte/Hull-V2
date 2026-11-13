@@ -24,6 +24,15 @@ def fixture():
 
 
 class JointTests(unittest.TestCase):
+    def test_black_pixels_keep_material_fit_finite(self):
+        rgb = np.full((12, 12, 3), .2)
+        rgb[3:7, 4:8] = 0
+        observed = np.log(np.maximum(rgb.mean(2), 1e-5))
+        prior, chroma = joint_shading.material_prior(
+            rgb, observed, np.zeros((12, 12)), np.ones((12, 12)))
+        self.assertTrue(np.isfinite(chroma).all())
+        self.assertTrue(np.isfinite(prior).all())
+
     def setUp(self):
         backend = patch.dict(os.environ, HULL_TRACE_BACKEND="classical")
         backend.start()

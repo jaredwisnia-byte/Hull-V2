@@ -70,7 +70,10 @@ def fit_light(observed, material, height, training, prior):
 
 
 def material_prior(rgb, observed, base_shading, training):
-    chroma = np.log(rgb) - np.log(rgb.mean(2, keepdims=True))
+    # Pure black paint and interpolation at a crop edge still have finite
+    # evidence; their logarithm must not poison the least-squares system.
+    safe_rgb = np.maximum(rgb, 1e-5)
+    chroma = np.log(safe_rgb) - np.log(safe_rgb.mean(2, keepdims=True))
     design = np.concatenate([np.ones((*observed.shape, 1)), chroma], axis=2)
     keep = training > 0
     coefficients = optimize.lsq_linear(design[keep], (observed - base_shading)[keep],
@@ -229,8 +232,8 @@ def reconstruct(image, mask, base, max_depth_px, light=None, albedo=None, iterat
     maximum = min(max(mask.shape), 768)
     finest_shape = tuple(max(8, round(n * maximum / max(mask.shape)))
                          for n in mask.shape)
-    reference_rgb = linear_image(image.resize(
-        finest_shape[::-1], Image.Resampling.LANCZOS))
+    reference_rgb = np.maximum(linear_image(image.resize(
+        finest_shape[::-1], Image.Resampling.LANCZOS)), 1e-5)
     reference_mask = ndimage.zoom(
         mask, np.asarray(finest_shape) / mask.shape, order=0)
     from .pixel_folds import balanced
@@ -267,8 +270,8 @@ def reconstruct(image, mask, base, max_depth_px, light=None, albedo=None, iterat
         pixel_scale = ratio[1]
         current_mask = ndimage.zoom(mask, ratio, order=0)
         current_base = ndimage.zoom(base, ratio, order=1) * pixel_scale
-        rgb = ndimage.zoom(
-            fitting_rgb, (* (np.asarray(shape) / finest_shape), 1), order=1)
+        rgb = np.maximum(ndimage.zoom(
+            fitting_rgb, (* (np.asarray(shape) / finest_shape), 1), order=1), 1e-5)
         observed = np.log(rgb @ [.2126, .7152, .0722])
         training = current_mask if resolution < maximum else reference_training
         testing = reference_testing
@@ -403,8 +406,8 @@ def reconstruct(image, mask, base, max_depth_px, light=None, albedo=None, iterat
                            accepted_height_px=applied_result,
                            log_material=ndimage.zoom(
                                material, 1 / ratio, order=1)[:mask.shape[0], :mask.shape[1]],
-                           observed_log_luminance=np.log(
-                               linear_image(image) @ [.2126, .7152, .0722]),
+                           observed_log_luminance=np.log(np.maximum(
+                               linear_image(image) @ [.2126, .7152, .0722], 1e-5)),
                            predicted_log_shading=ndimage.zoom(np.log(shade(
                                current_base + height, lighting)), 1 / ratio, order=1)[:mask.shape[0], :mask.shape[1]],
                            spline_controls_px=final_coefficients / pixel_scale, knots_u=best['basis'].u_knots, knots_v=best['basis'].v_knots)
