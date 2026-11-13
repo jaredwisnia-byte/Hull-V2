@@ -72,6 +72,30 @@ class MaintenanceTests(unittest.TestCase):
             self.assertTrue(unknown["partial"])
             self.assertIsNone(unknown["no_longer_at_root"])
 
+    def test_workspace_inventory_can_measure_allocation_without_confusing_logical_size(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            payload = root / 'Hull-evidence' / 'field.npy'
+            payload.parent.mkdir()
+            payload.write_bytes(b'0123456789')
+            with patch.object(workspace_inventory, 'allocated_size', return_value=4):
+                first = workspace_inventory.scan(root, include_allocated=True)
+            self.assertEqual(first['total_bytes'], 10)
+            self.assertEqual(first['allocated_bytes_observed'], 4)
+            self.assertFalse(first['allocated_partial'])
+            self.assertEqual(first['top_level']['Hull-evidence']['allocated_bytes'], 4)
+            with patch.object(workspace_inventory, 'allocated_size', return_value=6):
+                second = workspace_inventory.scan(root, previous=first,
+                                                  include_allocated=True)
+            self.assertEqual(second['top_level']['Hull-evidence']['delta_bytes'], 0)
+            self.assertEqual(second['top_level']['Hull-evidence']['delta_allocated_bytes'], 2)
+            with patch.object(workspace_inventory, 'allocated_size',
+                              side_effect=OSError('allocation unavailable')):
+                incomplete = workspace_inventory.scan(root, include_allocated=True)
+            self.assertFalse(incomplete['partial'])
+            self.assertTrue(incomplete['allocated_partial'])
+            self.assertEqual(incomplete['total_bytes'], 10)
+
     def test_memory_inventory_command_writes_report_without_collecting(self):
         with tempfile.TemporaryDirectory() as folder:
             database = Path(folder) / 'memory.sqlite3'
