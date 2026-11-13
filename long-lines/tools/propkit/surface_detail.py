@@ -385,15 +385,17 @@ def apply_field(field, plan):
             weight_sum += weight
         result[start:stop] = field[start:stop] + \
             numerator / np.maximum(weight_sum, floor)
+    solo_roots = {}
     if solo_fields is not None:
         for observation in observations:
             view = observation['view']
             values = plan.get('diagnostics', {}).get(view, {})
-            if 'mask' not in values:
-                continue
             axis, reverse = VIEWS[view]
             root, _, _, _ = visible_root(
                 solo_fields[view], axis, reverse, dimensions[axis])
+            solo_roots[view] = root
+            if 'mask' not in values:
+                continue
             values['single_view_height_px'] = (
                 -root_image(root, view, dimensions, field.shape,
                             values['mask'].shape) /
@@ -402,6 +404,14 @@ def apply_field(field, plan):
         import json
         from pathlib import Path
 
+        visible_roots = {}
+        for view in {probe['view'] for probe in plan['report']['probes']}:
+            axis, reverse = VIEWS[view]
+            visible_roots[view] = (
+                visible_root(field, axis, reverse, dimensions[axis])[0],
+                solo_roots.get(view),
+                visible_root(result, axis, reverse, dimensions[axis])[0],
+            )
         trace = {}
         for probe in plan['report']['probes']:
             anchors = []
@@ -411,6 +421,14 @@ def apply_field(field, plan):
                     * field.shape[axis] - .5 for axis in range(3)])
                 baseline = float(ndimage.map_coordinates(
                     field, index[:, None], order=1, mode='nearest')[0])
+                transverse = [i for i in range(3) if i != probe['axis']]
+                coordinates = index[transverse, None]
+                visible = {}
+                for key, root in zip(('baseline_m', 'single_view_m', 'fused_m'),
+                                     visible_roots[probe['view']]):
+                    if root is not None:
+                        visible[key] = float(ndimage.map_coordinates(
+                            root, coordinates, order=1, mode='nearest')[0])
                 contributions = {}
                 for observation in observations:
                     axis = observation['axis']
@@ -466,7 +484,9 @@ def apply_field(field, plan):
                             view: field_at(values)
                             for view, values in solo_fields.items()},
                     })
-                anchors.append({'model_point_m': point, 'views': contributions,
+                anchors.append({'model_point_m': point,
+                                'visible_root_from_camera_m': visible,
+                                'views': contributions,
                                 'field_profile': profile})
             trace[probe['id']] = {'view': probe['view'], 'anchors': anchors}
         folder = Path(plan['diagnostic_folder'])

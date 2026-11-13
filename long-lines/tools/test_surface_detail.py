@@ -161,6 +161,8 @@ class SurfaceContracts(unittest.TestCase):
             self.assertEqual(len(trace['probes']['observed_0']['anchors']), 3)
             anchor = trace['probes']['observed_0']['anchors'][0]
             self.assertIn('front', anchor['views'])
+            self.assertEqual(set(anchor['visible_root_from_camera_m']),
+                             {'baseline_m', 'single_view_m', 'fused_m'})
             self.assertEqual([sample['offset_voxels'] for sample in
                               anchor['field_profile']], list(range(-12, 13)))
             self.assertAlmostEqual(anchor['field_profile'][12]['fused_m'],

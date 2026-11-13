@@ -178,18 +178,25 @@ and depth, manufacture each part once, then run complete artifact QA.
 The opt-in fusion trace now stores a short depth profile around each
 source-derived probe anchor: original field, every one-view field, and the
 combined field. This is diagnostic data only and does not alter geometry.
-On the held cassette control, all 16 previously failed probes had three
-profile crossings in the expanded window. Five had fused local contrast below
-half the source-view contrast or reversed sign, while the other eleven retained
-at least half contrast at the nearby crossing. The earlier image-space
-visible-surface audit reported much broader loss. Those measurements answer
-different questions: a crossing near the original anchor may survive even if
-it is no longer the first visible surface along the camera ray. The next
-diagnostic must distinguish competing visible crossings from field attenuation
-before a new fusion rule is promoted.
+An initial analysis incorrectly chose the nearest zero crossing without
+checking which side of the surface faced the camera. That sometimes selected
+the rear/exit face and falsely suggested relief survived. A corrected
+single-attempt cassette analysis selected only camera-facing entry crossings
+and compared the first visible root along the same ray. Of 18 failed probes,
+17 had a measurable visible-root contrast; 17 of those lost at least half
+their source-view contrast or reversed sign. Ten had valid local entry
+crossings for all three fields, and nine lost at least half contrast locally.
+The other eight had no camera-facing entry *inside the sampled baseline
+window* because their original surface touched the field boundary; this does
+not establish that they had no physical surface. The result supports
+attenuation at fusion, rather than a hidden surviving local groove, on this
+control. It still does not establish physically correct source depths.
 
-The same held rerun reproduced the prior cassette outcome exactly: 16 missing
-depth probes, 5,574 triangles, and 3.588 extreme folds per 1,000 triangles.
+The earlier full held rerun reproduced the prior cassette outcome exactly:
+16 missing depth probes, 5,574 triangles, and 3.588 extreme folds per 1,000
+triangles. The new single-attempt diagnostic deliberately disabled automatic
+retry and therefore retained the first candidate: 18 missing depth probes,
+5,572 triangles, and 3.59 extreme folds per 1,000 triangles.
 Its full build also exposed a Blender-on-Windows file I/O limit: a 261-character
 diagnostic preview filename failed while shorter files in the same directory
 saved. Long diagnostic image paths now use Windows extended-path I/O for save
