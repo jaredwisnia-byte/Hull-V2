@@ -95,6 +95,14 @@ It never moves or deletes a checkpoint. A live inventory is not a safe deletion
 list: a writer may be creating a file while the scan runs. Review the report,
 repeat it after the workload is idle, and preserve the database plus recovery
 evidence before any separately approved retention action.
+After reviewing a stable, hash-verified report and stopping legacy workers,
+`python hull.py memory-quarantine DATABASE --reviewed-report REPORT.json
+--confirm-idle` rechecks the report under the checkpoint lock and moves only
+unchanged, unreferenced patches into `patches-quarantine/<batch>/` on the same
+volume. It writes a recovery journal before moving. Use `python hull.py
+memory-restore DATABASE BATCH` to verify and restore a batch, including one
+interrupted midway. Quarantine does not reclaim disk space; archive or deletion
+requires a separate reviewed retention decision.
 
 Each sealed build writes `retention-manifest.json` beside its receipt. It records
 run size, top-level contributors and largest files. The default warning budget is
