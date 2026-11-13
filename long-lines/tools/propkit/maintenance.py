@@ -344,6 +344,10 @@ def run_checks(root, profiles, output, blender=None, godot=None):
         and unchanged
         and all(r["pass"] for r in results),
         "profiles": profiles,
+        "planned_checks": [
+            {"id": check["id"], "capability": check["capability"]}
+            for check in plan["checks"] if check["capability"] in profiles
+        ],
         "source_unchanged_during_checks": unchanged,
         "repository_policy": policy,
         "runtime": health,
@@ -499,6 +503,8 @@ def main(root):
     sub.add_argument("--output", type=Path, required=True)
     sub.add_argument("--classification", type=Path)
     sub.add_argument("--previous", type=Path)
+    sub.add_argument("--allocated", action="store_true",
+                     help="also measure Windows allocated file bytes, including compression")
     sub = commands.add_parser("memory-quarantine")
     sub.add_argument("database", type=Path)
     sub.add_argument("--reviewed-report", type=Path, required=True)
@@ -531,7 +537,9 @@ def main(root):
                         if args.previous else None)
             if not isinstance(classification, dict):
                 raise ValueError("Workspace classification must be a name-to-role object")
-            result = workspace_inventory.scan(args.workspace, classification, previous)
+            result = workspace_inventory.scan(
+                args.workspace, classification, previous,
+                include_allocated=args.allocated)
             warehouse.atomic_json(args.output, result)
         elif args.command == "memory-inventory":
             if not args.database.is_file():
@@ -587,6 +595,7 @@ def main(root):
         if args.command == "workspace-inventory":
             print(json.dumps({key: result[key] for key in
                               ("root", "total_bytes", "file_count", "partial",
+                               "allocated_bytes_observed", "allocated_partial",
                                "review_candidates")}, indent=2))
         else:
             print(json.dumps(result, indent=2))

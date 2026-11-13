@@ -5,7 +5,10 @@ never become capped objects merely because width or curvature changes. All
 lengths passed to the field station are metres; source observations stay in
 their own image frame until sampling.
 """
+import copy
+import hashlib
 import numpy as np
+import os
 from scipy import ndimage
 
 VIEWS = {'front': (1, False), 'back': (1, True),
@@ -59,12 +62,15 @@ def chart_frame(view, dimensions):
             'bottom': ([-w / 2, -d / 2, 0], [w, 0, 0], [0, d, 0], [0, 0, -1])}[view]
 
 
-def analyse(views, dimensions, report, exclusions=(), silhouettes=None):
+def analyse(views, dimensions, report, exclusions=(), silhouettes=None,
+            memory_mode='learning', drawing_path=None):
     """Prepare pixel observations. Geometry is inferred after the base field exists.
 
     No circle recognition, primitive selection or fixed groove profiles run here.
     The visible field supplies the initial surface and boundary conditions.
     """
+    if memory_mode not in ('learning', 'off'):
+        raise ValueError('reconstruction memory mode must be learning or off')
     from .silhouette import silhouette
     maps, inputs, excluded_opening_pixels = {}, {}, {}
     silhouettes = silhouettes or {}
@@ -86,15 +92,25 @@ def analyse(views, dimensions, report, exclusions=(), silhouettes=None):
                 hh, ww = mask.shape
                 valid[max(0, int(b * hh) - 2):min(hh, int(np.ceil(d * hh)) + 2),
                       max(0, int(a * ww) - 2):min(ww, int(np.ceil(c * ww)) + 2)] = False
+        drawing_trace = None
+        if drawing_path:
+            from .drawing_traces import compile_relief_trace, load_relief_trace
+            compile_relief_trace(drawing_path, view, path, mask, valid, image)
+            drawing_trace = load_relief_trace(drawing_path, view, path, mask, valid)
         maps[view] = np.zeros(mask.shape)
         inputs[view] = {'image': image, 'valid': valid,
-                        'path': path, 'crop_box': box}
+                        'path': path, 'crop_box': box,
+                        'drawing_trace': drawing_trace}
     report.update(features=[], views={}, method='continuous pixel shading/height inference',
+                  reconstruction_memory_mode=memory_mode,
                   physical_separation='physical ownership only; shading contours do not create parts',
                   dimensions_m=list(dimensions),
                   excluded_opening_pixels=excluded_opening_pixels,
                   source_views={view: str(inputs[view]['path']) for view in inputs})
     return {'maps': maps, 'fine_maps': {}, 'shading_inputs': inputs,
+            'capture_fusion_contributions': os.environ.get('HULL_TRACE_FUSION') == '1',
+            'capture_source_fingerprint': True,
+            'memory_mode': memory_mode,
             'dimensions': tuple(dimensions), 'report': report}
 
 
@@ -114,9 +130,14 @@ def shading_view(root, view, plan, shape):
     bound = min(plan['dimensions']) * .04 / pixel
     diagnostics = {}
     from pathlib import Path
-    memory_path=Path(__file__).resolve().parents[3]/'.hull-memory'/'reconstruction.sqlite3'
+    memory_path = (Path(__file__).resolve().parents[3] / '.hull-memory' /
+                   'reconstruction.sqlite3' if plan.get('memory_mode', 'learning') == 'learning'
+                   else None)
     height, evidence = shading.reconstruct(
-        observation['image'], mask, base, bound, diagnostics=diagnostics,memory_path=memory_path)
+        observation['image'], mask, base, bound, diagnostics=diagnostics,
+        memory_path=memory_path, traced_override=observation.get('drawing_trace'))
+    if observation.get('drawing_trace') is not None:
+        evidence['prebuild_boundary_trace'] = 'consumed from technical drawing before geometry'
     diagnostics['metres_per_pixel'] = np.asarray(pixel)
     plan.setdefault('diagnostics', {})[view] = diagnostics
     plan['report']['views'][view] = evidence
@@ -202,6 +223,21 @@ def apply_field(field, plan):
     """
     field = np.asarray(field, dtype=np.float32)
     dimensions = plan['dimensions']
+    frozen = plan.get('frozen_source_evidence')
+    source_field_hash = None
+    if (frozen is not None or plan.get('source_evidence_sink') or
+            plan.get('capture_source_fingerprint')):
+        source_field_hash = hashlib.sha256(
+            repr((field.shape, tuple(dimensions))).encode() +
+            np.ascontiguousarray(field).tobytes()).hexdigest()
+    if frozen is not None:
+        if frozen['source_field_hash'] != source_field_hash:
+            raise ValueError('Retry changed the coarse source field; source evidence cannot be reused')
+        plan['maps'] = copy.deepcopy(frozen['maps'])
+        plan['diagnostics'] = copy.deepcopy(frozen['diagnostics'])
+        plan['report']['features'] = copy.deepcopy(frozen['features'])
+        plan['report']['views'] = copy.deepcopy(frozen['views'])
+        plan['report']['source_evidence_reused'] = True
     bounds = [(-dimensions[0] / 2, dimensions[0] / 2),
               (-dimensions[1] / 2, dimensions[1] / 2), (0, dimensions[2])]
     plan['report']['probes'] = []
@@ -227,7 +263,7 @@ def apply_field(field, plan):
         raw_slope = np.where(
             first == 0, (stack[0] - stack[1]) / spacing, raw_slope)
         slope = np.clip(raw_slope, .1, 2.)
-        if 'shading_inputs' in plan:
+        if 'shading_inputs' in plan and frozen is None:
             height_map = shading_view(root, view, plan, field.shape)
             plan['maps'][view] = height_map
         u, v = _mapping(view, dimensions, field.shape)
@@ -235,6 +271,12 @@ def apply_field(field, plan):
         sampled = ndimage.map_coordinates(
             height_map, [v * hh - .5, u * ww - .5], order=1, mode='nearest')
         sampled *= has_surface
+        if plan.get('diagnostic_folder') and view in plan.get('diagnostics', {}):
+            values = plan['diagnostics'][view]
+            values['sampled_height_px'] = (
+                root_image(sampled, view, dimensions, field.shape,
+                           values['mask'].shape) /
+                float(values['metres_per_pixel'])).astype(np.float32)
         last = len(stack) - 1 - occupied[::-1].argmax(0)
         thickness = (last - first + 1) * spacing
         # Preserve a two-cell core through thin supports. A minimum displacement
@@ -242,6 +284,12 @@ def apply_field(field, plan):
         cap = np.maximum(0., np.minimum(
             thickness * .3, (thickness - 2 * spacing) * .5))
         sampled = np.clip(sampled, -cap, cap)
+        if plan.get('diagnostic_folder') and view in plan.get('diagnostics', {}):
+            values = plan['diagnostics'][view]
+            values['clipped_height_px'] = (
+                root_image(sampled, view, dimensions, field.shape,
+                           values['mask'].shape) /
+                float(values['metres_per_pixel'])).astype(np.float32)
         # Save source-derived probe anchors before modifying the field. The
         # final QA measures their displacements on exported triangles.
         for feature in plan['report']['features']:
@@ -308,13 +356,34 @@ def apply_field(field, plan):
                                                  'anchors_m': anchors, 'target_offsets_m': targets,
                                                  'depth_estimate': probe.get('depth_estimate'),
                                                  'tolerance_m': max(spacing * .15, abs(targets[0] - np.mean(targets[1:])) * .2)})
-        observations.append({'axis': axis, 'reverse': reverse, 'height': sampled, 'root': root,
+        observations.append({'view': view, 'axis': axis, 'reverse': reverse, 'height': sampled, 'root': root,
                              'slope': slope, 'facing': np.clip(raw_slope, 0, 1), 'spacing': spacing})
+    if frozen is None and plan.get('source_evidence_sink'):
+        plan['source_evidence_sink']({
+            'source_field_hash': source_field_hash,
+            'maps': copy.deepcopy(plan['maps']),
+            'diagnostics': copy.deepcopy(plan.get('diagnostics', {})),
+            'features': copy.deepcopy(plan['report']['features']),
+            'views': copy.deepcopy(plan['report']['views'])})
+    if source_field_hash is not None:
+        source_digest = hashlib.sha256(source_field_hash.encode())
+        for view in sorted(plan['maps']):
+            height = np.ascontiguousarray(plan['maps'][view])
+            source_digest.update(view.encode())
+            source_digest.update(repr((height.shape, height.dtype.str)).encode())
+            source_digest.update(height.tobytes())
+        import json
+        source_digest.update(json.dumps(plan['report']['features'],
+                                        sort_keys=True, default=str).encode())
+        plan['report']['source_evidence_sha256'] = source_digest.hexdigest()
     # Fuse observations of the same surface instead of sequentially carving
     # it once per camera. Facing/skin support excludes the opposite surface.
     from .implicit import pad_field
     padded = pad_field(field, dimensions)
     result = np.empty_like(field)
+    solo_fields = ({item['view']: np.empty_like(field) for item in observations}
+                   if plan.get('capture_fusion_contributions') else None)
+    floor = plan.get('fusion_weight_floor', MIN_FUSION_WEIGHT)
     for start in range(0, field.shape[0], 16):
         stop = min(start + 16, field.shape[0])
         chunk = (stop - start, *field.shape[1:])
@@ -359,18 +428,148 @@ def apply_field(field, plan):
                 source = padded[start + 1:stop + 1, 1:-1, :]
             shifted = (1 - fraction) * np.take_along_axis(source, lower, axis=axis) + \
                 fraction * np.take_along_axis(source, upper, axis=axis)
+            if solo_fields is not None:
+                solo_fields[observation['view']][start:stop] = (
+                    field[start:stop] +
+                    weight * (shifted - field[start:stop]) /
+                    np.maximum(weight, floor))
             numerator += weight * (shifted - field[start:stop])
             weight_sum += weight
-        floor = plan.get('fusion_weight_floor', MIN_FUSION_WEIGHT)
         result[start:stop] = field[start:stop] + \
             numerator / np.maximum(weight_sum, floor)
+    solo_roots = {}
+    if solo_fields is not None:
+        for observation in observations:
+            view = observation['view']
+            values = plan.get('diagnostics', {}).get(view, {})
+            axis, reverse = VIEWS[view]
+            root, _, _, _ = visible_root(
+                solo_fields[view], axis, reverse, dimensions[axis])
+            solo_roots[view] = root
+            if 'mask' not in values:
+                continue
+            values['single_view_height_px'] = (
+                -root_image(root, view, dimensions, field.shape,
+                            values['mask'].shape) /
+                float(values['metres_per_pixel'])).astype(np.float32)
+    if plan.get('capture_fusion_contributions') and plan.get('diagnostic_folder'):
+        import json
+        from pathlib import Path
+
+        visible_roots = {}
+        for view in {probe['view'] for probe in plan['report']['probes']}:
+            axis, reverse = VIEWS[view]
+            visible_roots[view] = (
+                visible_root(field, axis, reverse, dimensions[axis])[0],
+                solo_roots.get(view),
+                visible_root(result, axis, reverse, dimensions[axis])[0],
+            )
+        trace = {}
+        for probe in plan['report']['probes']:
+            anchors = []
+            for point in probe['anchors_m']:
+                index = np.asarray([
+                    (point[axis] - bounds[axis][0]) / dimensions[axis]
+                    * field.shape[axis] - .5 for axis in range(3)])
+                baseline = float(ndimage.map_coordinates(
+                    field, index[:, None], order=1, mode='nearest')[0])
+                transverse = [i for i in range(3) if i != probe['axis']]
+                coordinates = index[transverse, None]
+                visible = {}
+                for key, root in zip(('baseline_m', 'single_view_m', 'fused_m'),
+                                     visible_roots[probe['view']]):
+                    if root is not None:
+                        visible[key] = float(ndimage.map_coordinates(
+                            root, coordinates, order=1, mode='nearest')[0])
+                contributions = {}
+                for observation in observations:
+                    axis = observation['axis']
+                    transverse = [i for i in range(3) if i != axis]
+                    coords = index[transverse, None]
+
+                    def sample(key):
+                        return float(ndimage.map_coordinates(
+                            observation[key], coords, order=1,
+                            mode='nearest')[0])
+
+                    height = sample('height')
+                    root = sample('root')
+                    facing = sample('facing')
+                    distance = (bounds[axis][1] - point[axis] if
+                                observation['reverse'] else
+                                point[axis] - bounds[axis][0])
+                    support = max(abs(height) * 4,
+                                  observation['spacing'] * 3)
+                    weight = (facing**8 *
+                              np.exp(-((distance - root) / support)**4)
+                              if abs(height) > 1e-9 else 0.)
+                    shifted_index = index + 1
+                    shifted_index[axis] -= (
+                        (1 if observation['reverse'] else -1) *
+                        height / observation['spacing'])
+                    shifted = float(ndimage.map_coordinates(
+                        padded, shifted_index[:, None], order=1,
+                        mode='nearest')[0])
+                    contributions[observation['view']] = {
+                        'weight': float(weight),
+                        'shift_m': shifted - baseline}
+                # The zero crossing can move between sample centres. A weight
+                # measured only at the original anchor cannot identify which
+                # view changed the surrounding field or erased its contrast.
+                # Keep a short ray profile of the original, each one-view
+                # field, and the combined field for this diagnostic only.
+                profile = []
+                for offset in range(-12, 13):
+                    sample_index = index.copy()
+                    sample_index[probe['axis']] += offset
+
+                    def field_at(values):
+                        return float(ndimage.map_coordinates(
+                            values, sample_index[:, None], order=1,
+                            mode='nearest')[0])
+
+                    profile.append({
+                        'offset_voxels': offset,
+                        'baseline_m': field_at(field),
+                        'fused_m': field_at(result),
+                        'single_view_m': {
+                            view: field_at(values)
+                            for view, values in solo_fields.items()},
+                    })
+                anchors.append({'model_point_m': point,
+                                'visible_root_from_camera_m': visible,
+                                'views': contributions,
+                                'field_profile': profile})
+            trace[probe['id']] = {'view': probe['view'], 'anchors': anchors}
+        folder = Path(plan['diagnostic_folder'])
+        folder.mkdir(parents=True, exist_ok=True)
+        (folder / 'fusion-contributions.json').write_text(
+            json.dumps({'method': 'continuous probe anchor with trilinear field sampling',
+                        'fusion_weight_floor': float(plan.get(
+                            'fusion_weight_floor', MIN_FUSION_WEIGHT)),
+                        'probes': trace}, indent=2), encoding='utf-8')
     plan['report']['field'] = {'mode': 'signed_field_detail_before_meshing', 'isovalue': 0.,
                                'depth_limit': '30% of observed local solid thickness; openings remain silhouette constraints',
                                'grid_shape': list(field.shape), 'spacing_m': [dimensions[i] / field.shape[i] for i in range(3)]}
+
+    def capture_stage(key, current):
+        if not plan.get('diagnostic_folder'):
+            return
+        for view, values in plan.get('diagnostics', {}).items():
+            if 'mask' not in values:
+                continue
+            axis, reverse = VIEWS[view]
+            root, _, _, _ = visible_root(current, axis, reverse, dimensions[axis])
+            values[key] = (-root_image(root, view, dimensions, current.shape,
+                                       values['mask'].shape) /
+                           float(values['metres_per_pixel'])).astype(np.float32)
+
+    capture_stage('fused_height_px', result)
     if 'shading_inputs' in plan:
         from .construction_fields import reconstruct
         result, plan['report']['construction_volumes'] = reconstruct(
             field, result)
+        capture_stage('post_construction_height_px', result)
         from .relief_consistency import compare
         charts = {}
         for view, values in plan.get('diagnostics', {}).items():
@@ -387,6 +586,7 @@ def apply_field(field, plan):
     # solver already supplies a continuous integrable surface, so keep it whole.
     from .implicit import preserve_components
     candidate, plan['report']['topology'] = preserve_components(field, result)
+    capture_stage('post_topology_height_px', candidate)
     if plan.get('retry_targets'):
         from . import local_retry
         candidate, plan['report']['local_retry'] = local_retry.attempt(
@@ -578,7 +778,8 @@ def protected_samples(obj, report, geometry_tolerance=None):
             reference.append(dict(probe, target_offsets_m=offsets))
     return {'points': np.asarray(points), 'tolerance_m': np.asarray(tolerances), 'ids': identifiers,
             'support_m': np.asarray(supports),
-            # Conflicting input fits remain in final QA. They cannot be repaired
-            # by retaining millions of triangles during reduction.
-            'source_report': {'probes': [probe for probe in report.get('probes', []) if probe['id'] not in excluded and probe['id'] not in uncertain]},
+            # Conflicting input fits remain in final QA; reduction cannot fix them.
+            # An uncertain physical depth still needs its existing dense-mesh
+            # contrast preserved so export QA and reduction use the same target.
+            'source_report': {'probes': [probe for probe in report.get('probes', []) if probe['id'] not in excluded]},
             'contrast_report': {'probes': reference}} if points else None

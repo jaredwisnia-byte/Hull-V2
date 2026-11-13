@@ -195,7 +195,9 @@ def recess_hook(front_path, depth_m, report, min_share=None):
     return hook
 
 
-def build_part(views, w, d, h, name, tmp, res=110, rough=0.5, cut_holes=True, defer=None, automatic_depth=False, cad_export=False):
+def build_part(views, w, d, h, name, tmp, res=110, rough=0.5, cut_holes=True,
+               defer=None, automatic_depth=False, cad_export=False,
+               memory_mode='learning', drawing_masks=None, drawing_path=None):
     """A part from its own views at size w x d x h (m), painted from its own views. Background seen
     through its front view (split's h_ mask: a hook frame's opening, a dial's finger holes) is an opening
     along that view and is cut through; a part with only a front view is a plate of depth d."""
@@ -210,7 +212,8 @@ def build_part(views, w, d, h, name, tmp, res=110, rough=0.5, cut_holes=True, de
         im.paste(Image.new("RGB", (sw, sh), (128, 128, 128)), (8, 8))
         im.save(q)
         views["right"] = q
-    sil = {k: silhouette(p) for k, p in views.items()}
+    sil = dict(drawing_masks or {})
+    sil.update({k: silhouette(p) for k, p in views.items() if k not in sil})
     notes = []
     if cut_holes:
         m, img, box = silhouette(views["front"], with_box=True)
@@ -228,7 +231,9 @@ def build_part(views, w, d, h, name, tmp, res=110, rough=0.5, cut_holes=True, de
         from . import surface_detail
         observed = {k: v for k, v in views.items(
         ) if not v.endswith('_side.png')}
-        plan = surface_detail.analyse(observed, (w, d, h), detail)
+        plan = surface_detail.analyse(observed, (w, d, h), detail,
+                                      memory_mode=memory_mode,
+                                      drawing_path=drawing_path)
         plan['cad_export'] = cad_export
         plan['diagnostic_folder'] = os.path.join(tmp, name + '_surface')
         options = {'field_hook': lambda field: surface_detail.apply_field(field, plan),
@@ -328,7 +333,16 @@ def build_parts(order, src_root):
     root = os.path.join(src_root, order["views_folder"])
     tmp = os.path.join(tempfile.gettempdir(), "_parts_" + order["name"])
     os.makedirs(tmp, exist_ok=True)
-    rep = {"layout": "parts", "parts": {}}
+    rep = {"layout": "parts", "parts": {}, "drawing_constraints": {}}
+    from .drawing_traces import load_construction_masks
+
+    def drawn_masks(folder, views):
+        drawing = order.get('construction_drawings', {}).get(folder)
+        if not drawing:
+            return None
+        masks, use = load_construction_masks(drawing, views)
+        rep['drawing_constraints'][folder] = use
+        return masks
     asm = part_views(os.path.join(root, order["assembly"]))
     # the reference handbook: the parts list, finishes, and how the object meets the human body
     hb = HB.entry(order["handbook"]) if order.get("handbook") else None
@@ -351,6 +365,7 @@ def build_parts(order, src_root):
     body_spec = next(p for p in plan if p.get("root"))
     body_views = _views(os.path.join(root, body_spec["views"]))
     body_own = part_views(os.path.join(root, body_spec["views"]))
+    body_drawn = drawn_masks(body_spec['views'], body_views)
 
     # 1. the body's place in the photo. Until the scale is known every length is in drawing units
     #    (the body's drawn width = 1), or in metres when the order gives the body's real width
@@ -648,7 +663,9 @@ def build_parts(order, src_root):
         from . import surface_detail
         report = rep.setdefault('surface_details', {}).setdefault('body', {})
         body_surface_plan = surface_detail.analyse(
-            body_views, (bx1 - bx0, by1 - by0, bz1 - bz0), report, exclusions)
+            body_views, (bx1 - bx0, by1 - by0, bz1 - bz0), report, exclusions,
+            memory_mode=order.get('reconstruction_memory_mode', 'learning'),
+            drawing_path=order.get('construction_drawings', {}).get(body_spec['views']))
         body_surface_plan['cad_export'] = bool(order.get('cad_export'))
         body_surface_plan['diagnostic_folder'] = os.path.join(tmp, 'body_surface')
         field_options = {'field_hook': lambda field: surface_detail.apply_field(field, body_surface_plan),
@@ -656,7 +673,8 @@ def build_parts(order, src_root):
                          'smooth_iters': 0, 'decimate': 1.}
     body = hull_prop(body_views, bz1 - bz0, res=order.get("res", 150), name=order["name"] + "_body",
                      width_m=bx1 - bx0, depth_m=by1 - by0, features=False, paint=False, rough=order.get("rough", 0.5),
-                     paint_only=paint_only, voxel_hook=rhook, **field_options)
+                     paint_only=paint_only, voxel_hook=rhook,
+                     sil_override=body_drawn, **field_options)
     body.location = ((bx0 + bx1) / 2, (by0 + by1) / 2, bz0)
     built["body"] = body
     rep["parts"]["body"] = {"box_m": [
@@ -669,7 +687,10 @@ def build_parts(order, src_root):
             w, dd, h = x1 - x0, y1 - y0, z1 - z0
         obj, notes, rev = build_part(pv, w, dd, h, "%s_%s" % (
             order["name"], name), tmp, rough=order.get("rough", 0.5), defer=pending,
-            automatic_depth=bool(order.get('automatic_depth')), cad_export=bool(order.get('cad_export')))
+            automatic_depth=bool(order.get('automatic_depth')), cad_export=bool(order.get('cad_export')),
+            memory_mode=order.get('reconstruction_memory_mode', 'learning'),
+            drawing_masks=drawn_masks(spec['views'], pv),
+            drawing_path=order.get('construction_drawings', {}).get(spec['views']))
         obj["finish"] = list(finish_of(name, spec)[:2])
         if how == "side":
             obj.rotation_euler = (
@@ -823,7 +844,8 @@ def build_parts(order, src_root):
         if obj is None:
             obj, notes, rev = build_part(crops, x1 - x0, y1 - y0, z1 - z0, "%s_%s" % (order["name"], name), tmp,
                                          rough=order.get("rough", 0.5), defer=pending,
-                                         automatic_depth=bool(order.get('automatic_depth')))
+                                         automatic_depth=bool(order.get('automatic_depth')),
+                                         memory_mode=order.get('reconstruction_memory_mode', 'learning'))
         obj.location = ((x0 + x1) / 2, (y0 + y1) / 2, z0)
         bpy.context.view_layer.update()
         built[name] = obj

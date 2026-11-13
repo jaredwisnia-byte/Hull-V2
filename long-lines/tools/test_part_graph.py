@@ -4,7 +4,9 @@ import tempfile
 from pathlib import Path
 import numpy as np
 from PIL import Image
-from propkit.part_graph import associate, ownership, export_ownership, from_report
+from propkit.part_graph import (assembly_envelopes, associate, ownership,
+                                export_ownership, from_report,
+                                infer_surface_contacts)
 
 
 def observation(identifier, view, box, label='unfamiliar mechanism', source=None):
@@ -13,6 +15,49 @@ def observation(identifier, view, box, label='unfamiliar mechanism', source=None
 
 
 class PartGraphTests(unittest.TestCase):
+    def test_assembly_envelope_keeps_uncropped_view_coordinates(self):
+        pixels = np.full((100, 100, 3), 20, np.uint8)
+        pixels[20:80, 30:70] = 180
+        masks = assembly_envelopes(
+            Image.fromarray(pixels),
+            [{'id': 1, 'part': 'assembly', 'view': 'front',
+              'box': [10, 10, 90, 90]}], [20, 20, 20])
+        self.assertEqual(masks['front'].shape, (80, 80))
+        self.assertTrue(masks['front'][30, 40])
+        self.assertFalse(masks['front'][2, 2])
+
+    def test_single_view_contact_uses_opposed_body_envelopes_without_promoting_part(self):
+        graph = associate([observation('front_control', 'front', [.3, .3, .5, .5])])
+        right = np.zeros((100, 100), bool)
+        right[20:80, 10:60] = True
+        left = np.zeros_like(right)
+        left[20:80, 40:90] = True
+        top = np.zeros_like(right)
+        top[:, :10] = True  # unrelated height must not bias a front mount
+        infer_surface_contacts(graph, {'right': right, 'left': left, 'top': top})
+        node = graph['parts'][0]
+        contact = node['contact_hypothesis']
+        self.assertEqual(contact['status'], 'cross_view_envelope_consistent')
+        self.assertEqual(contact['normal_unit_xyz'], [0, -1, 0])
+        self.assertAlmostEqual(contact['point_unit_xyz'][1], .105, places=2)
+        self.assertEqual({item['view'] for item in contact['witnesses']},
+                         {'right', 'left'})
+        self.assertEqual(graph['contact_hypotheses'], 1)
+        self.assertFalse(node['spatially_constrained'])
+        self.assertTrue(graph['needs_review'])
+
+    def test_conflicting_body_silhouettes_do_not_confirm_contact(self):
+        graph = associate([observation('front_control', 'front', [.3, .3, .5, .5])])
+        right = np.zeros((100, 100), bool)
+        right[20:80, 10:60] = True
+        left = np.zeros_like(right)
+        left[20:80, 10:50] = True
+        infer_surface_contacts(graph, {'right': right, 'left': left})
+        self.assertEqual(graph['parts'][0]['contact_hypothesis']['status'],
+                         'single_or_inconsistent_envelope')
+        self.assertGreater(graph['parts'][0]['contact_hypothesis']['witness_spread_unit'], .3)
+        self.assertTrue(graph['needs_review'])
+
     def test_unmatched_detail_is_reported_even_without_dense_matches(self):
         graph = from_report({'regions': [
             {'id': 0, 'part': 'assembly', 'view': 'front', 'box': [0, 0, 100, 100]},

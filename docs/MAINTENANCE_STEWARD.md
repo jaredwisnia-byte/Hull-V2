@@ -76,11 +76,14 @@ never treat a live scan as authority to delete files.
 At both 03:00 and 15:00, run `hull.py workspace-inventory
 C:/Users/jared/Documents/Codex --classification
 C:/Users/jared/Documents/Codex/Hull-maintenance-validation/workspace-organization/classification.json
---previous PRIOR.json --output REPORT.json` with a new report path under the
+--previous PRIOR.json --allocated --output REPORT.json` with a new report path under the
 shift's evidence folder. Omit `--previous` only when there is no earlier report.
-Compare complete top-level growth deltas and review unclassified `Hull-*`
+Compare complete top-level logical and allocated growth deltas and review unclassified `Hull-*`
 directories with an owner before proposing any move. An unreadable subtree has
 an unknown delta; it must not be counted as a size reduction or an orphan.
+Allocated bytes are a per-file observation that shows transparent compression;
+hard-linked paths can be counted more than once and an incomplete allocation
+scan must not be presented as total physical drive usage.
 Review `no_longer_at_root` against the move journal and current destinations.
 Absence at the root alone does not establish deletion; a `null` list means the
 root could not be scanned and no absence conclusion is available.

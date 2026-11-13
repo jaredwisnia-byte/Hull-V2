@@ -1,21 +1,98 @@
 """Cross-family contracts: planes, curved skins and continuous height maps."""
 import unittest
+import json
+import tempfile
+from pathlib import Path
+from unittest.mock import patch
 import numpy as np
 from PIL import Image
 from scipy import ndimage
-from propkit.surface_detail import apply_field, visible_root
+from propkit.surface_detail import analyse, apply_field, shading_view, visible_root
 from propkit.implicit import bounded_field, pad_field
 
 
 class SurfaceContracts(unittest.TestCase):
+    def test_relief_solver_consumes_boundaries_saved_by_prebuild_drawing(self):
+        from propkit.drawing_traces import infer, load_relief_trace
+        with tempfile.TemporaryDirectory() as folder:
+            source = Path(folder) / 'front.png'
+            pixels = np.zeros((72, 72, 3), np.uint8)
+            pixels[8:64, 12:60] = 150
+            pixels[20:52, 31:34] = 70
+            Image.fromarray(pixels).save(source)
+            drawing = Path(folder) / 'drawing'
+            infer({'front': str(source)}, drawing,
+                  compile_construction_masks=True)
+            plan = analyse({'front': str(source)}, (1, 1, 1), {},
+                           drawing_path=drawing / 'technical-traces.json',
+                           memory_mode='off')
+            observation = plan['shading_inputs']['front']
+            self.assertIsNotNone(observation['drawing_trace'])
+            from propkit.silhouette import silhouette
+            mask, _ = silhouette(str(source))
+            loaded = load_relief_trace(
+                drawing / 'technical-traces.json', 'front', str(source),
+                mask, observation['valid'])
+            np.testing.assert_array_equal(
+                loaded['boundaries'], observation['drawing_trace']['boundaries'])
+            with patch('propkit.shading.reconstruct',
+                       return_value=(np.zeros(mask.shape), {})) as solve:
+                shading_view(np.zeros((8, 8)), 'front', plan, (8, 8, 8))
+            self.assertIs(solve.call_args.kwargs['traced_override'],
+                          observation['drawing_trace'])
+
+    def test_retry_reuses_first_source_estimate_and_checks_coarse_field(self):
+        base = self.field(True)
+        height = np.full((48, 48), -.01)
+        evidence = []
+        first = {'dimensions': (1, 1, 1), 'maps': {'front': np.zeros((48, 48))},
+                 'shading_inputs': {}, 'report': {'features': [], 'views': {}},
+                 'source_evidence_sink': evidence.append}
+        with patch('propkit.surface_detail.shading_view', return_value=height) as solve:
+            result = apply_field(base, first)
+        self.assertEqual(solve.call_count, 1)
+        self.assertEqual(len(evidence), 1)
+        retry = {'dimensions': (1, 1, 1), 'maps': {'front': np.zeros((48, 48))},
+                 'shading_inputs': {}, 'report': {'features': [], 'views': {}},
+                 'frozen_source_evidence': evidence[0]}
+        with patch('propkit.surface_detail.shading_view', side_effect=AssertionError('re-solved')):
+            repeated = apply_field(base, retry)
+        np.testing.assert_array_equal(repeated, result)
+        self.assertTrue(retry['report']['source_evidence_reused'])
+        self.assertEqual(first['report']['source_evidence_sha256'],
+                         retry['report']['source_evidence_sha256'])
+        changed = base.copy()
+        changed[0, 0, 0] += .001
+        with self.assertRaisesRegex(ValueError, 'coarse source field'):
+            apply_field(changed, {'dimensions': (1, 1, 1), 'maps': {'front': height},
+                                  'report': {'features': [], 'views': {}},
+                                  'frozen_source_evidence': evidence[0]})
+
+    def test_memory_off_mode_is_explicit_and_skips_shared_database(self):
+        with self.assertRaisesRegex(ValueError, 'memory mode'):
+            analyse({}, (1, 1, 1), {}, memory_mode='unknown')
+        self.assertEqual(analyse({}, (1, 1, 1), {},
+                                 memory_mode='off')['memory_mode'], 'off')
+        mask = np.ones((8, 8), bool)
+        plan = {'dimensions': (1, 1, 1), 'memory_mode': 'off',
+                'shading_inputs': {'front': {'image': Image.new('RGB', (8, 8)),
+                                             'valid': mask}},
+                'report': {'features': [], 'views': {}}}
+        with patch('propkit.shading.reconstruct',
+                   return_value=(np.zeros((8, 8)), {})) as solve:
+            shading_view(np.zeros((8, 8)), 'front', plan, (8, 8, 8))
+        self.assertIsNone(solve.call_args.kwargs['memory_path'])
+
     def test_unobserved_original_cavity_cannot_be_filled_by_a_skin_correction(self):
         from propkit.implicit import preserve_components
         from propkit.correction_review import Rejected
         base=np.full((20,20,20),-1.,np.float32)
         base[10,10,10]=1.
         target=base.copy();target[10,10,10]=-1.
-        with self.assertRaises(Rejected):
+        with self.assertRaises(Rejected) as caught:
             preserve_components(base,target)
+        self.assertEqual(caught.exception.report['attempts'][0][
+            'lost_original_cavity_cells'], 1)
 
     def test_new_grid_cavity_is_repaired_but_original_cavity_and_open_groove_remain(self):
         from propkit.implicit import preserve_components
@@ -64,6 +141,54 @@ class SurfaceContracts(unittest.TestCase):
         with self.assertRaises(Rejected) as caught:
             preserve_components(base, target)
         self.assertEqual(caught.exception.report['decision'], 'reject_and_rollback')
+        self.assertEqual(caught.exception.report['attempts'][0][
+            'original_components'], 1)
+        self.assertGreater(caught.exception.report['attempts'][0][
+            'candidate_components'], 1)
+
+    def test_attempt_evidence_handles_unrelated_separate_solids(self):
+        from propkit.implicit import preserve_components
+        base = np.ones((24, 24, 24), np.float32)
+        base[3:10, 3:10, 3:10] = -1
+        base[14:20, 4:18, 4:18] = -1
+        target = base.copy()
+        target[14:20, 10:12, 4:18] = 1
+        from propkit.correction_review import Rejected
+        with self.assertRaises(Rejected) as caught:
+            preserve_components(base, target)
+        attempts = caught.exception.report['attempts']
+        self.assertEqual(attempts[0]['original_components'], 2)
+        self.assertGreater(attempts[0]['candidate_components'], 2)
+        self.assertFalse(attempts[0]['valid_after_local_repair'])
+        self.assertGreaterEqual(attempts[0]['original_solid_cells'], 1)
+
+    def test_large_solid_repairs_tiny_new_pocket_without_filling_original_cavity(self):
+        from propkit.implicit import preserve_components
+        base = np.ones((100, 100, 100), np.float32)
+        base[4:96, 4:96, 4:96] = -1
+        base[20:22, 20:22, 20:22] = 1  # observed original void
+        target = base.copy()
+        target[60:63, 60:63, 60:64] = 1  # 36 newly enclosed cells
+        result, report = preserve_components(base, target)
+        self.assertGreaterEqual(report['cavity_repair_limit_cells'], 36)
+        self.assertLessEqual(report['cavity_repair_limit_cells'], 64)
+        self.assertEqual(report['filled_new_cavity_cells'], 36)
+        self.assertTrue((result[20:22, 20:22, 20:22] > 0).all())
+        self.assertTrue((result[60:63, 60:63, 60:64] < 0).all())
+        self.assertEqual(report['detail_scale'], 1.)
+
+    def test_large_new_cavity_stays_outside_local_repair_budget(self):
+        from propkit.implicit import preserve_components
+        from propkit.correction_review import Rejected
+        base = np.ones((100, 100, 100), np.float32)
+        base[4:96, 4:96, 4:96] = -1
+        target = base.copy()
+        target[60:65, 60:65, 60:65] = 1  # 125 cells
+        with self.assertRaises(Rejected) as caught:
+            preserve_components(base, target)
+        first = caught.exception.report['attempts'][0]
+        self.assertEqual(first['unfilled_cavity_cells'], 125)
+        self.assertLess(first['cavity_repair_limit_cells'], 125)
 
     def test_metric_padding_preserves_exact_sampling_box_boundaries(self):
         from skimage.measure import marching_cubes
@@ -113,6 +238,58 @@ class SurfaceContracts(unittest.TestCase):
             (40, 40))}, 'report': {'features': []}}
         np.testing.assert_allclose(apply_field(
             original, plan), original, atol=2e-8)
+
+    def test_diagnostic_captures_fusion_before_component_repair(self):
+        original = self.field(True)
+        plan = {'dimensions': (1, 1, 1),
+                'maps': {'front': np.full((48, 48), -.02)},
+                'report': {'features': []},
+                'capture_fusion_contributions': True,
+                'diagnostic_folder': 'unused',
+                'diagnostics': {'front': {'mask': np.ones((48, 48), bool),
+                                          'metres_per_pixel': 1 / 48}}}
+        apply_field(original, plan)
+        chart = plan['diagnostics']['front']
+        self.assertEqual(chart['sampled_height_px'].shape, (48, 48))
+        self.assertEqual(chart['clipped_height_px'].shape, (48, 48))
+        self.assertEqual(chart['single_view_height_px'].shape, (48, 48))
+        self.assertEqual(chart['fused_height_px'].shape, (48, 48))
+        np.testing.assert_allclose(chart['single_view_height_px'],
+                                   chart['fused_height_px'], atol=1e-5)
+        self.assertEqual(chart['post_topology_height_px'].shape, (48, 48))
+        np.testing.assert_allclose(chart['fused_height_px'],
+                                   chart['post_topology_height_px'], atol=1e-5)
+
+    def test_fusion_trace_records_view_weights_without_changing_field(self):
+        original = self.field()
+        yy, xx = np.mgrid[:48, :48]
+        height = -.02 * np.exp(-((xx - 24)**2 + (yy - 24)**2) / 50)
+        feature = {'id': 'observed', 'view': 'front', 'kind': 'channel',
+                   'probes': [{'center_px': [24, 24], 'normal_px': [1, 0],
+                               'radius_px': 4, 'sample_span_px': 4}]}
+        base = {'dimensions': (1, 1, 1), 'maps': {'front': height},
+                'report': {'features': [feature]}}
+        control = apply_field(original, base)
+        with tempfile.TemporaryDirectory() as temporary:
+            plan = {'dimensions': (1, 1, 1), 'maps': {'front': height},
+                    'report': {'features': [feature]},
+                    'capture_fusion_contributions': True,
+                    'diagnostic_folder': temporary}
+            traced = apply_field(original, plan)
+            np.testing.assert_array_equal(traced, control)
+            trace = json.loads((Path(temporary) /
+                                'fusion-contributions.json').read_text())
+            self.assertIn('observed_0', trace['probes'])
+            self.assertEqual(len(trace['probes']['observed_0']['anchors']), 3)
+            anchor = trace['probes']['observed_0']['anchors'][0]
+            self.assertIn('front', anchor['views'])
+            self.assertEqual(set(anchor['visible_root_from_camera_m']),
+                             {'baseline_m', 'single_view_m', 'fused_m'})
+            self.assertEqual([sample['offset_voxels'] for sample in
+                              anchor['field_profile']], list(range(-12, 13)))
+            self.assertAlmostEqual(anchor['field_profile'][12]['fused_m'],
+                                   anchor['field_profile'][12]
+                                   ['single_view_m']['front'], places=6)
 
     def test_profile_envelope_is_applied_after_original_detail(self):
         original = self.field(True)

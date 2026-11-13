@@ -72,6 +72,69 @@ class ReviewContracts(unittest.TestCase):
         self.assertEqual(review['status'], 'no_flagged_issue')
         self.assertFalse(review['physical_geometry_verified'])
 
+    def test_opposing_mask_cut_remains_reviewable(self):
+        candidate = {'id': 'back:opening:1', 'kind': 'opposed_mask_opening',
+                     'cross_view_witness': 'front', 'area_source_px': 408,
+                     'status': 'construction_candidate_in_use_physical_hole_unverified'}
+        review = inspect({'pass': True, 'fails': []}, {'source_drawing': {
+            'sheet': 'technical-traces.png', 'opening_candidates': [candidate]}})
+        self.assertEqual(review['status'], 'needs_review')
+        finding = review['findings'][0]
+        self.assertEqual(finding['code'], 'opening_mask_physical_meaning_unverified')
+        self.assertEqual(finding['evidence']['candidates'], [candidate])
+        self.assertFalse(review['physical_geometry_verified'])
+
+    def test_preflight_view_conflict_cannot_pass_stage_review(self):
+        review = inspect({'pass': True, 'fails': []}, {'source_drawing': {
+            'sheet': 'technical-traces.png', 'view_conflicts_in_use': ['top']}})
+        self.assertEqual(review['status'], 'needs_review')
+        self.assertEqual(review['findings'][0]['code'],
+                         'preflight_view_conflict_used_for_geometry')
+
+    def test_reconciled_trace_without_source_mapping_requires_review(self):
+        review = inspect({'pass': True, 'fails': []}, {'source_drawing': {
+            'sheet': 'technical-traces.png',
+            'reconciled_views_without_source_pixel_map': ['right']}})
+        self.assertEqual(review['status'], 'needs_review')
+        self.assertEqual(review['findings'][0]['code'],
+                         'reconciled_view_lacks_source_pixel_map')
+
+    def test_persistent_export_section_error_requires_review(self):
+        result = {'pass': True, 'fails': [], 'metrics': {'drawing_section_audit': {
+            'drawing_path': 'technical-traces.json', 'views': {'front': {
+                'outside_tolerance_count': 3, 'sample_count': 19,
+                'max_error_in_height_units': .13}}}}}
+        review = inspect(result, {'source_drawing': {}})
+        self.assertEqual(review['status'], 'needs_review')
+        self.assertEqual(review['findings'][0]['code'],
+                         'export_diverges_from_traced_sections')
+
+    def test_one_error_far_beyond_raster_tolerance_requires_review(self):
+        result = {'pass': True, 'fails': [], 'metrics': {'drawing_section_audit': {
+            'views': {'front': {'outside_tolerance_count': 1,
+                                'severe_outlier_count': 1,
+                                'sample_count': 19,
+                                'max_error_in_height_units': .22}}}}}
+        review = inspect(result, {'source_drawing': {}})
+        self.assertEqual(review['findings'][0]['code'],
+                         'export_diverges_from_traced_sections')
+
+    def test_reused_companion_drawing_is_not_independent_view_evidence(self):
+        measured = {'source_drawing': {'part_drawings': {'lid': {
+            'reused_source_regions': [4], 'traces': 'lid.json'}}}}
+        review = inspect({'metrics': {}}, measured)
+        self.assertEqual(review['status'], 'needs_review')
+        self.assertEqual(review['findings'][0]['code'],
+                         'companion_view_evidence_reused')
+
+    def test_prepared_view_without_source_map_is_held_for_review(self):
+        measured = {'source_drawing': {'construction_unmapped_views': {
+            'body': ['front', 'right']}}}
+        review = inspect({'metrics': {}}, measured)
+        self.assertEqual(review['status'], 'needs_review')
+        self.assertIn('construction_view_source_map_unverified',
+                      [finding['code'] for finding in review['findings']])
+
     def test_separate_part_evidence_is_also_checked(self):
         measured = {'surface_details': {'handle': {
             'pre_reduction_validation': {'probes': [{'id': 'a', 'retained': True}]}}}}

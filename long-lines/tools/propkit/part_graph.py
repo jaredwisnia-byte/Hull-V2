@@ -6,11 +6,139 @@ Ambiguous observations stay unresolved rather than manufacturing extra parts.
 """
 import re
 import numpy as np
+from scipy import ndimage
 from scipy.optimize import linear_sum_assignment
 
 AXES = {'front': (0, False, 2, True), 'back': (0, True, 2, True),
         'right': (1, False, 2, True), 'left': (1, True, 2, True),
         'top': (0, False, 1, True), 'bottom': (0, False, 1, False)}
+FACES = {'front': (1, -1), 'back': (1, 1),
+         'right': (0, 1), 'left': (0, -1),
+         'top': (2, 1), 'bottom': (2, -1)}
+
+
+def assembly_envelopes(image, regions, background):
+    """Outer foreground in each uncropped assembly frame, with no caption pixels."""
+    envelopes = {}
+    for region in regions:
+        view = region.get('view')
+        if region.get('part') != 'assembly' or view not in AXES:
+            continue
+        pixels = np.asarray(image.crop(region['box']).convert('RGB'), float)
+        foreground = np.abs(pixels - np.asarray(background)).sum(2) > 32
+        foreground = ndimage.binary_closing(foreground, iterations=2)
+        labels, count = ndimage.label(foreground)
+        if not count:
+            continue
+        sizes = np.bincount(labels.ravel())
+        sizes[0] = 0
+        envelopes[view] = ndimage.binary_fill_holes(labels == sizes.argmax())
+    return envelopes
+
+
+def _contact_boundary(mask, witness, shared_axis, shared_bounds, missing_axis, direction):
+    """Estimate a face boundary per orthographic scan line, then robustly join it."""
+    mask = np.asarray(mask, bool)
+    if mask.ndim != 2 or min(mask.shape) < 2 or not mask.any():
+        return None
+    a, flip_a, b, flip_b = AXES[witness]
+    mapping = {a: (1, flip_a), b: (0, flip_b)}
+    if shared_axis not in mapping or missing_axis not in mapping:
+        return None
+    shared_dim, shared_flip = mapping[shared_axis]
+    missing_dim, missing_flip = mapping[missing_axis]
+    if shared_dim == missing_dim:
+        return None
+    length = mask.shape[shared_dim]
+    coordinates = (np.arange(length) + .5) / length
+    if shared_flip:
+        coordinates = 1 - coordinates
+    selected = np.flatnonzero((coordinates >= shared_bounds[0] - .01) &
+                              (coordinates <= shared_bounds[1] + .01))
+    if not len(selected):
+        return None
+    boundaries = []
+    for index in selected:
+        row = mask[index, :] if shared_dim == 0 else mask[:, index]
+        occupied = np.flatnonzero(row)
+        if not len(occupied):
+            continue
+        values = (occupied + .5) / mask.shape[missing_dim]
+        if missing_flip:
+            values = 1 - values
+        boundaries.append(float(values.min() if direction < 0 else values.max()))
+    if len(boundaries) < max(2, len(selected) // 2):
+        return None
+    boundaries = np.asarray(boundaries)
+    return {'view': witness, 'coordinate': float(np.median(boundaries)),
+            'span': float(np.percentile(boundaries, 90) -
+                          np.percentile(boundaries, 10)),
+            'coverage': float(len(boundaries) / len(selected))}
+
+
+def infer_surface_contacts(graph, envelopes, tolerance=.08):
+    """Add bounded body-contact hypotheses without upgrading them to 3D truth.
+
+    A single view gives two coordinates. Perpendicular body silhouettes suggest
+    where that ray first touches the visible outer envelope. They cannot prove
+    part depth, mounting, or identity, so the graph remains in review.
+    """
+    for node in graph.get('parts', []):
+        if node.get('spatially_constrained') or node.get('cross_view_support') != 1:
+            continue
+        observations = node.get('observations', [])
+        if not observations:
+            continue
+        source = max(observations, key=lambda item: item.get('confidence', 0))
+        face = source.get('view')
+        if face not in FACES:
+            continue
+        missing_axis, direction = FACES[face]
+        bounded = set(node.get('bounded_axes', []))
+        if bounded != (set(range(3)) - {missing_axis}):
+            continue
+        bounds = np.asarray(node['bounds_unit_xyz'], float)
+        witnesses = []
+        for view, mask in envelopes.items():
+            if view == face or view not in AXES:
+                continue
+            axes = {AXES[view][0], AXES[view][2]}
+            shared = axes & bounded
+            if missing_axis not in axes or len(shared) != 1:
+                continue
+            shared_axis = next(iter(shared))
+            # A top/bottom projection unions all heights. For a side-face
+            # attachment, preserve the observed height with a horizontal
+            # witness instead of sampling an unrelated protrusion above it.
+            if face not in ('top', 'bottom') and shared_axis != 2:
+                continue
+            estimate = _contact_boundary(mask, view, shared_axis,
+                                         bounds[shared_axis], missing_axis,
+                                         direction)
+            if estimate is not None:
+                witnesses.append(estimate)
+        if not witnesses:
+            continue
+        coordinates = np.asarray([item['coordinate'] for item in witnesses])
+        spread = float(np.max(coordinates) - np.min(coordinates))
+        point = bounds.mean(axis=1)
+        point[missing_axis] = np.median(coordinates)
+        normal = [0, 0, 0]
+        normal[missing_axis] = direction
+        node['contact_hypothesis'] = {
+            'mount_face': face,
+            'point_unit_xyz': point.tolist(),
+            'normal_unit_xyz': normal,
+            'missing_axis': missing_axis,
+            'witnesses': witnesses,
+            'witness_spread_unit': spread,
+            'status': ('cross_view_envelope_consistent' if len(witnesses) >= 2
+                       and spread <= tolerance else 'single_or_inconsistent_envelope'),
+            'evidence': 'outer silhouette only; protrusion and physical identity unverified',
+        }
+    graph['contact_hypotheses'] = sum('contact_hypothesis' in node
+                                      for node in graph.get('parts', []))
+    return graph
 
 
 def label(value, fallback):

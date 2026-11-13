@@ -19,7 +19,8 @@ from . import trim_checks
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.normpath(os.path.join(HERE, "..", ".."))
 LIB = os.path.join(ROOT, "assets", "props")
-STANDARDS = json.load(open(os.path.join(ROOT, "factory", "standards.json")))
+with open(os.path.join(ROOT, "factory", "standards.json"), encoding="utf-8") as stream:
+    STANDARDS = json.load(stream)
 MIN = STANDARDS["minimum_acceptable"]
 
 
@@ -45,7 +46,8 @@ def glb_normal_disagreement(path):
     as dark streaks however the geometry looks."""
     import json as _json
     import struct
-    b = open(path, "rb").read()
+    with open(path, "rb") as stream:
+        b = stream.read()
     jl = struct.unpack("<I", b[12:16])[0]
     js = _json.loads(b[20:20 + jl])
     bl = struct.unpack("<I", b[20 + jl:24 + jl])[0]
@@ -98,8 +100,11 @@ def check(name, views_dir=None, category_class=None, paint_only=(), solid=False,
     verts, polys, area, uv_area = [], [], 0.0, 0.0
     face_owners = []
     identity_path = os.path.join(d, name + '_parts.json')
-    identities = json.load(open(identity_path)).get(
-        'owners', []) if os.path.isfile(identity_path) else []
+    if os.path.isfile(identity_path):
+        with open(identity_path, encoding="utf-8") as stream:
+            identities = json.load(stream).get('owners', [])
+    else:
+        identities = []
     for o in objs:
         me = o.evaluated_get(dg).to_mesh()
         base = len(verts)
@@ -133,16 +138,19 @@ def check(name, views_dir=None, category_class=None, paint_only=(), solid=False,
                 'single physical surface contains disconnected geometric islands')
     library_path = os.path.join(library_root, 'library.json')
     if trim_order and trim_order.get('automatic_depth') and os.path.isfile(library_path):
-        projection = json.load(open(library_path)).get(
-            name, {}).get('texture_ownership', {})
+        with open(library_path, encoding="utf-8") as stream:
+            projection = json.load(stream).get(name, {}).get('texture_ownership', {})
         m['texture_ownership'] = projection
         if projection.get('needs_review'):
             fails.append(
                 'projected surfaces have no valid texture source for their physical owner')
     construction = (trim_order or {}).get('measured', {}).get('construction')
     detail = (trim_order or {}).get('measured', {}).get('relief', {})
-    library_entry = json.load(open(library_path)).get(
-        name, {}) if os.path.isfile(library_path) else {}
+    if os.path.isfile(library_path):
+        with open(library_path, encoding="utf-8") as stream:
+            library_entry = json.load(stream).get(name, {})
+    else:
+        library_entry = {}
     shift = np.asarray(library_entry.get(
         'manufacturing_translation_m', [0, 0, 0]))
 
@@ -186,7 +194,8 @@ def check(name, views_dir=None, category_class=None, paint_only=(), solid=False,
     hi = Vector([max(v[i] for v in verts) for i in range(3)])
     size = hi - lo
     albedo_path = os.path.join(d, name + "_albedo.png")
-    tex = Image.open(albedo_path).size[0]
+    with Image.open(albedo_path) as image:
+        tex = image.size[0]
     m["texture_signature"] = trim_checks.colour_signature(albedo_path)
     cls = size_class(max(size), category_class)
     budget = STANDARDS["size_classes"][cls]["tri_budget"]
@@ -290,10 +299,11 @@ def check(name, views_dir=None, category_class=None, paint_only=(), solid=False,
     # a sheet set: compare with the holes the reference really has
     if man and os.path.exists(man):
         try:
-            mj = json.load(open(man))
+            with open(man, encoding="utf-8") as stream:
+                mj = json.load(stream)
             x0, y0, x1, y1 = mj["part_map"]["view_bboxes_px"]["front"]
-            pm = np.asarray(Image.open(os.path.join(views_dir, mj["part_map"]["filename"])).convert(
-                "L").crop((x0, y0, x1, y1 - 3))) > 30
+            with Image.open(os.path.join(views_dir, mj["part_map"]["filename"])) as image:
+                pm = np.asarray(image.convert("L").crop((x0, y0, x1, y1 - 3))) > 30
             ys_, xs_ = np.nonzero(pm)
             pm = pm[ys_.min():ys_.max() + 1, xs_.min():xs_.max() + 1]
             ref_holes = float((ndimage.binary_fill_holes(pm) & ~pm).mean())
@@ -333,11 +343,22 @@ def check(name, views_dir=None, category_class=None, paint_only=(), solid=False,
         m["silhouette_iou_raw"] = raw_ious
         m["silhouette_raster_width"] = n
         if trim_order and trim_order.get('vision_generated'):
-            missing = set(('front', 'back', 'left',
-                          'right', 'top')) - set(ious)
+            required = set(('front', 'back', 'left', 'right', 'top')) - set(paint_only)
+            missing = required - set(ious)
             if missing:
                 fails.append(
                     'automatic reference comparison missing: ' + ', '.join(sorted(missing)))
+    drawing_path = (trim_order or {}).get('measured', {}).get('source_drawing', {}).get('traces')
+    if drawing_path and trim_order.get('automatic_depth') and trim_order.get('line') in ('hull', 'hull_parts'):
+        from .drawing_traces import audit_projected_elevations
+        try:
+            with open(drawing_path, encoding='utf-8') as stream:
+                source_drawing = json.load(stream)
+            m['drawing_section_audit'] = audit_projected_elevations(
+                source_drawing, sil, (size.x, size.y, size.z))
+            m['drawing_section_audit']['drawing_path'] = drawing_path
+        except (OSError, ValueError, KeyError, TypeError) as exc:
+            fails.append('source drawing section audit failed: %s' % exc)
     # The generic gate only checks v_front/v_side reference views. Trim orders
     # are produced from p_section/p_strip/p_front and need their own checks.
     if trim_order is None:

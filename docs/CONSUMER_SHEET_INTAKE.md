@@ -69,3 +69,238 @@ and the source-confidence map. The screen-space mesh budget accepts an
 explicit `--view-distance` value in metres for `factory.py auto`; the default
 remains the category's configured near distance. These are diagnostics and
 budget controls, not new evidence for hidden geometry.
+
+## Local depth transfer audit, 2026-11-13
+
+Saved first-attempt diagnostics for the cassette and toaster were sampled at
+the exact source-derived three-point probes that failed on the dense mesh.
+The accepted image-space height retained the target sign and at least half
+its contrast at 14/15 cassette and 28/29 toaster probes classified as
+source-supported. Those same 42 probes fell below half contrast, or reversed
+sign, in the final shared field before mesh reduction. This local evidence
+locates most observed loss in view fusion or the following field repair; a
+global least-squares transfer score did not expose it. It does not establish
+that every source shading feature is physical depth. The mixer fallback did
+not save a final shared-height chart, so it cannot support this comparison.
+
+The probe review now records accepted, shared-field and dense contrasts at
+the same model-space anchors, plus the first stage where a loss is measured.
+These measurements diagnose the failure; they do not relax the geometry QA
+gate or change the construction field. The next candidate change should be
+tested against these local gauges and final mesh/outline/fold checks on more
+than one object family.
+
+### View-fusion checkpoint
+
+A controlled toaster rerun saved the field immediately after view fusion,
+after construction reconstruction, and after component preservation. At 28
+of 29 failed source-supported probes, the first half-contrast or sign loss
+was already present immediately after view fusion. The later field stages
+kept nearly the same sampled contrast. One probe retained sufficient field
+contrast and failed at the dense-mesh measurement. These are first measured
+losses against source-derived targets, not verified physical-depth errors.
+
+Increasing only the field resolution from 110 to 160 did not resolve the
+failure: 31 of 31 source-supported failed probes first lost contrast at view
+fusion, missing-depth probes rose from 36 to 38, and triangles rose from
+5,026 to 6,782 against a 6,000 budget. The resolution experiment was not
+adopted. Diagnostic NPZ files and probe review now expose the intermediate
+field contrasts and preserve the older broad classification when prior run
+archives lack these checkpoints. The remaining fix must address transfer
+between views while preserving source support, silhouettes, folds, and the
+triangle budget across multiple object families.
+
+A second control run split the transfer into image resampling, the local
+thickness safety cap, and view fusion. All 29 source-supported failed probes
+had the same sampled and capped local contrast. At 28, the first half-contrast
+or sign failure occurred at view fusion; one retained field contrast and
+failed at the mesh/probe measurement. Across the 29, the median signed
+fused-to-capped contrast ratio was 0.032 and 13 ratios reversed sign. This
+rules out the safety cap as the immediate cause in this control, without
+establishing that the source-derived depth estimate is physically correct.
+Future diagnostic reports keep these checkpoints separate, and older reports
+without them say only `pre_fusion_or_fusion`.
+The control build remained quarantined with the same 36 depth failures,
+5,026 triangles, and 4.974 extreme folds per 1,000 triangles as the prior
+run, confirming the new checkpoints did not change that build's geometry.
+
+An opt-in `HULL_TRACE_FUSION=1` diagnostic now applies each accepted view
+to the coarse field on its own and records sparse per-view weights and
+field shifts at source-derived probes. This separates single-view field
+transfer from multi-view combination without changing the final field. On
+the toaster, all 29 source-supported failed probes retained sufficient
+contrast in the one-view field; 28 first lost it in the combined field.
+On a separate cassette control, all 15 retained it in the one-view field;
+14 first lost it in the combined field. The cassette's traced final QA
+was unchanged at 16 failures and 5,574 triangles. The toaster's nearest
+voxel trace found a competing view at one or more anchors on 26 of 29
+failed probes, but a continuous cassette trace found that pattern on only
+2 of 15. Simple strongest-view selection therefore lacks cross-object
+support. These are diagnostic projections against source-derived targets;
+the correct physical depth remains uncertain.
+
+A held, object-independent amplitude-weighted fusion trial improved final
+missing-depth counts on both controls: toaster 36 to 30, cassette 16 to 12.
+The toaster mesh rose from 5,026 to 6,104 triangles and exceeded its 6,000
+limit; the cassette rose from 5,574 to 5,878 triangles and still failed QA.
+Neither was released. The trial rule was removed, leaving the original
+weighted fusion unchanged. A subsequent candidate must solve the remaining
+view conflicts and mesh cost before promotion.
+
+## Provisional surface contact, 2026-11-13
+
+A two-resolution correspondence audit tested all 17 captioned detail regions
+against the six assembly views on each seven-sheet pilot (102 pairs). Doubling
+the DINOv2 source/target resolution from 224/448 to 448/896 found one extra
+above-threshold match, but the unchanged part graph still produced no
+three-axis placement on any sheet. More keypoints alone cannot establish
+physical ownership or the missing depth coordinate.
+
+The intake graph now records a *contact hypothesis* for a single-view match
+when a perpendicular assembly silhouette supplies an outer-envelope witness.
+For a front/back or left/right mount, it uses the opposed horizontal views at
+the matched height; top/bottom silhouettes span all heights and can capture
+unrelated protrusions. Each hypothesis includes the proposed mount face,
+position, outward normal, witness spread, and an explicit unverified-depth
+warning. It does not count as a spatially constrained part, authorize
+manufacture, or change `needs_review`.
+
+On the saved pilot, baseline correspondence yields three provisional contacts:
+the cassette door, cassette folding handle, and typewriter carriage lever.
+A fresh cassette image-only intake records two of them in its normal report
+while retaining the `outer_body_only` build scope. The other four sheets still
+lack a supported correspondence. The remaining task is to validate part
+identity and protrusion against independent views, estimate the actual mount
+and depth, manufacture each part once, then run complete artifact QA.
+
+## Fusion crossing audit, 2026-11-13
+
+The opt-in fusion trace now stores a short depth profile around each
+source-derived probe anchor: original field, every one-view field, and the
+combined field. This is diagnostic data only and does not alter geometry.
+An initial analysis incorrectly chose the nearest zero crossing without
+checking which side of the surface faced the camera. That sometimes selected
+the rear/exit face and falsely suggested relief survived. A corrected
+single-attempt cassette analysis selected only camera-facing entry crossings
+and compared the first visible root along the same ray. Of 18 failed probes,
+17 had a measurable visible-root contrast; 17 of those lost at least half
+their source-view contrast or reversed sign. Ten had valid local entry
+crossings for all three fields, and nine lost at least half contrast locally.
+The other eight had no camera-facing entry *inside the sampled baseline
+window* because their original surface touched the field boundary; this does
+not establish that they had no physical surface. The result supports
+attenuation at fusion, rather than a hidden surviving local groove, on this
+control. It still does not establish physically correct source depths.
+
+The earlier full held rerun reproduced the prior cassette outcome exactly:
+16 missing depth probes, 5,574 triangles, and 3.588 extreme folds per 1,000
+triangles. The new single-attempt diagnostic deliberately disabled automatic
+retry and therefore retained the first candidate: 18 missing depth probes,
+5,572 triangles, and 3.59 extreme folds per 1,000 triangles.
+Its full build also exposed a Blender-on-Windows file I/O limit: a 261-character
+diagnostic preview filename failed while shorter files in the same directory
+saved. Long diagnostic image paths now use Windows extended-path I/O for save
+and copy; ordinary paths remain in manifests. This was verified inside Blender
+with a 268-character path. It fixes the build interruption, not the depth QA.
+
+An isolated normal-aware weighting trial then discounted views whose ray
+direction disagreed with the local coarse-field normal. On the first cassette
+candidate it improved the median visible-root contrast ratio from 0.019 to
+0.88 and reduced triangles from 5,572 to 5,406. It did **not** reduce the 18
+exported depth failures. The stage review moved ten failures to single-view
+transfer, and several top features acquired wrong-sign or multi-millimetre
+dense-mesh contrast against sub-millimetre targets. The trial was removed
+from the engine. The next candidate must preserve source-view sign and scale
+while preventing nearly flat competing views from diluting a supported groove;
+it must pass final-mesh QA, not only an intermediate field ratio. Local records
+are retained under
+`C:/Users/jared/Documents/Codex/Hull-maintenance-validation/experiments/fusion-stage-isolation/cv1`
+and `cv2`.
+
+A separate relative-activity trial reduced the vote of a view whose shifted
+3D field was nearly flat beside another view's supported displacement. At a
+shared power of 0.5, first-attempt cassette depth failures fell from 18 to 15
+with 5,438 triangles (baseline 5,572); toaster failures fell from 36 to 28
+with 5,028 triangles (baseline 5,026). Both remained under their 6,000-triangle
+limit, but the toaster gained one new source-supported depth failure and both
+still failed full QA. Power 1 reduced cassette depth failures to 11 but raised
+it to 7,414 triangles, over budget. The accepted source-height arrays were
+identical between baseline and power-0.5 trial in all six views for both
+objects, isolating the difference to fusion. The experiment was removed from
+the engine and its patch and held results are retained under the same local
+`fusion-stage-isolation` area. Any future automatic fusion choice must be
+judged on final exported depth, new failures, folds, and triangle budget.
+
+A third object, the typewriter, exposed a reproducibility problem in the
+comparison itself. The first held baseline had 158 missing-depth failures;
+the power-0.5 candidate and a second unchanged baseline each had 157. The
+candidate changed 86 failed feature IDs relative to the first baseline, but
+the repeated baseline changed 94. The unchanged baselines also had slightly
+different geometry signatures. All three exported 1,410 triangles and 9.929
+extreme folds per 1,000. Their input-order hashes match, while regional
+relief memory and per-view held-out results changed between runs. The shared
+mutable memory is a plausible cause, but has not yet been isolated as the
+only cause. Numeric feature IDs cannot be compared across changed source
+probe cohorts. Therefore the typewriter result neither validates nor refutes
+the fusion candidate. The trial remains disabled. Before using the existing
+final-export rollback gate to select a fusion candidate, the builds must
+start from an identical memory snapshot and verify matching source evidence.
+All three held runs are in the local `fusion-stage-isolation` experiment area.
+
+In a controlled follow-up, two typewriter baselines with reconstruction
+memory disabled produced identical 480 source features, 168 probes, 158
+missing-depth failures, and mesh signatures. The memory-disabled power-0.5
+candidate produced the same result, so it gave no measurable typewriter gain
+with a stable source cohort. This isolates the prior changing feature sets
+to the memory-enabled route in these runs; it does not establish that memory
+is the sole possible source of nondeterminism. Production still uses a shared
+mutable memory database. Retry review must compare proposals against the
+same source evidence before treating changed feature IDs as gained or lost
+geometry. The diagnostic wrapper and three held runs remain in the local
+`fusion-stage-isolation` area; the candidate code was removed again.
+
+The factory retry reviews now compare the complete source-probe cohort by
+view, anchor positions, and target offsets before considering a second
+export. Feature sequence IDs are ignored. A changed source cohort rejects
+the retry even when its aggregate QA count improves. This prevents a mutable
+memory result from being mistaken for a geometry correction; it does not yet
+freeze memory or make every retry reproducible. The guard was checked against
+the real typewriter reports: it rejects the two memory-enabled baselines as
+incomparable and accepts the memory-disabled baseline pair and controlled
+fusion pair as comparable.
+
+The run-local retry now retains the first attempt's source height maps,
+feature observations, and diagnostics in memory. On a second attempt it
+requires the same coarse field and reuses those estimates instead of asking
+the shared reconstruction database to solve the source again. The ordinary
+memory-enabled first attempt still records its learning; the frozen copy is
+removed before the order is saved. In a held two-attempt cassette build, the
+second report recorded `source_evidence_reused: true`, 155 source probes, and
+`same_source_probes: 1`. The normal local retry repaired two targeted details,
+was accepted by final-export review, and retained 5,574 triangles and 16
+remaining depth failures. The build remains unqualified. This fixes retry
+comparability within one build; separate builds can still start from
+different shared-memory states and must record that state for reproducible
+cross-run experiments.
+
+## Repeatable comparison mode
+
+An automatic-depth work order may set `"reconstruction_memory_mode": "off"`
+for controlled A/B runs. The default `"learning"` continues using Hull's
+shared reconstruction memory. The mode is recorded in the relief report,
+along with `source_evidence_sha256`, a fingerprint of the coarse field,
+accepted source height maps, and source feature observations before view
+fusion. Matching fingerprints show that two builds compared the same source
+estimates; they do not prove either estimate is physically correct. The
+memory-off mode skips cache retrieval and strategy hints, so its output can
+differ from the normal learning mode. It is an experiment setting, not a
+replacement for learning or a release quality gate.
+
+Two held typewriter builds using the explicit memory-off order matched on
+source fingerprint, 168 probes, failure set, 1,410 triangles, and exported
+geometry signature. They also matched an earlier memory-disabled diagnostic
+baseline. The example work order and held outputs are in the local
+`fusion-stage-isolation` experiment area. This makes cross-run comparisons
+repeatable for this tested input; a later memory snapshot or source-evidence
+replay format would be needed to reproduce a specific learning-mode build
+without disabling memory.

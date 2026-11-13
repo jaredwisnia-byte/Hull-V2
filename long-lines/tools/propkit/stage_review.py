@@ -15,6 +15,54 @@ def inspect(result, measured, diagnostics=None):
     def flag(code, station, severity, summary, evidence, next_check):
         findings.append(dict(code=code, station=station, severity=severity, summary=summary,
                              evidence=evidence, next_check=next_check))
+    drawing = measured.get('source_drawing', {})
+    changed_frames = drawing.get('reconciled_views_without_source_pixel_map', [])
+    if changed_frames:
+        flag('reconciled_view_lacks_source_pixel_map', 5, 'review',
+             'Reconciliation altered build-input views without a source-pixel map',
+             {'views': changed_frames, 'drawing': drawing.get('sheet')},
+             'Map every build-input contour to the original source pixels before treating its inferred geometry as source-trace constrained.')
+    conflicts = drawing.get('view_conflicts_in_use', [])
+    if conflicts:
+        flag('preflight_view_conflict_used_for_geometry', 5, 'review',
+             'Preflight questions source views that the builder still uses for geometry',
+             {'views': conflicts, 'drawing': drawing.get('sheet')},
+             'Resolve source orientation or proportion, then rebuild and compare traced outlines before using these views as construction constraints.')
+    openings = drawing.get('opening_candidates', [])
+    if openings:
+        flag('opening_mask_physical_meaning_unverified', 5, 'review',
+             'Opposing source masks agree, but the accepted cuts may also be painted gaps',
+             {'drawing': drawing.get('sheet'), 'candidates': openings},
+             'Inspect each source region and clay cut from multiple views before treating it as a verified through-opening.')
+    repeated_sources = {
+        name: item['reused_source_regions']
+        for name, item in drawing.get('part_drawings', {}).items()
+        if item.get('reused_source_regions')}
+    if repeated_sources:
+        flag('companion_view_evidence_reused', 5, 'review',
+             'One source drawing supplies multiple assigned directions for a companion part',
+             {'parts': repeated_sources, 'drawing': drawing.get('sheet')},
+             'Confirm orientation or obtain an independent view before treating those directions as separate 3D evidence.')
+    unmapped = drawing.get('construction_unmapped_views', {})
+    if unmapped:
+        flag('construction_view_source_map_unverified', 7, 'review',
+             'Prepared construction views have no verified pixel map to their original source crops',
+             {'views_by_part': unmapped, 'drawing': drawing.get('sheet')},
+             'Compare the original crop and prepared view before attributing built geometry to the original pixels.')
+    section_audit = result.get('metrics', {}).get('drawing_section_audit', {})
+    divergent = {
+        view: {'outside_tolerance_count': data['outside_tolerance_count'],
+               'severe_outlier_count': data.get('severe_outlier_count', 0),
+               'sample_count': data['sample_count'],
+               'max_error_in_height_units': data['max_error_in_height_units']}
+        for view, data in section_audit.get('views', {}).items()
+        if data.get('outside_tolerance_count', 0) >= 3 or
+           data.get('severe_outlier_count', 0) >= 1}
+    if divergent:
+        flag('export_diverges_from_traced_sections', 15, 'review',
+             'Exported width profiles differ persistently from source contour measurements',
+             {'views': divergent, 'drawing': section_audit.get('drawing_path')},
+             'Inspect the listed source trace IDs and exported silhouette rows; resolve view calibration or geometry before release.')
     relief = measured.get('relief', {})
     for view, report in relief.get('views', {}).items():
         policy = report.get('boundary_policy')
@@ -82,6 +130,7 @@ def inspect(result, measured, diagnostics=None):
              {'probe_ids': relief['unmet_before_reduction'],
               'supported_unmet': audit.get('supported_unmet'),
               'unsupported_source': audit.get('unsupported_source'),
+              'supported_first_loss_counts': audit.get('supported_first_loss_counts'),
               'diagnostic': audit.get('path')},
              'Inspect each source/proposal/shared-field/mesh cross-section. Retry only supported regions with an isolated quality gate.')
     post = result.get('metrics', {}).get(

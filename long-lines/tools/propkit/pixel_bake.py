@@ -7,6 +7,7 @@ import numpy as np
 from PIL import Image
 from scipy import ndimage
 from .raster import triangle_samples, depth_buffer
+from .pathing import io_path
 
 AXES = {'front': (1, 1), 'back': (1, -1), 'right': (0, -1),
         'left': (0, 1), 'top': (2, -1)}
@@ -275,11 +276,11 @@ def refine_albedo(obj, sources, output_path, shift=(0, 0, 0)):
         margin = (distance > 0) & (
             distance <= max(4, width // 128)) & ~occupied
         image[margin] = image[indices[0][margin], indices[1][margin]]
-    Image.fromarray(image).save(output_path)
-    Image.fromarray(np.uint8(confidence * 255)).save(
-        str(output_path).replace('_albedo.png', '_source_confidence.png'))
-    Image.fromarray(source_view).save(
-        str(output_path).replace('_albedo.png', '_source_view.png'))
+    Image.fromarray(image).save(io_path(output_path))
+    Image.fromarray(np.uint8(confidence * 255)).save(io_path(
+        str(output_path).replace('_albedo.png', '_source_confidence.png')))
+    Image.fromarray(source_view).save(io_path(
+        str(output_path).replace('_albedo.png', '_source_view.png')))
     palette = np.zeros((256, 3), np.uint8)
     view_colours = {'front': (225, 89, 89), 'back': (75, 150, 232),
                     'left': (91, 185, 123), 'right': (241, 190, 68),
@@ -287,8 +288,8 @@ def refine_albedo(obj, sources, output_path, shift=(0, 0, 0)):
     for view, colour in view_colours.items():
         palette[view_codes[view]] = colour
     palette[254] = (160, 160, 160)
-    Image.fromarray(palette[source_view]).save(
-        str(output_path).replace('_albedo.png', '_source_view_preview.png'))
+    Image.fromarray(palette[source_view]).save(io_path(
+        str(output_path).replace('_albedo.png', '_source_view_preview.png')))
     return {'mode': 'per_texel_owned_projection', 'processed_samples': processed,
             'unseen_source_samples': unknown, 'unseen_pixels_filled_from_same_owner': filled,
             'unresolved_projected_pixels': unresolved, 'needs_review': bool(unresolved),

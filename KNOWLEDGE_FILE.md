@@ -3,6 +3,29 @@
 Last audited: 2026-11-11. Read this before proposing a new reconstruction module.
 Update it when verified behaviour, inputs, call paths or test results change.
 
+## Source-traced drawing checkpoint (2026-11-13)
+
+The automatic-depth factory now produces a prebuild trace sheet from source
+silhouettes and internal pixel paths. It measures 19 contour-crossing sections
+per elevation and pairs front/side envelopes while leaving the intervening 3D
+section unknown. A nine-object diagnostic trial measured 684 section rows with
+at most 0.5 source-pixel outline difference. The sheet and stage review now
+report when a view proposed for paint only is still used for geometry; all seven
+consumer pilot orders have at least one such conflict. End-view aspect evidence
+is recorded without rotating or excluding any view. These are diagnostics, not
+validated cross-view feature identities, physical sections or corrected meshes.
+For explicit reconciliation, the sheet now records original source paths and
+altered build-input paths separately. Lossless horizontal flips have exact,
+pixel-checked mappings. A changed view with erased pixels remains under review
+because those edges may not exist in the supplied image. A CRT TV right view
+exercised both flip and erasure; its original trace remains intact and its
+build-input contours remain unresolved.
+The exported-mesh QA now compares orthographic width profiles at the drawing's
+measured source contour crossings and records trace IDs for local failures.
+This is an outer-envelope check only; it does not validate carving depth,
+cross-view part identity or hidden sections.
+See [drawing status](docs/TRACE_DRIVEN_DRAWING_STATUS.md) for the acceptance gate.
+
 ## Consumer sheet intake pilot (2026-11-12)
 
 See [consumer sheet intake](docs/CONSUMER_SHEET_INTAKE.md) and
@@ -158,6 +181,38 @@ They are not photo-derived hidden construction, general dimensioned/hidden-line
 drafting, or a production-ready closed CAD solid. Optional STEP surfaces retain
 their previous limitations. Do not describe the drawing exporter as missing, or
 describe this tracing change as completing engineering inference.
+
+### Prebuild drawing audit (2026-11-13)
+
+The production `engineering.py` drawings still come from the finished mesh, so
+they cannot supply a missing lens or other component to the builder. A new
+trace-only sheet is generated before geometry in the automatic-depth factory
+path. It uses Hull's existing `feature_regions.trace` and
+`feature_curves.paths`, plus the source silhouette mask. A mixed-object trial
+produced sheets for a camera, a carved leg and seven consumer objects. Black
+silhouettes and blue internal marks come from source pixels and carry source-view
+coordinates. The factory records this sheet in its process report; no internal
+trace is yet promoted to a physical construction constraint. A Blender station
+check confirmed the drawing is written before construction planning and before
+any mesh object exists.
+The marks are observations only: a circle can be a bore, protrusion, decal or
+shadow. The earlier Hough-circle-to-cylinder prototype made a plausible camera
+lens but falsely classified a mark on a hair-dryer handle as a major protrusion;
+it is rejected for production. The trace-only sheets do not yet infer validated
+sections, dimensions or physical parts. The required next gate is cross-view
+correspondence with measured trace deviation and explicit unresolved status
+before any geometry is created. Do not describe the trace-only trial as a
+completed technical drawing pipeline.
+
+The drawing now also carries the exact source contours for openings already
+accepted by `observed_silhouettes`, plus their opposing-view witness and raw
+appearance statistics. The factory records those candidates as constraints it
+actually passes to the base hull. A mixed test found the cassette handle and
+stand-mixer bowl gap, but also an apparent false cut on the carved leg's back
+seam. Thus opposing masks alone do not verify a physical through-hole. The
+drawing labels these as mask-agreement candidates, and `stage_review` flags them
+for inspection without discarding the source evidence or silently declaring
+geometry correct. A general physical-opening validator remains necessary.
 
 ## Current implementation update (2026-11-10)
 
@@ -913,3 +968,78 @@ map, a colour preview, and the existing source-confidence map. The strongest
 Standalone exports copy these maps for inspection. The screen-space triangle
 tolerance can now take an explicit viewing distance. Neither change estimates
 physical detail absent from the input.
+
+## Multipart source drawings (2026-11-13)
+
+SOURCE-VERIFIED: Automatic sheet intake now saves exact original-sheet crops
+and generates prebuild assembly and companion trace drawings with a crop-to-sheet
+pixel offset. Reusing one crop under multiple view labels is marked as an
+unresolved view pair. Supplied multipart view folders get the same prebuild
+trace station. The measured drawing survives assembly build reporting, and
+automatic multipart export QA compares assembly source contour widths with
+the whole exported mesh.
+
+OBSERVED RUN: All 26 crops assigned from the supplied blender sheet matched
+their original image regions pixel for pixel. An archived assembled blender
+export failed its top silhouette check (78% agreement). Its source drawing
+width audit found 2/19 front, 9/19 right, 11/19 left and 17/19 back samples
+outside the source-resolution allowance, with six severe back deviations.
+This audit does not qualify the part geometry. Internal trace IDs still do not
+drive multipart construction, and some prepared builder views may have altered
+pixels or uncertain direction assignments. Those remain open evidence gaps.
+
+SOURCE-VERIFIED: On the `layout: parts` line, the factory now compiles the
+prepared view silhouettes into prebuild drawing masks. Body and companion
+hulls consume those masks, and the builder reports their build-trace IDs.
+Input and mask hashes guard against changes after tracing. When the prepared
+view has no verified map to the original crop, stage review holds that source
+claim. Internal traces remain observational; they do not yet determine holes,
+curves, protrusions or relief. Other multipart layouts do not yet consume
+compiled drawing masks.
+
+OBSERVED RUN: The archived blender rebuilt with the same geometry signature
+and 3,652 triangles. Rotary phone and CRT television multipart rebuilds
+consumed masks for seven and two part groups, respectively, while retaining
+their previous geometry signatures. Phone QA still failed normals and
+front/top outlines; television QA still failed normals. This validates the
+outer-mask handoff without implying that those assets are qualified.
+
+SOURCE-VERIFIED: Automatic-depth analysis now compiles its internal boundary
+array after applying the valid-image erosion and part exclusions. The packet
+is stored with the prebuild technical record and an overlay. The joint shading
+solver reloads it after checking image, mask, valid-region, and packet hashes.
+The same training-only pixel preparation is used by the drawing station and
+solver; withheld intensities do not leak into traced geometry evidence.
+These boundaries guide regularization and region selection, not depth sign or
+physical-part classification. Single-body Hull and multipart `parts` layout
+use this handoff; other multipart layouts remain outside it.
+
+OBSERVED RUN: A controlled toaster build with the prebuild packet matched an
+in-solver-tracing control exactly in geometry signature, 5,926 triangles,
+32 shading-depth QA failures, per-view boundary counts, and held-out shading
+gains. The equal failures show this handoff does not solve missing depth.
+
+## View-fusion defect isolation (2026-11-13)
+
+OBSERVED RUN: A same-source toaster rebuild with per-view fusion diagnostics
+reproduced the 5,926-triangle geometry signature and 32 final depth failures.
+Of 34 failed dense probes before reduction, 33 first lost at view fusion and
+one at mesh/probe intersection. None first failed at image resampling, the
+depth cap, construction, or topology repair. At several rounded edges, the
+feature-bearing front or top view competes with a nearly flat neighboring
+view; the current scalar field average attenuates the local contrast.
+
+EXPERIMENT REVERTED: Weighting each view by its local height contrast reduced
+the first-pass dense failures from 34 to 32 and final failures from 32 to 27;
+the trial output used 5,534 triangles. It did not pass QA or clean the planar
+body. On a fixed central front-panel measurement, area-weighted surface
+variation was 0.857 mm before and 0.859 mm after. Side-by-side renders showed
+no clear visual improvement. The trial source change was reverted. Do not
+describe this as a solved depth-transfer or planar-surface defect.
+
+OPEN: The shading selector can accept a whole view because its appearance
+prediction improves globally, even when large painted panels should remain
+flat. A useful replacement must distinguish material from relief by region,
+retain supported openings and protrusions, then reconcile orthogonal views
+without erasing local detail. Qualify it on flat manufactured, curved
+manufactured, and carved/organic sources before changing the release path.

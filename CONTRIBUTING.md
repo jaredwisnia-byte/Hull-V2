@@ -29,6 +29,40 @@ A global silhouette score alone cannot validate a groove. Preserve failed
 experiments and regression fixtures; do not lower thresholds to clear a check.
 Review baseline proposals separately with reasons, fixture scope and known defects.
 
+## Generalization gate for reconstruction features
+
+Never fit a reconstruction feature, threshold or tool choice to one asset or
+one reported defect. Do not branch on an object name to select geometry.
+Object-specific measurements may live in an input order, but the inference rule
+must operate from observable evidence and record uncertainty.
+
+Before promoting a geometry feature, compare the same inputs before and after
+on a mixed set: at least one planar manufactured object, one curved manufactured
+object, one organic or carved object, and a negative control where the feature
+must stay inactive. Include an object family not used to design the change.
+Inspect source views, source-derived construction plan, clay renders, textured
+renders, feature geometry, triangle counts and QA for every case. A pass on one
+object, or an improved image-fit score with worse clay geometry, is a rejection.
+Keep failed cases in the existing issue; do not open a new issue to relabel the
+same failure or promote a prototype because its unit tests pass.
+
+## Source-traced technical drawings
+
+Produce construction drawings from the source views before building geometry.
+Every observed line or curve in a drawing must retain its source view, source
+pixel path, coordinate transform and tracing method. Display observed traces,
+cross-view inferences and unknown geometry distinctly. A fitted primitive may
+summarize a trace only when its deviation from that trace is measured and shown;
+it must never replace or masquerade as the observation. Do not turn a circle,
+shading mark or assumed object category into a protrusion, bore, cut or part
+without independent cross-view support. The build must consume the recorded
+construction constraints and report which ones it used or could not resolve.
+Agreement between two painted or generated views is evidence, not proof of a
+physical opening; keep its interpretation reviewable until appearance and
+geometry checks distinguish a cut from a dark seam or recess.
+Apply the mixed-object generalization gate above to both the drawing and the
+resulting mesh.
+
 Do not commit dependency folders, private run records, model weights, generated
 imports or incidental library/ledger changes. Use explicit paths when staging.
 Do not rewrite asset history or migrate everything to LFS as a cleanup shortcut.

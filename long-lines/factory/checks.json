@@ -50,6 +50,12 @@
       "timeout_s": 300
     },
     {
+      "id": "drawing_traces",
+      "capability": "core",
+      "script": "long-lines/tools/test_drawing_traces.py",
+      "timeout_s": 300
+    },
+    {
       "id": "tracing_backend",
       "capability": "core",
       "script": "long-lines/tools/test_tracing_backend.py",

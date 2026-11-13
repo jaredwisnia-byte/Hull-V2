@@ -1,5 +1,6 @@
 """The diagnostic keeps rejected image evidence separate from lost geometry."""
 
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -51,8 +52,150 @@ class ProbeReviewTests(unittest.TestCase):
             summary = probe_review.write(report, (1., 1., 1.))
             self.assertEqual(summary['supported_unmet'], 1)
             self.assertEqual(summary['unsupported_source'], 1)
+            self.assertEqual(summary['supported_first_loss_counts']['unresolved'], 1)
             self.assertTrue(Path(summary['overview_image']).is_file())
             self.assertTrue(Path(summary['path']).is_file())
+
+    def test_locates_supported_contrast_lost_in_shared_field(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            accepted = np.zeros((64, 64), dtype=float)
+            shared = np.zeros_like(accepted)
+            accepted[:, 15:17] = -2.
+            shared[:, 15:17] = -.4
+            np.savez_compressed(Path(temporary) / 'front.npz',
+                                feature_labels=np.ones((64, 64), dtype=np.uint8),
+                                accepted_height_px=accepted,
+                                final_shared_height_px=shared,
+                                coarse_height_px=np.zeros_like(accepted),
+                                metres_per_pixel=.01)
+            report = {'probes': [{'id': 'groove', 'view': 'front',
+                                  'anchors_m': [[-.25, -.2, .5],
+                                                [-.375, -.2, .5],
+                                                [-.125, -.2, .5]],
+                                  'target_offsets_m': [-.02, 0., 0.]}],
+                      'unmet_before_reduction': ['groove'],
+                      'pre_reduction_validation': {'probes': [
+                          {'id': 'groove', 'expected_contrast_m': -.02,
+                           'measured_contrast_m': -.003}]},
+                      'views': {'front': {'relief_selection': {'regions': [
+                          {'region_id': 1, 'initially_supported': True,
+                           'applied': True, 'final_test_gain': .2}]}}}}
+            record = probe_review.classify(report, (1., 1., 1.), temporary)[0]
+            self.assertEqual(record['status'], 'supported_unmet')
+            self.assertAlmostEqual(record['stage_contrasts_m']['accepted_m'], -.02)
+            self.assertAlmostEqual(record['stage_contrasts_m']['shared_field_m'], -.004)
+            self.assertEqual(record['first_observed_loss'], 'shared_field_or_repair')
+
+    def test_locates_supported_contrast_lost_at_view_fusion(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            accepted = np.zeros((64, 64), dtype=float)
+            fused = np.zeros_like(accepted)
+            accepted[:, 15:17] = -2.
+            fused[:, 15:17] = -.4
+            np.savez_compressed(Path(temporary) / 'front.npz',
+                                feature_labels=np.ones((64, 64), dtype=np.uint8),
+                                accepted_height_px=accepted,
+                                sampled_height_px=accepted,
+                                clipped_height_px=accepted,
+                                single_view_height_px=accepted,
+                                fused_height_px=fused,
+                                post_construction_height_px=fused,
+                                post_topology_height_px=fused,
+                                final_shared_height_px=fused,
+                                coarse_height_px=np.zeros_like(accepted),
+                                metres_per_pixel=.01)
+            probe = {'view': 'front', 'anchors_m': [[-.25, -.2, .5],
+                     [-.375, -.2, .5], [-.125, -.2, .5]]}
+            with np.load(Path(temporary) / 'front.npz') as arrays:
+                contrasts = probe_review.stage_contrasts(arrays, probe,
+                                                          (1., 1., 1.))
+            self.assertAlmostEqual(contrasts['accepted_m'], -.02)
+            self.assertAlmostEqual(contrasts['clipped_m'], -.02)
+            self.assertAlmostEqual(contrasts['single_view_m'], -.02)
+            self.assertAlmostEqual(contrasts['fused_m'], -.004)
+            self.assertAlmostEqual(contrasts['post_construction_m'], -.004)
+            self.assertEqual(probe_review.first_observed_loss(
+                -.02, -.003, contrasts), 'view_fusion')
+
+    def test_transfer_checkpoint_does_not_blame_fusion_without_evidence(self):
+        self.assertEqual(probe_review.first_observed_loss(
+            -.02, -.003, {'accepted_m': -.02, 'fused_m': -.004,
+                          'shared_field_m': -.004}), 'pre_fusion_or_fusion')
+        self.assertEqual(probe_review.first_observed_loss(
+            -.02, -.003, {'accepted_m': -.02, 'sampled_m': -.02,
+                          'clipped_m': -.004, 'fused_m': -.004,
+                          'shared_field_m': -.004}), 'depth_safety_cap')
+        self.assertEqual(probe_review.first_observed_loss(
+            -.02, -.003, {'accepted_m': -.02, 'sampled_m': -.02,
+                          'clipped_m': -.02, 'fused_m': -.004,
+                          'shared_field_m': -.004}), 'single_view_or_fusion')
+        self.assertEqual(probe_review.first_observed_loss(
+            -.02, -.003, {'accepted_m': -.02, 'sampled_m': -.02,
+                          'clipped_m': -.02, 'single_view_m': -.004,
+                          'fused_m': -.004, 'shared_field_m': -.004}),
+            'single_view_field_transfer')
+
+    def test_rejected_repair_keeps_partial_checkpoints_and_names_fallback(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            accepted = np.zeros((64, 64), dtype=float)
+            accepted[:, 15:17] = -2.
+            np.savez_compressed(Path(temporary) / 'front.npz',
+                                feature_labels=np.ones((64, 64), dtype=np.uint8),
+                                hypothesis_height_px=accepted,
+                                accepted_height_px=accepted,
+                                sampled_height_px=accepted,
+                                clipped_height_px=accepted,
+                                fused_height_px=accepted,
+                                post_construction_height_px=accepted,
+                                coarse_height_px=np.zeros_like(accepted),
+                                observed_log_luminance=np.full((64, 64), -1.),
+                                metres_per_pixel=.01)
+            probe = {'id': 'groove', 'view': 'front',
+                     'anchors_m': [[-.25, -.2, .5],
+                                   [-.375, -.2, .5], [-.125, -.2, .5]],
+                     'target_offsets_m': [-.02, 0., 0.]}
+            report = {'diagnostic_folder': temporary,
+                      'dimensions_m': [1., 1., 1.],
+                      'probes': [probe], 'unmet_before_reduction': ['groove'],
+                      'topology': {'status': 'rejected',
+                                   'fallback': 'unchanged base field'},
+                      'pre_reduction_validation': {'probes': [
+                          {'id': 'groove', 'expected_contrast_m': -.02,
+                           'measured_contrast_m': 0.}]},
+                      'views': {'front': {'relief_selection': {'regions': [
+                          {'region_id': 1, 'initially_supported': True,
+                           'applied': True, 'final_test_gain': .2}]}}}}
+            record = probe_review.classify(report, (1., 1., 1.), temporary)[0]
+            self.assertAlmostEqual(record['stage_contrasts_m']['accepted_m'], -.02)
+            self.assertAlmostEqual(record['stage_contrasts_m']['fused_m'], -.02)
+            self.assertNotIn('shared_field_m', record['stage_contrasts_m'])
+            self.assertEqual(record['first_observed_loss'], 'rejected_detail_fallback')
+            faded = dict(record['stage_contrasts_m'], fused_m=-.003)
+            self.assertEqual(probe_review.first_observed_loss(
+                -.02, 0., faded, 'unchanged base field'), 'single_view_or_fusion')
+            summary = probe_review.write(report, (1., 1., 1.))
+            self.assertEqual(summary['supported_first_loss_counts'][
+                'rejected_detail_fallback'], 1)
+            self.assertTrue(Path(summary['probes'][0]['image']).is_file())
+
+    def test_fusion_trace_flags_competing_view_without_claiming_depth(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            trace = {'fusion_weight_floor': 1e-4, 'probes': {'groove': {
+                'view': 'front', 'anchors': [
+                    {'views': {'front': {'weight': .8}, 'right': {'weight': .2}}},
+                    {'views': {'front': {'weight': .2}, 'right': {'weight': .8}}},
+                    {'views': {'front': {'weight': .6}, 'right': {'weight': .4}}}]}}}
+            (Path(temporary) / 'fusion-contributions.json').write_text(
+                json.dumps(trace), encoding='utf-8')
+            report = {'probes': [{'id': 'groove', 'view': 'front',
+                                  'anchors_m': [[0, 0, .5]] * 3,
+                                  'target_offsets_m': [0, 0, 0]}],
+                      'unmet_before_reduction': ['groove']}
+            record = probe_review.classify(report, (1., 1., 1.), temporary)[0]
+            review = record['fusion_weight_review']
+            self.assertEqual(review['competing_anchor_count'], 1)
+            self.assertAlmostEqual(review['source_weight_fraction_center'], .8)
+            self.assertEqual(review['below_weight_floor_anchor_count'], 0)
 
 
 if __name__ == '__main__':

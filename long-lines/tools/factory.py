@@ -68,7 +68,9 @@ def file_hash(paths):
     h = hashlib.sha1()
     for p in sorted(paths):
         if os.path.exists(p):
-            h.update(open(p, "rb").read())
+            with open(p, "rb") as stream:
+                for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+                    h.update(chunk)
     return h.hexdigest()[:12]
 
 
@@ -277,13 +279,77 @@ def run_line(order):
     line = order["line"]
     if line == "hull_parts":     # an object from its parts, each a hull from its own views
         from propkit.hull_assembly import build as hull_parts_build
-        order["measured"] = hull_parts_build(order, SRC)
+        from propkit.hull_assembly import part_views
+        from propkit import drawing_traces
+        measured = order.setdefault('measured', {})
+        source_drawings = dict(order.get('source_drawings', {}))
+        construction_drawings = {}
+        unmapped_construction_views = {}
+        root = os.path.join(SRC, order['views_folder'])
+        plan = order.get('parts')
+        if not plan and order.get('handbook'):
+            from propkit import handbook
+            plan = (handbook.entry(order['handbook']) or {}).get('assembly')
+        plan = plan or {}
+        folders = ({order['assembly']} |
+                   ({spec['views'] for spec in plan if spec.get('views')}
+                    if isinstance(plan, list) else set(plan.values())))
+        for folder in sorted(folders):
+            views = {view: path for view, path in
+                     part_views(os.path.join(root, folder)).items()
+                     if view in ('front', 'back', 'left', 'right', 'top', 'bottom')}
+            if not views:
+                continue
+            drawing_folder = os.path.join(diagnostic_root(order),
+                                          'construction-traces', folder)
+            source = source_drawings.get(folder, {})
+            construction = drawing_traces.infer(
+                views, drawing_folder, geometry_views=views,
+                source_views=source.get('source_views'),
+                source_sheet_frames=source.get('source_sheet_frames'),
+                compile_construction_masks=True)
+            if construction['reconciled_views_without_source_pixel_map']:
+                unmapped_construction_views[folder] = construction[
+                    'reconciled_views_without_source_pixel_map']
+            construction_drawings[folder] = os.path.join(
+                drawing_folder, 'technical-traces.json')
+            if folder not in source_drawings:
+                source_drawings[folder] = {
+                    'sheet': os.path.join(drawing_folder, 'technical-traces.png'),
+                    'traces': construction_drawings[folder],
+                    'source_kind': 'supplied part-view file',
+                }
+        order['construction_drawings'] = construction_drawings
+        assembly_drawing = source_drawings.get(order.get('assembly'))
+        if assembly_drawing:
+            measured['source_drawing'] = {
+                'stage': 'before_geometry',
+                'sheet': assembly_drawing['sheet'],
+                'traces': assembly_drawing['traces'],
+                'source_kind': assembly_drawing.get('source_kind',
+                                                   'unaltered original-sheet crop'),
+                'part_drawings': {name: {'sheet': item['sheet'],
+                                        'traces': item['traces'],
+                                        'reused_source_regions': item.get(
+                                            'reused_source_regions', [])}
+                                  for name, item in source_drawings.items()
+                                  if name != order.get('assembly')},
+                'construction_drawings': construction_drawings,
+                'construction_unmapped_views': unmapped_construction_views,
+                'construction_use': (
+                    'compiled prebuild masks constrain part hull geometry'
+                    if order.get('layout') == 'parts' else
+                    'prebuild drawings recorded; this layout has no compiled-mask handoff'),
+            }
+        built = hull_parts_build(order, SRC)
+        measured.update(built)
         return
     if line == "hull":
         from propkit.hull import hull_prop
         d = os.path.join(SRC, order["views_folder"])
         views = {k: os.path.join(d, "v_%s.png" % k)
                  for k in order.get("views", [])}
+        original_views = dict(views)
         hp = dict(order.get("hull", {}))
         # "paint": "project" blends every view by how squarely each face sees it (texturing.project, as
         # hull_parts does). The default paints each face from one view only, which streaks slanted faces
@@ -316,6 +382,10 @@ def run_line(order):
         if not height and order.get("handbook"):
             # human scale: the views give proportions, the handbook's contacts give the size
             height, order["measured"] = human_scale_height(order, views)
+        paint_only = tuple(hp.get('paint_only', ()))
+        order.setdefault('measured', {})['paint_only'] = list(paint_only)
+        geometry_views = {view: path for view, path in views.items()
+                          if view not in paint_only}
         if hp.pop("guides", False):
             # removable construction guides (propkit/guides.py): cross-section rings make their band round
             from propkit import guides
@@ -338,9 +408,75 @@ def run_line(order):
             D_ = hp.get("depth_m") or height * sm_.shape[1] / sm_.shape[0]
             order.setdefault("measured", {})["relief"] = rrep = {}
             if order.get('automatic_depth'):
-                from propkit import surface_detail, process_planner
-                methods, section_bands = process_planner.plan_methods(views)
+                from propkit import surface_detail, process_planner, drawing_traces
+                trace_folder = os.path.join(diagnostic_root(order), 'technical-traces')
+                source_drawing = drawing_traces.infer(
+                    views, trace_folder,
+                    construction_masks=hp.get('sil_override'),
+                    opening_report=order['measured'].get('observed_openings'),
+                    view_consistency=(order['measured'].get('reconcile') or
+                                      order.get('view_consistency')),
+                    geometry_views=geometry_views,
+                    source_views=(order.get('source_drawings', {}).get(
+                        'assembly', {}).get('source_views') or original_views),
+                    source_sheet_frames=order.get('source_drawings', {}).get(
+                        'assembly', {}).get('source_sheet_frames'),
+                    compile_construction_masks=True,
+                    estimated_height_m=height)
+                drawing_path = os.path.join(trace_folder, 'technical-traces.json')
+                construction_contract = os.path.join(
+                    trace_folder, 'construction-contract.json')
+                shutil.copyfile(drawing_path, construction_contract)
+                drawing_masks, drawing_use = drawing_traces.load_construction_masks(
+                    construction_contract, views)
+                if set(drawing_masks) != set(views):
+                    raise ValueError('Prebuild drawing did not compile every build view')
+                # Bind exactly the masks saved by the prebuild drawing to the
+                # hull constructor. No later silhouette pass may substitute a
+                # different mask without invalidating the drawing receipt.
+                hp['sil_override'] = drawing_masks
+                order.setdefault('measured', {})['source_drawing'] = {
+                    'stage': 'before_geometry',
+                    'sheet': os.path.join(trace_folder, 'technical-traces.png'),
+                    'vector_sheet': source_drawing['vector_sheet'],
+                    'section_envelopes': source_drawing['section_envelope_sheet'],
+                    'traces': drawing_path,
+                    'construction_contract': construction_contract,
+                    'geometry_inferences': 0,
+                    'status': 'source contours and opposing-mask opening candidates; physical meaning unresolved',
+                    'opening_candidates': source_drawing['build_constraints'],
+                    'view_conflicts_in_use': source_drawing['view_conflicts_in_use'],
+                    'reconciled_views_without_source_pixel_map':
+                        source_drawing['reconciled_views_without_source_pixel_map'],
+                    'reconciled_views_with_verified_source_pixel_map':
+                        source_drawing['reconciled_views_with_verified_source_pixel_map'],
+                    'paired_elevation_measurements': len(
+                        source_drawing['paired_elevation_envelopes']),
+                    'path_counts': {view: {'outer': record['outer_path_count'],
+                                           'internal': record['internal_path_count'],
+                                           'opposed_mask_openings': record['opposed_mask_opening_count']}
+                                    for view, record in source_drawing['observations'].items()}}
+                order['measured']['source_drawing']['construction_receipt'] = {
+                    'status': 'prepared_for_hull_constructor',
+                    'operation': 'intersect compiled orthographic silhouette masks',
+                    'drawing_sha256': hashlib.sha256(
+                        open(construction_contract, 'rb').read()).hexdigest(),
+                    'consumed_constraint_ids': [
+                        item['id'] for item in source_drawing['construction_constraints']
+                        if item['used_for_geometry']],
+                    'views': drawing_use,
+                    'unresolved': source_drawing['unknowns'],
+                    'physical_geometry_verified': False,
+                }
+                methods, section_bands = process_planner.plan_methods(geometry_views)
                 order.setdefault('measured', {})['construction_methods'] = methods
+                methods['source_drawing'] = {
+                    'traces': order['measured']['source_drawing']['traces'],
+                    'consumed_constraints': order['measured']['source_drawing'][
+                        'construction_receipt']['consumed_constraint_ids'],
+                    'opening_candidates': [constraint['id'] for constraint in
+                                           source_drawing['build_constraints']],
+                    'reason': 'compiled source silhouettes constrain the base hull; opposing-mask openings are candidates, and internal traces lack verified physical interpretation'}
                 methods['order_overrides'] = {
                     key: hp[key] for key in ('revolve', 'sections') if key in hp}
                 hp.setdefault('revolve', methods['method'].startswith('lathe_'))
@@ -349,11 +485,23 @@ def run_line(order):
                     'revolve': bool(hp['revolve']), 'sections': bool(hp['sections'])}
                 if section_bands is not None and hp['sections']:
                     hp['section_bands'] = section_bands
-                profile_model, route = process_planner.propose(views, height)
+                profile_model, route = process_planner.propose(geometry_views, height)
                 order.setdefault('measured', {})['process_plan'] = route
                 detail_plan = surface_detail.analyse(
-                    views, (W_, D_, height), rrep,
-                    silhouettes=hp.get('sil_override'))
+                    geometry_views, (W_, D_, height), rrep,
+                    silhouettes=hp.get('sil_override'),
+                    memory_mode=order.get('reconstruction_memory_mode', 'learning'),
+                    drawing_path=order['measured']['source_drawing']['traces'])
+                if order.get('_frozen_source_evidence') is not None:
+                    detail_plan['frozen_source_evidence'] = order['_frozen_source_evidence']
+                else:
+                    # A run-local retry must test a new construction decision
+                    # against the same source estimates. Shared learning may
+                    # change between attempts, so retain the first estimates
+                    # in memory for this build only.
+                    detail_plan['source_evidence_sink'] = (
+                        lambda evidence: order.__setitem__(
+                            '_frozen_source_evidence', evidence))
                 if order.get('relief_retry'):
                     detail_plan['retry_targets'] = order['relief_retry']
                 detail_plan['cad_export'] = bool(order.get('cad_export'))
@@ -377,6 +525,7 @@ def run_line(order):
                         # destructive relief correction or promoting the asset.
                         detail_plan['report']['topology'] = {
                             'status': 'rejected', 'reason': str(exc),
+                            'review': exc.report,
                             'fallback': 'unchanged base field'}
                         order.setdefault('inference_warnings', []).append(
                             'unsafe_inferred_detail_discarded')
@@ -401,6 +550,11 @@ def run_line(order):
         from propkit.hull import HULL_REPORT
         HULL_REPORT.pop("sections", None)
         obj = hull_prop(views, height, name=order["name"], **hp)
+        if order.get('automatic_depth'):
+            receipt = order.get('measured', {}).get('source_drawing', {}).get(
+                'construction_receipt')
+            if receipt is not None:
+                receipt['status'] = 'supplied_to_hull_constructor'
         order.setdefault('measured', {})['field'] = dict(
             HULL_REPORT.get('field', {}))
         print('RECONSTRUCTION_FIELD',
@@ -616,9 +770,9 @@ def render_trim_preview(name, library_root=None):
     return out
 
 
-def _local_retry_review(before, after, targets, measured):
+def _local_retry_review(before, after, targets, before_measured, measured):
     """Accept a second build only if exported geometry improves safely."""
-    from propkit.correction_review import assess
+    from propkit.correction_review import assess, same_source_probes
     target_ids = {item['id'] for item in targets}
 
     def target_misses(result):
@@ -633,6 +787,8 @@ def _local_retry_review(before, after, targets, measured):
                  for view, value in old_outline.items()), default=-1.)
     extra_fails = set(after.get('fails', ())) - set(before.get('fails', ()))
     retry_applied = measured.get('relief', {}).get('local_retry', {}).get('applied') is True
+    source_evidence_same = same_source_probes(
+        before_measured.get('relief', {}), measured.get('relief', {}))
     before_metrics = {'missing_target_details': len(target_misses(before))}
     after_metrics = {
         'missing_target_details': len(target_misses(after)),
@@ -642,6 +798,7 @@ def _local_retry_review(before, after, targets, measured):
         'geometric_components': new.get('geometric_components'),
         'triangle_count': new.get('tris'),
         'minimum_silhouette_delta': delta,
+        'same_source_probes': int(source_evidence_same),
         'field_retry_applied': int(retry_applied)}
     limits = {'new_final_failures': (0, 0),
               'extreme_fold_count': (0, old.get('extreme_folds', {}).get('count', -1)),
@@ -649,6 +806,7 @@ def _local_retry_review(before, after, targets, measured):
               'geometric_components': (1, old.get('geometric_components', 0)),
               'triangle_count': (0, old.get('tris', 0) * 1.05),
               'minimum_silhouette_delta': (-.005, 1.),
+              'same_source_probes': (1, 1),
               'field_retry_applied': (1, 1)}
     return assess('supported relief missing after view fusion',
                   'accept isolated local view ownership on exported asset',
@@ -687,7 +845,9 @@ def _build_candidate(order, run, samples=16):
             bake.update_manifest(os.path.join(
                 library_root, "library.json"), order["name"], info)
             vd = reference_views(order)
-            result = qa.check(order["name"], vd, order.get("class"), tuple(order.get("hull", {}).get("paint_only", ())),
+            result = qa.check(order["name"], vd, order.get("class"),
+                              tuple(order.get('measured', {}).get('paint_only',
+                                    order.get("hull", {}).get("paint_only", ()))),
                               solid=order["line"] in STANDARDS["solid_lines"], mount=order.get("mount", "floor"),
                               trim_order=order, library_root=library_root)
             stages["qa"] = round(time.time() - ts, 1)
@@ -709,6 +869,7 @@ def _build_candidate(order, run, samples=16):
             else:
                 review = _local_retry_review(old_result, result,
                                              order.get('relief_retry', ()),
+                                             old_measured,
                                              order.get('measured', {}))
             if not review['accepted']:
                 result = old_result
@@ -756,6 +917,7 @@ def _build_candidate(order, run, samples=16):
                            for region in view.get('regional_relief',{}).get('regions',[]) if region.get('memory_key')]})
     result.update(attempts=attempt, seconds=round(time.time()-t0, 2), stage_seconds=stages,
                   artifact_library_root=library_root)
+    order.pop('_frozen_source_evidence', None)
     return result
 
 
@@ -775,6 +937,11 @@ def build(order, samples=16):
     if source and Path(source).is_file():
         inputs.append(Path(source))
     required = warehouse.required_capabilities(order)
+    required_checks = [
+        {'id': check['id'], 'capability': check['capability']}
+        for check in maintenance.load_plan(repo)['checks']
+        if check['capability'] in required
+    ]
     local_runtime = maintenance.doctor(repo, [capability for capability in required
                                                if capability != 'godot'],
                                        blender=bpy.app.binary_path)
@@ -786,6 +953,7 @@ def build(order, samples=16):
         'file_hashes': file_hashes,
         'source_hashes': source_hashes,
         'required_capabilities': required,
+        'required_checks': required_checks,
         'runtime': {'pass': local_runtime['pass'],
                     'python': local_runtime['python'],
                     'packages': local_runtime['packages'],
@@ -832,6 +1000,7 @@ def build(order, samples=16):
         order['status'] = 'needs_person'
     finally:
         order.pop('_input_views_snapshot', None)
+        order.pop('_frozen_source_evidence', None)
         # This is a run-local second attempt, not a lasting instruction in
         # the source order. A future rebuild must earn the retry anew.
         order.pop('relief_retry', None)
@@ -877,7 +1046,9 @@ def gate(names):
         line = o.get("line") or ("painted" if n.startswith(
             ("car_coupe", "can_", "tv_painted", "range_")) else "recipe")
         try:
-            r = qa.check(n, vd, o.get("class"), tuple(o.get("hull", {}).get("paint_only", ())),
+            r = qa.check(n, vd, o.get("class"),
+                         tuple(o.get('measured', {}).get('paint_only',
+                               o.get("hull", {}).get("paint_only", ()))),
                          solid=line in STANDARDS["solid_lines"] and n not in STANDARDS["open_by_design"]["names"],
                          mount=mount_of(n), trim_order=o)
         except Exception as e:

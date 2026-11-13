@@ -43,6 +43,11 @@ class WarehouseTests(unittest.TestCase):
             "source_hashes": {"hull.py": w.digest(self.source_file)},
             "file_hashes": {str(self.source_file): w.digest(self.source_file)},
             "required_capabilities": ["core", "blender", "godot"],
+            "required_checks": [{"id": name, "capability": capability}
+                                for name, capability in (("core", "core"),
+                                                         ("core-extra", "core"),
+                                                         ("blender", "blender"),
+                                                         ("godot", "godot"))],
             "runtime": {"pass": True, "python": "3.13.13", "packages": {"numpy": "2.5.4"},
                         "blender_path": str(self.root / "blender.exe"),
                         "blender_version": "5.2.3"},
@@ -52,14 +57,16 @@ class WarehouseTests(unittest.TestCase):
             "pass": True, "source_unchanged_during_checks": True,
             "repository_policy": {"pass": True},
             "profiles": ["core", "blender", "godot"],
+            "planned_checks": self.context["required_checks"],
             "source_hashes": self.context["source_hashes"],
             "runtime": {"pass": True, "python": "3.13.13",
                         "packages": {"numpy": "2.5.4"},
                         "qualified_capabilities": ["core", "blender", "godot"],
                         "tools": {"blender": {"path": str(self.root / "blender.exe"),
                                               "version": "Blender 5.2.3 LTS"}}},
-            "checks": [{"id": name, "capability": name, "pass": True,
-                        "exit_code": 0, "skipped": 0} for name in ("core", "blender", "godot")],
+            "checks": [{"id": check["id"], "capability": check["capability"], "pass": True,
+                        "exit_code": 0, "skipped": 0}
+                       for check in self.context["required_checks"]],
         })
         self.run = w.create(self.root / "runs", self.order, self.context)
         self.lib = self.run / "attempt-001/library"
@@ -144,6 +151,9 @@ class WarehouseTests(unittest.TestCase):
             lambda q: q["runtime"].update(python="3.12.0"),
             lambda q: q.update(profiles=["core"]),
             lambda q: q["checks"][1].update({"pass": False}),
+            lambda q: q["checks"].pop(),
+            lambda q: q["checks"].pop(1),
+            lambda q: q["planned_checks"].pop(),
         ):
             trial = json.loads(json.dumps(original))
             change(trial)

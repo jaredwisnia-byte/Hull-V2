@@ -8,6 +8,8 @@ import sys
 import tempfile
 import unittest
 from unittest.mock import patch
+import numpy as np
+from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import sheet_blobs  # noqa: E402
@@ -15,6 +17,122 @@ import factory  # noqa: E402
 
 
 class BuildGuards(unittest.TestCase):
+    def test_single_body_constructor_consumes_prebuild_drawing_masks(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            for view in ('front', 'right'):
+                pixels = np.zeros((80, 80, 3), np.uint8)
+                pixels[10:70, 16:64] = 150
+                Image.fromarray(pixels).save(root / f'v_{view}.png')
+            order = {'name': 'drawing_contract_probe', 'line': 'hull',
+                     'views_folder': str(root), 'views': ['front', 'right'],
+                     'height_m': .2, 'hull': {'relief': True},
+                     'automatic_depth': True, 'run_directory': str(root / 'run'),
+                     'measured': {}}
+            from propkit import process_planner, surface_detail
+            with patch.object(factory, 'SRC', str(root)), \
+                    patch.object(process_planner, 'plan_methods',
+                                 return_value=({'method': 'continuous_field'}, None)), \
+                    patch.object(process_planner, 'propose',
+                                 return_value=(None, {})), \
+                    patch.object(surface_detail, 'analyse', return_value={}), \
+                    patch('propkit.hull.hull_prop', return_value=object()) as builder:
+                factory.run_line(order)
+            supplied = builder.call_args.kwargs['sil_override']
+            drawing = order['measured']['source_drawing']
+            receipt = drawing['construction_receipt']
+            self.assertEqual(set(supplied), {'front', 'right'})
+            self.assertEqual(receipt['status'], 'supplied_to_hull_constructor')
+            self.assertTrue(Path(drawing['section_envelopes']).is_file())
+            self.assertEqual(hashlib.sha256(Path(
+                drawing['construction_contract']).read_bytes()).hexdigest(),
+                receipt['drawing_sha256'])
+            evolving = Path(drawing['traces'])
+            evolving.write_text(evolving.read_text() + '\n')
+            self.assertEqual(hashlib.sha256(Path(
+                drawing['construction_contract']).read_bytes()).hexdigest(),
+                receipt['drawing_sha256'])
+            self.assertEqual(drawing['opening_candidates'], [])
+            for view in supplied:
+                self.assertTrue(receipt['views'][view]['build_trace_ids'])
+                self.assertTrue(supplied[view][0].any())
+
+    def test_handbook_parts_receive_prebuild_drawings(self):
+        from propkit import handbook
+        order_path = (Path(__file__).resolve().parents[1] / 'factory' /
+                      'orders' / 'wallphone_rotary.json')
+        order = json.loads(order_path.read_text())
+        order['measured'] = {}
+        with tempfile.TemporaryDirectory() as folder:
+            order['run_directory'] = folder
+            with patch('propkit.hull_assembly.build', return_value={'parts': {}}):
+                factory.run_line(order)
+            expected = {spec['views'] for spec in
+                        handbook.entry(order['handbook'])['assembly']
+                        if spec.get('views')}
+            self.assertTrue(expected <= set(order['construction_drawings']))
+            self.assertTrue(expected <= set(
+                order['measured']['source_drawing']['part_drawings']))
+
+    def test_part_geometry_receives_compiled_drawing_mask(self):
+        from propkit import parts_layout
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            pixels = np.zeros((90, 90, 3), np.uint8)
+            pixels[15:75, 20:70] = 140
+            for view in ('front', 'right'):
+                Image.fromarray(pixels).save(root / f'v_{view}.png')
+            views = {view: str(root / f'v_{view}.png')
+                     for view in ('front', 'right')}
+            from propkit.drawing_traces import infer, load_construction_masks
+            infer(views, root / 'drawing', compile_construction_masks=True)
+            masks, _ = load_construction_masks(
+                root / 'drawing' / 'technical-traces.json', views)
+            with patch.object(parts_layout, 'hull_prop', return_value=object()) as builder:
+                parts_layout.build_part(views, .1, .1, .2, 'generic_part', str(root),
+                                        cut_holes=False, defer=[], drawing_masks=masks)
+            self.assertIs(builder.call_args.kwargs['sil_override']['front'][0],
+                          masks['front'][0])
+            from propkit import surface_detail
+            drawing_path = root / 'drawing' / 'technical-traces.json'
+            with patch.object(parts_layout, 'hull_prop', return_value=object()), \
+                    patch.object(surface_detail, 'analyse', return_value={}) as analyse:
+                parts_layout.build_part(views, .1, .1, .2, 'generic_detail', str(root),
+                                        cut_holes=False, defer=[], automatic_depth=True,
+                                        drawing_masks=masks, drawing_path=drawing_path)
+            self.assertEqual(analyse.call_args.kwargs['drawing_path'], drawing_path)
+
+    def test_parts_line_draws_supplied_views_before_geometry(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            for name in ('assembly', 'body'):
+                part = root / 'source' / name
+                part.mkdir(parents=True)
+                pixels = np.full((90, 90, 3), 255, np.uint8)
+                pixels[15:75, 20:70] = 10
+                Image.fromarray(pixels).save(part / 'v_front.png')
+            order = {'line': 'hull_parts', 'layout': 'parts', 'name': 'test',
+                     'views_folder': 'source', 'assembly': 'assembly',
+                     'parts': [{'name': 'body', 'views': 'body', 'root': True}],
+                     'run_directory': str(root / 'run')}
+            def build(candidate, unused_root):
+                drawing = candidate['measured']['source_drawing']
+                self.assertEqual(drawing['stage'], 'before_geometry')
+                self.assertTrue(Path(drawing['traces']).is_file())
+                self.assertIn('body', drawing['part_drawings'])
+                from propkit.drawing_traces import load_construction_masks
+                masks, use = load_construction_masks(
+                    candidate['construction_drawings']['body'],
+                    {'front': str(root / 'source' / 'body' / 'v_front.png')})
+                self.assertTrue(masks['front'][0].any())
+                self.assertTrue(use['front']['build_trace_ids'])
+                return {'parts': {'body': {}}}
+            with patch.object(factory, 'SRC', str(root)), \
+                    patch('propkit.hull_assembly.build', side_effect=build):
+                factory.run_line(order)
+            self.assertIn('parts', order['measured'])
+            self.assertIn('source_drawing', order['measured'])
+
     def test_station_exception_is_saved_as_a_reviewable_failure(self):
         with tempfile.TemporaryDirectory() as folder:
             source = Path(folder) / 'input.png'

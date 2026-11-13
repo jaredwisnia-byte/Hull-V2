@@ -13,19 +13,28 @@ def preserve_components(base, target, maximum_fragment_cells=8):
     from scipy import ndimage
     from .correction_review import assess, Rejected
     original, expected = ndimage.label(base < 0)
+    original_solid_cells = int(np.count_nonzero(original))
+    # A fixed eight-cell limit discards an otherwise intact large asset for a
+    # few enclosed grid cells. Bound local cavity repair by both total solid
+    # volume and an absolute cap; original cavities remain protected below.
+    cavity_repair_limit = max(
+        maximum_fragment_cells, min(64, int(original_solid_cells * .00005)))
     original_cavities = ndimage.binary_fill_holes(base < 0) & (base >= 0)
-    removed_total = 0
     reviews = []
+    attempts = []
     initial_errors = None
     for attempt, scale in enumerate((1., .95, .9, .8, .5, .25)):
         candidate = (target.copy() if attempt == 0 else
                      base + (target - base) * scale)
         lost_cavity_cells = int(np.count_nonzero(original_cavities & (candidate < 0)))
         if lost_cavity_cells:
-            raise Rejected(assess('original enclosed cavity was filled', 'alter unobserved interior',
-                                 {'cavity_loss_cells': lost_cavity_cells},
-                                 {'cavity_loss_cells': lost_cavity_cells},
-                                 improve=['cavity_loss_cells'], limits={'cavity_loss_cells': (0, 0)}))
+            review = assess('original enclosed cavity was filled', 'alter unobserved interior',
+                            {'cavity_loss_cells': lost_cavity_cells},
+                            {'cavity_loss_cells': lost_cavity_cells},
+                            improve=['cavity_loss_cells'], limits={'cavity_loss_cells': (0, 0)})
+            review['attempts'] = attempts + [{
+                'detail_scale': scale, 'lost_original_cavity_cells': lost_cavity_cells}]
+            raise Rejected(review)
         labels, count = ndimage.label(candidate < 0)
         if initial_errors is None:
             initial_errors = abs(count - expected)
@@ -56,7 +65,8 @@ def preserve_components(base, target, maximum_fragment_cells=8):
         new_pockets = [i for i in range(
             1, pocket_count + 1) if i not in existing]
         fill_ids = [i for i in new_pockets if pocket_sizes[i]
-                    <= maximum_fragment_cells]
+                    <= cavity_repair_limit]
+        unfilled_ids = [i for i in new_pockets if i not in fill_ids]
         filled = int(pocket_sizes[fill_ids].sum()) if fill_ids else 0
         if fill_ids:
             lookup = np.zeros(pocket_count + 1, bool)
@@ -71,19 +81,37 @@ def preserve_components(base, target, maximum_fragment_cells=8):
                  and len(fill_ids) == len(new_pockets))
         if filled and expected > 1:
             valid = valid and ndimage.label(candidate < 0)[1] == expected
+        attempts.append({
+            'detail_scale': scale,
+            'original_components': int(expected),
+            'candidate_components': int(count),
+            'preserved_original_components': int(sum(owner != 0 for owner in owners)),
+            'distinct_original_owners': int(len(keep)),
+            'removable_fragment_components': len(fragments),
+            'removable_fragment_cells': removed,
+            'new_cavity_components': len(new_pockets),
+            'fillable_cavity_components': len(fill_ids),
+            'filled_cavity_cells': filled,
+            'unfilled_cavity_cells': int(pocket_sizes[unfilled_ids].sum()),
+            'largest_unfilled_cavity_cells': int(max(
+                (pocket_sizes[i] for i in unfilled_ids), default=0)),
+            'original_solid_cells': original_solid_cells,
+            'cavity_repair_limit_cells': cavity_repair_limit,
+            'valid_after_local_repair': bool(valid)})
         if valid:
             if count != expected or scale != 1. or filled:
                 review = assess('solid component mismatch', 'repair detached grid fragments and enclosed grid pockets',
                                 {'component_errors': initial_errors +
                                     len(new_pockets)},
                                 {'component_errors': 0, 'detail_retention': scale,
-                                 'discarded_solid_fraction': removed / max(1, int(np.count_nonzero(original))),
-                                 'filled_solid_fraction': filled / max(1, int(np.count_nonzero(original)))},
+                                 'discarded_solid_fraction': removed / max(1, original_solid_cells),
+                                 'filled_solid_fraction': filled / max(1, original_solid_cells)},
                                 improve=['component_errors'],
                                 limits={'component_errors': (0, 0), 'detail_retention': (.8, 1.),
                                         'discarded_solid_fraction': (0, .001), 'filled_solid_fraction': (0, .001)})
                 reviews.append(review)
                 if not review['accepted']:
+                    review['attempts'] = attempts
                     raise Rejected(review)
             return candidate, {'baseline_solid_components': int(expected),
                                'detail_scale': scale,
@@ -92,13 +120,16 @@ def preserve_components(base, target, maximum_fragment_cells=8):
                                'filled_new_cavity_components': len(fill_ids),
                                'filled_new_cavity_cells': filled,
                                'maximum_fragment_cells': maximum_fragment_cells,
+                               'cavity_repair_limit_cells': cavity_repair_limit,
+                               'attempts': attempts,
                                'correction_reviews': reviews,
                                'method': 'preserve original components; remove detached grid-scale fragments before backoff'}
-        removed_total += removed
-    raise Rejected(assess('unresolved solid component conflict', 'discard all inferred relief',
-                          {'component_errors': max(1, abs(count - expected))},
-                          {'component_errors': 0, 'detail_retention': 0.},
-                          improve=['component_errors'], limits={'detail_retention': (.8, 1.)}))
+    review = assess('unresolved solid component conflict', 'discard all inferred relief',
+                    {'component_errors': max(1, abs(count - expected))},
+                    {'component_errors': 0, 'detail_retention': 0.},
+                    improve=['component_errors'], limits={'detail_retention': (.8, 1.)})
+    review['attempts'] = attempts
+    raise Rejected(review)
 
 
 def bounded_field(field, dimensions):

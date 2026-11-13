@@ -97,14 +97,16 @@ repeat it after the workload is idle, and preserve the database plus recovery
 evidence before any separately approved retention action.
 
 `python hull.py workspace-inventory WORKSPACE --classification ROLES.json
---previous PRIOR.json --output REPORT.json` scans local storage without changing
+--previous PRIOR.json --allocated --output REPORT.json` scans local storage without changing
 files. The classification and previous report are optional. Each top-level entry
 records size, file count, assigned role and growth since the previous complete
 scan. Unclassified `Hull-*` directories are review candidates, not verified
 orphans. If a subtree could not be read, the report says `partial` and suppresses
 the affected entry's growth delta. Run this at the local steward's 03:00 and 15:00 checks, retaining each
 report as a baseline for the next scan. This does not replace the separate
-checkpoint inventory or authorize deletion.
+checkpoint inventory or authorize deletion. `--allocated` adds observed physical
+file bytes, including Windows transparent compression. An incomplete scan is not
+a drive-usage total, and hard-linked paths may be counted more than once.
 After reviewing a stable, hash-verified report and stopping legacy workers,
 `python hull.py memory-quarantine DATABASE --reviewed-report REPORT.json
 --confirm-idle` rechecks the report under the checkpoint lock and moves only
