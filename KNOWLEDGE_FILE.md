@@ -159,6 +159,23 @@ drafting, or a production-ready closed CAD solid. Optional STEP surfaces retain
 their previous limitations. Do not describe the drawing exporter as missing, or
 describe this tracing change as completing engineering inference.
 
+### Prebuild drawing audit (2026-11-13)
+
+The production `engineering.py` drawings still come from the finished mesh, so
+they cannot supply a missing lens or other component to the builder. A separate
+prebuild prototype produced source-pixel trace sheets for a camera, a carved leg
+and seven mixed consumer objects. Its black silhouettes and blue internal marks
+come from the supplied orthographic images and carry source-view coordinates.
+The marks are observations only: a circle can be a bore, protrusion, decal or
+shadow. The earlier Hough-circle-to-cylinder prototype made a plausible camera
+lens but falsely classified a mark on a hair-dryer handle as a major protrusion;
+it is rejected for production. The trace-only sheets do not yet infer validated
+sections, dimensions or physical parts, and the current builder does not consume
+their internal paths. The required next gate is cross-view correspondence with
+measured trace deviation and explicit unresolved status before any geometry is
+created. Do not describe the trace-only trial as a completed technical drawing
+pipeline.
+
 ## Current implementation update (2026-11-10)
 
 ### Superseding reconstruction path (2026-11-11)
