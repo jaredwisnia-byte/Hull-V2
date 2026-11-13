@@ -18,6 +18,12 @@ class MaintenanceTests(unittest.TestCase):
             {c["capability"] for c in plan["checks"]},
             {"core", "blender", "godot", "cad", "vision"},
         )
+        registered = {c.get("script"): c["capability"] for c in plan["checks"]}
+        for name in ("companion_captions", "local_retry", "observed_openings",
+                     "probe_review", "process_planner"):
+            self.assertEqual(registered[f"long-lines/tools/test_{name}.py"], "core")
+        self.assertEqual(registered["long-lines/tools/test_retry_review.py"],
+                         "blender")
         self.assertTrue(m.repository_audit(ROOT)["pass"])
 
     def test_change_profiles_do_not_ignore_dependency_configuration_or_loader(self):
