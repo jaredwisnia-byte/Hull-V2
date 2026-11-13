@@ -1,5 +1,11 @@
 # Status
 
+Historical Long Lines and early factory snapshot. The counts and "Next" list
+below record their original date; they are not the current Hull V2 task queue or
+qualification result. Use the [Hull V2 issues](https://github.com/jaredwisnia-byte/Hull-V2/issues)
+for current tasks and [`KNOWLEDGE_FILE.md`](../../KNOWLEDGE_FILE.md) for
+verified reconstruction capabilities and limits.
+
 ## Done
 - Apartment slice: systems, rooms, dressing, street, tests (39 unit, 45 smoke).
 - Factory v1 (Nov 9): work orders, intake (view splitting, category sizing), lines (hull, car,
@@ -30,3 +36,4 @@
    computable from human/object constants (finger, hand, glass, insulation).
 5. Place trim pieces in the apartment (baseboards / crown along walls, casings on doorways)
    and appliances in the kitchen in place of the recipe ones.
+

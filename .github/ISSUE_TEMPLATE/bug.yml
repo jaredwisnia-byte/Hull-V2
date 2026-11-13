@@ -1,6 +1,21 @@
 name: Reconstruction or maintenance defect
 description: Capture a reproducible failure and its evidence.
 body:
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Impact
+      options:
+        - Release blocked or data integrity at risk
+        - Model quality or required check fails
+        - Maintenance or documentation gap
+    validations:
+      required: true
+  - type: input
+    id: owner
+    attributes:
+      label: Responsible owner
+      description: Name the person or team that will carry the next action.
   - type: textarea
     id: symptom
     attributes:
@@ -18,3 +33,9 @@ body:
     id: environment
     attributes:
       label: Commit, capability profile, tool versions and next experiment
+  - type: textarea
+    id: closure
+    attributes:
+      label: Completion evidence
+      description: Record the fix, checks, protected properties and remaining limits before closing.
+
