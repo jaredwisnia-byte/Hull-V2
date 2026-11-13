@@ -32,6 +32,29 @@ class MaintenanceTests(unittest.TestCase):
             self.assertTrue(report['files']['referenced'][0]['matches_record'])
             self.assertEqual(len(list((Path(folder) / 'patches').glob('*.npz'))), 1)
 
+    def test_memory_quarantine_commands_restore_reviewed_orphan(self):
+        with tempfile.TemporaryDirectory() as folder:
+            database = Path(folder) / 'memory.sqlite3'
+            report = Path(folder) / 'review.json'
+            with closing(BuildMemory(database)) as memory:
+                for scale in (1, 2):
+                    memory.save('key', 'v1', {'status': 'accepted'}, [1],
+                                np.ones((2, 2)) * scale, np.zeros((2, 2)))
+            with patch.object(sys, 'argv', ['hull.py', 'memory-inventory',
+                                            str(database), '--output', str(report),
+                                            '--verify-hashes']):
+                self.assertEqual(m.main(ROOT), 0)
+            with patch.object(sys, 'argv', ['hull.py', 'memory-quarantine',
+                                            str(database), '--reviewed-report',
+                                            str(report), '--confirm-idle']):
+                self.assertEqual(m.main(ROOT), 0)
+            batch = next((Path(folder) / 'patches-quarantine').iterdir())
+            self.assertEqual(len(list((Path(folder) / 'patches').glob('*.npz'))), 1)
+            with patch.object(sys, 'argv', ['hull.py', 'memory-restore',
+                                            str(database), str(batch)]):
+                self.assertEqual(m.main(ROOT), 0)
+            self.assertEqual(len(list((Path(folder) / 'patches').glob('*.npz'))), 2)
+
     def test_manifest_has_explicit_native_and_core_coverage(self):
         plan = m.load_plan(ROOT)
         self.assertEqual(
