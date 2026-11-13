@@ -15,6 +15,13 @@ def inspect(result, measured, diagnostics=None):
     def flag(code, station, severity, summary, evidence, next_check):
         findings.append(dict(code=code, station=station, severity=severity, summary=summary,
                              evidence=evidence, next_check=next_check))
+    drawing = measured.get('source_drawing', {})
+    openings = drawing.get('opening_candidates', [])
+    if openings:
+        flag('opening_mask_physical_meaning_unverified', 5, 'review',
+             'Opposing source masks agree, but the accepted cuts may also be painted gaps',
+             {'drawing': drawing.get('sheet'), 'candidates': openings},
+             'Inspect each source region and clay cut from multiple views before treating it as a verified through-opening.')
     relief = measured.get('relief', {})
     for view, report in relief.get('views', {}).items():
         policy = report.get('boundary_policy')

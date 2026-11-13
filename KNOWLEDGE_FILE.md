@@ -181,6 +181,16 @@ correspondence with measured trace deviation and explicit unresolved status
 before any geometry is created. Do not describe the trace-only trial as a
 completed technical drawing pipeline.
 
+The drawing now also carries the exact source contours for openings already
+accepted by `observed_silhouettes`, plus their opposing-view witness and raw
+appearance statistics. The factory records those candidates as constraints it
+actually passes to the base hull. A mixed test found the cassette handle and
+stand-mixer bowl gap, but also an apparent false cut on the carved leg's back
+seam. Thus opposing masks alone do not verify a physical through-hole. The
+drawing labels these as mask-agreement candidates, and `stage_review` flags them
+for inspection without discarding the source evidence or silently declaring
+geometry correct. A general physical-opening validator remains necessary.
+
 ## Current implementation update (2026-11-10)
 
 ### Superseding reconstruction path (2026-11-11)

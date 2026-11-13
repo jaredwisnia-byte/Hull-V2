@@ -9,6 +9,7 @@ from pathlib import Path
 
 import numpy as np
 from PIL import Image, ImageDraw
+from scipy import ndimage
 from skimage.measure import find_contours
 
 from .feature_curves import paths
@@ -22,7 +23,7 @@ def _linear_rgb(pixels):
                     ((color + .055) / 1.055) ** 2.4)
 
 
-def observe(view, path):
+def observe(view, path, construction_mask=None, opening_witness=None):
     """Return source-pixel paths and their provenance, without geometric fitting."""
     image = Image.open(path).convert('RGB')
     cropped, _, box = silhouette(path, with_box=True)
@@ -49,6 +50,37 @@ def observe(view, path):
                         'method': traced['method'] + ' / connected pixel path',
                         'points_source_xy': points,
                         'physical_interpretation': 'unresolved: relief, paint, shadow or part seam'})
+    if construction_mask is not None:
+        accepted = np.asarray(construction_mask, bool)
+        if accepted.shape != cropped.shape or np.any(accepted & ~cropped):
+            raise ValueError('Construction opening mask differs from source silhouette')
+        openings = cropped & ~accepted
+        if openings.any() and opening_witness is None:
+            raise ValueError('Source opening lacks an opposite-view witness')
+        labels, count = ndimage.label(openings)
+        source_pixels = np.asarray(image)[box[1]:box[3], box[0]:box[2]]
+        for index in range(1, count + 1):
+            region = labels == index
+            contours = find_contours(region.astype(np.float32), .5)
+            if not contours:
+                continue
+            contour = max(contours, key=len)
+            if len(contour) < 8:
+                continue
+            points = [[float(x + box[0]), float(y + box[1])]
+                      for y, x in contour]
+            colors = source_pixels[region]
+            records.append({
+                'id': f'{view}:opening:{index}', 'kind': 'opposed_mask_opening',
+                'source_view': view, 'source_path': str(path),
+                'method': 'accepted source opening-mask isocontour',
+                'points_source_xy': points,
+                'cross_view_witness': opening_witness,
+                'area_source_px': int(region.sum()),
+                'appearance_median_rgb': np.median(colors, axis=0).tolist(),
+                'appearance_std_rgb': np.std(colors, axis=0).tolist(),
+                'physical_interpretation':
+                'opposing masks agree; physical through-opening unverified'})
     return {'view': view, 'source_path': str(path),
             'source_size_px': [image.width, image.height],
             'foreground_box_px': list(map(int, box)),
@@ -56,10 +88,12 @@ def observe(view, path):
             'traces': records,
             'outer_path_count': len(outer),
             'internal_path_count': sum(r['kind'] == 'internal_intensity_boundary'
-                                       for r in records)}
+                                       for r in records),
+            'opposed_mask_opening_count': sum(r['kind'] == 'opposed_mask_opening'
+                                           for r in records)}
 
 
-def infer(views, destination):
+def infer(views, destination, construction_masks=None, opening_report=None):
     """Create the first-station drawing and JSON from arbitrary labelled views."""
     destination = Path(destination)
     destination.mkdir(parents=True, exist_ok=True)
@@ -67,7 +101,26 @@ def infer(views, destination):
                 if name in views]
     if not selected:
         raise ValueError('At least one labelled source view is required')
-    observations = {name: observe(name, views[name]) for name in selected}
+    construction_masks = construction_masks or {}
+    opening_report = opening_report or {}
+    opposites = {'front': 'back', 'back': 'front',
+                 'left': 'right', 'right': 'left'}
+    observations = {
+        name: observe(name, views[name],
+                      construction_masks[name][0] if name in construction_masks else None,
+                      opposites.get(name) if opening_report.get('accepted', {}).get(name, 0)
+                      else None)
+        for name in selected}
+    constraints = [
+        {'id': item['id'], 'kind': 'opposed_mask_opening',
+         'source_view': name, 'cross_view_witness': item['cross_view_witness'],
+         'source_trace_id': item['id'],
+         'area_source_px': item['area_source_px'],
+         'appearance_median_rgb': item['appearance_median_rgb'],
+         'appearance_std_rgb': item['appearance_std_rgb'],
+         'status': 'construction_candidate_in_use_physical_hole_unverified'}
+        for name, observed in observations.items() for item in observed['traces']
+        if item['kind'] == 'opposed_mask_opening']
     columns = min(3, len(selected))
     rows = (len(selected) + columns - 1) // columns
     panel_w, panel_h = 510, 600
@@ -95,21 +148,26 @@ def infer(views, destination):
             if len(points) < 2:
                 continue
             mapped = [(ox + px * scale, oy + py * scale) for px, py in points]
-            color = '#111111' if item['kind'] == 'outer_silhouette' else '#1260a8'
+            color = {'outer_silhouette': '#111111',
+                     'internal_intensity_boundary': '#1260a8',
+                     'opposed_mask_opening': '#008b51'}[item['kind']]
             draw.line(mapped, fill=color,
-                      width=2 if item['kind'] == 'outer_silhouette' else 1)
+                      width=2 if item['kind'] != 'internal_intensity_boundary' else 1)
         draw.text((x0 + 12, y1 - 27),
-                  f"{record['outer_path_count']} outer / {record['internal_path_count']} internal paths",
+                  f"{record['outer_path_count']} outer / {record['internal_path_count']} internal / "
+                  f"{record['opposed_mask_opening_count']} opposed-mask openings",
                   fill='#333333')
     footer_y = 110 + rows * panel_h
-    draw.text((28, footer_y), 'NO INFERRED HOLES, PROTRUSIONS, SECTION CUTS OR DIMENSIONS', fill='#9a2626')
+    draw.text((28, footer_y),
+              'GREEN: OPPOSING MASKS AGREE; THROUGH-HOLE UNVERIFIED. NO INFERRED PROTRUSIONS.',
+              fill='#008b51')
     draw.text((28, footer_y + 28),
               'Unseen surfaces and physical meaning of internal traces require cross-view validation.',
               fill='#333333')
     report = {'schema': 1, 'stage': 'before_geometry',
-              'status': 'observations_only_not_build_constraints',
+              'status': 'source_observations_and_opposed_mask_openings',
               'observations': observations, 'coordinate_transforms': coordinate_transforms,
-              'geometry_inferences': [], 'build_constraints': [],
+              'geometry_inferences': [], 'build_constraints': constraints,
               'unknowns': ['internal depth', 'material or shadow versus relief',
                            'unseen geometry', 'physical scale']}
     image.save(destination / 'technical-traces.png')

@@ -346,22 +346,28 @@ def run_line(order):
             if order.get('automatic_depth'):
                 from propkit import surface_detail, process_planner, drawing_traces
                 trace_folder = os.path.join(diagnostic_root(order), 'technical-traces')
-                source_drawing = drawing_traces.infer(views, trace_folder)
+                source_drawing = drawing_traces.infer(
+                    views, trace_folder,
+                    construction_masks=hp.get('sil_override'),
+                    opening_report=order['measured'].get('observed_openings'))
                 order.setdefault('measured', {})['source_drawing'] = {
                     'stage': 'before_geometry',
                     'sheet': os.path.join(trace_folder, 'technical-traces.png'),
                     'traces': os.path.join(trace_folder, 'technical-traces.json'),
                     'geometry_inferences': 0,
-                    'status': 'observed contours only; physical meaning unresolved',
+                    'status': 'source contours and opposing-mask opening candidates; physical meaning unresolved',
+                    'opening_candidates': source_drawing['build_constraints'],
                     'path_counts': {view: {'outer': record['outer_path_count'],
-                                           'internal': record['internal_path_count']}
+                                           'internal': record['internal_path_count'],
+                                           'opposed_mask_openings': record['opposed_mask_opening_count']}
                                     for view, record in source_drawing['observations'].items()}}
                 methods, section_bands = process_planner.plan_methods(geometry_views)
                 order.setdefault('measured', {})['construction_methods'] = methods
                 methods['source_drawing'] = {
                     'traces': order['measured']['source_drawing']['traces'],
-                    'consumed_constraints': [],
-                    'reason': 'internal traces lack cross-view physical interpretation'}
+                    'consumed_constraints': [constraint['id'] for constraint in
+                                             source_drawing['build_constraints']],
+                    'reason': 'opposing-mask openings feed the base hull, but physical through-holes remain unverified; other internal traces lack physical interpretation'}
                 methods['order_overrides'] = {
                     key: hp[key] for key in ('revolve', 'sections') if key in hp}
                 hp.setdefault('revolve', methods['method'].startswith('lathe_'))

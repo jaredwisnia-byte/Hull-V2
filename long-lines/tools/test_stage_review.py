@@ -72,6 +72,18 @@ class ReviewContracts(unittest.TestCase):
         self.assertEqual(review['status'], 'no_flagged_issue')
         self.assertFalse(review['physical_geometry_verified'])
 
+    def test_opposing_mask_cut_remains_reviewable(self):
+        candidate = {'id': 'back:opening:1', 'kind': 'opposed_mask_opening',
+                     'cross_view_witness': 'front', 'area_source_px': 408,
+                     'status': 'construction_candidate_in_use_physical_hole_unverified'}
+        review = inspect({'pass': True, 'fails': []}, {'source_drawing': {
+            'sheet': 'technical-traces.png', 'opening_candidates': [candidate]}})
+        self.assertEqual(review['status'], 'needs_review')
+        finding = review['findings'][0]
+        self.assertEqual(finding['code'], 'opening_mask_physical_meaning_unverified')
+        self.assertEqual(finding['evidence']['candidates'], [candidate])
+        self.assertFalse(review['physical_geometry_verified'])
+
     def test_separate_part_evidence_is_also_checked(self):
         measured = {'surface_details': {'handle': {
             'pre_reduction_validation': {'probes': [{'id': 'a', 'retained': True}]}}}}

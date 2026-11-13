@@ -57,6 +57,9 @@ it must never replace or masquerade as the observation. Do not turn a circle,
 shading mark or assumed object category into a protrusion, bore, cut or part
 without independent cross-view support. The build must consume the recorded
 construction constraints and report which ones it used or could not resolve.
+Agreement between two painted or generated views is evidence, not proof of a
+physical opening; keep its interpretation reviewable until appearance and
+geometry checks distinguish a cut from a dark seam or recess.
 Apply the mixed-object generalization gate above to both the drawing and the
 resulting mesh.
 
