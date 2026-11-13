@@ -5,6 +5,8 @@ never become capped objects merely because width or curvature changes. All
 lengths passed to the field station are metres; source observations stay in
 their own image frame until sampling.
 """
+import copy
+import hashlib
 import numpy as np
 import os
 from scipy import ndimage
@@ -204,6 +206,20 @@ def apply_field(field, plan):
     """
     field = np.asarray(field, dtype=np.float32)
     dimensions = plan['dimensions']
+    frozen = plan.get('frozen_source_evidence')
+    source_field_hash = None
+    if frozen is not None or plan.get('source_evidence_sink'):
+        source_field_hash = hashlib.sha256(
+            repr((field.shape, tuple(dimensions))).encode() +
+            np.ascontiguousarray(field).tobytes()).hexdigest()
+    if frozen is not None:
+        if frozen['source_field_hash'] != source_field_hash:
+            raise ValueError('Retry changed the coarse source field; source evidence cannot be reused')
+        plan['maps'] = copy.deepcopy(frozen['maps'])
+        plan['diagnostics'] = copy.deepcopy(frozen['diagnostics'])
+        plan['report']['features'] = copy.deepcopy(frozen['features'])
+        plan['report']['views'] = copy.deepcopy(frozen['views'])
+        plan['report']['source_evidence_reused'] = True
     bounds = [(-dimensions[0] / 2, dimensions[0] / 2),
               (-dimensions[1] / 2, dimensions[1] / 2), (0, dimensions[2])]
     plan['report']['probes'] = []
@@ -229,7 +245,7 @@ def apply_field(field, plan):
         raw_slope = np.where(
             first == 0, (stack[0] - stack[1]) / spacing, raw_slope)
         slope = np.clip(raw_slope, .1, 2.)
-        if 'shading_inputs' in plan:
+        if 'shading_inputs' in plan and frozen is None:
             height_map = shading_view(root, view, plan, field.shape)
             plan['maps'][view] = height_map
         u, v = _mapping(view, dimensions, field.shape)
@@ -324,6 +340,13 @@ def apply_field(field, plan):
                                                  'tolerance_m': max(spacing * .15, abs(targets[0] - np.mean(targets[1:])) * .2)})
         observations.append({'view': view, 'axis': axis, 'reverse': reverse, 'height': sampled, 'root': root,
                              'slope': slope, 'facing': np.clip(raw_slope, 0, 1), 'spacing': spacing})
+    if frozen is None and plan.get('source_evidence_sink'):
+        plan['source_evidence_sink']({
+            'source_field_hash': source_field_hash,
+            'maps': copy.deepcopy(plan['maps']),
+            'diagnostics': copy.deepcopy(plan.get('diagnostics', {})),
+            'features': copy.deepcopy(plan['report']['features']),
+            'views': copy.deepcopy(plan['report']['views'])})
     # Fuse observations of the same surface instead of sequentially carving
     # it once per camera. Facing/skin support excludes the opposite surface.
     from .implicit import pad_field

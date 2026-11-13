@@ -356,6 +356,16 @@ def run_line(order):
                 detail_plan = surface_detail.analyse(
                     views, (W_, D_, height), rrep,
                     silhouettes=hp.get('sil_override'))
+                if order.get('_frozen_source_evidence') is not None:
+                    detail_plan['frozen_source_evidence'] = order['_frozen_source_evidence']
+                else:
+                    # A run-local retry must test a new construction decision
+                    # against the same source estimates. Shared learning may
+                    # change between attempts, so retain the first estimates
+                    # in memory for this build only.
+                    detail_plan['source_evidence_sink'] = (
+                        lambda evidence: order.__setitem__(
+                            '_frozen_source_evidence', evidence))
                 if order.get('relief_retry'):
                     detail_plan['retry_targets'] = order['relief_retry']
                 detail_plan['cad_export'] = bool(order.get('cad_export'))
@@ -763,6 +773,7 @@ def _build_candidate(order, run, samples=16):
                            for region in view.get('regional_relief',{}).get('regions',[]) if region.get('memory_key')]})
     result.update(attempts=attempt, seconds=round(time.time()-t0, 2), stage_seconds=stages,
                   artifact_library_root=library_root)
+    order.pop('_frozen_source_evidence', None)
     return result
 
 
@@ -845,6 +856,7 @@ def build(order, samples=16):
         order['status'] = 'needs_person'
     finally:
         order.pop('_input_views_snapshot', None)
+        order.pop('_frozen_source_evidence', None)
         # This is a run-local second attempt, not a lasting instruction in
         # the source order. A future rebuild must earn the retry anew.
         order.pop('relief_retry', None)

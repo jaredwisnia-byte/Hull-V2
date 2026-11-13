@@ -268,3 +268,17 @@ freeze memory or make every retry reproducible. The guard was checked against
 the real typewriter reports: it rejects the two memory-enabled baselines as
 incomparable and accepts the memory-disabled baseline pair and controlled
 fusion pair as comparable.
+
+The run-local retry now retains the first attempt's source height maps,
+feature observations, and diagnostics in memory. On a second attempt it
+requires the same coarse field and reuses those estimates instead of asking
+the shared reconstruction database to solve the source again. The ordinary
+memory-enabled first attempt still records its learning; the frozen copy is
+removed before the order is saved. In a held two-attempt cassette build, the
+second report recorded `source_evidence_reused: true`, 155 source probes, and
+`same_source_probes: 1`. The normal local retry repaired two targeted details,
+was accepted by final-export review, and retained 5,574 triangles and 16
+remaining depth failures. The build remains unqualified. This fixes retry
+comparability within one build; separate builds can still start from
+different shared-memory states and must record that state for reproducible
+cross-run experiments.

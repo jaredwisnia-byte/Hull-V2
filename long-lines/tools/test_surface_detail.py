@@ -3,6 +3,7 @@ import unittest
 import json
 import tempfile
 from pathlib import Path
+from unittest.mock import patch
 import numpy as np
 from PIL import Image
 from scipy import ndimage
@@ -11,6 +12,31 @@ from propkit.implicit import bounded_field, pad_field
 
 
 class SurfaceContracts(unittest.TestCase):
+    def test_retry_reuses_first_source_estimate_and_checks_coarse_field(self):
+        base = self.field(True)
+        height = np.full((48, 48), -.01)
+        evidence = []
+        first = {'dimensions': (1, 1, 1), 'maps': {'front': np.zeros((48, 48))},
+                 'shading_inputs': {}, 'report': {'features': [], 'views': {}},
+                 'source_evidence_sink': evidence.append}
+        with patch('propkit.surface_detail.shading_view', return_value=height) as solve:
+            result = apply_field(base, first)
+        self.assertEqual(solve.call_count, 1)
+        self.assertEqual(len(evidence), 1)
+        retry = {'dimensions': (1, 1, 1), 'maps': {'front': np.zeros((48, 48))},
+                 'shading_inputs': {}, 'report': {'features': [], 'views': {}},
+                 'frozen_source_evidence': evidence[0]}
+        with patch('propkit.surface_detail.shading_view', side_effect=AssertionError('re-solved')):
+            repeated = apply_field(base, retry)
+        np.testing.assert_array_equal(repeated, result)
+        self.assertTrue(retry['report']['source_evidence_reused'])
+        changed = base.copy()
+        changed[0, 0, 0] += .001
+        with self.assertRaisesRegex(ValueError, 'coarse source field'):
+            apply_field(changed, {'dimensions': (1, 1, 1), 'maps': {'front': height},
+                                  'report': {'features': [], 'views': {}},
+                                  'frozen_source_evidence': evidence[0]})
+
     def test_unobserved_original_cavity_cannot_be_filled_by_a_skin_correction(self):
         from propkit.implicit import preserve_components
         from propkit.correction_review import Rejected
