@@ -1,5 +1,6 @@
 """The diagnostic keeps rejected image evidence separate from lost geometry."""
 
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -96,6 +97,7 @@ class ProbeReviewTests(unittest.TestCase):
                                 accepted_height_px=accepted,
                                 sampled_height_px=accepted,
                                 clipped_height_px=accepted,
+                                single_view_height_px=accepted,
                                 fused_height_px=fused,
                                 post_construction_height_px=fused,
                                 post_topology_height_px=fused,
@@ -109,6 +111,7 @@ class ProbeReviewTests(unittest.TestCase):
                                                           (1., 1., 1.))
             self.assertAlmostEqual(contrasts['accepted_m'], -.02)
             self.assertAlmostEqual(contrasts['clipped_m'], -.02)
+            self.assertAlmostEqual(contrasts['single_view_m'], -.02)
             self.assertAlmostEqual(contrasts['fused_m'], -.004)
             self.assertAlmostEqual(contrasts['post_construction_m'], -.004)
             self.assertEqual(probe_review.first_observed_loss(
@@ -122,6 +125,34 @@ class ProbeReviewTests(unittest.TestCase):
             -.02, -.003, {'accepted_m': -.02, 'sampled_m': -.02,
                           'clipped_m': -.004, 'fused_m': -.004,
                           'shared_field_m': -.004}), 'depth_safety_cap')
+        self.assertEqual(probe_review.first_observed_loss(
+            -.02, -.003, {'accepted_m': -.02, 'sampled_m': -.02,
+                          'clipped_m': -.02, 'fused_m': -.004,
+                          'shared_field_m': -.004}), 'single_view_or_fusion')
+        self.assertEqual(probe_review.first_observed_loss(
+            -.02, -.003, {'accepted_m': -.02, 'sampled_m': -.02,
+                          'clipped_m': -.02, 'single_view_m': -.004,
+                          'fused_m': -.004, 'shared_field_m': -.004}),
+            'single_view_field_transfer')
+
+    def test_fusion_trace_flags_competing_view_without_claiming_depth(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            trace = {'fusion_weight_floor': 1e-4, 'probes': {'groove': {
+                'view': 'front', 'anchors': [
+                    {'views': {'front': {'weight': .8}, 'right': {'weight': .2}}},
+                    {'views': {'front': {'weight': .2}, 'right': {'weight': .8}}},
+                    {'views': {'front': {'weight': .6}, 'right': {'weight': .4}}}]}}}
+            (Path(temporary) / 'fusion-contributions.json').write_text(
+                json.dumps(trace), encoding='utf-8')
+            report = {'probes': [{'id': 'groove', 'view': 'front',
+                                  'anchors_m': [[0, 0, .5]] * 3,
+                                  'target_offsets_m': [0, 0, 0]}],
+                      'unmet_before_reduction': ['groove']}
+            record = probe_review.classify(report, (1., 1., 1.), temporary)[0]
+            review = record['fusion_weight_review']
+            self.assertEqual(review['competing_anchor_count'], 1)
+            self.assertAlmostEqual(review['source_weight_fraction_center'], .8)
+            self.assertEqual(review['below_weight_floor_anchor_count'], 0)
 
 
 if __name__ == '__main__':

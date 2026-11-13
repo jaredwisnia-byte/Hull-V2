@@ -123,3 +123,26 @@ without them say only `pre_fusion_or_fusion`.
 The control build remained quarantined with the same 36 depth failures,
 5,026 triangles, and 4.974 extreme folds per 1,000 triangles as the prior
 run, confirming the new checkpoints did not change that build's geometry.
+
+An opt-in `HULL_TRACE_FUSION=1` diagnostic now applies each accepted view
+to the coarse field on its own and records sparse per-view weights and
+field shifts at source-derived probes. This separates single-view field
+transfer from multi-view combination without changing the final field. On
+the toaster, all 29 source-supported failed probes retained sufficient
+contrast in the one-view field; 28 first lost it in the combined field.
+On a separate cassette control, all 15 retained it in the one-view field;
+14 first lost it in the combined field. The cassette's traced final QA
+was unchanged at 16 failures and 5,574 triangles. The toaster's nearest
+voxel trace found a competing view at one or more anchors on 26 of 29
+failed probes, but a continuous cassette trace found that pattern on only
+2 of 15. Simple strongest-view selection therefore lacks cross-object
+support. These are diagnostic projections against source-derived targets;
+the correct physical depth remains uncertain.
+
+A held, object-independent amplitude-weighted fusion trial improved final
+missing-depth counts on both controls: toaster 36 to 30, cassette 16 to 12.
+The toaster mesh rose from 5,026 to 6,104 triangles and exceeded its 6,000
+limit; the cassette rose from 5,574 to 5,878 triangles and still failed QA.
+Neither was released. The trial rule was removed, leaving the original
+weighted fusion unchanged. A subsequent candidate must solve the remaining
+view conflicts and mesh cost before promotion.

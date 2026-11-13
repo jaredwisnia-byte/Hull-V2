@@ -59,7 +59,8 @@ def stage_contrasts(arrays, probe, dimensions):
                        ('clipped_height_px', 'clipped_m')):
         if key in arrays.files and arrays[key].shape == accepted.shape:
             result[label] = contrast(arrays[key])
-    for key, label in (('fused_height_px', 'fused_m'),
+    for key, label in (('single_view_height_px', 'single_view_m'),
+                       ('fused_height_px', 'fused_m'),
                        ('post_construction_height_px', 'post_construction_m'),
                        ('post_topology_height_px', 'post_topology_m'),
                        ('final_shared_height_px', 'shared_field_m')):
@@ -77,6 +78,7 @@ def first_observed_loss(expected, dense, contrasts):
         return 'accepted_height'
     for key, label in (('sampled_m', 'image_resampling'),
                        ('clipped_m', 'depth_safety_cap'),
+                       ('single_view_m', 'single_view_field_transfer'),
                        ('fused_m', 'view_fusion'),
                        ('post_construction_m', 'construction_repair'),
                        ('post_topology_m', 'component_repair'),
@@ -87,12 +89,32 @@ def first_observed_loss(expected, dense, contrasts):
         if value * expected <= 0 or abs(value) < .5 * abs(expected):
             if key == 'fused_m' and 'clipped_m' not in contrasts:
                 return 'pre_fusion_or_fusion'
+            if key == 'fused_m' and 'single_view_m' not in contrasts:
+                return 'single_view_or_fusion'
             if key == 'shared_field_m' and 'fused_m' not in contrasts:
                 return 'shared_field_or_repair'
             return label
     if dense is None or dense * expected <= 0 or abs(dense) < .5 * abs(expected):
         return 'mesh_or_probe_intersection'
     return 'unresolved'
+
+
+def fusion_weight_review(trace, floor, sampling):
+    """Summarize sampled ownership competition without claiming physical truth."""
+    owner = trace['view']
+    fractions = []
+    below_floor = 0
+    for anchor in trace['anchors']:
+        contributors = anchor['views']
+        total = sum(float(item['weight']) for item in contributors.values())
+        below_floor += total < floor
+        fractions.append(float(contributors.get(owner, {}).get('weight', 0)) /
+                         total if total > 0 else 0.)
+    return {'sampling': sampling,
+            'source_weight_fraction_center': fractions[0],
+            'source_weight_fraction_min': min(fractions),
+            'competing_anchor_count': sum(value < .5 for value in fractions),
+            'below_weight_floor_anchor_count': below_floor}
 
 
 def classify(report, dimensions, diagnostic_folder):
@@ -107,6 +129,11 @@ def classify(report, dimensions, diagnostic_folder):
     cross = {(item['view'], item['region_id']): item for item in report.get(
         'cross_view_relief', {}).get('regions', ())}
     folder = Path(diagnostic_folder)
+    trace_path = folder / 'fusion-contributions.json'
+    trace_file = (json.loads(trace_path.read_text(encoding='utf-8'))
+                  if trace_path.is_file() else {})
+    traces = trace_file.get('probes', {})
+    trace_floor = float(trace_file.get('fusion_weight_floor', 0.))
     records = []
     for identifier in sorted(failed):
         probe = probes.get(identifier)
@@ -147,6 +174,10 @@ def classify(report, dimensions, diagnostic_folder):
                             expected, measured_contrast, contrasts),
                         'anchors_m': probe['anchors_m'],
                         'target_offsets_m': probe['target_offsets_m']})
+        if identifier in traces:
+            records[-1]['fusion_weight_review'] = fusion_weight_review(
+                traces[identifier], trace_floor,
+                trace_file.get('method', 'unknown'))
     return records
 
 
@@ -272,11 +303,17 @@ def write(report, dimensions, source_views=None, obj=None, tree=None):
         stage: sum(item['status'] == 'supported_unmet' and
                    item['first_observed_loss'] == stage for item in records)
         for stage in ('accepted_height', 'image_resampling',
-                      'depth_safety_cap', 'pre_fusion_or_fusion', 'view_fusion',
+                      'depth_safety_cap', 'pre_fusion_or_fusion',
+                      'single_view_field_transfer', 'single_view_or_fusion',
+                      'view_fusion',
                       'construction_repair',
                       'component_repair', 'post_topology_or_retry',
                       'shared_field_or_repair', 'mesh_or_probe_intersection',
                       'unresolved')}
+    summary['supported_competing_view_probes'] = sum(
+        item['status'] == 'supported_unmet' and
+        item.get('fusion_weight_review', {}).get('competing_anchor_count', 0) > 0
+        for item in records)
     illustrated = [item for item in records if item.get('image')]
     if illustrated:
         rows = (len(illustrated) + 1) // 2

@@ -1,5 +1,8 @@
 """Cross-family contracts: planes, curved skins and continuous height maps."""
 import unittest
+import json
+import tempfile
+from pathlib import Path
 import numpy as np
 from PIL import Image
 from scipy import ndimage
@@ -119,6 +122,7 @@ class SurfaceContracts(unittest.TestCase):
         plan = {'dimensions': (1, 1, 1),
                 'maps': {'front': np.full((48, 48), -.02)},
                 'report': {'features': []},
+                'capture_fusion_contributions': True,
                 'diagnostic_folder': 'unused',
                 'diagnostics': {'front': {'mask': np.ones((48, 48), bool),
                                           'metres_per_pixel': 1 / 48}}}
@@ -126,10 +130,37 @@ class SurfaceContracts(unittest.TestCase):
         chart = plan['diagnostics']['front']
         self.assertEqual(chart['sampled_height_px'].shape, (48, 48))
         self.assertEqual(chart['clipped_height_px'].shape, (48, 48))
+        self.assertEqual(chart['single_view_height_px'].shape, (48, 48))
         self.assertEqual(chart['fused_height_px'].shape, (48, 48))
+        np.testing.assert_allclose(chart['single_view_height_px'],
+                                   chart['fused_height_px'], atol=1e-5)
         self.assertEqual(chart['post_topology_height_px'].shape, (48, 48))
         np.testing.assert_allclose(chart['fused_height_px'],
                                    chart['post_topology_height_px'], atol=1e-5)
+
+    def test_fusion_trace_records_view_weights_without_changing_field(self):
+        original = self.field()
+        yy, xx = np.mgrid[:48, :48]
+        height = -.02 * np.exp(-((xx - 24)**2 + (yy - 24)**2) / 50)
+        feature = {'id': 'observed', 'view': 'front', 'kind': 'channel',
+                   'probes': [{'center_px': [24, 24], 'normal_px': [1, 0],
+                               'radius_px': 4, 'sample_span_px': 4}]}
+        base = {'dimensions': (1, 1, 1), 'maps': {'front': height},
+                'report': {'features': [feature]}}
+        control = apply_field(original, base)
+        with tempfile.TemporaryDirectory() as temporary:
+            plan = {'dimensions': (1, 1, 1), 'maps': {'front': height},
+                    'report': {'features': [feature]},
+                    'capture_fusion_contributions': True,
+                    'diagnostic_folder': temporary}
+            traced = apply_field(original, plan)
+            np.testing.assert_array_equal(traced, control)
+            trace = json.loads((Path(temporary) /
+                                'fusion-contributions.json').read_text())
+            self.assertIn('observed_0', trace['probes'])
+            self.assertEqual(len(trace['probes']['observed_0']['anchors']), 3)
+            self.assertIn('front', trace['probes']['observed_0']
+                          ['anchors'][0]['views'])
 
     def test_profile_envelope_is_applied_after_original_detail(self):
         original = self.field(True)

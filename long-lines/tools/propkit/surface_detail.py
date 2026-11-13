@@ -6,6 +6,7 @@ lengths passed to the field station are metres; source observations stay in
 their own image frame until sampling.
 """
 import numpy as np
+import os
 from scipy import ndimage
 
 VIEWS = {'front': (1, False), 'back': (1, True),
@@ -95,6 +96,7 @@ def analyse(views, dimensions, report, exclusions=(), silhouettes=None):
                   excluded_opening_pixels=excluded_opening_pixels,
                   source_views={view: str(inputs[view]['path']) for view in inputs})
     return {'maps': maps, 'fine_maps': {}, 'shading_inputs': inputs,
+            'capture_fusion_contributions': os.environ.get('HULL_TRACE_FUSION') == '1',
             'dimensions': tuple(dimensions), 'report': report}
 
 
@@ -320,13 +322,16 @@ def apply_field(field, plan):
                                                  'anchors_m': anchors, 'target_offsets_m': targets,
                                                  'depth_estimate': probe.get('depth_estimate'),
                                                  'tolerance_m': max(spacing * .15, abs(targets[0] - np.mean(targets[1:])) * .2)})
-        observations.append({'axis': axis, 'reverse': reverse, 'height': sampled, 'root': root,
+        observations.append({'view': view, 'axis': axis, 'reverse': reverse, 'height': sampled, 'root': root,
                              'slope': slope, 'facing': np.clip(raw_slope, 0, 1), 'spacing': spacing})
     # Fuse observations of the same surface instead of sequentially carving
     # it once per camera. Facing/skin support excludes the opposite surface.
     from .implicit import pad_field
     padded = pad_field(field, dimensions)
     result = np.empty_like(field)
+    solo_fields = ({item['view']: np.empty_like(field) for item in observations}
+                   if plan.get('capture_fusion_contributions') else None)
+    floor = plan.get('fusion_weight_floor', MIN_FUSION_WEIGHT)
     for start in range(0, field.shape[0], 16):
         stop = min(start + 16, field.shape[0])
         chunk = (stop - start, *field.shape[1:])
@@ -371,11 +376,82 @@ def apply_field(field, plan):
                 source = padded[start + 1:stop + 1, 1:-1, :]
             shifted = (1 - fraction) * np.take_along_axis(source, lower, axis=axis) + \
                 fraction * np.take_along_axis(source, upper, axis=axis)
+            if solo_fields is not None:
+                solo_fields[observation['view']][start:stop] = (
+                    field[start:stop] +
+                    weight * (shifted - field[start:stop]) /
+                    np.maximum(weight, floor))
             numerator += weight * (shifted - field[start:stop])
             weight_sum += weight
-        floor = plan.get('fusion_weight_floor', MIN_FUSION_WEIGHT)
         result[start:stop] = field[start:stop] + \
             numerator / np.maximum(weight_sum, floor)
+    if solo_fields is not None:
+        for observation in observations:
+            view = observation['view']
+            values = plan.get('diagnostics', {}).get(view, {})
+            if 'mask' not in values:
+                continue
+            axis, reverse = VIEWS[view]
+            root, _, _, _ = visible_root(
+                solo_fields[view], axis, reverse, dimensions[axis])
+            values['single_view_height_px'] = (
+                -root_image(root, view, dimensions, field.shape,
+                            values['mask'].shape) /
+                float(values['metres_per_pixel'])).astype(np.float32)
+    if plan.get('capture_fusion_contributions') and plan.get('diagnostic_folder'):
+        import json
+        from pathlib import Path
+
+        trace = {}
+        for probe in plan['report']['probes']:
+            anchors = []
+            for point in probe['anchors_m']:
+                index = np.asarray([
+                    (point[axis] - bounds[axis][0]) / dimensions[axis]
+                    * field.shape[axis] - .5 for axis in range(3)])
+                baseline = float(ndimage.map_coordinates(
+                    field, index[:, None], order=1, mode='nearest')[0])
+                contributions = {}
+                for observation in observations:
+                    axis = observation['axis']
+                    transverse = [i for i in range(3) if i != axis]
+                    coords = index[transverse, None]
+
+                    def sample(key):
+                        return float(ndimage.map_coordinates(
+                            observation[key], coords, order=1,
+                            mode='nearest')[0])
+
+                    height = sample('height')
+                    root = sample('root')
+                    facing = sample('facing')
+                    distance = (bounds[axis][1] - point[axis] if
+                                observation['reverse'] else
+                                point[axis] - bounds[axis][0])
+                    support = max(abs(height) * 4,
+                                  observation['spacing'] * 3)
+                    weight = (facing**8 *
+                              np.exp(-((distance - root) / support)**4)
+                              if abs(height) > 1e-9 else 0.)
+                    shifted_index = index + 1
+                    shifted_index[axis] -= (
+                        (1 if observation['reverse'] else -1) *
+                        height / observation['spacing'])
+                    shifted = float(ndimage.map_coordinates(
+                        padded, shifted_index[:, None], order=1,
+                        mode='nearest')[0])
+                    contributions[observation['view']] = {
+                        'weight': float(weight),
+                        'shift_m': shifted - baseline}
+                anchors.append({'model_point_m': point, 'views': contributions})
+            trace[probe['id']] = {'view': probe['view'], 'anchors': anchors}
+        folder = Path(plan['diagnostic_folder'])
+        folder.mkdir(parents=True, exist_ok=True)
+        (folder / 'fusion-contributions.json').write_text(
+            json.dumps({'method': 'continuous probe anchor with trilinear field sampling',
+                        'fusion_weight_floor': float(plan.get(
+                            'fusion_weight_floor', MIN_FUSION_WEIGHT)),
+                        'probes': trace}, indent=2), encoding='utf-8')
     plan['report']['field'] = {'mode': 'signed_field_detail_before_meshing', 'isovalue': 0.,
                                'depth_limit': '30% of observed local solid thickness; openings remain silhouette constraints',
                                'grid_shape': list(field.shape), 'spacing_m': [dimensions[i] / field.shape[i] for i in range(3)]}
