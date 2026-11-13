@@ -73,6 +73,14 @@ For each known BuildMemory database, run `hull.py memory-inventory DATABASE
 --output REPORT.json --verify-hashes` into that shift's evidence folder.
 Compare referenced, unreferenced and missing counts with the previous report;
 never treat a live scan as authority to delete files.
+At both 03:00 and 15:00, run `hull.py workspace-inventory
+C:/Users/jared/Documents/Codex --classification
+C:/Users/jared/Documents/Codex/Hull-maintenance-validation/workspace-organization/classification.json
+--previous PRIOR.json --output REPORT.json` with a new report path under the
+shift's evidence folder. Omit `--previous` only when there is no earlier report.
+Compare complete top-level growth deltas and review unclassified `Hull-*`
+directories with an owner before proposing any move. An unreadable subtree has
+an unknown delta; it must not be counted as a size reduction or an orphan.
 
 ### 15:00 — foreman review and controlled improvement
 

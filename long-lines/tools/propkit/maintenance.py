@@ -494,6 +494,11 @@ def main(root):
     sub.add_argument("database", type=Path)
     sub.add_argument("--output", type=Path, required=True)
     sub.add_argument("--verify-hashes", action="store_true")
+    sub = commands.add_parser("workspace-inventory")
+    sub.add_argument("workspace", type=Path)
+    sub.add_argument("--output", type=Path, required=True)
+    sub.add_argument("--classification", type=Path)
+    sub.add_argument("--previous", type=Path)
     sub = commands.add_parser("memory-quarantine")
     sub.add_argument("database", type=Path)
     sub.add_argument("--reviewed-report", type=Path, required=True)
@@ -518,6 +523,16 @@ def main(root):
     try:
         if args.command == "package":
             result = package(root, args.output)
+        elif args.command == "workspace-inventory":
+            from . import workspace_inventory
+            classification = (json.loads(args.classification.read_text(encoding="utf-8"))
+                              if args.classification else {})
+            previous = (json.loads(args.previous.read_text(encoding="utf-8"))
+                        if args.previous else None)
+            if not isinstance(classification, dict):
+                raise ValueError("Workspace classification must be a name-to-role object")
+            result = workspace_inventory.scan(args.workspace, classification, previous)
+            warehouse.atomic_json(args.output, result)
         elif args.command == "memory-inventory":
             if not args.database.is_file():
                 raise ValueError("Memory database does not exist")
@@ -569,7 +584,12 @@ def main(root):
                 result = run_checks(
                     root, profiles, args.output, args.blender, args.godot
                 )
-        print(json.dumps(result, indent=2))
+        if args.command == "workspace-inventory":
+            print(json.dumps({key: result[key] for key in
+                              ("root", "total_bytes", "file_count", "partial",
+                               "review_candidates")}, indent=2))
+        else:
+            print(json.dumps(result, indent=2))
         return 0 if result.get("pass", True) else 1
     except (
         OSError,
