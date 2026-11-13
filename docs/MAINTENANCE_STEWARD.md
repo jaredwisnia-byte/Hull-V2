@@ -78,9 +78,9 @@ C:/Users/jared/Documents/Codex --classification
 C:/Users/jared/Documents/Codex/Hull-maintenance-validation/workspace-organization/classification.json
 --previous PRIOR.json --allocated --output REPORT.json` with a new report path under the
 shift's evidence folder. Omit `--previous` only when there is no earlier report.
-Compare complete top-level logical and allocated growth deltas and review unclassified `Hull-*`
-directories with an owner before proposing any move. An unreadable subtree has
-an unknown delta; it must not be counted as a size reduction or an orphan.
+Compare complete top-level logical and allocated growth deltas and review every
+unclassified root item with an owner before proposing any move. An unreadable
+subtree has an unknown delta; it must not be counted as a size reduction or an orphan.
 Allocated bytes are a per-file observation that shows transparent compression;
 hard-linked paths can be counted more than once and an incomplete allocation
 scan must not be presented as total physical drive usage.

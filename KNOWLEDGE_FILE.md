@@ -13,6 +13,15 @@ number of code units to remove; it does not rename public assets or change geome
 Non-BMP characters count as two units, matching Windows path accounting.
 Ordinary Python diagnostics retain their existing extended-path handling.
 
+## Workspace root inventory (2026-11-13)
+
+The read-only `hull.py workspace-inventory` report now lists every unclassified
+root item as a review candidate, including loose files and directories outside
+the `Hull-*` naming pattern. A review candidate is not an orphan or a deletion
+instruction. The workspace-specific classification file assigns known active
+scripts and references their roles; inaccessible subtrees still leave size
+deltas unknown rather than implying a reduction.
+
 ## Source-traced drawing checkpoint (2026-11-13)
 
 The automatic-depth factory now produces a prebuild trace sheet from source

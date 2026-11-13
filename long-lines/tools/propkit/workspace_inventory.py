@@ -1,7 +1,7 @@
 """Read-only, bounded-summary inventory of a workspace tree.
 
-The report never calls a folder orphaned merely because it is large or old.
-Unclassified Hull folders are candidates for an owner/retention review.
+The report never calls an item orphaned merely because it is large or old.
+Unclassified root items are candidates for an owner/retention review.
 """
 
 from datetime import datetime, timezone
@@ -142,8 +142,7 @@ def scan(root, classification=None, previous=None, include_allocated=False):
         "top_level": dict(sorted(top.items())),
         "no_longer_at_root": removed_top_level,
         "review_candidates": sorted(
-            name for name, item in top.items() if item["kind"] == "directory"
-            and name.startswith("Hull-") and name not in classification
+            name for name in top if name not in classification
         ),
-        "notes": "Review candidates have no assigned role; they are not verified orphans. Items no longer at the root may have been moved and are not verified deletions."
+        "notes": "Review candidates are unclassified root items, not verified orphans. Items no longer at the root may have been moved and are not verified deletions."
     }

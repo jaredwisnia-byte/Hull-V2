@@ -25,21 +25,26 @@ class MaintenanceTests(unittest.TestCase):
             (evidence / "result.bin").write_bytes(b"first")
             (root / "Hull-helper.py").write_text("pass")
             first = workspace_inventory.scan(root)
-            self.assertEqual(first["review_candidates"], ["Hull-trial"])
+            self.assertEqual(first["review_candidates"],
+                             ["Hull-helper.py", "Hull-trial"])
             self.assertIsNone(first["top_level"]["Hull-trial"]["delta_bytes"])
             (evidence / "result.bin").write_bytes(b"first and second")
-            second = workspace_inventory.scan(root, {"Hull-trial": "experiment evidence"}, first)
+            second = workspace_inventory.scan(
+                root, {"Hull-trial": "experiment evidence",
+                       "Hull-helper.py": "active trial driver"}, first)
             self.assertEqual(second["top_level"]["Hull-trial"]["delta_bytes"], 11)
             self.assertEqual(second["review_candidates"], [])
             self.assertEqual(second["top_level"]["Hull-trial"]["role"],
                              "experiment evidence")
             self.assertEqual(second["no_longer_at_root"], [])
             (root / "Hull-helper.py").rename(root / "helper-archived.py")
-            moved = workspace_inventory.scan(root, previous=second)
+            moved = workspace_inventory.scan(
+                root, {"Hull-trial": "experiment evidence"}, previous=second)
             self.assertEqual(moved["no_longer_at_root"], [
                 {"name": "Hull-helper.py", "prior_bytes": 4,
-                 "prior_role": None, "prior_partial": False}])
+                 "prior_role": "active trial driver", "prior_partial": False}])
             self.assertIn("helper-archived.py", moved["top_level"])
+            self.assertEqual(moved["review_candidates"], ["helper-archived.py"])
             with self.assertRaises(ValueError):
                 workspace_inventory.scan(root, previous=dict(first, root="elsewhere"))
 
