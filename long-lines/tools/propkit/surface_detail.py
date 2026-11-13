@@ -235,6 +235,12 @@ def apply_field(field, plan):
         sampled = ndimage.map_coordinates(
             height_map, [v * hh - .5, u * ww - .5], order=1, mode='nearest')
         sampled *= has_surface
+        if plan.get('diagnostic_folder') and view in plan.get('diagnostics', {}):
+            values = plan['diagnostics'][view]
+            values['sampled_height_px'] = (
+                root_image(sampled, view, dimensions, field.shape,
+                           values['mask'].shape) /
+                float(values['metres_per_pixel'])).astype(np.float32)
         last = len(stack) - 1 - occupied[::-1].argmax(0)
         thickness = (last - first + 1) * spacing
         # Preserve a two-cell core through thin supports. A minimum displacement
@@ -242,6 +248,12 @@ def apply_field(field, plan):
         cap = np.maximum(0., np.minimum(
             thickness * .3, (thickness - 2 * spacing) * .5))
         sampled = np.clip(sampled, -cap, cap)
+        if plan.get('diagnostic_folder') and view in plan.get('diagnostics', {}):
+            values = plan['diagnostics'][view]
+            values['clipped_height_px'] = (
+                root_image(sampled, view, dimensions, field.shape,
+                           values['mask'].shape) /
+                float(values['metres_per_pixel'])).astype(np.float32)
         # Save source-derived probe anchors before modifying the field. The
         # final QA measures their displacements on exported triangles.
         for feature in plan['report']['features']:

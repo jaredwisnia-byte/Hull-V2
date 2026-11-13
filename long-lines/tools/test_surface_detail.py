@@ -124,6 +124,8 @@ class SurfaceContracts(unittest.TestCase):
                                           'metres_per_pixel': 1 / 48}}}
         apply_field(original, plan)
         chart = plan['diagnostics']['front']
+        self.assertEqual(chart['sampled_height_px'].shape, (48, 48))
+        self.assertEqual(chart['clipped_height_px'].shape, (48, 48))
         self.assertEqual(chart['fused_height_px'].shape, (48, 48))
         self.assertEqual(chart['post_topology_height_px'].shape, (48, 48))
         np.testing.assert_allclose(chart['fused_height_px'],

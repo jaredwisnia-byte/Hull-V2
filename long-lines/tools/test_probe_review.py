@@ -94,6 +94,8 @@ class ProbeReviewTests(unittest.TestCase):
             np.savez_compressed(Path(temporary) / 'front.npz',
                                 feature_labels=np.ones((64, 64), dtype=np.uint8),
                                 accepted_height_px=accepted,
+                                sampled_height_px=accepted,
+                                clipped_height_px=accepted,
                                 fused_height_px=fused,
                                 post_construction_height_px=fused,
                                 post_topology_height_px=fused,
@@ -106,10 +108,20 @@ class ProbeReviewTests(unittest.TestCase):
                 contrasts = probe_review.stage_contrasts(arrays, probe,
                                                           (1., 1., 1.))
             self.assertAlmostEqual(contrasts['accepted_m'], -.02)
+            self.assertAlmostEqual(contrasts['clipped_m'], -.02)
             self.assertAlmostEqual(contrasts['fused_m'], -.004)
             self.assertAlmostEqual(contrasts['post_construction_m'], -.004)
             self.assertEqual(probe_review.first_observed_loss(
                 -.02, -.003, contrasts), 'view_fusion')
+
+    def test_transfer_checkpoint_does_not_blame_fusion_without_evidence(self):
+        self.assertEqual(probe_review.first_observed_loss(
+            -.02, -.003, {'accepted_m': -.02, 'fused_m': -.004,
+                          'shared_field_m': -.004}), 'pre_fusion_or_fusion')
+        self.assertEqual(probe_review.first_observed_loss(
+            -.02, -.003, {'accepted_m': -.02, 'sampled_m': -.02,
+                          'clipped_m': -.004, 'fused_m': -.004,
+                          'shared_field_m': -.004}), 'depth_safety_cap')
 
 
 if __name__ == '__main__':

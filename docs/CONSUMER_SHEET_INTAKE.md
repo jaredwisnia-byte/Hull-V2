@@ -109,3 +109,17 @@ field contrasts and preserve the older broad classification when prior run
 archives lack these checkpoints. The remaining fix must address transfer
 between views while preserving source support, silhouettes, folds, and the
 triangle budget across multiple object families.
+
+A second control run split the transfer into image resampling, the local
+thickness safety cap, and view fusion. All 29 source-supported failed probes
+had the same sampled and capped local contrast. At 28, the first half-contrast
+or sign failure occurred at view fusion; one retained field contrast and
+failed at the mesh/probe measurement. Across the 29, the median signed
+fused-to-capped contrast ratio was 0.032 and 13 ratios reversed sign. This
+rules out the safety cap as the immediate cause in this control, without
+establishing that the source-derived depth estimate is physically correct.
+Future diagnostic reports keep these checkpoints separate, and older reports
+without them say only `pre_fusion_or_fusion`.
+The control build remained quarantined with the same 36 depth failures,
+5,026 triangles, and 4.974 extreme folds per 1,000 triangles as the prior
+run, confirming the new checkpoints did not change that build's geometry.
