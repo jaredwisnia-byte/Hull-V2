@@ -70,3 +70,57 @@ No claim is made that hosted About/default-branch content changed.
 Dynamic reconstruction modules, sizing tools and fixtures remain active. The
 old proportional budget policy is deprecated but retained for explicit older
 orders; unused-looking imports alone do not justify deleting dynamic engines.
+
+## Branch and documentation cleanup — 2026-11-14
+
+Goal: one obvious place for current code (`main`) and for the directives and
+architecture, with nothing lost. Codex was running the architecture orders
+(`CODEX_ORDERS.md`) at the time and reads `AGENTS.md`, `CONTRIBUTING.md`,
+`long-lines/docs/ARCHITECTURE.md` + `architecture.json`, `long-lines/factory/DRAWING.md`
+and `long-lines/docs/LESSONS.md` from the main checkout at the start of every order, so
+those files were not moved or edited; that part of the plan waits for the run to finish.
+
+### Done
+
+1. **Gate before moving `main`.** Codex Order 1 regression check passed (no drawn-set
+   asset worse; wall phone top-view IoU 0.705 -> 0.816 from the third-angle frame fix).
+   The tested commit and the new `main` differ only in two architecture documents.
+2. **Archive tags first.** The old `main` (2026-11-09, still carrying game files) is
+   `archive/main-2026-11-09`. Every branch with commits found nowhere else got an
+   `archive/<branch>` tag, each checked on GitHub against its branch tip before
+   deletion (16 tags):
+   `archive/main-2026-11-09`, `archive/main-before-trusting-dirac`,
+   `archive/experiment/orthographic-component-reconstruction`,
+   `archive/feature/hull-v2-component-pipeline`, `archive/claude/factory-v1-assembly`,
+   `archive/chatgpt/factory-v1-package-contract`, `archive/chatgpt/sheetfirst-panels-v1`,
+   `archive/chatgpt/sheetfirst-toaster-assembly-test`, and
+   `archive/codex/{godot-cold-import, maintenance-handoff, trace-frame-mapping,
+   workspace-root-file-inventory, retention-manifest, cad-qualification,
+   local-depth-transfer-audit, workspace-inventory}-20261113`.
+3. **README "Read first" index** linking the directives, the architecture (human and
+   machine-readable), LESSONS, the factory manual, the drawing guide and status.
+   `docs/SYSTEM_ARCHITECTURE.md` (2026-11-13 proposal) marked superseded; content kept.
+4. **`main` fast-forwarded** to `claude/object-aware-sizing` (no force push).
+5. **31 remote branches deleted**: 16 already fully contained in `main`, 15 archived
+   above. Remaining: `main`, `claude/object-aware-sizing` (working branch),
+   `codex/read-only-memory-inventory-20261114` (new that day, possibly a live job; left).
+
+To restore an archived branch: `git push origin refs/tags/archive/<name>^{commit}:refs/heads/<name>`.
+
+### Waiting for the Codex run to finish (after Order 10)
+
+1. Move `long-lines/docs/ARCHITECTURE.md` and `architecture.json` to root `docs/`,
+   leaving one-line pointers at the old paths; update the README links.
+2. Point `AGENTS.md`'s current priority at the architecture and its migration steps.
+3. Update paths in the Codex orders and in `architecture.json` (`human_doc`, `branch`).
+4. Review Codex's `codex/architecture` work, merge it into `main` after its gates, then
+   delete the branch (tag it first if anything is not merged).
+5. Decide `codex/read-only-memory-inventory-20261114`: merge, archive as a tag, or delete.
+
+### Keeping it tidy
+
+- `main` is the current, tested code; README "Read first" is the entry point.
+- One branch per piece of work, merged into `main` after its gate, then deleted.
+- A branch that will not be merged is kept as an `archive/...` tag, never as a branch.
+- Superseded documents get a banner pointing at their replacement instead of being
+  silently left to disagree.
