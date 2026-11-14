@@ -1,0 +1,514 @@
+"""The drawing stage: the sheet's painted views become one consistent engineering drawing,
+and the build is made from that drawing.
+
+It runs right after intake has split the sheet into views, before any geometry:
+
+1. Orientation. Each view is put into the standard frame (third-angle projection: front,
+   top above it, right side to its right). A top or bottom view drawn turned or mirrored is
+   tried in all eight orientations and the one that agrees with the front and side views is
+   used; the decision and its scores are recorded.
+2. Size. Width and height come from the front view, depth from the side view, at the scale
+   intake fitted. Every other view is measured against them and its disagreement reported.
+3. Clean profiles. Each outline is fitted with straight lines and true arcs (one closed
+   polyline with bulges, the way CAD stores it) within a stated tolerance; near-axis lines
+   are snapped square; a view that is mirror-symmetric is made exactly symmetric.
+4. Features. Circles drawn inside a view (openings, dials, bosses) are found and measured.
+   An end view whose outline is round marks that axis as round: the build then gives the
+   part round cross-sections along it instead of the square ones two outlines produce.
+5. Output. An AutoCAD DXF (layers, centre lines, dimensions in mm, title block), a PNG of
+   the same sheet, and a JSON record the build and QA read.
+
+Nothing here is a measurement of a real object: sizes are estimates at intake's scale, and
+the drawing says so in its title block.
+"""
+import json
+import math
+import os
+from pathlib import Path
+
+import numpy as np
+from PIL import Image, ImageDraw
+from scipy import ndimage
+from scipy.optimize import minimize_scalar
+
+from .silhouette import silhouette
+
+# how each view's image axes map to the object (hull frame: x left->right, y front->back,
+# z up). cols/rows: which object axis runs along image columns/rows, and its direction.
+FRAME = {'front': ('x', +1, 'z', -1), 'back': ('x', -1, 'z', -1),
+         'right': ('y', +1, 'z', -1), 'left': ('y', -1, 'z', -1),
+         'top': ('x', +1, 'y', -1), 'bottom': ('x', +1, 'y', +1)}
+FIT_TOL_PX = 1.0          # largest distance from the painted outline to a drawn line or arc
+SNAP_DEG = 2.0            # lines this close to horizontal/vertical are drawn square
+SYMMETRY_IOU = 0.94       # a view at least this close to its mirror image is drawn symmetric
+ROUND_COVERAGE = 0.55     # share of a circle the outline must follow to call the end view round
+
+
+# ---------------------------------------------------------------- orientation and size
+
+def _orientations(a):
+    """The eight ways a view can be drawn: four turns, each optionally mirrored."""
+    for flip in (False, True):
+        b = a[:, ::-1] if flip else a
+        for k in range(4):
+            yield k, flip, np.rot90(b, k)
+
+
+def _profile(mask, axis, n=96):
+    """How much object there is at each position along one image axis, resampled to n."""
+    p = mask.sum(axis=axis).astype(float)
+    return np.interp(np.linspace(0, len(p) - 1, n), np.arange(len(p)), p) / max(1.0, p.max())
+
+
+def _corr(a, b):
+    if a.std() < 1e-6 or b.std() < 1e-6:
+        return 0.0
+    return float(np.corrcoef(a, b)[0, 1])
+
+
+def orient_plan_view(name, mask, front, side, W, D):
+    """Pick the orientation of a top/bottom view that agrees with the front and side views.
+
+    Its proportion must be width:depth; its columns run along x, so the amount of object in
+    each column follows the front view's columns; its rows run along depth, following the
+    side view's columns (front at the bottom of a top view, at the top of a bottom view)."""
+    fx = _profile(front, 0)
+    sy = _profile(side, 0)
+    if name == 'top':
+        sy = sy[::-1]            # top view: the front is the bottom row
+    scores = []
+    for k, flip, m in _orientations(mask):
+        aspect = abs(math.log((m.shape[1] / m.shape[0]) / (W / D)))
+        cx = _corr(_profile(m, 0), fx)
+        cy = _corr(_profile(m, 1), sy)
+        cxm = _corr(_profile(m, 0)[::-1], fx)
+        # mirror in x is invisible for symmetric objects; prefer fewer changes on a tie
+        score = cx + cy - 3.0 * aspect - 0.01 * (k != 0) - 0.01 * flip
+        scores.append({'turns_ccw': k, 'mirrored': flip, 'aspect_error_pct': round(100 * (math.exp(aspect) - 1), 1),
+                       'column_agreement': round(cx, 3), 'row_agreement': round(cy, 3),
+                       'mirror_ambiguous': abs(cx - cxm) < 0.02, 'score': round(score, 3)})
+    best = max(scores, key=lambda s: s['score'])
+    as_drawn = scores[0]
+    return best, as_drawn, scores
+
+
+def apply_orientation(arr, turns, mirrored):
+    a = arr[:, ::-1] if mirrored else arr
+    return np.rot90(a, turns).copy()
+
+
+# ---------------------------------------------------------------- symmetry
+
+def symmetrize(mask):
+    """Mirror-symmetric views (most product fronts and tops) are made exactly symmetric about
+    the best vertical axis: the average of the outline and its mirror image."""
+    h, w = mask.shape
+    sd = ndimage.distance_transform_edt(mask) - ndimage.distance_transform_edt(~mask)
+    best = (0.0, 0)
+    for shift in range(-max(2, w // 25), max(2, w // 25) + 1):
+        flipped = np.roll(mask[:, ::-1], shift, axis=1)
+        iou = (mask & flipped).sum() / max(1, (mask | flipped).sum())
+        best = max(best, (float(iou), shift))
+    iou, shift = best
+    if iou < SYMMETRY_IOU:
+        return mask, None
+    sdf = np.roll(sd[:, ::-1], shift, axis=1)
+    out = (sd + sdf) / 2 > 0
+    axis_col = (w - 1 + shift) / 2.0
+    return out, {'mirror_iou': round(iou, 3), 'axis_col_px': axis_col}
+
+
+# ---------------------------------------------------------------- lines and arcs
+
+def _outline(mask):
+    import cv2
+    m = np.pad(mask.astype(np.uint8), 2)
+    cs, _ = cv2.findContours(m, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    c = max(cs, key=cv2.contourArea)[:, 0, :].astype(float) - 2   # (x, y) px
+    # light smoothing along the outline removes the pixel staircase, not the shape
+    c = np.c_[ndimage.gaussian_filter1d(c[:, 0], 1.2, mode='wrap'),
+              ndimage.gaussian_filter1d(c[:, 1], 1.2, mode='wrap')]
+    return c
+
+
+def _cross(a, b):
+    a = np.asarray(a); b = np.asarray(b)
+    return a[..., 0] * b[..., 1] - a[..., 1] * b[..., 0]
+
+
+def _circle3(a, b, c):
+    ax, ay = a; bx, by = b; cx, cy = c
+    d = 2 * (ax * (by - cy) + bx * (cy - ay) + cx * (ay - by))
+    if abs(d) < 1e-9:
+        return None
+    ux = ((ax * ax + ay * ay) * (by - cy) + (bx * bx + by * by) * (cy - ay) + (cx * cx + cy * cy) * (ay - by)) / d
+    uy = ((ax * ax + ay * ay) * (cx - bx) + (bx * bx + by * by) * (ax - cx) + (cx * cx + cy * cy) * (bx - ax)) / d
+    return np.array([ux, uy]), math.hypot(ax - ux, ay - uy)
+
+
+def _line_dev(P):
+    a, b = P[0], P[-1]
+    d = b - a
+    L = math.hypot(*d)
+    if L < 1e-9:
+        return np.inf
+    return float(np.abs(_cross(d, P - a)).max() / L)
+
+
+def _arc_through_ends(P, scale):
+    """Best arc through both end points (its centre lies on their perpendicular bisector).
+    Returns (centre, radius, max deviation) or None."""
+    a, b = P[0], P[-1]
+    m = (a + b) / 2
+    d = b - a
+    L = math.hypot(*d)
+    if L < 1e-9:
+        return None
+    n = np.array([-d[1], d[0]]) / L
+    first = _circle3(a, P[len(P) // 2], b)
+    if first is None:
+        return None
+    t0 = float(np.dot(first[0] - m, n))
+
+    def cost(t):
+        c = m + t * n
+        r = math.hypot(*(a - c))
+        return float(((np.hypot(*(P - c).T) - r) ** 2).mean())
+    span = max(abs(t0), L) * 2 + 1
+    res = minimize_scalar(cost, bounds=(t0 - span, t0 + span), method='bounded', options={'xatol': 1e-3})
+    c = m + res.x * n
+    r = math.hypot(*(a - c))
+    if r > 40 * scale:
+        return None
+    dev = float(np.abs(np.hypot(*(P - c).T) - r).max())
+    return c, r, dev
+
+
+def _grow(P, i, ok, limit, start=2):
+    """Largest j (i+start <= j <= limit) with ok(P[i:j+1]), by doubling then bisection."""
+    lo, step = i + start, 2
+    if lo > limit or not ok(P[i:lo + 1]):
+        return i + 1
+    while lo + step <= limit and ok(P[i:lo + step + 1]):
+        lo += step
+        step *= 2
+    hi = min(limit, lo + step)
+    while hi - lo > 1:
+        mid = (lo + hi) // 2
+        if ok(P[i:mid + 1]):
+            lo = mid
+        else:
+            hi = mid
+    return lo
+
+
+def fit_profile(mask, tol=FIT_TOL_PX):
+    """The outline as CAD entities: a closed list of vertices (x, y px), each with the bulge of
+    the segment that leaves it (0 = straight line, tan(sweep/4) = arc). Also the deviation."""
+    C = _outline(mask)
+    scale = float(max(mask.shape))
+    # start at the sharpest corner so no entity straddles it
+    k = 5
+    v1 = np.roll(C, -k, 0) - C
+    v0 = C - np.roll(C, k, 0)
+    turn = np.abs(np.arctan2(_cross(v0, v1), (v0 * v1).sum(1)))
+    C = np.roll(C, -int(np.argmax(turn)), 0)
+    P = np.vstack([C, C[:1]])
+    N = len(P) - 1
+    line_ok = lambda Q: _line_dev(Q) <= tol
+
+    def arc_ok(Q):
+        if len(Q) < 7:
+            return False
+        r = _arc_through_ends(Q, scale)
+        return r is not None and r[2] <= tol
+    verts = []
+    i = 0
+    while i < N:
+        jl = _grow(P, i, line_ok, N)
+        ja = _grow(P, i, arc_ok, N, start=6)
+        if ja - i >= 7 and (ja >= jl or (ja - i) >= 0.9 * (jl - i)):
+            Q = P[i:ja + 1]
+            c, r, _ = _arc_through_ends(Q, scale)
+            a0 = math.atan2(*(Q[0] - c)[::-1])
+            am = math.atan2(*(Q[len(Q) // 2] - c)[::-1])
+            a1 = math.atan2(*(Q[-1] - c)[::-1])
+            sweep = (a1 - a0) % (2 * math.pi)
+            if not ((am - a0) % (2 * math.pi) < sweep):
+                sweep -= 2 * math.pi
+            verts.append([P[i][0], P[i][1], math.tan(sweep / 4) if abs(sweep) > math.radians(4) else 0.0])
+            i = ja
+        else:
+            verts.append([P[i][0], P[i][1], 0.0])
+            i = max(jl, i + 1)
+    return _merge_arcs(np.array(verts), P, tol, scale), C
+
+
+def _merge_arcs(verts, P, tol, scale):
+    """Neighbouring arcs (and short lines between them) that one arc fits within tolerance
+    become that one arc: a round end is drawn as one arc, not a fan of pieces."""
+    idx = [int(np.argmin(np.hypot(*(P[:-1] - v[:2]).T))) for v in verts]
+    changed = True
+    while changed and len(verts) > 3:
+        changed = False
+        for k in range(len(verts) - 1):
+            i0, i2 = idx[k], (idx[k + 2] if k + 2 < len(idx) else len(P) - 1)
+            if i2 <= i0 or abs(verts[k, 2]) + abs(verts[k + 1, 2]) < 1e-9:
+                continue
+            Q = P[i0:i2 + 1]
+            fit = _arc_through_ends(Q, scale)
+            if fit is None or fit[2] > tol:
+                continue
+            c, r, _ = fit
+            a0 = math.atan2(*(Q[0] - c)[::-1]); am = math.atan2(*(Q[len(Q) // 2] - c)[::-1])
+            a1 = math.atan2(*(Q[-1] - c)[::-1])
+            sweep = (a1 - a0) % (2 * math.pi)
+            if not ((am - a0) % (2 * math.pi) < sweep):
+                sweep -= 2 * math.pi
+            verts[k, 2] = math.tan(sweep / 4)
+            verts = np.delete(verts, k + 1, axis=0)
+            del idx[k + 1]
+            changed = True
+            break
+    return verts
+
+
+def snap_square(verts, deg=SNAP_DEG):
+    """Straight segments within `deg` of horizontal/vertical are made exactly square (shared
+    vertices move; arcs keep their sweep)."""
+    v = verts.copy()
+    n = len(v)
+    for i in range(n):
+        if abs(v[i, 2]) > 1e-9:
+            continue
+        j = (i + 1) % n
+        dx, dy = v[j, 0] - v[i, 0], v[j, 1] - v[i, 1]
+        ang = math.degrees(math.atan2(dy, dx)) % 180
+        if min(ang, 180 - ang) < deg:
+            v[i, 1] = v[j, 1] = (v[i, 1] + v[j, 1]) / 2
+        elif abs(ang - 90) < deg:
+            v[i, 0] = v[j, 0] = (v[i, 0] + v[j, 0]) / 2
+    return v
+
+
+def _bulge_points(p0, p1, bulge, n=None):
+    """Points along one polyline segment (straight or arc) from p0 to p1."""
+    if abs(bulge) < 1e-9:
+        L = math.hypot(p1[0] - p0[0], p1[1] - p0[1])
+        k = max(1, int(L))
+        return [(p0[0] + (p1[0] - p0[0]) * t / k, p0[1] + (p1[1] - p0[1]) * t / k) for t in range(k)]
+    sweep = 4 * math.atan(bulge)
+    chord = np.asarray(p1) - np.asarray(p0)
+    L = math.hypot(*chord)
+    r = L / (2 * math.sin(abs(sweep) / 2))
+    mid = (np.asarray(p0) + np.asarray(p1)) / 2
+    nrm = np.array([-chord[1], chord[0]]) / max(L, 1e-12)
+    h = r * math.cos(abs(sweep) / 2) * (1 if (sweep > 0) else -1)
+    c = mid + nrm * h
+    a0 = math.atan2(p0[1] - c[1], p0[0] - c[0])
+    n = n or max(4, int(abs(sweep) * r))      # about one point per pixel
+    return [tuple(c + r * np.array([math.cos(a0 + sweep * t / n), math.sin(a0 + sweep * t / n)])) for t in range(n)]
+
+
+def polyline_points(verts):
+    pts = []
+    for i in range(len(verts)):
+        j = (i + 1) % len(verts)
+        pts += _bulge_points(tuple(verts[i, :2]), tuple(verts[j, :2]), verts[i, 2])
+    return np.array(pts)
+
+
+def rasterize(verts, shape, supersample=4):
+    """The drawn profile as a mask on the view's pixel grid (what the build carves with)."""
+    h, w = shape
+    im = Image.new('L', (w * supersample, h * supersample), 0)
+    pts = polyline_points(verts) * supersample + (supersample - 1) / 2
+    ImageDraw.Draw(im).polygon([tuple(p) for p in pts], fill=255)
+    return np.asarray(im.resize((w, h), Image.Resampling.BOX)) >= 128
+
+
+# ---------------------------------------------------------------- circles
+
+def find_circles(painting, mask, max_count=3):
+    """Circles drawn inside a view (openings, dials, bosses): Hough on the painting's edges,
+    kept only where the edge follows most of the circumference and the circle lies on the
+    object. Returns [{'center_px', 'radius_px', 'support'}], largest first."""
+    from skimage.feature import canny
+    from skimage.transform import hough_circle, hough_circle_peaks
+    g = np.asarray(painting.convert('L')).astype(float) / 255
+    if g.shape != mask.shape:
+        g = np.asarray(Image.fromarray((g * 255).astype(np.uint8)).resize(mask.shape[::-1])) / 255
+    e = canny(g, sigma=1.5) & ndimage.binary_erosion(mask, iterations=2)
+    s = min(mask.shape)
+    radii = np.arange(max(6, int(s * 0.12)), max(9, int(s * 0.5)), 1)
+    acc = hough_circle(e, radii)
+    _, cx, cy, rr = hough_circle_peaks(acc, radii, total_num_peaks=24, min_xdistance=3, min_ydistance=3)
+    near = ndimage.binary_dilation(e, iterations=1)
+    out = []
+    for x, y, r in zip(cx, cy, rr):
+        t = np.linspace(0, 2 * np.pi, 180, endpoint=False)
+        px = np.round(x + r * np.cos(t)).astype(int)
+        py = np.round(y + r * np.sin(t)).astype(int)
+        inside = (px >= 0) & (py >= 0) & (px < mask.shape[1]) & (py < mask.shape[0])
+        if inside.mean() < 0.98 or not mask[py[inside], px[inside]].all():
+            continue
+        support = float(near[py, px].mean())
+        if support < 0.8:
+            continue
+        out.append({'center_px': [float(x), float(y)], 'radius_px': float(r), 'support': round(support, 3)})
+    # overlapping candidates are one feature: keep the best-supported
+    out.sort(key=lambda c: -c['support'])
+    kept = []
+    for c in out:
+        if any(math.hypot(c['center_px'][0] - k['center_px'][0], c['center_px'][1] - k['center_px'][1])
+               < c['radius_px'] + k['radius_px'] and
+               not math.hypot(c['center_px'][0] - k['center_px'][0], c['center_px'][1] - k['center_px'][1])
+               < 0.1 * max(c['radius_px'], k['radius_px']) for k in kept):
+            continue
+        if any(math.hypot(c['center_px'][0] - k['center_px'][0], c['center_px'][1] - k['center_px'][1])
+               < 0.1 * k['radius_px'] and abs(c['radius_px'] - k['radius_px']) < 0.12 * k['radius_px'] for k in kept):
+            continue
+        kept.append(c)
+    out = kept
+    out.sort(key=lambda c: -c['support'] * c['radius_px'])
+    return out[:max_count]
+
+
+def round_outline(outline, mask):
+    """Is this view's outline (an end view) round? Fit circles to stretches of the outline and
+    keep the one the outline follows around the most of. Returns the circle or None."""
+    best = None
+    n = len(outline)
+    s = float(max(mask.shape))
+    for frac in (0.12, 0.2, 0.3):
+        span = max(8, int(n * frac))
+        for i in range(0, n, max(1, n // 48)):
+            Q = np.vstack([outline, outline])[i:i + span]
+            c3 = _circle3(Q[0], Q[len(Q) // 2], Q[-1])
+            if c3 is None:
+                continue
+            c, r = c3
+            if r < 0.15 * s or r > 0.6 * s:
+                continue
+            d = np.abs(np.hypot(*(outline - c).T) - r)
+            on = d <= max(1.5, 0.02 * r)
+            ang = np.arctan2(outline[on, 1] - c[1], outline[on, 0] - c[0])
+            cover = len(np.unique(np.floor((ang + np.pi) / (2 * np.pi) * 72))) / 72.0
+            if best is None or cover > best['coverage']:
+                best = {'center_px': [float(c[0]), float(c[1])], 'radius_px': float(r), 'coverage': round(cover, 3)}
+    if best and best['coverage'] >= ROUND_COVERAGE:
+        return best
+    return None
+
+
+# ---------------------------------------------------------------- the stage
+
+def prepare(views, destination, height_m, width_m=None, depth_m=None, name='part', scale_note=''):
+    """Make the drawing from the views. views: {name: image path}. Returns the record, with
+    'views' (paths to build and paint from, oriented), 'masks' (the drawn profiles on each
+    view's pixel grid), 'size_m', 'round_sections' and the DXF/PNG paths."""
+    destination = Path(destination)
+    destination.mkdir(parents=True, exist_ok=True)
+    raw = {k: silhouette(p, with_box=True) for k, p in views.items()}
+    front = raw['front'][0]
+    side_key = 'right' if 'right' in raw else 'left'
+    side = raw[side_key][0]
+    if side_key == 'left':
+        side = side[:, ::-1]
+    H = float(height_m)
+    W = float(width_m or H * front.shape[1] / front.shape[0])
+    D = float(depth_m or H * side.shape[1] / side.shape[0])
+    record = {'stage': 'drawing_before_geometry', 'units': 'mm', 'projection': 'third_angle',
+              'size_m': {'width': W, 'depth': D, 'height': H}, 'scale_note': scale_note,
+              'views': {}, 'decisions': [], 'profiles': {}, 'circles': {}, 'symmetry': {},
+              'view_agreement': {}, 'round_sections': []}
+    masks, paintings, out_paths = {}, {}, {}
+    for k, path in views.items():
+        mask, painting, box = raw[k]
+        arr = np.asarray(painting)
+        if k in ('top', 'bottom'):
+            best, drawn, scores = orient_plan_view(k, mask, front, side, W, D)
+            record.setdefault('orientation', {})[k] = {'chosen': best, 'as_drawn': drawn}
+            if best['turns_ccw'] or best['mirrored']:
+                mask = apply_orientation(mask, best['turns_ccw'], best['mirrored'])
+                arr = apply_orientation(arr, best['turns_ccw'], best['mirrored'])
+                record['decisions'].append(
+                    '%s view was drawn %s%s; turned to match the front and side views (agreement %.2f/%.2f, '
+                    'proportion off %.0f%% as drawn, %.0f%% after)' % (
+                        k, '%d quarter-turn(s)' % best['turns_ccw'] if best['turns_ccw'] else 'unturned',
+                        ' and mirrored' if best['mirrored'] else '', best['column_agreement'],
+                        best['row_agreement'], drawn['aspect_error_pct'], best['aspect_error_pct']))
+            # carry the cut-out hole mask along with the painting
+        hole = Path(path).with_name('h_%s.png' % k)
+        mask_sym, sym = (symmetrize(mask) if k in ('front', 'back', 'top', 'bottom') else (mask, None))
+        if sym:
+            record['symmetry'][k] = sym
+        verts, outline = fit_profile(mask_sym)
+        verts = snap_square(verts)
+        drawn_mask = rasterize(verts, mask.shape)
+        dev = _outline_deviation(outline, verts)
+        record['profiles'][k] = {'vertices_px': verts.round(3).tolist(), 'image_px': list(mask.shape[::-1]),
+                                 'entities': int(len(verts)), 'arcs': int((np.abs(verts[:, 2]) > 1e-9).sum()),
+                                 'max_deviation_px': round(dev, 2)}
+        img = Image.fromarray(arr)
+        record['circles'][k] = find_circles(img, drawn_mask)
+        out = destination / ('v_%s.png' % k)
+        Image.fromarray(arr).save(out)
+        if hole.exists():
+            hm = np.asarray(Image.open(hole).convert('L'))
+            b = box
+            hm = hm[b[1]:b[3], b[0]:b[2]]
+            if k in record.get('orientation', {}):
+                o = record['orientation'][k]['chosen']
+                hm = apply_orientation(hm, o['turns_ccw'], o['mirrored'])
+            Image.fromarray(hm).save(destination / ('h_%s.png' % k))
+        masks[k], paintings[k], out_paths[k] = drawn_mask, img, str(out)
+    # size agreement: each view's own proportion against the decided size
+    expect = {'front': W / H, 'back': W / H, 'right': D / H, 'left': D / H, 'top': W / D, 'bottom': W / D}
+    for k, m in masks.items():
+        own = m.shape[1] / m.shape[0]
+        record['view_agreement'][k] = {'proportion': round(own, 3), 'expected': round(expect[k], 3),
+                                       'off_pct': round(100 * (own / expect[k] - 1), 1)}
+    # round axes: an end view whose outline is round
+    for k, axis in (('front', 'y'), ('back', 'y'), ('right', 'x'), ('left', 'x')):
+        if k not in masks or any(r['axis'] == axis for r in record['round_sections']):
+            continue
+        outline = _outline(masks[k])
+        circ = round_outline(outline, masks[k])
+        if not circ:
+            continue
+        h, w = masks[k].shape
+        su, sv = (W if axis == 'y' else D) / w, H / h
+        cu = circ['center_px'][0] * su
+        if FRAME[k][1] < 0:
+            cu = (W if axis == 'y' else D) - cu
+        cz = H - circ['center_px'][1] * sv
+        r = circ['radius_px'] * (su + sv) / 2
+        record['round_sections'].append({'axis': axis, 'end_view': k, 'center_m': [cu, cz], 'radius_m': r,
+                                         'coverage': circ['coverage']})
+        record['decisions'].append('%s view outline follows a circle for %.0f%% of its turn (diameter %.1f mm): '
+                                   'the part is built with round cross-sections along %s inside that circle' % (
+                                       k, 100 * circ['coverage'], 2000 * r, axis))
+    record['views'] = out_paths
+    from . import drawing_cad
+    record['dxf'], record['sheet'] = drawing_cad.write(record, masks, destination, name)
+    (destination / 'drawing.json').write_text(json.dumps(record, indent=1))
+    record['masks'] = masks
+    record['paintings'] = paintings
+    return record
+
+
+def _outline_deviation(outline, verts):
+    from scipy.spatial import cKDTree
+    pts = polyline_points(verts)
+    d, _ = cKDTree(pts).query(outline)
+    return float(np.percentile(d, 99))
+
+
+def view_mask_mm(record, view, mm_per_px=0.5):
+    """A drawn view's profile resampled to a metric grid (for QA): mask, mm per pixel."""
+    m = record['masks'][view]
+    W, D, H = (record['size_m'][k] * 1000 for k in ('width', 'depth', 'height'))
+    span = {'front': (W, H), 'back': (W, H), 'right': (D, H), 'left': (D, H), 'top': (W, D), 'bottom': (W, D)}[view]
+    size = (max(2, int(round(span[0] / mm_per_px))), max(2, int(round(span[1] / mm_per_px))))
+    return np.asarray(Image.fromarray(m.astype(np.uint8) * 255).resize(size, Image.Resampling.BILINEAR)) >= 128

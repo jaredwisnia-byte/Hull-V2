@@ -230,6 +230,88 @@ def hull_field(carve, X, Yy, Z, W, D, H):
     return np.array(F)
 
 
+def round_section_field(F, sections, W, D, H):
+    """Round cross-sections from the drawing stage (propkit/drafting.py): where an end view's
+    outline is a circle, every slice of the part across that axis, inside that circle, is the
+    ellipse that fills the slice's own extent (its width from one view, its height from the
+    other) instead of the rectangle two outlines leave. Only ever removes material, so the part
+    still fills every view's outline at its extremes. Returns (F, report)."""
+    nx, ny, nz = F.shape
+    xs, ys, zs = ((np.arange(n) + .5) / n * s for n, s in ((nx, W), (ny, D), (nz, H)))
+    report = []
+    for rs in sections or ():
+        axis = rs['axis']
+        cu, cz = rs['center_m']
+        r = rs['radius_m'] * 1.03
+        if axis == 'y':
+            U, V = np.meshgrid(xs, zs, indexing='ij')
+            slices = [F[:, j, :] for j in range(ny)]
+        elif axis == 'x':
+            U, V = np.meshgrid(ys, zs, indexing='ij')
+            slices = [F[i, :, :] for i in range(nx)]
+        else:
+            continue
+        cyl = (U - cu) ** 2 + (V - cz) ** 2 <= r * r
+        du, dv = U[1, 0] - U[0, 0], V[0, 1] - V[0, 0]
+        ext = np.full((len(slices), 4), np.nan)
+        for k, s in enumerate(slices):
+            inside = (s < 0) & cyl
+            if inside.sum() < 6:
+                continue
+            # sub-voxel extents: zero crossings of the slice's field profiles
+            pu = np.where(cyl, s, np.inf).min(1)
+            pv = np.where(cyl, s, np.inf).min(0)
+
+            def span(p, coords):
+                idx = np.nonzero(p < 0)[0]
+                a, b = idx[0], idx[-1]
+                lo = coords[a] - (coords[1] - coords[0]) * (
+                    (-p[a]) / max(1e-12, p[a - 1] - p[a]) if a > 0 and np.isfinite(p[a - 1]) else .5)
+                hi = coords[b] + (coords[1] - coords[0]) * (
+                    (-p[b]) / max(1e-12, p[b + 1] - p[b]) if b + 1 < len(p) and np.isfinite(p[b + 1]) else .5)
+                return lo, hi
+            ext[k, :2] = span(pu, U[:, 0])
+            ext[k, 2:] = span(pv, V[0, :])
+        valid = ~np.isnan(ext[:, 0])
+        if valid.sum() < 3:
+            continue
+        # the extents vary smoothly along the axis (no voxel steps in the lofted surface)
+        lab, n = ndimage.label(valid)
+        for i in range(1, n + 1):
+            run = lab == i
+            if run.sum() >= 3:
+                for c in range(4):
+                    ext[run, c] = ndimage.gaussian_filter1d(ext[run, c], 1.0, mode='nearest')
+        changed = 0
+        for k, s in enumerate(slices):
+            if not valid[k]:
+                continue
+            u0, u1, v0, v1 = ext[k]
+            ru, rv = max((u1 - u0) / 2, du), max((v1 - v0) / 2, dv)
+            uc, vc = (u0 + u1) / 2, (v0 + v1) / 2
+            e = (np.sqrt(((U - uc) / ru) ** 2 + ((V - vc) / rv) ** 2) - 1) * min(ru, rv)
+            new = np.where(cyl, np.maximum(s, e), s)
+            changed += int(((s < 0) & (new >= 0)).sum())
+            s[...] = new
+        report.append({'axis': axis, 'end_view': rs.get('end_view'), 'slices': int(valid.sum()),
+                       'voxels_rounded_off': changed})
+    if report:
+        # rounding can leave thin offcuts outside the circle (a handle's flare where it met the
+        # old square barrel) no longer attached to the body: they are removed, not meshed
+        solid = F < 0
+        lab, n = ndimage.label(solid)
+        if n > 1:
+            sizes = ndimage.sum(solid, lab, range(1, n + 1))
+            loose = np.isin(lab, 1 + np.nonzero(sizes < 0.02 * sizes.max())[0])
+            if loose.any():
+                vox = min(W / nx, D / ny, H / nz)
+                F = np.where(ndimage.binary_dilation(loose, iterations=1) & ~np.isin(lab, [1 + int(np.argmax(sizes))]),
+                             np.maximum(F, vox), F)
+                report.append({'loose_offcuts_removed': int(n - 1 - int((sizes >= 0.02 * sizes.max()).sum() - 1)),
+                               'voxels': int(loose.sum())})
+    return F, report
+
+
 HULL_REPORT = {}     # what the last hull_prop call carved with blades
 DETAIL_MESH = {}     # relief_last: the detailed field surface of the last hull_prop call
 
@@ -237,7 +319,8 @@ DETAIL_MESH = {}     # relief_last: the detailed field surface of the last hull_
 def hull_prop(views, height, res=110, smooth_iters=4, decimate=0.35, rough=0.5, name="hull",
               convex=False, paint_only=(), features=True, sil_override=None, depth_m=None, grime=0.25,
               paint=True, width_m=None, blades=False, voxel_hook=None, mesh_hook=None, revolve=True, blur=0.7,
-              field=None, sections=None, field_hook=None, section_bands=None, detail_normal_only=False, shape_relief_min_m=None):
+              field=None, sections=None, field_hook=None, section_bands=None, detail_normal_only=False, shape_relief_min_m=None,
+              round_sections=None):
     """convex: fill each outline to its convex shape (boxy objects; dark areas can't
     punch holes). paint_only: views used for texture but not trusted to carve (e.g. a
     dark back panel on a dark sheet). width_m: the real width (views painted out of
@@ -318,6 +401,9 @@ def hull_prop(views, height, res=110, smooth_iters=4, decimate=0.35, rough=0.5, 
         vox = min(W / nx, D / ny, H / nz)
         F = hull_field(carve, X, Yy, Z, W, D, H)
         from .implicit import bounded_field, pad_field
+        if round_sections:
+            # round cross-sections the drawing stage found (propkit/drafting.py)
+            F, HULL_REPORT['round_sections'] = round_section_field(F, round_sections, W, D, H)
         F = bounded_field(F, (W, D, H))
         # carved by blades / lathe / hooks (always subtractive)
         removed = keep0 & ~keep

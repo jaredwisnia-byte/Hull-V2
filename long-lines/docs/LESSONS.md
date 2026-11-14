@@ -758,3 +758,21 @@ rather than compare their output. Preserve those failure records.
   a gate that jumps within a voxel leaves cliffs that mesh as folds (744 vs 80 on the dryer).
 - Rule: count folds on the dense surface before blaming the simplifier, and test seam
   hypotheses by measuring where the folds are (outline edges of two views at once).
+
+## The hair dryer had a wall, not a round nozzle: views were never made to agree (2026-11-14)
+- The sheet's top view shows the barrel lying sideways. View consistency flagged it (+184%
+  proportion) but its "paint only" decision was diagnostic only, so the hull carved with the
+  sideways top view stretched to width x depth. That put fins and a flat wall on the barrel.
+  QA then compared the mesh with the same sideways view it was built from (after rescaling
+  both outlines to one box), and its own top/bottom rasters were upside down against the
+  hull's third-angle frame, so nothing caught it.
+- Two outlines can only make rectangular cross-sections; the front view's circle never became
+  geometry, and the round-section code only handled upright (vertical-axis) parts.
+- Fix: a drawing stage runs before any geometry (propkit/drafting.py, factory/DRAWING.md):
+  views put in the third-angle frame (plan views tried in all 8 orientations), outlines fitted
+  as lines and arcs, sizes agreed, round end views turned into round cross-sections along any
+  axis. The build carves with the drawing; QA compares the mesh with the drawing in mm (never
+  rescaled) and with the sheet's isometric view over camera angles; the engineering export
+  is a CAD solid (OpenCascade) built from the drawing, with STEP and a dimensioned drawing.
+- Rule: a check that rescales the result to the reference before comparing cannot catch a
+  wrong proportion. Compare in real units, and against a witness the build did not use.

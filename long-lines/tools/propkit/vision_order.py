@@ -107,6 +107,17 @@ def generic_order(report, image, background, output, assembly, groups):
         Image.fromarray(painting).save(source/f'v_{view}.png')
         if holes.any():
             Image.fromarray(np.uint8(holes)*255).save(source/f'h_{view}.png')
+    # pictorial (isometric/perspective) views of the whole object: never built from, kept as
+    # QA's independent witness of what the object looks like (propkit/drawing_qa.py)
+    pictorials = []
+    for region in report.get('regions', []):
+        if region.get('view') == 'perspective' and region.get('part') in (None, 'assembly'):
+            tile = image.crop(region['box'])
+            painting, _ = crop(np.asarray(tile).astype(int), background,
+                               [0, 0, tile.width, tile.height])
+            path = source/f"p_pictorial_{region['id']}.png"
+            Image.fromarray(painting).save(path)
+            pictorials.append(str(path))
 
     front = image.crop(assembly['front']['box'])
     side = image.crop(assembly['right']['box'])
@@ -149,6 +160,7 @@ def generic_order(report, image, background, output, assembly, groups):
              'automatic_depth': True, 'vision_generated': True,
              'build_scope': 'outer_body_only',
              'unresolved_component_regions': unresolved,
+             'reference_images': pictorials,
              'source': report['image'],
              'size_source': {'identity': identity, 'fit': fit,
                              'dimensions_mm': [round(d*1000) for d in dimensions]},

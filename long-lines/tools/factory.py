@@ -288,6 +288,35 @@ def run_line(order):
                  for k in order.get("views", [])}
         original_views = dict(views)
         hp = dict(order.get("hull", {}))
+        drawing = None
+        observed_sil = None
+        if order.get('drafting', bool(order.get('vision_generated'))):
+            # The drawing stage (propkit/drafting.py): the views become one consistent
+            # engineering drawing before any geometry, and the build is made from it: views
+            # put in the standard frame (a top view drawn turned is turned), clean profiles,
+            # agreed sizes, round cross-sections where an end view is round.
+            from propkit import drafting
+            dest = os.path.join(order.get('run_directory') or diagnostic_root(order), 'drawing')
+            allv = dict(views)
+            bp = os.path.join(d, 'v_bottom.png')
+            if os.path.exists(bp):
+                allv['bottom'] = bp
+            drawing = drafting.prepare(
+                allv, dest, order.get('height_m'), name=order['name'],
+                scale_note=(order.get('assumptions') or [''])[0])
+            views = {k: drawing['views'][k] for k in views}
+            original_views = dict(views)
+            d = dest
+            order['views_folder'] = dest          # paint, QA and exports use the drawn frame
+            hp['width_m'] = drawing['size_m']['width']
+            hp['depth_m'] = drawing['size_m']['depth']
+            if drawing['round_sections']:
+                hp['round_sections'] = drawing['round_sections']
+            order.setdefault('measured', {})['drawing'] = {
+                'json': os.path.join(dest, 'drawing.json'), 'dxf': drawing['dxf'], 'sheet': drawing['sheet'],
+                'decisions': drawing['decisions'], 'round_sections': drawing['round_sections'],
+                'size_mm': {k: round(v * 1000, 1) for k, v in drawing['size_m'].items()}}
+            print('DRAWING', json.dumps(order['measured']['drawing']))
         # relief_last: the shape keeps its relief and is simplified afterwards like a game
         # asset (larger polygons; forms above the screen tolerance survive); detail below
         # that tolerance reaches the asset through the normal map baked from the dense mesh.
@@ -346,6 +375,21 @@ def run_line(order):
             from propkit.silhouette import observed_silhouettes
             hp['sil_override'], openings_report = observed_silhouettes(views)
             order.setdefault('measured', {})['observed_openings'] = openings_report
+            observed_sil = dict(hp['sil_override'])
+            if drawing is not None:
+                # carve with the drawn profiles (lines and arcs), keeping observed openings
+                import numpy as np
+                from PIL import Image as _Image
+                from scipy import ndimage as _nd
+                for k, (m_, img_) in list(hp['sil_override'].items()):
+                    if k not in drawing['masks']:
+                        continue
+                    dm = drawing['masks'][k]
+                    if dm.shape != m_.shape:
+                        dm = np.asarray(_Image.fromarray(dm.astype(np.uint8) * 255).resize(
+                            (m_.shape[1], m_.shape[0]), _Image.Resampling.BILINEAR)) >= 128
+                    openings = _nd.binary_fill_holes(m_) & ~m_
+                    hp['sil_override'][k] = (dm & ~openings, img_)
         if hp.pop("relief", False):
             # carving inside the outline, read from the painting (propkit/relief.py)
             from propkit import relief
@@ -360,7 +404,7 @@ def run_line(order):
                 trace_folder = os.path.join(diagnostic_root(order), 'technical-traces')
                 source_drawing = drawing_traces.infer(
                     views, trace_folder,
-                    construction_masks=hp.get('sil_override'),
+                    construction_masks=observed_sil or hp.get('sil_override'),
                     opening_report=order['measured'].get('observed_openings'),
                     view_consistency=(order['measured'].get('reconcile') or
                                       order.get('view_consistency')),

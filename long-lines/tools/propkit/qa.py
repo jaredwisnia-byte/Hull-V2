@@ -268,12 +268,14 @@ def check(name, views_dir=None, category_class=None, paint_only=(), solid=False,
         "back": (Vector((0, -1, 0)), lambda u, v: Vector((hi.x - u * size.x, hi.y + 1, lo.z + v * size.z)), size.z / max(size.x, 1e-6)),
         "right": (Vector((-1, 0, 0)), lambda u, v: Vector((hi.x + 1, lo.y + u * size.y, lo.z + v * size.z)), size.z / max(size.y, 1e-6)),
         "left": (Vector((1, 0, 0)), lambda u, v: Vector((lo.x - 1, hi.y - u * size.y, lo.z + v * size.z)), size.z / max(size.y, 1e-6)),
-        "top": (Vector((0, 0, -1)), lambda u, v: Vector((lo.x + u * size.x, hi.y - v * size.y, hi.z + 1)), size.y / max(size.x, 1e-6)),
+        # third-angle frames, as the hull carves with them: a top view has the front edge at its
+        # bottom (next to the front view), a bottom view at its top
+        "top": (Vector((0, 0, -1)), lambda u, v: Vector((lo.x + u * size.x, lo.y + v * size.y, hi.z + 1)), size.y / max(size.x, 1e-6)),
     }
     strict_geometry = bool(trim_order and trim_order.get("automatic_depth"))
     if strict_geometry:
         views["bottom"] = (Vector((0, 0, 1)), lambda u, v: Vector(
-            (lo.x + u * size.x, lo.y + v * size.y, lo.z - 1)), size.y / max(size.x, 1e-6))
+            (lo.x + u * size.x, hi.y - v * size.y, lo.z - 1)), size.y / max(size.x, 1e-6))
     back_hits, hits = 0, 0
     sil = {}
     for k, (direc, origin, aspect) in views.items():
@@ -456,4 +458,12 @@ def check(name, views_dir=None, category_class=None, paint_only=(), solid=False,
             if difference is None or difference > MIN["trim"]["colour_difference_max"]:
                 fails.append(
                     "trim baked colour differs from painted reference: %s" % difference)
+    if trim_order and (trim_order.get('measured') or {}).get('drawing'):
+        # what the object is supposed to look like: the drawing (in mm, never rescaled to
+        # fit) and the sheet's pictorial views (camera angle searched) (propkit/drawing_qa.py)
+        from . import drawing_qa
+        tri = [(p[0], p[i], p[i + 1]) for p in polys for i in range(1, len(p) - 1)]
+        dm, df = drawing_qa.check(np.array([tuple(v) for v in verts]), tri, trim_order)
+        m['against_drawing'] = dm
+        fails += df
     return {"pass": not fails, "fails": fails, "metrics": m}

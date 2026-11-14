@@ -98,6 +98,7 @@ def _build_image(image, output, *, build_order, library_root, render_script, exp
             result.update(export_model(name, library_root, destination))
             if order.get("automatic_depth"):
                 result.update(engineering.export(order, destination))
+            result.update(_drawing_exports(library_root, name, destination))
             result["render"] = render_asset(name, destination, render_script, library_root)
             if result["qa"]["pass"] and result["render"] and not warnings:
                 result["status"] = "complete"
@@ -109,6 +110,33 @@ def _build_image(image, output, *, build_order, library_root, render_script, exp
     (destination / "result.json").write_text(json.dumps(result, indent=2))
     print("AUTOMATIC_RESULT", json.dumps(result))
     return result
+
+
+def _drawing_exports(library_root, name, destination):
+    """The drawing made before the build (DXF + PNG) and the CAD solid built from it (STEP, STL,
+    general-arrangement drawing with hidden lines, sections and measured properties)."""
+    import shutil
+    import numpy as np
+    drawing_json = Path(library_root).parent / 'drawing' / 'drawing.json'
+    if not drawing_json.exists():
+        return {}
+    record = json.loads(drawing_json.read_text())
+    out = {'drawing_record': str(destination / (name + '_drawing.json'))}
+    shutil.copy(drawing_json, destination / (name + '_drawing.json'))
+    for key in ('dxf', 'sheet'):
+        if record.get(key) and Path(record[key]).exists():
+            target = destination / Path(record[key]).name
+            shutil.copy(record[key], target)
+            out['drawing_' + key] = str(target)
+    try:
+        from .drafting import rasterize
+        from . import cad_model
+        masks = {k: rasterize(np.asarray(p['vertices_px']), tuple(p['image_px'][::-1]))
+                 for k, p in record['profiles'].items()}
+        out['cad'] = cad_model.export(record, masks, destination, name)
+    except Exception as error:          # the mesh asset stands without the CAD export
+        out['cad'] = {'cad_failure': str(error)}
+    return out
 
 
 def build_image(image, output, **stations):
