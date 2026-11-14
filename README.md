@@ -15,8 +15,8 @@ texture ownership, inspection drawings and optional CAD surface exchange.
 | What | Where |
 |---|---|
 | Directives: current priority, how to judge a change | [AGENTS.md](AGENTS.md), [CONTRIBUTING.md](CONTRIBUTING.md) |
-| **Architecture (agreed 2026-11-14)**: pipeline, rules R1-R8, part model, fidelity, Blender replacement | [ARCHITECTURE.md](long-lines/docs/ARCHITECTURE.md) |
-| Same, machine-readable (for agents) | [architecture.json](long-lines/docs/architecture.json) |
+| **Architecture (agreed 2026-11-14)**: pipeline, rules R1-R8, part model, fidelity, Blender replacement | [ARCHITECTURE.md](docs/ARCHITECTURE.md) |
+| Same, machine-readable (for agents) | [architecture.json](docs/architecture.json) |
 | What went wrong before and why | [LESSONS.md](long-lines/docs/LESSONS.md) |
 | Reconstruction background | [KNOWLEDGE_FILE.md](KNOWLEDGE_FILE.md) |
 | Factory manual and the drawing stage | [factory/README.md](long-lines/factory/README.md), [DRAWING.md](long-lines/factory/DRAWING.md) |

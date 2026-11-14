@@ -1,6 +1,12 @@
 # Hull V2 working guide
 
-## Current priority (2026-11-13)
+## Current priority (2026-11-14)
+
+Follow the agreed architecture, [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+(machine-readable: [docs/architecture.json](docs/architecture.json)). Its rules
+R1-R8 bind every change, and its migration steps are done in order: the drawing
+stage first, then fidelity profiles, the Python backend replacing Blender, the
+part model from the drawing, and per-part tessellation.
 
 Better models, not more machinery. Storage, release qualification, maintenance
 roles, workspace inventory and other process tooling are frozen until a change
@@ -9,8 +15,9 @@ drawn set and comparing the contact sheet before and after:
 
     python long-lines/tools/line.py car_sedan_tan coffee_maker_drip electronics_tv_crt electronics_tv_crt2 sofa_olive_suede table_leg_carved table_leg_guided wallphone_rotary
 
-`docs/renders/line.png` is the before/after evidence; a change that makes any of
-these worse is not done. Pick one problem, finish it, merge it. Do not open a new
+and by building the seven image-only objects (`001_toaster` ... `007_stand_mixer`
+in `Hull-dataset-100/assortment`). `docs/renders/line.png` is the before/after
+evidence; a change that makes any of these worse is not done. Pick one problem, finish it, merge it. Do not open a new
 branch per session.
 
 Read `CONTRIBUTING.md` and `KNOWLEDGE_FILE.md` before changing the factory. The

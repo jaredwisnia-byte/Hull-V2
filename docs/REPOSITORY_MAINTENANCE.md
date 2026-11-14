@@ -109,6 +109,9 @@ To restore an archived branch: `git push origin refs/tags/archive/<name>^{commit
 
 ### Waiting for the Codex run to finish (after Order 10)
 
+Steps 1-3 (except the Codex orders, which live outside the repo) are prepared on
+branch `claude/docs-layout`, to merge into `main` once the run ends.
+
 1. Move `long-lines/docs/ARCHITECTURE.md` and `architecture.json` to root `docs/`,
    leaving one-line pointers at the old paths; update the README links.
 2. Point `AGENTS.md`'s current priority at the architecture and its migration steps.
