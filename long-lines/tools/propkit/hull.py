@@ -231,12 +231,13 @@ def hull_field(carve, X, Yy, Z, W, D, H):
 
 
 HULL_REPORT = {}     # what the last hull_prop call carved with blades
+DETAIL_MESH = {}     # relief_last: the detailed field surface of the last hull_prop call
 
 
 def hull_prop(views, height, res=110, smooth_iters=4, decimate=0.35, rough=0.5, name="hull",
               convex=False, paint_only=(), features=True, sil_override=None, depth_m=None, grime=0.25,
               paint=True, width_m=None, blades=False, voxel_hook=None, mesh_hook=None, revolve=True, blur=0.7,
-              field=None, sections=None, field_hook=None, section_bands=None, relief_last=False):
+              field=None, sections=None, field_hook=None, section_bands=None, detail_normal_only=False, shape_relief_min_m=None):
     """convex: fill each outline to its convex shape (boxy objects; dark areas can't
     punch holes). paint_only: views used for texture but not trusted to carve (e.g. a
     dark back panel on a dark sheet). width_m: the real width (views painted out of
@@ -312,6 +313,7 @@ def hull_prop(views, height, res=110, smooth_iters=4, decimate=0.35, rough=0.5, 
         keep = voxel_hook(keep, carve, W, D, H)
     import time as _time
     _t = _time.time()
+    detail_F = None
     if field == "sdf":
         vox = min(W / nx, D / ny, H / nz)
         F = hull_field(carve, X, Yy, Z, W, D, H)
@@ -330,17 +332,35 @@ def hull_prop(views, height, res=110, smooth_iters=4, decimate=0.35, rough=0.5, 
             zone = ndimage.binary_dilation(removed, iterations=3)
             F = np.where(zone, np.maximum(F, G), F)
         detail_F = None
+        stage = "geometry"
         if field_hook is not None:
-            if relief_last:
+            if detail_normal_only:
                 # Relief as the last step: the shape is the plain hull; the painted detail
                 # is meshed separately and only ever reaches the asset as a baked normal map.
                 detail_F = field_hook(F)
+                stage = "normal_map_only"
+            elif shape_relief_min_m:
+                # Game-asset split: the full detail is the normal-bake source; the shape keeps
+                # relief at its full sharpness where it is deeper than the screen tolerance and
+                # drops shallower bumps (painted numerals, panel lumps), which cannot show at
+                # viewing distance and reach the asset through the normal map only. The depth
+                # gate is read from a lightly smoothed copy so noise doesn't flicker it.
+                detail_F = field_hook(F)
+                delta = detail_F - F
+                t = float(shape_relief_min_m)
+                gate = np.abs(ndimage.gaussian_filter(delta, 1.0))
+                weight = np.clip((gate - 0.5 * t) / (0.5 * t), 0.0, 1.0)   # full at the tolerance
+                # The gate itself must vary smoothly across the surface: a weight that jumps
+                # within a voxel or two leaves cliffs in the field that mesh as folded faces.
+                weight = ndimage.gaussian_filter(weight, 3.0)
+                F = F + delta * weight
+                stage = "split_at_%.4f_m" % t
             else:
                 F = field_hook(F)
         HULL_REPORT["field"] = {"mode": "projected_signed_distance_csg", "isovalue": 0.,
                                 "boundary_padding": "metric half-voxel exterior cells",
-                                "interior_detail": field_hook is not None and not relief_last,
-                                "relief_stage": "normal_map_only" if relief_last else "geometry",
+                                "interior_detail": field_hook is not None and not detail_normal_only,
+                                "relief_stage": stage,
                                 "removed_voxels": int(removed.sum()), "vox_m": round(float(vox), 6)}
         vol = pad_field(F, (W, D, H))
         verts, faces, _, _ = marching_cubes(vol, 0.0)
@@ -381,10 +401,14 @@ def hull_prop(views, height, res=110, smooth_iters=4, decimate=0.35, rough=0.5, 
     obj = to_object(verts, faces, name)
     import json
     obj['reconstruction_field'] = json.dumps(HULL_REPORT['field'])
-    if relief_last and field == "sdf" and field_hook is not None:
+    if detail_F is not None and field == "sdf":
         # The hook keeps a copy of the detailed mesh as the normal-bake source
         # (surface_detail.capture_high); the plain hull goes on to simplification.
         detailed = to_object(dverts, dfaces, name + "__detail_tmp", register=False)
+        # The relief field's own surface, before the bake source adds fine painted maps;
+        # the factory measures the shading probes on it (relief_last QA).
+        DETAIL_MESH['verts'] = [tuple(v.co) for v in detailed.data.vertices]
+        DETAIL_MESH['faces'] = [list(p.vertices) for p in detailed.data.polygons]
         if mesh_hook is not None:
             mesh_hook(detailed)
         if detailed.get('dense_source_name'):

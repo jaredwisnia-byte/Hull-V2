@@ -99,6 +99,7 @@ class VisionTests(unittest.TestCase):
             self.assertGreater(order['height_m'], .2)
             self.assertEqual(order['class'],'medium')
             self.assertTrue(order['needs_size_review'])     # no envelope named: prior only
+            self.assertTrue(order['hull']['relief_last'])   # shading goes to the normal map only
             evidence=json.loads((__import__('pathlib').Path(folder)/'vision-report.json').read_text())
             self.assertEqual(evidence['unresolved_component_groups'],['knob'])
         with tempfile.TemporaryDirectory() as folder:

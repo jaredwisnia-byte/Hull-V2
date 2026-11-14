@@ -160,7 +160,45 @@ def check(name, views_dir=None, category_class=None, paint_only=(), solid=False,
         return dict(report, matrix_world=matrix.tolist())
     m['reconstruction_field'] = (trim_order or {}).get(
         'measured', {}).get('field', {})
-    if detail.get('probes'):
+    relief_last = bool((trim_order or {}).get('hull', {}).get('relief_last'))
+    if detail.get('probes') and relief_last:
+        # relief_last, the game-asset split: relief larger than the screen tolerance must still
+        # be in the exported shape; every probe must be in the normal-bake source (probed at
+        # build time); and the baked normal map must actually deviate from flat.
+        tolerance = (trim_order.get('measured', {}).get('simplification', {}).get('tolerance_m')
+                     or 0.0)
+        if m['reconstruction_field'].get('relief_stage') == 'normal_map_only':
+            large = []   # relief_shape "none": the shape is the plain hull by request
+        else:
+            # The game-asset line (factory passes protected_samples twice the tolerance): relief
+            # at least as deep as the screen tolerance must be in the shape.
+            large = [p for p in detail['probes']
+                     if abs(p['target_offsets_m'][0] - np.mean(p['target_offsets_m'][1:])) >= tolerance]
+        from .local_features import check_surface_features
+        geometric = check_surface_features(verts, polys, placed_report(dict(detail, probes=large)))
+        m['surface_features'] = dict(geometric, rule='probes at least %.4f m deep (the screen tolerance)'
+                                     % tolerance, probes_in_shape=len(large),
+                                     probes_total=len(detail['probes']))
+        fails.extend(geometric['fails'])
+        # Fine probes were never a geometry requirement; record whether the dense surface the
+        # normal map is baked from holds them (unmet ones are shading-inference misses).
+        source = detail.get('normal_source_features')
+        if source is None:
+            fails.append('relief_last: normal-bake source was not measured')
+        else:
+            m['normal_source_features'] = {'unmet': len(source.get('fails', [])),
+                                           'probes': len(detail['probes']),
+                                           'with_fine_maps_unmet': source.get('with_fine_maps_fails')}
+        with Image.open(os.path.join(d, name + "_normal.png")) as image:
+            rgb = np.asarray(image.convert('RGB'), dtype=np.float32) / 127.5 - 1.0
+        flat = np.abs(rgb - np.array([0.0, 0.0, 1.0])).max(axis=2) < 0.02
+        tilt = np.degrees(np.arccos(np.clip(rgb[..., 2], -1, 1)))
+        detail_fraction = float((tilt[~flat] > 5).mean()) if (~flat).any() else 0.0
+        m['normal_map_relief'] = {'detail_fraction': round(detail_fraction, 4),
+                                  'rule': 'share of non-flat texels tilted more than 5 degrees'}
+        if detail_fraction < 0.01:
+            fails.append('relief_last: baked normal map carries no relief detail')
+    elif detail.get('probes'):
         from .local_features import check_surface_features
         local_surface = check_surface_features(
             verts, polys, placed_report(detail))

@@ -143,7 +143,9 @@ def generic_order(report, image, background, output, assembly, groups):
              'status': 'pending', 'class': size_class, 'tex': 2048,
              'views_folder': str(source), 'views': list(assembly),
              'height_m': front.height*scale, 'budget': 'screen', 'rough': .65,
-             'hull': {'paint': 'project', 'relief': True},
+             # relief_last: painted shading reaches the asset as a baked normal map only;
+             # the shape stays the clean hull (embossed numerals, lumpy panels otherwise).
+             'hull': {'paint': 'project', 'relief': True, 'relief_last': True},
              'automatic_depth': True, 'vision_generated': True,
              'build_scope': 'outer_body_only',
              'unresolved_component_regions': unresolved,

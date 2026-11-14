@@ -52,6 +52,84 @@ def screen_tolerance(standards, kind, distance_m=None):
     return sb["error_px"] / px_per_m
 
 
+def _fold_safe_reduce(obj, ratio, locked=None):
+    """Quadric edge-collapse simplification with a fold-over check (Fast Quadric Mesh
+    Simplification via pyfqmr): a collapse that would flip a neighbouring triangle is
+    rejected, the standard Garland-Heckbert safeguard Blender's Decimate modifier lacks.
+
+    locked: vertex indices to keep exactly. Faces touching them stay dense; the rest is
+    simplified with its border held fixed and welded back, so the patch joins seamlessly.
+    Returns False (caller falls back to Blender) when pyfqmr is unavailable or the mesh
+    carries per-vertex data this rebuild would drop."""
+    try:
+        import pyfqmr
+    except ImportError:
+        return False
+    me = obj.data
+    extra = [a.name for a in me.attributes if not a.name.startswith('.') and a.name not in
+             ('position', 'sharp_face', 'sharp_edge')]
+    if extra or me.uv_layers or me.vertex_colors:
+        return False
+    import bmesh
+    bm = bmesh.new()
+    bm.from_mesh(me)
+    bmesh.ops.triangulate(bm, faces=bm.faces)
+    bm.verts.index_update()
+    verts = np.array([v.co[:] for v in bm.verts], dtype=np.float64)
+    faces = np.array([[v.index for v in f.verts] for f in bm.faces], dtype=np.int32)
+    bm.free()
+    keep = np.zeros(len(faces), bool)
+    if locked is not None and len(locked):
+        mark = np.zeros(len(verts), bool)
+        mark[np.asarray(list(locked), int)] = True
+        keep = mark[faces].any(axis=1)
+    free = faces[~keep]
+    target = max(4, int(len(faces) * ratio) - int(keep.sum()))
+    simplifier = pyfqmr.Simplify()
+    simplifier.setMesh(verts, free)
+    simplifier.simplify_mesh(target_count=target, aggressiveness=7, max_iterations=1000,
+                             preserve_border=bool(keep.any()), verbose=False)
+    out_v, out_f, _ = simplifier.getMesh()
+    if len(out_f) > max(target * 1.3, target + 64):
+        # Stalled well short of the target (its error threshold grows per iteration and
+        # can run out before cheap coplanar collapses finish): let Blender's modifier try.
+        return False
+    all_v = out_v.tolist()
+    all_f = out_f.tolist()
+    if keep.any():
+        used = np.unique(faces[keep])
+        remap = {int(old): len(all_v) + i for i, old in enumerate(used)}
+        all_v += verts[used].tolist()
+        all_f += [[remap[int(i)] for i in tri] for tri in faces[keep]]
+    me.clear_geometry()
+    me.from_pydata(all_v, [], all_f)
+    me.update()
+    if keep.any():   # weld the fixed border of the simplified part to the dense patch
+        bm = bmesh.new()
+        bm.from_mesh(me)
+        bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-9)
+        bm.to_mesh(me)
+        bm.free()
+        me.update()
+    return True
+
+
+def _fold_safe_available():
+    try:
+        import pyfqmr  # noqa: F401
+        return True
+    except ImportError:
+        return False
+
+
+def _locked_vertices(obj, group):
+    """Vertices a focus group pins outright (weight 1): the failed features' own triangles."""
+    if group is None:
+        return None
+    index = group.index
+    return [v.index for v in obj.data.vertices
+            if any(g.group == index and g.weight >= .999 for g in v.groups)]
+
 def decimate_to_error(obj, tol, min_tris=120, samples=2500, protected=None):
     """Simplify a mesh as far as it can go while its surface stays within tol (metres) of the dense
     mesh (99th percentile, both ways: detail lost and corners cut). Binary search on
@@ -150,18 +228,26 @@ def decimate_to_error(obj, tol, min_tris=120, samples=2500, protected=None):
         return modifier
 
     reviews = []
+    reducer = {}
     fold_limit = None
-    if protected is not None and 'source_report' in protected:
+    if protected is not None:
+        # Every feature-guarded reduction answers to the same fold limit QA applies, so the
+        # search cannot accept a mesh that the gate (or a later fold repair) would reject.
         from .bake import STANDARDS
         fold_limit = STANDARDS['minimum_acceptable']['max_extreme_folds_per_1k']
 
-    def trial(ratio, focus=None):
+    def reduced(ratio, focus, fold_safe):
         o2 = obj.copy()
         o2.data = me.copy()
         bpy.context.scene.collection.objects.link(o2)
-        group = detail_group if focus is None else focus_group(o2, focus)
-        modifier_for(o2, 'd', ratio, group)
-        apply_mods(o2)
+        # Fold-safe quadric reduction when available; focused retries lock the dense
+        # triangles of the failed features. Every trial is reviewed the same way.
+        group = None if focus is None else focus_group(o2, focus)
+        used = fold_safe and _fold_safe_reduce(o2, ratio, _locked_vertices(o2, group))
+        if not used:
+            group = detail_group if focus is None else group
+            modifier_for(o2, 'd', ratio, group)
+            apply_mods(o2)
         t = BVHTree.FromPolygons([v.co for v in o2.data.vertices], [
                                  p_.vertices for p_ in o2.data.polygons])
         simple = np.array([v.co for v in o2.data.vertices])
@@ -173,7 +259,18 @@ def decimate_to_error(obj, tol, min_tris=120, samples=2500, protected=None):
                            for c in dense], 99)
         e2 = np.percentile(
             [(dense_tree.find_nearest(tuple(c))[3] or 0.0) for c in simple], 99)
-        err = float(max(e1, e2))
+        return o2, t, simple, float(max(e1, e2)), used
+
+    def trial(ratio, focus=None):
+        o2, t, simple, err, used = reduced(ratio, focus, True)
+        if used and err > tol:
+            # The fold-safe reducer places vertices differently; where it overshoots the
+            # surface bound (e.g. rounded corners at very low counts), try Blender's too.
+            mesh2 = o2.data
+            bpy.data.objects.remove(o2)
+            bpy.data.meshes.remove(mesh2)
+            o2, t, simple, err, used = reduced(ratio, focus, False)
+        reducer[(ratio, frozenset(focus or ()))] = used
         feature_error = 0.
         if protected is not None and protected.get('contrast_report'):
             from .local_features import check_surface_features
@@ -253,13 +350,28 @@ def decimate_to_error(obj, tol, min_tris=120, samples=2500, protected=None):
     best_error = 0.0
     best_count = tris0
     best_focus = None
+    # When a trial is within tolerance but flattens particular measured features, lock
+    # exactly those features' triangles and retry the same ratio (the rest still reduces),
+    # instead of keeping the whole mesh dense for them. Locks need the fold-safe reducer.
+    lockable = (protected is not None and protected.get('contrast_report')
+                and protected.get('ids') and _fold_safe_available())
+    locks = set()
     for _ in range(8):
         mid = (lo * hi) ** 0.5
-        err, n, feature_error, failed = trial(mid)
+        err, n, feature_error, failed = trial(mid, set(locks) if locks else None)
+        retries = 0
+        while lockable and err <= tol and feature_error > 1 and failed and retries < 3:
+            new = {item.split(': ', 1)[-1] for item in failed} - locks
+            if not new:
+                break
+            locks |= new
+            retries += 1
+            err, n, feature_error, failed = trial(mid, set(locks))
         if err <= tol and feature_error <= 1:
             best, hi = mid, mid
             best_error = err
             best_count = n
+            best_focus = set(locks) if locks else None
         else:
             lo = mid
     # Coarse retries protect only observed failures instead of retaining the
@@ -286,10 +398,13 @@ def decimate_to_error(obj, tol, min_tris=120, samples=2500, protected=None):
             focus.update(failing_ids)
             previous_failures = len(failed)
     if best < 1.0:
-        group = detail_group if best_focus is None else focus_group(
-            obj, best_focus)
-        modifier_for(obj, 'to_error', best, group)
-        apply_mods(obj)
+        # Same reducer as the accepted trial.
+        group = None if best_focus is None else focus_group(obj, best_focus)
+        fold_safe = reducer.get((best, frozenset(best_focus or ())), False)
+        if not (fold_safe and _fold_safe_reduce(obj, best, _locked_vertices(obj, group))):
+            group = detail_group if best_focus is None else group
+            modifier_for(obj, 'to_error', best, group)
+            apply_mods(obj)
     if detail_group is not None:
         stored_group = obj.vertex_groups.get('__hull_detail_guard')
         if stored_group is not None:
@@ -320,3 +435,4 @@ def reduce_assembly_part(obj, order, report):
     report.setdefault('reduction', []).append({'part': obj.name,
         'before': before, 'triangles': triangles, 'sampled_error_m': error,
         'tolerance_m': tolerance, 'stage': 'before texture projection'})
+

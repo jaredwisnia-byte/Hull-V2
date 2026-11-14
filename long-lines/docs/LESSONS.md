@@ -743,3 +743,18 @@ rather than compare their output. Preserve those failure records.
 - Rule: a failure that appears after a Blender upgrade is a toolchain change until proven
   otherwise. Rebuild the same order on both versions before calling it an inherited geometry
   defect.
+
+## Simplification folded noisy relief, so meshes stayed dense (2026-11-14)
+- Image-only props carried 6,000-26,000 triangles and folded faces. The cause was not the
+  visual hull: its dense surface had 1 fold on the hair dryer. Painted-shading relief added the
+  folds (149), and those cluster at view seams about 3x more than chance, where two views'
+  relief meet. Blender's Decimate has no fold-over check, so each reduction created more folds
+  and the review rolled it back until the fold rate fell under 10 per 1,000.
+- Fixes, all general: (1) simplification uses a quadric reducer that rejects collapses which
+  flip a neighbour (pyfqmr), with Blender as fallback; (2) when a reduction flattens a measured
+  feature, lock that feature's triangles and retry the same ratio instead of keeping the whole
+  mesh dense; (3) relief_last keeps relief deeper than the screen tolerance in the shape (the
+  game-asset rule) and bakes the rest to the normal map, with the depth gate itself blurred:
+  a gate that jumps within a voxel leaves cliffs that mesh as folds (744 vs 80 on the dryer).
+- Rule: count folds on the dense surface before blaming the simplifier, and test seam
+  hypotheses by measuring where the folds are (outline edges of two views at once).
