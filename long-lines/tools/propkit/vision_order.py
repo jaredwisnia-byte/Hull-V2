@@ -109,13 +109,27 @@ def generic_order(report, image, background, output, assembly, groups):
             Image.fromarray(np.uint8(holes)*255).save(source/f'h_{view}.png')
 
     front = image.crop(assembly['front']['box'])
-    # A hand-width for the entire consumer device produced miniature assets and
-    # excessive texel density. Three hand-widths is an explicit generic prior,
-    # still not a physical measurement or object classification.
-    scale = 3*sizing.facts()['hand_width']/1000/front.width
     side = image.crop(assembly['right']['box'])
-    dimensions = (front.width*scale, front.height*scale,
-                  front.height*scale*side.width/side.height)
+    depth_px = front.height*side.width/side.height
+    # Absolute scale is not observable from one sheet. When the sheet names an
+    # object the sizing manual knows (file name first, then printed text), fit
+    # the drawing inside that object's envelope. Otherwise fall back to the
+    # three-hand-width prior and ask for review instead of claiming a size.
+    stem = Path(report['image']).stem
+    identity = (sizing.identify([stem])
+                or sizing.identify([l.get('text', '') for l in report.get('labels', [])]))
+    if identity:
+        fit = sizing.fit_scale(identity['category'], front.width, front.height, depth_px)
+        scale = fit['mm_per_px']/1000
+        category = identity['category']
+        scale_note = ("Scale fitted to the sizing-manual '%s' envelope (matched '%s' in %r); "
+                      "an estimate, not a measurement." % (category, identity['matched'], identity['source']))
+    else:
+        fit = None
+        scale = 3*sizing.facts()['hand_width']/1000/front.width
+        category = 'appliance'
+        scale_note = 'Width estimated as three hand-widths; not measured. No sizing-manual envelope matched.'
+    dimensions = (front.width*scale, front.height*scale, depth_px*scale)
     standards = json.loads((Path(__file__).resolve().parents[2]
                             /'factory/standards.json').read_text())
     size_class = next((name for name, rule in standards['size_classes'].items()
@@ -125,7 +139,7 @@ def generic_order(report, image, background, output, assembly, groups):
                   and region['view'] != 'perspective']
     asset = 'vision_' + __import__('re').sub('[^a-z0-9]+', '_',
                                             Path(report['image']).stem.lower()).strip('_')
-    order = {'name': asset, 'category': 'appliance', 'line': 'hull',
+    order = {'name': asset, 'category': category, 'line': 'hull',
              'status': 'pending', 'class': size_class, 'tex': 2048,
              'views_folder': str(source), 'views': list(assembly),
              'height_m': front.height*scale, 'budget': 'screen', 'rough': .65,
@@ -134,12 +148,17 @@ def generic_order(report, image, background, output, assembly, groups):
              'build_scope': 'outer_body_only',
              'unresolved_component_regions': unresolved,
              'source': report['image'],
-             'assumptions': ['Width estimated as three hand-widths; not measured.',
+             'size_source': {'identity': identity, 'fit': fit,
+                             'dimensions_mm': [round(d*1000) for d in dimensions]},
+             'assumptions': [scale_note,
                              'Single observed body only; companion parts are unresolved.']}
+    if identity is None or fit['conflict']:
+        order['needs_size_review'] = True
     (output/'work-order.json').write_text(json.dumps(order, indent=2))
     (output/'vision-report.json').write_text(json.dumps({
         'mode': 'generic_outer_body', 'image_only': True, 'runtime_llm': False,
-        'scale_m_per_pixel': scale, 'unresolved_component_groups': sorted(groups),
+        'scale_m_per_pixel': scale, 'scale_source': scale_note,
+        'unresolved_component_groups': sorted(groups),
         'unresolved_component_regions': unresolved,
         'records': {'assembly': {'views': {view: region['id']
                                            for view, region in assembly.items()}}}

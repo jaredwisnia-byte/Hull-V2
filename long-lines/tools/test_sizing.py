@@ -66,6 +66,27 @@ def test_envelopes():
     assert sizing.envelope("unknown_category", 9, 9, 9) == []
 
 
+def test_identify_from_sheet_names():
+    assert sizing.identify(["003_typewriter"])["category"] == "typewriter"
+    assert sizing.identify(["002_cassette_recorder"])["category"] == "cassette_recorder"
+    assert sizing.identify(["TYPE: CASSETTE RECORDER"])["category"] == "cassette_recorder"
+    assert sizing.identify(["wall_telephone_v2"])["category"] == "wall_telephone"   # longest match wins
+    assert sizing.identify(["005_hairdryer"])["category"] == "hair_dryer"           # alias
+    assert sizing.identify(["MADE IN CANADA"]) is None                             # 'can' is a whole word only
+    assert sizing.identify(["mystery_gadget"]) is None
+
+
+def test_fit_scale_lands_inside_envelope():
+    # The typewriter sheet's front (W x H) and implied depth in pixels.
+    fit = sizing.fit_scale("typewriter", 600, 300, 587)
+    s = fit["mm_per_px"] / 1000
+    assert not fit["conflict"]
+    assert sizing.envelope("typewriter", 600 * s, 587 * s, 300 * s) == []
+    # A drawing far too flat for a stand mixer cannot fit: flag it, still return a scale.
+    bad = sizing.fit_scale("stand_mixer", 1000, 50, 100)
+    assert bad["conflict"] and bad["mm_per_px"] > 0
+
+
 if __name__ == "__main__":
     for name, fn in list(globals().items()):
         if name.startswith("test_"):

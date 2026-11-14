@@ -637,6 +637,55 @@
     320
    ],
    "_why": "1970s rotary wall set (Bell 554 type): body about 140 mm (5.5 in) wide. One ITT 554 listing gives 5.5 x 12 x 5.25 in with the handset (12 in read as the height); drawings scaled by the body width come out nearer 240 mm, so the height range is wide"
+  },
+  "toaster": {
+   "aliases": ["pop up toaster"],
+   "width": [240, 390],
+   "depth": [120, 230],
+   "height": [170, 240],
+   "_why": "1960s-70s pop-up toaster: two-slice about 28 x 17 x 20 cm; long-slot models about 38 x 14 x 20 cm. Slots stay about 140 mm long for a slice of bread"
+  },
+  "cassette_recorder": {
+   "aliases": ["cassette player", "tape recorder"],
+   "width": [200, 320],
+   "depth": [50, 110],
+   "height": [110, 290],
+   "_why": "1970s portable mono cassette recorder: about 23-28 cm wide and 6-9 cm deep; the height runs from about 13 cm (handle folded) to 27 cm (handle raised)"
+  },
+  "typewriter": {
+   "aliases": ["portable typewriter"],
+   "width": [300, 500],
+   "depth": [280, 420],
+   "height": [100, 270],
+   "_why": "1960s-70s portable to office manual typewriter: carriage 30-48 cm wide; height 10 cm (portable) to 25 cm with the return lever"
+  },
+  "instant_camera": {
+   "aliases": ["land camera", "folding camera", "bellows camera"],
+   "width": [110, 210],
+   "depth": [80, 250],
+   "height": [110, 230],
+   "_why": "1960s-70s folding pack-film camera: closed about 15 x 7 x 18 cm (w x d x h); the bellows extends the depth to about 23 cm"
+  },
+  "hair_dryer": {
+   "aliases": ["hairdryer", "blow dryer"],
+   "width": [60, 120],
+   "depth": [150, 300],
+   "height": [170, 300],
+   "_why": "1970s pistol-grip hand dryer seen from the nozzle: barrel 7-10 cm across and 18-28 cm long; barrel plus handle 18-28 cm tall"
+  },
+  "alarm_clock": {
+   "aliases": ["clock", "bedside clock"],
+   "width": [90, 250],
+   "depth": [45, 130],
+   "height": [90, 230],
+   "_why": "1960s-70s bedside clock, wind-up twin-bell (about 11 x 6 x 17 cm with bells) to electric flip clock (about 20 x 10 x 11 cm)"
+  },
+  "stand_mixer": {
+   "aliases": ["kitchen mixer", "food mixer"],
+   "width": [180, 300],
+   "depth": [240, 420],
+   "height": [280, 420],
+   "_why": "1960s-70s tilt-head or bowl-lift stand mixer: about 22 cm across the front, 35 cm deep and 35 cm tall with the head down"
   }
  },
  "assembly_rules": [

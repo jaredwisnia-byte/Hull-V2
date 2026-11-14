@@ -73,6 +73,14 @@ The build report lists every renamed part with the reason (`was`, `because`), an
 can be formulas too (a dishwasher is no taller than the counter). Intake adds a "check size" note to
 the order when the manifest's dimensions fall outside, and the build reports `size_warnings`.
 
+Image-only sheets have no measured scale. The automatic intake (`propkit/vision_order.py`) looks for
+an envelope named by the sheet: its file name first (`003_typewriter.png`), then its printed text.
+A key or one of its `aliases` matches when all its words appear; the longest match wins.
+`sizing.fit_scale` then picks the scale that puts the drawn width, height and depth inside that
+envelope. If the drawing's proportions can't fit, or no envelope matches (the old three-hand-width
+prior is used), the order gets `needs_size_review`. To size a new kind of object, add its envelope
+here; don't change the code.
+
 ## Adding things
 
 - **New kind of object:** add its envelope, and if it's an appliance add it to `appliance_types`.

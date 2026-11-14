@@ -92,14 +92,22 @@ class VisionTests(unittest.TestCase):
                      ('front','back','left','right','top'),boxes))]
         regions.append({'id':5,'part':'knob','view':None,'box':[220,200,270,250]})
         with tempfile.TemporaryDirectory() as folder:
-            order=generate({'image':'radio.png','regions':regions,'compact_parts':{}},
+            order=generate({'image':'gadget.png','regions':regions,'compact_parts':{}},
                            image,np.array([20,20,20]),folder)
             self.assertEqual(order['line'],'hull')
             self.assertEqual(len(order['views']),5)
             self.assertGreater(order['height_m'], .2)
             self.assertEqual(order['class'],'medium')
+            self.assertTrue(order['needs_size_review'])     # no envelope named: prior only
             evidence=json.loads((__import__('pathlib').Path(folder)/'vision-report.json').read_text())
             self.assertEqual(evidence['unresolved_component_groups'],['knob'])
+        with tempfile.TemporaryDirectory() as folder:
+            order=generate({'image':'004_instant_camera.png','regions':regions,'compact_parts':{}},
+                           image,np.array([20,20,20]),folder)
+            self.assertEqual(order['category'],'instant_camera')
+            self.assertNotIn('needs_size_review',order)
+            w,h,d=order['size_source']['dimensions_mm']
+            self.assertTrue(110<=w<=210 and 110<=h<=230 and 80<=d<=250)
 
 
 if __name__=='__main__':

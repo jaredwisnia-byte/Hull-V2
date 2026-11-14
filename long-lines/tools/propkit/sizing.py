@@ -4,6 +4,7 @@
   Same shape as the old parts_catalog.json, plus the formula behind each number.
 - place(): does a part of this kind make sense where it was found? If not, what is it?
 - envelope(): is an object of this category a believable size?
+- identify() / fit_scale(): which envelope a sheet names, and the scale that fits it.
 
 Pure Python: usable from Blender, the factory and plain tests.
     python3 tools/propkit/sizing.py --catalogue   rewrite factory/parts_catalog.json
@@ -164,6 +165,59 @@ def envelope(category, width_m=None, depth_m=None, height_m=None):
         if not lo <= v <= hi:
             out.append("%s %.0f mm is outside %.0f-%.0f mm for a %s" % (dim, v, lo, hi, category))
     return out
+
+
+def _words(text):
+    return [w for w in "".join(c if c.isalnum() else " " for c in str(text).lower()).split() if w]
+
+
+def identify(names):
+    """The envelope category a sheet names, or None.
+
+    `names` are strings that come with the sheet (file name, OCR text). A category matches when
+    every word of its key or one of its `aliases` appears in the same string; the longest match
+    wins, so "cassette recorder" beats "recorder". Nothing is guessed from the picture.
+    """
+    best = None
+    for key, env in manual()["envelopes"].items():
+        if key.startswith("_") or not isinstance(env, dict):
+            continue
+        for alias in [key] + list(env.get("aliases", [])):
+            need = _words(alias)
+            if not need:
+                continue
+            for name in names:
+                have = set(_words(name))
+                if all(w in have for w in need) and (best is None or len(need) > best[0]):
+                    best = (len(need), key, alias, name)
+    return {"category": best[1], "matched": best[2], "source": best[3]} if best else None
+
+
+def fit_scale(category, width_px=None, height_px=None, depth_px=None):
+    """Millimetres per pixel that puts a drawing inside its category's envelope.
+
+    Each measured dimension allows a band of scales (envelope low/high over pixels). Where the
+    bands overlap, the geometric middle of the overlap is used; where they don't, the drawing's
+    proportions disagree with the envelope, so the scale that best fits all the envelope middles
+    is used and `conflict` is set for review.
+    """
+    env = manual()["envelopes"][category]
+    bands = []
+    for dim, px in (("width", width_px), ("height", height_px), ("depth", depth_px)):
+        if px and dim in env:
+            lo, hi = (mm(x) for x in env[dim])
+            bands.append((dim, lo / px, hi / px))
+    if not bands:
+        raise ValueError("sizing manual: envelope '%s' has no usable dimension" % category)
+    a, b = max(x[1] for x in bands), min(x[2] for x in bands)
+    if a <= b:
+        return {"mm_per_px": (a * b) ** 0.5, "conflict": False}
+    mids = [(lo * hi) ** 0.5 for _, lo, hi in bands]
+    product = 1.0
+    for m in mids:
+        product *= m
+    return {"mm_per_px": product ** (1.0 / len(mids)), "conflict": True,
+            "bands": {d: [round(lo, 4), round(hi, 4)] for d, lo, hi in bands}}
 
 
 def write_catalogue(path=None):
