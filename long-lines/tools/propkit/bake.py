@@ -78,12 +78,17 @@ def fit_texture(me, tex):
                                                                     for v in me.vertices) for i in range(3)]
     cls = next((k for k, v in STANDARDS["size_classes"].items() if max(
         dims or [0]) <= v["max_dim_m"]), "building")
-    lo_density = STANDARDS["size_classes"][cls].get("texel_density_px_per_m",
-                                                    STANDARDS["minimum_acceptable"]["texel_density_px_per_m"])[0]
+    lo_density, hi_density = STANDARDS["size_classes"][cls].get(
+        "texel_density_px_per_m", STANDARDS["minimum_acceptable"]["texel_density_px_per_m"])
     notes = []
     while area > 0 and uv_area > 0 and tex * (uv_area / area) ** 0.5 < lo_density * 1.1 and tex < 2048:
         tex *= 2
         notes.append("texture raised to %d for texel density" % tex)
+    # A small object with a large requested texture overshoots the ceiling just as surely;
+    # halve until it fits (halving keeps density at or above half the ceiling, far above the floor).
+    while area > 0 and uv_area > 0 and tex * (uv_area / area) ** 0.5 > hi_density and tex > 256:
+        tex //= 2
+        notes.append("texture lowered to %d for texel density" % tex)
     return tex, notes
 
 
