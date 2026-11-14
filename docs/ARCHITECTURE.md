@@ -19,7 +19,8 @@ surface and simplify it. The drawing is the same for every output; only the last
    - `engineering`: t = 0.05 mm, exact surfaces, all features modelled.
    - `game_hero`: viewing distance 0.5 m. `game_prop`: 2 m (default). `game_background`: 10 m.
    - Or `{"distance_m": d}` or `{"budget": n_triangles}` (raise t until the budget is met).
-   - Game tolerance t = d x 0.00097 rad (60 deg vertical FOV, 1080 lines; to be confirmed by Jared).
+   - Game tolerance t = d x pixel angle; default 0.00097 rad (60 deg vertical FOV, 1080 lines).
+     The profile takes `fov_deg` and `lines` so a known target camera replaces the default.
 5. **Tessellation per part**: a round part of radius r becomes the smallest n-sided prism with
    r(1 - cos(pi/n)) <= t, i.e. n = ceil(pi / arccos(1 - t/r)). A feature that stands out from its
    part by less than t, or is narrower than 2t, is texture + normal map only. Parts are welded at
@@ -131,3 +132,17 @@ at `game_background` (t = 9.7 mm) the barrel is about 5 sides and the switch is 
 **Why it fixes today's defects:** no shared grid (no folds or slivers where carving fields meet),
 no simplification of a blob (thin parts kept, sides chosen deliberately), one source for mesh,
 STEP and drawing, and per-part QA.
+
+## Decisions (2026-11-14)
+
+Made by Claude at Jared's request ("do it for me"); Jared can overrule any of them.
+
+1. **The part model is the core of Hull.** The voxel hull is kept only as the per-part fallback for
+   organic shapes.
+2. **Profiles:** `engineering` (t = 0.05 mm), `game_hero` (0.5 m), `game_prop` (2 m, **default**),
+   `game_background` (10 m), plus `{"distance_m": d}` or `{"budget": n_triangles}`.
+3. **Screen assumption:** 60 deg vertical field of view, 1080 lines (0.97 mrad per pixel) is the
+   default, exposed as `fov_deg` and `lines` on the profile. Higher resolutions only make t smaller,
+   so the default never produces a coarser mesh than a 1080-line screen needs.
+4. **Shading of game meshes:** smooth across each exact (B-rep) face of a part; hard edges at B-rep edges whose faces meet at more than 30 degrees, at part seams and around features. Never a fixed angle between mesh facets (a 7-sided handle has 51 degrees between facets and must still read round).
+5. **Voxel fold fixes are paused** until migration step 4; step 4 removes their cause.

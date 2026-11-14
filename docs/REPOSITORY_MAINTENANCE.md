@@ -118,7 +118,12 @@ branch `claude/docs-layout`, to merge into `main` once the run ends.
 3. Update paths in the Codex orders and in `architecture.json` (`human_doc`, `branch`).
 4. Review Codex's `codex/architecture` work, merge it into `main` after its gates, then
    delete the branch (tag it first if anything is not merged).
-5. Decide `codex/read-only-memory-inventory-20261114`: merge, archive as a tag, or delete.
+5. ~~Decide `codex/read-only-memory-inventory-20261114`~~ — done 2026-11-14: archived as
+   `archive/codex/read-only-memory-inventory-20261114` and deleted, not merged. It was cut 62
+   commits behind `main` and conflicts with main's checkpoint locking (`eae3454`) in
+   `build_memory.py`; process tooling is frozen by `AGENTS.md` unless a change improves models.
+   The four Dependabot branches (actions/checkout 7.0.1, setup-python 7.1.0, upload-artifact 7.0.2,
+   vtk 9.7.2) were merged as PRs #22-#25 and their branches deleted.
 
 ### Keeping it tidy
 
