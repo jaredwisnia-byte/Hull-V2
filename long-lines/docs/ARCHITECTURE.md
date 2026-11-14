@@ -72,3 +72,62 @@ dependency.
 
 Known open items at the start: measured roundness adds folds on the hair dryer (dense 49 -> 238;
 stop fixing in the voxel path, step 4 removes the cause).
+
+## How QA compares the result with the sheet (state on 2026-11-14)
+
+1. **Old outline check** (`qa.py`): rays cast from the six orthographic directions give the mesh's
+   silhouettes; each is stretched with the painted view's outline to one box and compared (IoU).
+   Stretching hides proportion errors. Top/bottom rasters now use the third-angle frame.
+2. **Against the drawing, in mm** (`drawing_qa.against_drawing`): mesh triangles projected along
+   each axis at 0.5 mm per pixel, compared with the drawn profile with no rescaling. Fails if IoU <
+   0.90, the 95th-percentile outline distance > 3% of the object, or an overall size is off by more
+   than max(2 mm, 3%). Overlays `drawing-match-<view>.png`. Aligned at the mesh's bounding-box
+   corner, which a thin outlier (a cable) can shift; Codex Order 3 registers on the main body.
+3. **Against the sheet's pictorial view** (`drawing_qa.against_pictorial`), never used to build:
+   - outline: the mesh rotated over camera angles from above (azimuth 15 degree steps, elevation
+     5-60, then refined), fitted to the picture's outline box; best IoU must reach 0.85.
+   - shading: at that pose, one light fitted to the painting from the mesh's own normals
+     (brightness = n . l + c, least squares); R^2 must reach 0.25 (square vs round dryer handle:
+     0.21 vs 0.31).
+   Limits: assumes an orthographic picture; paint bands lower R^2; no colour/texture comparison; the
+   CAD solid and the sheet's detail views are not compared yet; thresholds are provisional.
+
+## The part model (design for steps 3-4)
+
+The middle of the pipeline becomes a list of named parts, each an exact CAD solid, replacing the
+single shared voxel field.
+
+**Each part holds**
+- shape: construction (profiles extruded and intersected / loft through measured sections /
+  revolve) and its measured roundness exponent per axis;
+- features attached to it: bumps (sized from the view that faces them), holes, bosses;
+- attachment: which part it sits on and where (contact, seating);
+- paint ownership: which pixels of which views belong to it (for projection);
+- fine detail: markings, grilles, numerals kept as texture and normal-map sources, not carved.
+
+**Where parts come from:** the drawing (abrupt section changes along an axis split parts; round
+end views; measured roundness), and later the part graph that matches detail views to regions,
+accepting a part only when two or more views agree.
+
+**From parts to a mesh:** fidelity sets tolerance t; each part is tessellated to t on its own
+(round surfaces: fewest sides with r(1 - cos(pi/n)) <= t; flat faces: fewest polygons; features
+under t become texture and normal map); parts are welded at seams; paint is projected onto the
+chosen surface and dropped detail baked from the exact parts. STEP and the engineering drawing come
+from the same parts, so they cannot disagree with the mesh. QA runs per part as well as whole.
+
+**Worked example: hair dryer as a room prop (t = 1.9 mm)**
+
+| Part | Built as | Game mesh |
+|---|---|---|
+| Barrel and nozzle | Loft through superellipse sections along its axis (n = 3.5) | 12 sides |
+| Handle | Loft along its height (n = 2.6) | 7 sides |
+| Switch | Box feature, 5 mm wide, 4 mm proud | Modelled (4 mm > t) |
+| Grille and vents | Painted detail on the barrel | Normal map |
+| Cord | Swept along its curve | Few-sided tube |
+
+At `engineering` the same parts export as exact surfaces in STEP (grille possibly as real slots);
+at `game_background` (t = 9.7 mm) the barrel is about 5 sides and the switch is texture.
+
+**Why it fixes today's defects:** no shared grid (no folds or slivers where carving fields meet),
+no simplification of a blob (thin parts kept, sides chosen deliberately), one source for mesh,
+STEP and drawing, and per-part QA.
