@@ -1,5 +1,10 @@
 # Hull system architecture
 
+> **Superseded.** This 2026-11-13 proposal is kept for history. The agreed architecture is
+> [long-lines/docs/ARCHITECTURE.md](../long-lines/docs/ARCHITECTURE.md)
+> (machine-readable: [architecture.json](../long-lines/docs/architecture.json)). Where they
+> disagree, ARCHITECTURE.md wins.
+
 Status: proposed integration contract, audited against the working tree on 2026-11-13. This document describes the existing software and the work needed to make its stages agree. It does not certify that arbitrary images already produce correct models.
 
 ## Product boundary

@@ -10,6 +10,24 @@ orthographic views, parts sheets, inferred sections, local relief hypotheses,
 texture ownership, inspection drawings and optional CAD surface exchange.
 **A passing image fit does not establish physical depth or universal recognition.**
 
+## Read first (people and agents)
+
+| What | Where |
+|---|---|
+| Directives: current priority, how to judge a change | [AGENTS.md](AGENTS.md), [CONTRIBUTING.md](CONTRIBUTING.md) |
+| **Architecture (agreed 2026-11-14)**: pipeline, rules R1-R8, part model, fidelity, Blender replacement | [ARCHITECTURE.md](long-lines/docs/ARCHITECTURE.md) |
+| Same, machine-readable (for agents) | [architecture.json](long-lines/docs/architecture.json) |
+| What went wrong before and why | [LESSONS.md](long-lines/docs/LESSONS.md) |
+| Reconstruction background | [KNOWLEDGE_FILE.md](KNOWLEDGE_FILE.md) |
+| Factory manual and the drawing stage | [factory/README.md](long-lines/factory/README.md), [DRAWING.md](long-lines/factory/DRAWING.md) |
+| Status | [STATUS.md](long-lines/docs/STATUS.md) |
+
+`docs/SYSTEM_ARCHITECTURE.md` is an older proposal (2026-11-13), superseded by the architecture above.
+
+**Branches.** `main` is the current, tested code. Work happens on short-lived branches
+merged into `main`. Retired branches are kept as `archive/...` tags (for example
+`archive/main-2026-11-09`, the old main), not as branches.
+
 ## Start here
 
 1. Use Python **3.13** and Blender **5.2.3** for the qualified profile.
