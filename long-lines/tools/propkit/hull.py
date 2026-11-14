@@ -236,7 +236,7 @@ HULL_REPORT = {}     # what the last hull_prop call carved with blades
 def hull_prop(views, height, res=110, smooth_iters=4, decimate=0.35, rough=0.5, name="hull",
               convex=False, paint_only=(), features=True, sil_override=None, depth_m=None, grime=0.25,
               paint=True, width_m=None, blades=False, voxel_hook=None, mesh_hook=None, revolve=True, blur=0.7,
-              field=None, sections=None, field_hook=None, section_bands=None):
+              field=None, sections=None, field_hook=None, section_bands=None, relief_last=False):
     """convex: fill each outline to its convex shape (boxy objects; dark areas can't
     punch holes). paint_only: views used for texture but not trusted to carve (e.g. a
     dark back panel on a dark sheet). width_m: the real width (views painted out of
@@ -329,14 +329,23 @@ def hull_prop(views, height, res=110, smooth_iters=4, decimate=0.35, rough=0.5, 
             G = ndimage.gaussian_filter((G - np.sign(G) * 0.5) * vox, 1.0)
             zone = ndimage.binary_dilation(removed, iterations=3)
             F = np.where(zone, np.maximum(F, G), F)
+        detail_F = None
         if field_hook is not None:
-            F = field_hook(F)
+            if relief_last:
+                # Relief as the last step: the shape is the plain hull; the painted detail
+                # is meshed separately and only ever reaches the asset as a baked normal map.
+                detail_F = field_hook(F)
+            else:
+                F = field_hook(F)
         HULL_REPORT["field"] = {"mode": "projected_signed_distance_csg", "isovalue": 0.,
                                 "boundary_padding": "metric half-voxel exterior cells",
-                                "interior_detail": field_hook is not None,
+                                "interior_detail": field_hook is not None and not relief_last,
+                                "relief_stage": "normal_map_only" if relief_last else "geometry",
                                 "removed_voxels": int(removed.sum()), "vox_m": round(float(vox), 6)}
         vol = pad_field(F, (W, D, H))
         verts, faces, _, _ = marching_cubes(vol, 0.0)
+        if detail_F is not None:
+            dverts, dfaces, _, _ = marching_cubes(pad_field(detail_F, (W, D, H)), 0.0)
     else:
         if field_hook is not None:
             raise ValueError(
@@ -346,26 +355,42 @@ def hull_prop(views, height, res=110, smooth_iters=4, decimate=0.35, rough=0.5, 
         vol = np.pad(keep.astype(np.float32), 1)
         vol = ndimage.gaussian_filter(vol, blur)
         verts, faces, _, _ = marching_cubes(vol, 0.5)
-    verts -= 1.0
     HULL_REPORT.setdefault("timing", {})[
         "field_and_mesh_s"] = round(_time.time() - _t, 2)
     sx, sy, sz = W / nx, D / ny, H / nz
-    bm = bmesh.new()
-    bv = [bm.verts.new(((vx + 0.5) * sx - W / 2, (vy + 0.5)
-                       * sy - D / 2, (vz + 0.5) * sz)) for vx, vy, vz in verts]
-    for a, b, c in faces:
-        try:
-            bm.faces.new((bv[a], bv[c], bv[b]))
-        except ValueError:
-            pass
-    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
-    me = bpy.data.meshes.new(name)
-    bm.to_mesh(me)
-    bm.free()
-    obj = link(bpy.data.objects.new(name, me))
+
+    def to_object(verts, faces, oname, register=True):
+        verts = verts - 1.0
+        bm = bmesh.new()
+        bv = [bm.verts.new(((vx + 0.5) * sx - W / 2, (vy + 0.5)
+                           * sy - D / 2, (vz + 0.5) * sz)) for vx, vy, vz in verts]
+        for a, b, c in faces:
+            try:
+                bm.faces.new((bv[a], bv[c], bv[b]))
+            except ValueError:
+                pass
+        bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+        me = bpy.data.meshes.new(oname)
+        bm.to_mesh(me)
+        bm.free()
+        new = bpy.data.objects.new(oname, me)
+        if not register:   # scratch object: kept out of the build's part list
+            bpy.context.scene.collection.objects.link(new)
+            return new
+        return link(new)
+    obj = to_object(verts, faces, name)
     import json
     obj['reconstruction_field'] = json.dumps(HULL_REPORT['field'])
-    if mesh_hook is not None:
+    if relief_last and field == "sdf" and field_hook is not None:
+        # The hook keeps a copy of the detailed mesh as the normal-bake source
+        # (surface_detail.capture_high); the plain hull goes on to simplification.
+        detailed = to_object(dverts, dfaces, name + "__detail_tmp", register=False)
+        if mesh_hook is not None:
+            mesh_hook(detailed)
+        if detailed.get('dense_source_name'):
+            obj['dense_source_name'] = detailed['dense_source_name']
+        bpy.data.objects.remove(detailed, do_unlink=True)
+    elif mesh_hook is not None:
         mesh_hook(obj)
     sm_mod = obj.modifiers.new("smooth", "SMOOTH")
     sm_mod.iterations = smooth_iters
