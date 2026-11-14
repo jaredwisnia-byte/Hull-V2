@@ -45,6 +45,21 @@ sections do not fit lines, arcs and superellipses within tolerance (sofa cushion
   table_leg_carved table_leg_guided wallphone_rotary`) **and** the seven image-only objects
   (`001_toaster ... 007_stand_mixer`). A change that makes any of them worse is not done.
 - QA thresholds are never loosened to make something pass.
+- **No new Blender dependencies.** New code (part model, tessellation, QA, export) is plain Python
+  (numpy, scipy, build123d/OpenCascade, trimesh, xatlas) and runs without Blender. Blender is being
+  replaced (see below); until each piece reaches parity it stays the default behind
+  `HULL_BACKEND=blender|python`.
+
+## Replacing Blender
+
+Blender currently provides mesh editing, simplification fallback, UV unwrapping, ray casts for QA,
+paint projection and normal baking, GLB export and turnaround renders. Each moves to Python behind
+`HULL_BACKEND`, in this order, each proven against Blender's output on the same inputs before it
+becomes the default: inventory -> mesh core -> GLB export -> QA -> UVs, projection and baking ->
+renders -> end-to-end `python` backend. Blender is then optional (renders only) and finally
+removable. Motivation: every test needs a Blender process (4-6 minutes a build), a hard-coded
+install, Blender's decimator and normal recalculation caused defects, and it is the only GPL
+dependency.
 
 ## Migration steps (do in order)
 
