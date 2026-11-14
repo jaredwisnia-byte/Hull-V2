@@ -43,6 +43,10 @@ must stay inactive. Include an object family not used to design the change.
 Inspect source views, source-derived construction plan, clay renders, textured
 renders, feature geometry, triangle counts and QA for every case. A pass on one
 object, or an improved image-fit score with worse clay geometry, is a rejection.
+Every comparison is only valid between reproducible builds: the same input
+built twice must give byte-identical GLBs (architecture rule R9). Run gates with
+reconstruction memory `off`, the default; a build that reports
+`reproducible: false` cannot be used as before or after evidence.
 Keep failed cases in the existing issue; do not open a new issue to relabel the
 same failure or promote a prototype because its unit tests pass.
 

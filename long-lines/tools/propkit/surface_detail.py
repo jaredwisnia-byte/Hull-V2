@@ -63,7 +63,7 @@ def chart_frame(view, dimensions):
 
 
 def analyse(views, dimensions, report, exclusions=(), silhouettes=None,
-            memory_mode='learning'):
+            memory_mode='off'):
     """Prepare pixel observations. Geometry is inferred after the base field exists.
 
     No circle recognition, primitive selection or fixed groove profiles run here.
@@ -97,6 +97,9 @@ def analyse(views, dimensions, report, exclusions=(), silhouettes=None,
                         'path': path, 'crop_box': box}
     report.update(features=[], views={}, method='continuous pixel shading/height inference',
                   reconstruction_memory_mode=memory_mode,
+                  # Learning reads a shared database that earlier builds changed, so
+                  # the same image can give a different mesh. Only 'off' is reproducible.
+                  reproducible=memory_mode == 'off',
                   physical_separation='physical ownership only; shading contours do not create parts',
                   dimensions_m=list(dimensions),
                   excluded_opening_pixels=excluded_opening_pixels,
@@ -125,7 +128,7 @@ def shading_view(root, view, plan, shape):
     diagnostics = {}
     from pathlib import Path
     memory_path = (Path(__file__).resolve().parents[3] / '.hull-memory' /
-                   'reconstruction.sqlite3' if plan.get('memory_mode', 'learning') == 'learning'
+                   'reconstruction.sqlite3' if plan.get('memory_mode', 'off') == 'learning'
                    else None)
     height, evidence = shading.reconstruct(
         observation['image'], mask, base, bound, diagnostics=diagnostics,memory_path=memory_path)

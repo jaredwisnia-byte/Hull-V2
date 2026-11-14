@@ -453,7 +453,7 @@ def run_line(order):
                 detail_plan = surface_detail.analyse(
                     geometry_views, (W_, D_, height), rrep,
                     silhouettes=hp.get('sil_override'),
-                    memory_mode=order.get('reconstruction_memory_mode', 'learning'))
+                    memory_mode=order.get('reconstruction_memory_mode', 'off'))
                 if order.get('_frozen_source_evidence') is not None:
                     detail_plan['frozen_source_evidence'] = order['_frozen_source_evidence']
                 else:

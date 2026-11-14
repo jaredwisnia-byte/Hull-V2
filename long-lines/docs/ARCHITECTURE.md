@@ -45,6 +45,11 @@ sections do not fit lines, arcs and superellipses within tolerance (sofa cushion
   table_leg_carved table_leg_guided wallphone_rotary`) **and** the seven image-only objects
   (`001_toaster ... 007_stand_mixer`). A change that makes any of them worse is not done.
 - QA thresholds are never loosened to make something pass.
+- **Same photo, same mesh (R9).** A build is a pure function of its input image, order and code
+  version: two builds of the same input give byte-identical GLBs. Nothing a previous build wrote
+  (learning memory, caches, `.hull-runs`) may change geometry. Reconstruction memory is `off` by
+  default; `learning` is for experiments only and its reports say `reproducible: false`. A
+  difference between repeat builds is a defect to fix at its cause, never a tolerance.
 - **No new Blender dependencies.** New code (part model, tessellation, QA, export) is plain Python
   (numpy, scipy, build123d/OpenCascade, trimesh, xatlas) and runs without Blender. Blender is being
   replaced (see below); until each piece reaches parity it stays the default behind

@@ -39,6 +39,21 @@ class SurfaceContracts(unittest.TestCase):
                                   'report': {'features': [], 'views': {}},
                                   'frozen_source_evidence': evidence[0]})
 
+    def test_default_build_is_reproducible_and_reads_no_shared_memory(self):
+        # The same photo must give the same mesh on every build. Shared learning
+        # memory changes between builds, so the default must not read it.
+        report = {}
+        plan = analyse({}, (1, 1, 1), report)
+        self.assertEqual(plan['memory_mode'], 'off')
+        self.assertTrue(report['reproducible'])
+        analyse({}, (1, 1, 1), report, memory_mode='learning')
+        self.assertFalse(report['reproducible'])
+        here = Path(__file__).resolve().parent
+        for name in ('factory.py', 'propkit/parts_layout.py'):
+            text = (here / name).read_text(encoding='utf-8')
+            self.assertNotIn("'reconstruction_memory_mode', 'learning'", text, name)
+            self.assertNotIn("memory_mode='learning'", text, name)
+
     def test_memory_off_mode_is_explicit_and_skips_shared_database(self):
         with self.assertRaisesRegex(ValueError, 'memory mode'):
             analyse({}, (1, 1, 1), {}, memory_mode='unknown')

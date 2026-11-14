@@ -13,7 +13,8 @@
     {"id": "R5", "rule": "QA thresholds are never loosened to make something pass."},
     {"id": "R6", "rule": "No new Blender dependencies. New code is plain Python (numpy, scipy, build123d/OpenCascade, trimesh, xatlas). Blender stays default behind HULL_BACKEND=blender|python until parity."},
     {"id": "R7", "rule": "No bug-fix loops: one hypothesis = one change = one test; stop at the order's attempt limit, revert uncommitted work, write a report."},
-    {"id": "R8", "rule": "Never kill processes by image name; stop only processes you started, by PID."}
+    {"id": "R8", "rule": "Never kill processes by image name; stop only processes you started, by PID."},
+    {"id": "R9", "rule": "Same photo, same mesh: a build is a pure function of input image, order and code version; repeat builds give byte-identical GLBs. Nothing a previous build wrote (learning memory, caches, .hull-runs) may change geometry. reconstruction_memory_mode defaults to off; learning is experiment-only and reports reproducible: false. A repeat-build difference is a defect, never a tolerance."}
   ],
   "pipeline": [
     {"stage": 1, "name": "intake", "status": "existing", "modules": ["sheet_blobs.py", "vision_order.py", "sizing.py"],
