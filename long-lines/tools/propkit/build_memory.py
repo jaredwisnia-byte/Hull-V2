@@ -4,11 +4,89 @@ An accepted numerical fit is never labelled verified physical geometry.
 """
 import hashlib
 import json
+from contextlib import closing
 from pathlib import Path
 import sqlite3
 import tempfile
 import time
 import numpy as np
+
+
+def read_only_retention_inventory(path, verify_hashes=False):
+    """Inspect an existing, quiet database without changing its directory.
+
+    SQLite's ordinary read-only WAL connection may create a shared-memory file.
+    An immutable connection cannot read a live WAL, so fail visibly when one has
+    content rather than reporting a stale checkpoint inventory as current.
+    """
+    path = Path(path).resolve()
+    if not path.is_file():
+        raise ValueError('Memory database does not exist')
+    wal = Path(str(path) + '-wal')
+    if wal.is_file() and wal.stat().st_size:
+        raise ValueError('Memory database has a nonempty WAL; quiet it before read-only inventory')
+    before = path.stat()
+    with closing(sqlite3.connect(path.as_uri() + '?immutable=1', uri=True)) as db:
+        db.execute('PRAGMA query_only=ON')
+        report = _retention_inventory(db, path, path.parent / 'patches', verify_hashes)
+        report['quick_check'] = db.execute('PRAGMA quick_check').fetchone()[0]
+    after = path.stat()
+    report['database_stable_during_scan'] = (
+        (before.st_size, before.st_mtime_ns) == (after.st_size, after.st_mtime_ns)
+        and (not wal.exists() or wal.stat().st_size == 0)
+    )
+    report['snapshot_consistent'] &= (
+        report['database_stable_during_scan'] and report['quick_check'] == 'ok'
+    )
+    return report
+
+
+def _retention_inventory(db, path, artifacts, verify_hashes):
+    """Collect checkpoint evidence from a supplied database connection."""
+    rows_before = db.execute(
+        'SELECT artifact,digest FROM patches WHERE artifact IS NOT NULL ORDER BY artifact'
+    ).fetchall()
+    referenced = {name: digest for name, digest in rows_before}
+    files = sorted(artifacts.glob('*.npz'))
+    missing_referenced = sorted(set(referenced) - {item.name for item in files})
+    groups = {'referenced': [], 'unreferenced': []}
+    errors = []
+    for item in files:
+        try:
+            stat_before = item.stat()
+            entry = {'name': item.name, 'bytes': stat_before.st_size}
+            if verify_hashes:
+                digest = hashlib.sha256()
+                with item.open('rb') as stream:
+                    for chunk in iter(lambda: stream.read(1024 * 1024), b''):
+                        digest.update(chunk)
+                entry['sha256'] = digest.hexdigest()
+                stat_after = item.stat()
+                entry['stable_during_hash'] = (
+                    stat_before.st_size == stat_after.st_size
+                    and stat_before.st_mtime_ns == stat_after.st_mtime_ns
+                )
+                if item.name in referenced:
+                    entry['matches_record'] = entry['sha256'] == referenced[item.name]
+            group = 'referenced' if item.name in referenced else 'unreferenced'
+            groups[group].append(entry)
+        except OSError as error:
+            errors.append({'name': item.name, 'error': str(error)})
+    rows_after = db.execute(
+        'SELECT artifact,digest FROM patches WHERE artifact IS NOT NULL ORDER BY artifact'
+    ).fetchall()
+    return {
+        'database': str(path),
+        'snapshot_consistent': rows_before == rows_after and not errors
+                               and not missing_referenced,
+        'collection_authorized': False,
+        'scan_errors': errors,
+        'missing_referenced': missing_referenced,
+        'counts': {kind: len(items) for kind, items in groups.items()},
+        'bytes': {kind: sum(item['bytes'] for item in items)
+                  for kind, items in groups.items()},
+        'files': groups,
+    }
 
 
 def fingerprint(*values):
@@ -125,47 +203,4 @@ class BuildMemory:
         This is a live observation, not permission to collect an orphan: another
         process may be writing a checkpoint while the directory is scanned.
         """
-        rows_before = self.db.execute(
-            'SELECT artifact,digest FROM patches WHERE artifact IS NOT NULL ORDER BY artifact'
-        ).fetchall()
-        referenced = {name: digest for name, digest in rows_before}
-        files = sorted(self.artifacts.glob('*.npz'))
-        missing_referenced = sorted(set(referenced) - {path.name for path in files})
-        groups = {'referenced': [], 'unreferenced': []}
-        errors = []
-        for path in files:
-            try:
-                stat_before = path.stat()
-                entry = {'name': path.name, 'bytes': stat_before.st_size}
-                if verify_hashes:
-                    digest = hashlib.sha256()
-                    with path.open('rb') as stream:
-                        for chunk in iter(lambda: stream.read(1024 * 1024), b''):
-                            digest.update(chunk)
-                    entry['sha256'] = digest.hexdigest()
-                    stat_after = path.stat()
-                    entry['stable_during_hash'] = (
-                        stat_before.st_size == stat_after.st_size and
-                        stat_before.st_mtime_ns == stat_after.st_mtime_ns
-                    )
-                    if path.name in referenced:
-                        entry['matches_record'] = entry['sha256'] == referenced[path.name]
-                group = 'referenced' if path.name in referenced else 'unreferenced'
-                groups[group].append(entry)
-            except OSError as error:
-                errors.append({'name': path.name, 'error': str(error)})
-        rows_after = self.db.execute(
-            'SELECT artifact,digest FROM patches WHERE artifact IS NOT NULL ORDER BY artifact'
-        ).fetchall()
-        return {
-            'database': str(self.path),
-            'snapshot_consistent': rows_before == rows_after and not errors
-                                   and not missing_referenced,
-            'collection_authorized': False,
-            'scan_errors': errors,
-            'missing_referenced': missing_referenced,
-            'counts': {kind: len(items) for kind, items in groups.items()},
-            'bytes': {kind: sum(item['bytes'] for item in items)
-                      for kind, items in groups.items()},
-            'files': groups,
-        }
+        return _retention_inventory(self.db, self.path, self.artifacts, verify_hashes)

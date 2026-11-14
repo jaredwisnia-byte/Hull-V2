@@ -18,11 +18,14 @@ ROOT = Path(__file__).resolve().parents[2]
 class MaintenanceTests(unittest.TestCase):
     def test_memory_inventory_command_writes_report_without_collecting(self):
         with tempfile.TemporaryDirectory() as folder:
-            database = Path(folder) / 'memory.sqlite3'
+            store = Path(folder) / 'store'
+            database = store / 'memory.sqlite3'
             output = Path(folder) / 'inventory.json'
             with closing(BuildMemory(database)) as memory:
                 memory.save('key', 'v1', {'status': 'accepted'}, [1],
                             np.ones((2, 2)), np.zeros((2, 2)))
+            original = {str(path.relative_to(store)): (path.stat().st_size, path.stat().st_mtime_ns)
+                        for path in store.rglob('*') if path.is_file()}
             with patch.object(sys, 'argv', ['hull.py', 'memory-inventory',
                                             str(database), '--output', str(output),
                                             '--verify-hashes']):
@@ -30,7 +33,30 @@ class MaintenanceTests(unittest.TestCase):
             report = json.loads(output.read_text())
             self.assertEqual(report['counts']['referenced'], 1)
             self.assertTrue(report['files']['referenced'][0]['matches_record'])
-            self.assertEqual(len(list((Path(folder) / 'patches').glob('*.npz'))), 1)
+            self.assertEqual(report['quick_check'], 'ok')
+            self.assertTrue(report['database_stable_during_scan'])
+            self.assertEqual(original, {
+                str(path.relative_to(store)): (path.stat().st_size, path.stat().st_mtime_ns)
+                for path in store.rglob('*') if path.is_file()})
+
+    def test_memory_inventory_rejects_unread_wal_without_touching_store(self):
+        with tempfile.TemporaryDirectory() as folder:
+            store = Path(folder) / 'store'
+            database = store / 'memory.sqlite3'
+            output = Path(folder) / 'inventory.json'
+            with closing(BuildMemory(database)):
+                pass
+            wal = Path(str(database) + '-wal')
+            wal.write_bytes(b'uncheckpointed')
+            before = {str(path.relative_to(store)): path.read_bytes()
+                      for path in store.rglob('*') if path.is_file()}
+            with patch.object(sys, 'argv', ['hull.py', 'memory-inventory',
+                                            str(database), '--output', str(output)]):
+                self.assertEqual(m.main(ROOT), 1)
+            self.assertFalse(output.exists())
+            self.assertEqual(before, {
+                str(path.relative_to(store)): path.read_bytes()
+                for path in store.rglob('*') if path.is_file()})
 
     def test_manifest_has_explicit_native_and_core_coverage(self):
         plan = m.load_plan(ROOT)

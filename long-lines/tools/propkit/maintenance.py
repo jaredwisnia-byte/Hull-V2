@@ -514,9 +514,8 @@ def main(root):
         elif args.command == "memory-inventory":
             if not args.database.is_file():
                 raise ValueError("Memory database does not exist")
-            from .build_memory import BuildMemory
-            with closing(BuildMemory(args.database)) as memory:
-                result = memory.retention_inventory(args.verify_hashes)
+            from .build_memory import read_only_retention_inventory
+            result = read_only_retention_inventory(args.database, args.verify_hashes)
             warehouse.atomic_json(args.output, result)
         elif args.command == "promote":
             result = warehouse.promote(
