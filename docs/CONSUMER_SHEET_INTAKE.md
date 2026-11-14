@@ -253,8 +253,8 @@ missing-depth failures, and mesh signatures. The memory-disabled power-0.5
 candidate produced the same result, so it gave no measurable typewriter gain
 with a stable source cohort. This isolates the prior changing feature sets
 to the memory-enabled route in these runs; it does not establish that memory
-is the sole possible source of nondeterminism. Production still uses a shared
-mutable memory database. Retry review must compare proposals against the
+is the sole possible source of nondeterminism. (2026-11-14: memory is now `off` by
+default; two memory-off instant-camera builds gave byte-identical GLBs; see rule R9.) Retry review must compare proposals against the
 same source evidence before treating changed feature IDs as gained or lost
 geometry. The diagnostic wrapper and three held runs remain in the local
 `fusion-stage-isolation` area; the candidate code was removed again.

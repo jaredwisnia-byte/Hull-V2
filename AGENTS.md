@@ -17,7 +17,10 @@ drawn set and comparing the contact sheet before and after:
 
 and by building the seven image-only objects (`001_toaster` ... `007_stand_mixer`
 in `Hull-dataset-100/assortment`). `docs/renders/line.png` is the before/after
-evidence; a change that makes any of these worse is not done. Pick one problem, finish it, merge it. Do not open a new
+evidence; a change that makes any of these worse is not done. The same photo must
+give the same mesh on every build (rule R9 in `docs/ARCHITECTURE.md`): a difference
+between two builds of the same input is a defect to fix, never noise to tolerate.
+Pick one problem, finish it, merge it. Do not open a new
 branch per session.
 
 Read `CONTRIBUTING.md` and `KNOWLEDGE_FILE.md` before changing the factory. The
