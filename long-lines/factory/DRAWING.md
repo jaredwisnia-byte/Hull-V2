@@ -23,6 +23,35 @@ raw paintings' outlines any more.
 5. **Writes the drawing**: `<name>.dxf` (AutoCAD, mm, layers OUTLINE/CENTER/DIMENSIONS/NOTES/
    FEATURES/BORDER, associative dimensions, title block), `<name>_drawing.png`, `drawing.json`.
 
+## Measured roundness (`tools/propkit/rounding.py`)
+
+Two outlines that share an axis fix each slice across it only as rectangles (one per pair of
+outline spans). Each rectangle is given the superellipse |u/a|^n + |v/b|^n <= 1 that fills it:
+n = 2 is an ellipse, larger n squarer, n = infinity the rectangle (the plain visual hull). One n
+per **part**: connected runs of rectangles along each axis, split where the section changes
+abruptly (a handle meeting a barrel). Rounding never changes any view's outline: a corner a view
+needs is put back.
+
+n is measured, never chosen by object type:
+- **Pictorial view:** the camera is solved once from the unrounded shape and held fixed. For each
+  part, the exponent whose outline best matches the picture where that part forms the outline
+  wins, if it beats the square section by more than the measurement resolution. (A square
+  section seen at angle t spans w(|cos t| + |sin t|); a round one spans w.)
+- **Painted shading** (second witness; used only without a pictorial view): edge-to-middle
+  brightness under light from the viewer follows the cosine of the surface tilt, a known
+  function of n. Paint bands make it unreliable on most sheets, which is why it is second.
+
+## Local features (`tools/propkit/features.py`)
+
+A bump one outline shows (a switch on a handle) would otherwise widen every rectangle at its
+height across the whole part. Along each part, a short run (at most 25% of the part, at most 30%
+of its section deep) where a section edge stands out from its running-median trend is a bump.
+Its width is measured in the painting of the view that **faces** it (looks along the bump's
+direction from the side it sticks out on), as the columns whose colour changes where the bump
+starts and stops (compared with the same columns just before and after it, so stripes and
+panels running along the part cancel). The bump is built only that wide in the mesh and in
+the CAD solid; with no distinct painted feature it keeps the full width and says so.
+
 ## How the build uses it (`tools/factory.py`, `tools/propkit/hull.py`)
 
 - The oriented views become the order's views (paint, relief and QA all see the same frame).
@@ -39,14 +68,22 @@ raw paintings' outlines any more.
   the object's size. Overlays `drawing-match-<view>.png` (red = drawn but missing, blue = extra).
 - **Against the sheet's pictorial (isometric) view:** intake now saves it
   (`p_pictorial_<id>.png`, order `reference_images`). The camera angle is searched (from above)
-  for the best outline match; IoU ≥ 0.82 passes. Overlay `pictorial-match-*.png`. The pictorial
+  for the best outline match; IoU ≥ 0.85 passes. Overlay `pictorial-match-*.png`. The pictorial
   view is never used to build, so it is an independent witness.
+- **Inside the outline:** at that camera, one light is fitted to the pictorial painting from the
+  mesh's own surface normals (brightness = n·l + c, linear least squares) and the share of the
+  painted brightness the geometry explains (R²) must reach the pass level. A boxed handle where
+  the picture shades smoothly explains less (square vs round dryer: 0.21 vs 0.31). Overlay
+  `shading-match-*.png` (painting left, fitted shading right).
 
 ## Engineering export (`tools/propkit/cad_model.py`)
 
 A CAD solid (OpenCascade via build123d) is built from the drawing the way a designer would:
-the front, side and top profiles are extruded and intersected, and round axes are lofted
-through ellipses. Exports: `<name>.step` (tooling), `<name>_cad.stl`, `<name>_cad_drawing.dxf/png`
+the front, side and top profiles are extruded and intersected, round end views are lofted
+through ellipses, measured round parts are lofted through superellipse sections at their own
+(smoothed) stations, and local features are cut to their measured width. Each replacement is
+accepted only if every view's outline stays within 0.3% and the overall size within 1 mm;
+otherwise the extrusion stands and the report says why. Exports: `<name>.step` (tooling), `<name>_cad.stl`, `<name>_cad_drawing.dxf/png`
 (hidden-line front/top/right views, isometric, hatched sections A-A and B-B, dimensions, volume,
 surface area, centre of mass, mass for a stated material), `<name>_cad.json`.
 

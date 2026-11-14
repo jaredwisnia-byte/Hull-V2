@@ -26,7 +26,7 @@ from scipy import ndimage
 
 DRAWING_IOU = 0.90          # the mesh's outline must cover the drawn profile this well...
 DRAWING_P95_FRAC = 0.03     # ...and stay within 3% of the object's size (95% of the outline)
-PICTORIAL_IOU = 0.82        # best-pose outline overlap with the sheet's pictorial view
+PICTORIAL_IOU = 0.85        # best-pose outline overlap with the sheet's pictorial view
 GRID_MM = 0.5
 
 AXES = {'front': (0, 2, False), 'back': (0, 2, True), 'right': (1, 2, False), 'left': (1, 2, True),
@@ -182,7 +182,165 @@ def against_pictorial(verts, tris, image_path, out_dir=None, height_px=140):
         big = Image.fromarray(ov).resize((shape[1] * 3, shape[0] * 3), Image.Resampling.NEAREST)
         name = Path(image_path).stem
         big.save(os.path.join(out_dir, 'pictorial-match-%s.png' % name))
-    return {'iou': round(iou, 3), 'azimuth_deg': az, 'elevation_deg': el}
+    result = {'iou': round(iou, 3), 'azimuth_deg': az, 'elevation_deg': el}
+    try:
+        result.update(shading_agreement(np.asarray(verts, float), np.asarray(tris, int), painting, ref,
+                                        az, el, out_dir, Path(image_path).stem))
+    except Exception as exc:
+        result['crease_error'] = str(exc)
+    return result
+
+
+CREASE_DEG = 35.0           # a mesh edge this sharp is a visible corner line
+CREASE_PRECISION = 0.40     # share of the mesh's visible corner lines the painting must also show
+
+
+def _zbuffer(P2, depth, T, shape, faces_out=None):
+    """Per-pixel nearest depth of the triangles (screen coords P2, depth along the view);
+    with faces_out (an int array of shape), also the nearest triangle's index per pixel."""
+    h, w = shape
+    zb = np.full(shape, np.inf)
+    for fi, t in enumerate(T):
+        p = P2[t]
+        x0, y0 = np.floor(p.min(0)).astype(int)
+        x1, y1 = np.ceil(p.max(0)).astype(int)
+        x0, y0, x1, y1 = max(x0, 0), max(y0, 0), min(x1, w - 1), min(y1, h - 1)
+        if x1 < x0 or y1 < y0:
+            continue
+        xs, ys = np.meshgrid(np.arange(x0, x1 + 1) + .5, np.arange(y0, y1 + 1) + .5)
+        a, b, c = p
+        den = (b[1] - c[1]) * (a[0] - c[0]) + (c[0] - b[0]) * (a[1] - c[1])
+        if abs(den) < 1e-12:
+            continue
+        l1 = ((b[1] - c[1]) * (xs - c[0]) + (c[0] - b[0]) * (ys - c[1])) / den
+        l2 = ((c[1] - a[1]) * (xs - c[0]) + (a[0] - c[0]) * (ys - c[1])) / den
+        l3 = 1 - l1 - l2
+        inside = (l1 >= -1e-6) & (l2 >= -1e-6) & (l3 >= -1e-6)
+        if not inside.any():
+            continue
+        z = l1 * depth[t[0]] + l2 * depth[t[1]] + l3 * depth[t[2]]
+        sub = zb[y0:y1 + 1, x0:x1 + 1]
+        zz = np.where(inside, z, np.inf)
+        if faces_out is not None:
+            fsub = faces_out[y0:y1 + 1, x0:x1 + 1]
+            fsub[zz < sub] = fi
+        np.minimum(sub, zz, out=sub)
+    return zb
+
+
+def crease_agreement(V, T, painting, ref_mask, az, el, out_dir=None, name='pictorial'):
+    """Inside the outline: the mesh's visible corner lines (edges sharper than CREASE_DEG) seen
+    from the solved camera, against the painting's own edges. A corner the painting does not
+    show (a boxed handle drawn soft) lowers the precision."""
+    from skimage.feature import canny
+    h0 = 220
+    w0 = max(8, int(round(h0 * ref_mask.shape[1] / ref_mask.shape[0])))
+    shape = (h0 + 4, w0 + 4)
+    V = V - V.mean(0)
+    R = _rotation(az, el)
+    Q = V @ R.T
+    P = Q[:, [0, 2]]
+    lo, hi = P.min(0), P.max(0)
+    sc = min((shape[1] - 4) / max(1e-9, hi[0] - lo[0]), (shape[0] - 4) / max(1e-9, hi[1] - lo[1]))
+    P2 = (P - (lo + hi) / 2) * sc
+    P2[:, 0] += shape[1] / 2
+    P2[:, 1] = shape[0] / 2 - P2[:, 1]
+    depth = -Q[:, 1]                     # camera looks along +y after rotation: nearer = larger y
+    depth = Q[:, 1]
+    zb = _zbuffer(P2, depth, T, shape)
+    # face normals and sharp edges
+    a, b, c = V[T[:, 0]], V[T[:, 1]], V[T[:, 2]]
+    n = np.cross(b - a, c - a)
+    n /= np.maximum(np.linalg.norm(n, axis=1, keepdims=True), 1e-12)
+    edges = {}
+    for fi, t in enumerate(T):
+        for i, j in ((0, 1), (1, 2), (2, 0)):
+            edges.setdefault((min(t[i], t[j]), max(t[i], t[j])), []).append(fi)
+    crease = np.zeros(shape, bool)
+    span = max(1e-9, float(zb[np.isfinite(zb)].max() - zb[np.isfinite(zb)].min())) if np.isfinite(zb).any() else 1
+    for (i, j), fs in edges.items():
+        if len(fs) != 2:
+            continue
+        if np.degrees(np.arccos(np.clip(n[fs[0]] @ n[fs[1]], -1, 1))) < CREASE_DEG:
+            continue
+        for t in np.linspace(0.1, 0.9, 6):
+            p = P2[i] * (1 - t) + P2[j] * t
+            d = depth[i] * (1 - t) + depth[j] * t
+            x, y = int(p[0]), int(p[1])
+            if 0 <= x < shape[1] and 0 <= y < shape[0] and d <= zb[y, x] + 0.01 * span:
+                crease[y, x] = True
+    # only corner lines inside the outline (the outline itself is checked separately)
+    sil = np.isfinite(zb)
+    crease &= ndimage.binary_erosion(sil, iterations=3)
+    g = np.asarray(painting.convert('L').resize((shape[1] - 4, shape[0] - 4))).astype(float) / 255
+    g = np.pad(g, 2, mode='edge')
+    painted = canny(g, sigma=1.5)
+    near = ndimage.binary_dilation(painted, iterations=3)
+    total = int(crease.sum())
+    precision = float((crease & near).sum() / total) if total else 1.0
+    if out_dir:
+        ov = np.zeros(shape + (3,), np.uint8) + 255
+        ov[painted] = (170, 170, 170)
+        ov[crease & near] = (40, 160, 60)
+        ov[crease & ~near] = (220, 50, 50)
+        from PIL import Image as _I
+        _I.fromarray(ov).resize((shape[1] * 3, shape[0] * 3), _I.Resampling.NEAREST).save(
+            os.path.join(out_dir, 'crease-match-%s.png' % name))
+    return {'crease_pixels': total, 'crease_precision': round(precision, 3)}
+
+
+SHADING_R2 = 0.25          # the mesh's geometry must explain at least this much of the painted shading
+
+
+def shading_agreement(V, T, painting, ref_mask, az, el, out_dir=None, name='pictorial'):
+    """Inside the outline, at the solved camera: fit one light to the painting from the mesh's
+    own surface normals (brightness = n . l + c, linear least squares in l and c) and report the
+    share of the painted brightness variation that this geometry explains (R^2), measured on
+    the brightness gradient so flat paint colours count less than shading. A boxed shape where
+    the picture shades smoothly (or the reverse) explains less."""
+    h0 = 220
+    w0 = max(8, int(round(h0 * ref_mask.shape[1] / ref_mask.shape[0])))
+    shape = (h0 + 4, w0 + 4)
+    V = V - V.mean(0)
+    R = _rotation(az, el)
+    Q = V @ R.T
+    P = Q[:, [0, 2]]
+    lo, hi = P.min(0), P.max(0)
+    sc = min((shape[1] - 4) / max(1e-9, hi[0] - lo[0]), (shape[0] - 4) / max(1e-9, hi[1] - lo[1]))
+    P2 = (P - (lo + hi) / 2) * sc
+    P2[:, 0] += shape[1] / 2
+    P2[:, 1] = shape[0] / 2 - P2[:, 1]
+    faces = np.full(shape, -1, int)
+    zb = _zbuffer(P2, Q[:, 1], T, shape, faces)
+    a, b, c = Q[T[:, 0]], Q[T[:, 1]], Q[T[:, 2]]
+    n = np.cross(b - a, c - a)
+    n /= np.maximum(np.linalg.norm(n, axis=1, keepdims=True), 1e-12)
+    inside = ndimage.binary_erosion(faces >= 0, iterations=2)
+    # the painting fitted into the same box as the projection
+    ys, xs = np.nonzero(ref_mask)
+    crop = painting.crop((xs.min(), ys.min(), xs.max() + 1, ys.max() + 1)).convert('L')
+    gw = int(round((hi[0] - lo[0]) * sc)) or 1
+    gh = int(round((hi[1] - lo[1]) * sc)) or 1
+    from PIL import Image as _I
+    g = np.zeros(shape)
+    im = np.asarray(crop.resize((max(1, gw), max(1, gh)), _I.Resampling.BILINEAR)).astype(float) / 255
+    oy, ox = (shape[0] - im.shape[0]) // 2, (shape[1] - im.shape[1]) // 2
+    g[oy:oy + im.shape[0], ox:ox + im.shape[1]] = im
+    N = n[faces[inside]]
+    I = g[inside]
+    if len(I) < 50:
+        return {'shading_r2': None}
+    A = np.c_[N, np.ones(len(N))]
+    coef, *_ = np.linalg.lstsq(A, I, rcond=None)
+    pred = A @ coef
+    r2 = 1 - ((I - pred) ** 2).sum() / max(1e-12, ((I - I.mean()) ** 2).sum())
+    if out_dir:
+        out = np.zeros(shape)
+        out[inside] = pred
+        both = np.concatenate([g, out], 1)
+        _I.fromarray((np.clip(both, 0, 1) * 255).astype(np.uint8)).resize(
+            (both.shape[1] * 2, both.shape[0] * 2)).save(os.path.join(out_dir, 'shading-match-%s.png' % name))
+    return {'shading_r2': round(float(r2), 3), 'light_direction_view': [round(float(v), 3) for v in coef[:3]]}
 
 
 def check(verts, tris, order, out_dir=None):
@@ -205,6 +363,10 @@ def check(verts, tris, order, out_dir=None):
             if r['iou'] < PICTORIAL_IOU:
                 fails.append('looks unlike the sheet\'s pictorial view %s: best outline match %.0f%% '
                              '(limit %.0f%%)' % (Path(p).stem, 100 * r['iou'], 100 * PICTORIAL_IOU))
+            if r.get('shading_r2') is not None and r['shading_r2'] < SHADING_R2:
+                fails.append('surface shape unlike the sheet\'s pictorial view %s: the mesh\'s surface '
+                             'explains only %.0f%% of the painted shading (limit %.0f%%)' % (
+                                 Path(p).stem, 100 * r['shading_r2'], 100 * SHADING_R2))
     if pics:
         metrics['pictorial'] = pics
     return metrics, fails

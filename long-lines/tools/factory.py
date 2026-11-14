@@ -303,7 +303,8 @@ def run_line(order):
                 allv['bottom'] = bp
             drawing = drafting.prepare(
                 allv, dest, order.get('height_m'), name=order['name'],
-                scale_note=(order.get('assumptions') or [''])[0])
+                scale_note=(order.get('assumptions') or [''])[0],
+                pictorials=order.get('reference_images', ()))
             views = {k: drawing['views'][k] for k in views}
             original_views = dict(views)
             d = dest
@@ -312,9 +313,15 @@ def run_line(order):
             hp['depth_m'] = drawing['size_m']['depth']
             if drawing['round_sections']:
                 hp['round_sections'] = drawing['round_sections']
+            if any(f.get('keep') for f in drawing.get('features', [])):
+                hp['local_features'] = drawing['features']
+            ex = (drawing.get('roundness') or {}).get('exponents') or {}
+            if any(ex.values()):
+                hp['roundness'] = {a: (v if v else float('inf')) for a, v in ex.items()}
             order.setdefault('measured', {})['drawing'] = {
                 'json': os.path.join(dest, 'drawing.json'), 'dxf': drawing['dxf'], 'sheet': drawing['sheet'],
                 'decisions': drawing['decisions'], 'round_sections': drawing['round_sections'],
+                'roundness': (drawing.get('roundness') or {}).get('exponents'),
                 'size_mm': {k: round(v * 1000, 1) for k, v in drawing['size_m'].items()}}
             print('DRAWING', json.dumps(order['measured']['drawing']))
         # relief_last: the shape keeps its relief and is simplified afterwards like a game

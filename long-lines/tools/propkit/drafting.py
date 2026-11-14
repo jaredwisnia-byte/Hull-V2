@@ -403,7 +403,88 @@ def round_outline(outline, mask):
 
 # ---------------------------------------------------------------- the stage
 
-def prepare(views, destination, height_m, width_m=None, depth_m=None, name='part', scale_note=''):
+# each view's image frame in normalised object coordinates: (column axis, flipped?), (row axis, flipped?)
+VIEW_UV = {'front': (('x', False), ('z', True)), 'back': (('x', True), ('z', True)),
+           'right': (('y', False), ('z', True)), 'left': (('y', True), ('z', True)),
+           'top': (('x', False), ('y', True)), 'bottom': (('x', False), ('y', False))}
+PAIRS = (('front', 'back', ('x', 'z')), ('right', 'left', ('y', 'z')), ('top', 'bottom', ('x', 'y')))
+
+
+def _sample_plane(mask, view, a_dim, b_dim, na, nb):
+    """A view's mask sampled on a normalised (a, b) grid of the object, [na, nb]."""
+    (cu, fu), (cv, fv) = VIEW_UV[view]
+    a = (np.arange(na) + .5) / na
+    b = (np.arange(nb) + .5) / nb
+    A, B = np.meshgrid(a, b, indexing='ij')
+    coords = {a_dim: A, b_dim: B}
+    u = coords[cu]
+    v = coords[cv]
+    u = 1 - u if fu else u
+    v = 1 - v if fv else v
+    h, w = mask.shape
+    return mask[np.clip((v * h).astype(int), 0, h - 1), np.clip((u * w).astype(int), 0, w - 1)]
+
+
+def _to_view(plane, view, a_dim, b_dim, shape):
+    """A normalised (a, b) plane resampled back onto a view's own pixel grid."""
+    h, w = shape
+    (cu, fu), (cv, fv) = VIEW_UV[view]
+    u = (np.arange(w) + .5) / w
+    v = (np.arange(h) + .5) / h
+    V, U = np.meshgrid(v, u, indexing='ij')
+    U = 1 - U if fu else U
+    V = 1 - V if fv else V
+    coords = {cu: U, cv: V}
+    na, nb = plane.shape
+    return plane[np.clip((coords[a_dim] * na).astype(int), 0, na - 1),
+                 np.clip((coords[b_dim] * nb).astype(int), 0, nb - 1)]
+
+
+def reconcile_opposites(masks, W, D, H, res=320):
+    """Opposite orthographic views see the same silhouette, mirrored. Painted sheets often leave
+    something out of one of them (a lever drawn only on the front). Where a pair disagrees, a
+    pixel seen in only one of the two is kept when the other two directions support it (some
+    depth along the view has material in both other directions' outlines) and dropped otherwise.
+    Returns (reconciled masks by view, report by pair)."""
+    big = max(W, D, H)
+    n = {'x': max(16, int(res * W / big)), 'y': max(16, int(res * D / big)), 'z': max(16, int(res * H / big))}
+    planes, union = {}, {}
+    for v1, v2, (a, b) in PAIRS:
+        got = [_sample_plane(masks[v], v, a, b, n[a], n[b]) for v in (v1, v2) if v in masks]
+        planes[(v1, v2)] = got
+        if got:
+            union[(a, b)] = got[0] | got[-1]
+    out, report = {}, {}
+
+    def support(a, b):
+        # material at (a, b) needs some depth c with (a, c) and (c, b) or (b, c) inside the others
+        c = ({'x', 'y', 'z'} - {a, b}).pop()
+        P = union.get((a, c)) if (a, c) in union else (union[(c, a)].T if (c, a) in union else None)
+        Q = union.get((c, b)) if (c, b) in union else (union[(b, c)].T if (b, c) in union else None)
+        if P is None or Q is None:
+            return None
+        return (P.astype(np.int32) @ Q.astype(np.int32)) > 0
+    for v1, v2, (a, b) in PAIRS:
+        got = planes[(v1, v2)]
+        if len(got) < 2:
+            continue
+        m1, m2 = got
+        both, either = m1 & m2, m1 | m2
+        sup = support(a, b)
+        if sup is None:
+            continue
+        only = either & ~both
+        keep = both | (only & sup)
+        report['%s/%s' % (v1, v2)] = {
+            'disagreement_pct': round(100 * only.sum() / max(1, either.sum()), 2),
+            'kept_from_one_view_px': int((only & sup).sum()), 'dropped_px': int((only & ~sup).sum())}
+        for v in (v1, v2):
+            out[v] = _to_view(keep, v, a, b, masks[v].shape)
+    return out, report
+
+
+def prepare(views, destination, height_m, width_m=None, depth_m=None, name='part', scale_note='',
+            pictorials=()):
     """Make the drawing from the views. views: {name: image path}. Returns the record, with
     'views' (paths to build and paint from, oriented), 'masks' (the drawn profiles on each
     view's pixel grid), 'size_m', 'round_sections' and the DXF/PNG paths."""
@@ -423,6 +504,7 @@ def prepare(views, destination, height_m, width_m=None, depth_m=None, name='part
               'views': {}, 'decisions': [], 'profiles': {}, 'circles': {}, 'symmetry': {},
               'view_agreement': {}, 'round_sections': []}
     masks, paintings, out_paths = {}, {}, {}
+    staged = {}
     for k, path in views.items():
         mask, painting, box = raw[k]
         arr = np.asarray(painting)
@@ -439,10 +521,22 @@ def prepare(views, destination, height_m, width_m=None, depth_m=None, name='part
                         ' and mirrored' if best['mirrored'] else '', best['column_agreement'],
                         best['row_agreement'], drawn['aspect_error_pct'], best['aspect_error_pct']))
             # carry the cut-out hole mask along with the painting
-        hole = Path(path).with_name('h_%s.png' % k)
         mask_sym, sym = (symmetrize(mask) if k in ('front', 'back', 'top', 'bottom') else (mask, None))
         if sym:
             record['symmetry'][k] = sym
+        staged[k] = (mask_sym, arr, box, path)
+    # opposite views must be mirror images; where they disagree, the other directions decide
+    recon, rrep = reconcile_opposites({k: v[0] for k, v in staged.items()}, W, D, H)
+    record['opposite_views'] = rrep
+    for pair, info in rrep.items():
+        if info.get('kept_from_one_view_px') or info.get('dropped_px'):
+            record['decisions'].append(
+                '%s disagree in %.1f%% of their outline area: %d px seen in only one of them kept (supported by '
+                'the other two directions), %d px dropped (unsupported)' % (
+                    pair, info['disagreement_pct'], info['kept_from_one_view_px'], info['dropped_px']))
+    for k, (mask_sym, arr, box, path) in staged.items():
+        mask = mask_sym = recon.get(k, mask_sym)
+        hole = Path(path).with_name('h_%s.png' % k)
         verts, outline = fit_profile(mask_sym)
         verts = snap_square(verts)
         drawn_mask = rasterize(verts, mask.shape)
@@ -490,6 +584,37 @@ def prepare(views, destination, height_m, width_m=None, depth_m=None, name='part
                                    'the part is built with round cross-sections along %s inside that circle' % (
                                        k, 100 * circ['coverage'], 2000 * r, axis))
     record['views'] = out_paths
+    # measured roundness of every part's cross-section (propkit/rounding.py): the pictorial view
+    # and the painted shading decide how far each rectangle two outlines leave is rounded
+    from . import rounding
+    pics = [p for p in pictorials if p and Path(p).exists()]
+    try:
+        rr = rounding.estimate(masks, record['size_m'], pics[0] if pics else None, paintings)
+        record['roundness'] = {'exponents': rr['exponents_json'], 'evidence': rr['evidence'],
+                               'source': rr.get('source', 'pictorial outline' if pics else 'none')}
+        for axis, parts in rr['exponents_json'].items():
+            for part in parts or []:
+                record['decisions'].append(
+                    'parts along %s measured round: superellipse exponent %s (2 = ellipse) over %.0f%%-%.0f%% '
+                    'of the %s axis, from the %s' % (axis, part['n'], 100 * part['box'][0], 100 * part['box'][1],
+                                                    axis, record['roundness']['source']))
+    except Exception as exc:          # no roundness evidence: the plain visual hull stands
+        record['roundness'] = {'exponents': {}, 'error': str(exc)}
+    # local features (propkit/features.py): bumps an outline shows, built only as wide as the
+    # painting shows them
+    from . import features as _features
+    try:
+        record['features'] = _features.find(masks, paintings, record['size_m'])
+        for f in record['features']:
+            if f.get('keep'):
+                record['decisions'].append(
+                    'bump on the %s edge along %s (%.0f%%-%.0f%%) measured %.0f%% of the part wide in the %s '
+                    'painting; built that wide, not across the whole part' % (
+                        f['edge'], f['axis'], 100 * f['along'][0], 100 * f['along'][1],
+                        100 * (f['keep'][1] - f['keep'][0]), f['measured_in']))
+    except Exception as exc:
+        record['features'] = []
+        record['features_error'] = str(exc)
     from . import drawing_cad
     record['dxf'], record['sheet'] = drawing_cad.write(record, masks, destination, name)
     (destination / 'drawing.json').write_text(json.dumps(record, indent=1))

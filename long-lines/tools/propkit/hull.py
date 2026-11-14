@@ -242,7 +242,9 @@ def round_section_field(F, sections, W, D, H):
     for rs in sections or ():
         axis = rs['axis']
         cu, cz = rs['center_m']
-        r = rs['radius_m'] * 1.03
+        # the end view is only approximately a circle (flattened sides are common): the round region
+        # reaches past the fitted circle so each slice's ellipse spans the part's full width
+        r = rs['radius_m'] * 1.12
         if axis == 'y':
             U, V = np.meshgrid(xs, zs, indexing='ij')
             slices = [F[:, j, :] for j in range(ny)]
@@ -253,6 +255,9 @@ def round_section_field(F, sections, W, D, H):
             continue
         cyl = (U - cu) ** 2 + (V - cz) ** 2 <= r * r
         du, dv = U[1, 0] - U[0, 0], V[0, 1] - V[0, 0]
+        # the rounding fades in across the circle's edge over two voxels (a hard switch leaves a
+        # cliff in the field where the round part meets the rest, which meshes as slivers)
+        blend = np.clip((r - np.sqrt((U - cu) ** 2 + (V - cz) ** 2)) / (2 * max(du, dv)) + .5, 0, 1)
         ext = np.full((len(slices), 4), np.nan)
         for k, s in enumerate(slices):
             inside = (s < 0) & cyl
@@ -290,7 +295,8 @@ def round_section_field(F, sections, W, D, H):
             ru, rv = max((u1 - u0) / 2, du), max((v1 - v0) / 2, dv)
             uc, vc = (u0 + u1) / 2, (v0 + v1) / 2
             e = (np.sqrt(((U - uc) / ru) ** 2 + ((V - vc) / rv) ** 2) - 1) * min(ru, rv)
-            new = np.where(cyl, np.maximum(s, e), s)
+            from .rounding import smooth_max
+            new = s + blend * (smooth_max(s, e, 1.5 * min(du, dv)) - s)
             changed += int(((s < 0) & (new >= 0)).sum())
             s[...] = new
         report.append({'axis': axis, 'end_view': rs.get('end_view'), 'slices': int(valid.sum()),
@@ -320,7 +326,7 @@ def hull_prop(views, height, res=110, smooth_iters=4, decimate=0.35, rough=0.5, 
               convex=False, paint_only=(), features=True, sil_override=None, depth_m=None, grime=0.25,
               paint=True, width_m=None, blades=False, voxel_hook=None, mesh_hook=None, revolve=True, blur=0.7,
               field=None, sections=None, field_hook=None, section_bands=None, detail_normal_only=False, shape_relief_min_m=None,
-              round_sections=None):
+              round_sections=None, roundness=None, local_features=None):
     """convex: fill each outline to its convex shape (boxy objects; dark areas can't
     punch holes). paint_only: views used for texture but not trusted to carve (e.g. a
     dark back panel on a dark sheet). width_m: the real width (views painted out of
@@ -370,6 +376,27 @@ def hull_prop(views, height, res=110, smooth_iters=4, decimate=0.35, rough=0.5, 
     keep0 = keep.copy()
     HULL_REPORT.pop("revolve", None)
     HULL_REPORT.pop("sections", None)
+    HULL_REPORT.pop("roundness", None)
+    _round_args = None
+    if roundness and _os.environ.get("HULL_ROUNDNESS", "1") != "0":   # HULL_ROUNDNESS=0: A/B tests
+        # measured cross-section roundness from the drawing stage (propkit/rounding.py): each
+        # rectangle two outlines leave becomes the superellipse its evidence chose; every
+        # view's outline is preserved
+        from . import rounding as _rounding
+        _side = carve["right"][0] if "right" in carve else (carve["left"][0][:, ::-1] if "left" in carve else None)
+        _top = carve["top"][0] if "top" in carve else None
+        HULL_REPORT["roundness"] = _rrep = {}
+        if (field or _os.environ.get("HULL_FIELD", "sdf")) != "sdf":
+            keep = _rounding.apply(keep, carve["front"][0], _side, _top, roundness, _rrep)
+        else:
+            _round_args = (carve["front"][0], _side, _top, roundness, _rrep)   # applied to the field below
+    if local_features:
+        # bumps built only as wide as the painting shows them (propkit/features.py)
+        from . import features as _features
+        _side = carve["right"][0] if "right" in carve else (carve["left"][0][:, ::-1] if "left" in carve else None)
+        _top = carve["top"][0] if "top" in carve else None
+        HULL_REPORT["local_features"] = _frep = {}
+        keep = _features.apply(keep, carve["front"][0], _side, _top, local_features, _frep)
     if blades:
         from . import blades as _blades
         HULL_REPORT.clear()
@@ -401,7 +428,11 @@ def hull_prop(views, height, res=110, smooth_iters=4, decimate=0.35, rough=0.5, 
         vox = min(W / nx, D / ny, H / nz)
         F = hull_field(carve, X, Yy, Z, W, D, H)
         from .implicit import bounded_field, pad_field
-        if round_sections:
+        if _round_args is not None:
+            # measured roundness as a smooth field (propkit/rounding.py)
+            from . import rounding as _rounding
+            F = _rounding.field(F, *_round_args[:4], vox_m=vox, report=_round_args[4])
+        if round_sections and _os.environ.get("HULL_ROUND_SECTIONS", "1") != "0":   # A/B switch
             # round cross-sections the drawing stage found (propkit/drafting.py)
             F, HULL_REPORT['round_sections'] = round_section_field(F, round_sections, W, D, H)
         F = bounded_field(F, (W, D, H))
@@ -419,6 +450,8 @@ def hull_prop(views, height, res=110, smooth_iters=4, decimate=0.35, rough=0.5, 
             F = np.where(zone, np.maximum(F, G), F)
         detail_F = None
         stage = "geometry"
+        # a value of exactly zero is neither inside nor outside; the relief stage compares signs
+        F = np.where(F == 0, np.float32(1e-9), F).astype(F.dtype)
         if field_hook is not None:
             if detail_normal_only:
                 # Relief as the last step: the shape is the plain hull; the painted detail
@@ -476,6 +509,11 @@ def hull_prop(views, height, res=110, smooth_iters=4, decimate=0.35, rough=0.5, 
             except ValueError:
                 pass
         bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+        # a closed solid has positive signed volume; an open sliver can make the normal
+        # recalculation flip the whole body inside out, so check and correct
+        vol6 = sum(f.verts[0].co.dot(f.verts[1].co.cross(f.verts[2].co)) for f in bm.faces if len(f.verts) == 3)
+        if vol6 < 0:
+            bmesh.ops.reverse_faces(bm, faces=bm.faces)
         me = bpy.data.meshes.new(oname)
         bm.to_mesh(me)
         bm.free()

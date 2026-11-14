@@ -776,3 +776,17 @@ rather than compare their output. Preserve those failure records.
   is a CAD solid (OpenCascade) built from the drawing, with STEP and a dimensioned drawing.
 - Rule: a check that rescales the result to the reference before comparing cannot catch a
   wrong proportion. Compare in real units, and against a witness the build did not use.
+
+## The typewriter lost 40 mm of levers: opposite views disagreed (2026-11-14)
+- Its painted back view leaves out the return lever and the paper-rest top. The hull intersects
+  every view, so anything one view omits is deleted. Front and back silhouettes of a real object
+  are exact mirror images (likewise left/right, top/bottom), so a disagreement is a painting error.
+- Fix (propkit/drafting.py reconcile_opposites): where a pair disagrees, a pixel seen in only one
+  of them is kept if the other two directions support it (some depth has material in both their
+  outlines) and dropped otherwise. Typewriter dense mesh 321 x 353 x 168 mm -> 361 x 353 x 179 mm
+  (drawing 362 x 354 x 180).
+- Also: measured roundness (rounding.py) is applied as a smooth field, not voxels; a "local
+  feature" wider than 40% of its part is not local (it was cutting the dryer's paint band into a
+  loose shell); a meshed body with negative signed volume is flipped back outward.
+- Rule: before blaming a numerical stage for a missing part, intersect the masks by hand with and
+  without each view; the culprit is often one view that disagrees with the rest.
