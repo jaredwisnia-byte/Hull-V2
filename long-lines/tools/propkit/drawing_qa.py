@@ -30,7 +30,7 @@ PICTORIAL_IOU = 0.85        # best-pose outline overlap with the sheet's pictori
 GRID_MM = 0.5
 
 AXES = {'front': (0, 2, False), 'back': (0, 2, True), 'right': (1, 2, False), 'left': (1, 2, True),
-        'top': (0, 1, False), 'bottom': (0, 1, True)}
+        'top': (0, 1, False), 'bottom': (0, 1, False)}
 
 
 def _raster(points2d, tris, shape, scale, origin):

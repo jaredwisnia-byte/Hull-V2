@@ -22,6 +22,11 @@
       "script": "long-lines/tools/test_curve_views.py"
     },
     {
+      "id": "drawing-qa-frame",
+      "capability": "core",
+      "script": "long-lines/tools/test_drawing_qa_frame.py"
+    },
+    {
       "id": "sectioning",
       "capability": "core",
       "script": "long-lines/tools/test_sectioning.py",
