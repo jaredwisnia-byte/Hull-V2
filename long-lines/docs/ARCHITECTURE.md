@@ -71,6 +71,8 @@ dependency.
 1. Settle current work: regression run; drawing keeps openings; QA registers on the main body.
 2. Fidelity profiles in the current pipeline (sets tolerance and budget only).
 3. Part model from the drawing (one solid per part), output beside the current mesh, unused.
+   Detailed design for steps 3-4 (curves not light, automatic parts, statistics against
+   noise, rules for unseen sides): [CURVE_RECONSTRUCTION.md](CURVE_RECONSTRUCTION.md).
 4. Tessellate per part + texture/bake from the part model, behind `"construction": "parts"`.
 5. Detail views and the part graph (accept a part only when two or more views agree).
 6. Retire the voxel path for manufactured parts; keep it as the organic fallback.
