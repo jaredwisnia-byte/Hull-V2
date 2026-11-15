@@ -1,6 +1,6 @@
 """Mathematical curves traced in one painted view, with paint noise rejected by statistics.
 
-Design: long-lines/docs/CURVE_RECONSTRUCTION.md, steps 1-2. Pixels are read once, here. Every
+Design: docs/CURVE_RECONSTRUCTION.md, steps 1-2. Pixels are read once, here. Every
 later stage works on the fitted curves (lines, circular arcs, ellipses, B-splines), never on
 brightness. Nothing in this module guesses depth.
 

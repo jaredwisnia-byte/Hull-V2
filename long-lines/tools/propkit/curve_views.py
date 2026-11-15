@@ -1,6 +1,6 @@
 """Seen first: curves that agree across orthographic views decide the construction.
 
-Design: long-lines/docs/CURVE_RECONSTRUCTION.md, "Seen first, crutch second". Each view is traced
+Design: docs/CURVE_RECONSTRUCTION.md, "Seen first, crutch second". Each view is traced
 by propkit/curves.py. Here the curves meet:
 
 1. Frames. Every view is normalised to the object's box (its outline's bounding box), using the

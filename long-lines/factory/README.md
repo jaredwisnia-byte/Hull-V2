@@ -3,8 +3,8 @@
 The factory is the product; the models are its output. This folder holds the factory's
 standards, work orders, ledger and report. The machinery is in `tools/`.
 
-The [system architecture](../../docs/SYSTEM_ARCHITECTURE.md) maps the stages,
-their evidence contracts, current gaps, and integration order.
+The [architecture](../../docs/ARCHITECTURE.md) (agreed 2026-11-14) is the pipeline, its
+rules and the migration order; the older [system architecture](../../docs/SYSTEM_ARCHITECTURE.md) is superseded.
 
 For captioned vessel-appliance sheets with separate part drawings, the optional
 [automatic image-only build](AUTOMATIC_INTAKE.md) detects/crops the views, generates

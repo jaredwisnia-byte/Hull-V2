@@ -1,6 +1,6 @@
 """Hull run archive: copies a finished Codex run into archive/ and indexes it in hull.db.
 
-Plan and rules: long-lines/docs/ARCHIVE.md. The archive itself is not in git (it holds
+Plan and rules: docs/ARCHIVE.md. The archive itself is not in git (it holds
 run evidence and GLBs); this tool is.
 
 Usage (Python 3.13, standard library only):

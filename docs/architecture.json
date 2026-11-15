@@ -1,0 +1,431 @@
+{
+  "schema": "hull-architecture/1",
+  "as_of": "2026-11-14",
+  "human_doc": "docs/ARCHITECTURE.md",
+  "principle": "Build every asset as measured parts made from the technical drawing; tessellate each part to the user's fidelity. Never build one dense voxel surface and simplify it.",
+  "rules": [
+    {
+      "id": "R1",
+      "rule": "No geometry selected from an object name; no rule tuned to one example. Every rule is geometric or measured and stated in its docstring."
+    },
+    {
+      "id": "R2",
+      "rule": "The drawing stage runs first and is identical for every fidelity. Nothing builds from raw painted outlines."
+    },
+    {
+      "id": "R3",
+      "rule": "Every new step sits behind a switch; the current pipeline keeps building every object until the new path beats it on the same inputs."
+    },
+    {
+      "id": "R4",
+      "rule": "Gate for every change: before/after contact sheet on the drawn regression set and the seven image-only objects; any asset worse = not done.",
+      "drawn_set": [
+        "car_sedan_tan",
+        "coffee_maker_drip",
+        "electronics_tv_crt",
+        "electronics_tv_crt2",
+        "sofa_olive_suede",
+        "table_leg_carved",
+        "table_leg_guided",
+        "wallphone_rotary"
+      ],
+      "image_only_set": [
+        "001_toaster",
+        "002_cassette_recorder",
+        "003_typewriter",
+        "004_instant_camera",
+        "005_hair_dryer",
+        "006_alarm_clock",
+        "007_stand_mixer"
+      ]
+    },
+    {
+      "id": "R5",
+      "rule": "QA thresholds are never loosened to make something pass."
+    },
+    {
+      "id": "R6",
+      "rule": "No new Blender dependencies. New code is plain Python (numpy, scipy, build123d/OpenCascade, trimesh, xatlas). Blender stays default behind HULL_BACKEND=blender|python until parity."
+    },
+    {
+      "id": "R7",
+      "rule": "No bug-fix loops: one hypothesis = one change = one test; stop at the order's attempt limit, revert uncommitted work, write a report."
+    },
+    {
+      "id": "R8",
+      "rule": "Never kill processes by image name; stop only processes you started, by PID."
+    },
+    {
+      "id": "R9",
+      "rule": "Same photo, same mesh: a build is a pure function of input image, order and code version; repeat builds give byte-identical GLBs. Nothing a previous build wrote (learning memory, caches, .hull-runs) may change geometry. reconstruction_memory_mode defaults to off; learning is experiment-only and reports reproducible: false. A repeat-build difference is a defect, never a tolerance. Scope: same input, order, code and toolchain (Blender version, Python packages, OS); after a toolchain change rebuild baselines once, compare old vs new by measurement, record it, then require byte identity again."
+    },
+    {
+      "id": "R10",
+      "rule": "QA at the profile tolerance: a drawing view passes when its p95 outline distance <= max(2t, floor), floor = max(1 mm, 2 QA raster px, 1.5 x sheet mm per source px); size within max(3t, floor); IoU reported, backstop fail below 0.80 only; t below the floor -> unverifiable at this fidelity (reported, never a pass); mesh-health limits independent of t."
+    }
+  ],
+  "pipeline": [
+    {
+      "stage": 1,
+      "name": "intake",
+      "status": "existing",
+      "modules": [
+        "sheet_blobs.py",
+        "vision_order.py",
+        "sizing.py"
+      ],
+      "in": "sheet image",
+      "out": [
+        "view crops v_<view>.png",
+        "hole masks h_<view>.png",
+        "pictorial crops p_pictorial_<id>.png",
+        "work-order.json (size_source, reference_images)"
+      ]
+    },
+    {
+      "stage": 2,
+      "name": "drawing",
+      "status": "existing",
+      "modules": [
+        "drafting.py",
+        "drawing_cad.py",
+        "rounding.py",
+        "features.py"
+      ],
+      "steps": [
+        "orient plan views (8 orientations scored against front/side)",
+        "symmetrize mirror-symmetric views",
+        "reconcile opposite views (keep a one-view part if the other two directions support it)",
+        "fit lines and arcs (<= 1 px)",
+        "find circles",
+        "round end views -> round_sections",
+        "measured roundness per part -> roundness",
+        "local features -> features",
+        "write DXF, PNG, drawing.json"
+      ],
+      "out": "drawing.json",
+      "todo": [
+        "keep openings (Codex Order 2)",
+        "record detail-view regions"
+      ]
+    },
+    {
+      "stage": 3,
+      "name": "part_model",
+      "status": "planned",
+      "grows_from": "cad_model.py",
+      "out": "list[Part]",
+      "see": "part_schema"
+    },
+    {
+      "stage": 4,
+      "name": "fidelity_profile",
+      "status": "planned (Codex Order 4)",
+      "module": "fidelity.py",
+      "out": "tolerance_m",
+      "see": "fidelity"
+    },
+    {
+      "stage": 5,
+      "name": "tessellate_per_part",
+      "status": "planned",
+      "out": "game or engineering mesh, parts welded at seams",
+      "see": "tessellation"
+    },
+    {
+      "stage": 6,
+      "name": "texture_and_bake",
+      "status": "existing in Blender; python port planned (Codex Order 9)",
+      "modules": [
+        "texturing.py",
+        "bake.py",
+        "bake_py.py (planned)"
+      ],
+      "out": [
+        "albedo",
+        "normal (baked from exact parts)",
+        "orm"
+      ]
+    },
+    {
+      "stage": 7,
+      "name": "qa",
+      "status": "existing",
+      "modules": [
+        "qa.py",
+        "drawing_qa.py",
+        "qa_py.py (planned)"
+      ],
+      "see": "qa"
+    },
+    {
+      "stage": 8,
+      "name": "exports",
+      "status": "existing",
+      "modules": [
+        "bake.py",
+        "cad_model.py",
+        "export_py.py (planned)"
+      ],
+      "out": [
+        "model.glb per fidelity",
+        "<name>.step",
+        "<name>_cad_drawing.dxf/png",
+        "<name>_drawing.dxf/png"
+      ]
+    }
+  ],
+  "fallback": {
+    "what": "voxel visual hull (hull.py hull_field)",
+    "when": "per part, when its sections do not fit lines, arcs and superellipses within tolerance (organic: sofa cushion, carved leg)"
+  },
+  "part_schema": {
+    "Part": {
+      "name": "str (unique)",
+      "construction": "extrude_intersect | loft | revolve | voxel_fallback",
+      "profiles": "drawing profile references per view (vertices_px with bulges)",
+      "sections": "list of stations [along, a0, a1, b0, b1] normalised, with superellipse exponent n per axis",
+      "features": "list of {kind: bump|hole|boss, axis, edge, along, cut, keep, measured_in}",
+      "attachment": "{parent: part name | null, contact: face/axis, offset_mm}",
+      "paint_ownership": "per view: pixel mask of this part",
+      "detail_maps": "markings/grilles/numerals as texture and normal-map sources (never carved)",
+      "evidence": "views and detail views supporting this part; accepted only if >= 2 views agree"
+    },
+    "sources": [
+      "drawing: abrupt section changes split parts (rounding.tracks ratio 0.8)",
+      "round end views",
+      "measured roundness",
+      "part graph (part_graph.py) matching detail views, later"
+    ]
+  },
+  "fidelity": {
+    "profiles": {
+      "engineering": {
+        "tolerance_m": 5e-05,
+        "surfaces": "exact (STEP)",
+        "features": "all modelled"
+      },
+      "game_hero": {
+        "distance_m": 0.5
+      },
+      "game_prop": {
+        "distance_m": 2.0,
+        "default": true
+      },
+      "game_background": {
+        "distance_m": 10.0
+      }
+    },
+    "custom": [
+      {
+        "distance_m": "float"
+      },
+      {
+        "budget": "int triangles (raise t until met)"
+      }
+    ],
+    "game_tolerance": "t = distance_m * pixel_angle; pixel_angle = 2*tan(fov_deg/2)/lines, default fov_deg 60, lines 1080 -> 0.00097 rad",
+    "screen": {
+      "fov_deg": 60,
+      "lines": 1080,
+      "overridable": true
+    }
+  },
+  "tessellation": {
+    "round_part_sides": "n = ceil(pi / arccos(1 - t/r))",
+    "examples": [
+      {
+        "r_mm": 6,
+        "t_mm": 0.5,
+        "n": 8
+      },
+      {
+        "r_mm": 15,
+        "t_mm": 1.9,
+        "n": 7
+      },
+      {
+        "r_mm": 50,
+        "t_mm": 1.9,
+        "n": 12
+      },
+      {
+        "r_mm": 50,
+        "t_mm": 9.7,
+        "n": 5
+      }
+    ],
+    "feature_to_texture": "a feature standing out from its part by less than t, or narrower than 2t, becomes albedo + normal map only",
+    "flat_faces": "fewest polygons",
+    "seams": "parts welded; no simplification of a whole-object mesh",
+    "shading": "smooth across each exact (B-rep) face of a part; hard edges at B-rep edges whose faces meet at more than 30 degrees, at part seams and around features. Never a fixed angle between mesh facets (a 7-sided handle has 51 degrees between facets and must still read round)."
+  },
+  "qa": {
+    "checks": [
+      {
+        "id": "outline_old",
+        "module": "qa.py",
+        "method": "six orthographic ray-cast silhouettes stretched with painted outlines to one box",
+        "limit": "stretching hides proportion errors"
+      },
+      {
+        "id": "drawing_mm",
+        "module": "drawing_qa.against_drawing",
+        "method": "triangles projected along each axis at 0.5 mm/px vs drawn profile, no rescaling",
+        "pass": {
+          "iou_min": 0.9,
+          "outline_p95_max_frac": 0.03,
+          "size_tol": "max(2 mm, 3%)"
+        },
+        "limit": "aligned at mesh bbox corner (Codex Order 3 registers on main body)"
+      },
+      {
+        "id": "pictorial_outline",
+        "module": "drawing_qa.against_pictorial",
+        "method": "mesh rotated over azimuth (15 deg) and elevation (5-60 deg, from above), refined, fitted to picture outline box",
+        "pass": {
+          "iou_min": 0.85
+        },
+        "limit": "assumes orthographic picture"
+      },
+      {
+        "id": "pictorial_shading",
+        "module": "drawing_qa.shading_agreement",
+        "method": "z-buffer at solved pose; least squares brightness = n . l + c from mesh normals",
+        "pass": {
+          "r2_min": 0.25
+        },
+        "reference": {
+          "square_handle": 0.21,
+          "round_handle": 0.31
+        },
+        "limit": "paint bands lower R^2"
+      }
+    ],
+    "not_yet": [
+      "colour/texture comparison",
+      "fine features",
+      "CAD solid comparison",
+      "detail views"
+    ],
+    "thresholds": "provisional"
+  },
+  "worked_example": {
+    "object": "005_hair_dryer",
+    "profile": "game_prop",
+    "t_mm": 1.9,
+    "parts": [
+      {
+        "name": "barrel_nozzle",
+        "construction": "loft",
+        "n": 3.5,
+        "game_mesh": "12 sides"
+      },
+      {
+        "name": "handle",
+        "construction": "loft",
+        "n": 2.6,
+        "game_mesh": "7 sides"
+      },
+      {
+        "name": "switch",
+        "construction": "feature bump",
+        "width_mm": 5,
+        "proud_mm": 4,
+        "game_mesh": "modelled (4 > t)"
+      },
+      {
+        "name": "grille_vents",
+        "construction": "detail map",
+        "game_mesh": "normal map"
+      },
+      {
+        "name": "cord",
+        "construction": "sweep",
+        "game_mesh": "few-sided tube"
+      }
+    ]
+  },
+  "migration": [
+    {
+      "step": 1,
+      "name": "settle current work",
+      "codex_orders": [
+        1,
+        2,
+        3
+      ]
+    },
+    {
+      "step": 2,
+      "name": "fidelity profiles in current pipeline",
+      "codex_orders": [
+        4
+      ]
+    },
+    {
+      "step": "B",
+      "name": "replace Blender behind HULL_BACKEND",
+      "codex_orders": [
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ]
+    },
+    {
+      "step": 3,
+      "name": "part model from the drawing",
+      "needs": "approved (D1); design as in part_schema"
+    },
+    {
+      "step": 4,
+      "name": "tessellate per part + bake from part model",
+      "switch": "construction: parts"
+    },
+    {
+      "step": 5,
+      "name": "detail views and part graph"
+    },
+    {
+      "step": 6,
+      "name": "retire voxel path for manufactured parts; keep as organic fallback"
+    }
+  ],
+  "known_open": [
+    "measured roundness adds folds on 005_hair_dryer (dense 49 -> 238); not fixed in the voxel path, step 4 removes the cause",
+    "camera (004) pictorial IoU 0.78; cassette drawing fills its handle opening; alarm clock QA misaligned by cable"
+  ],
+  "branch": {
+    "main": "current tested code (Codex Order 1 regression check passed 2026-11-14)",
+    "work": "short-lived branches merged into main; retired ones kept as archive/... tags"
+  },
+  "decisions": {
+    "date": "2026-11-14",
+    "by": "Claude at Jared's request; Jared can overrule",
+    "items": [
+      {
+        "id": "D1",
+        "decision": "part model is the core; voxel hull only as per-part organic fallback"
+      },
+      {
+        "id": "D2",
+        "decision": "profiles engineering, game_hero 0.5 m, game_prop 2 m (default), game_background 10 m, custom distance or budget"
+      },
+      {
+        "id": "D3",
+        "decision": "screen default 60 deg vertical FOV, 1080 lines; fov_deg and lines overridable per profile"
+      },
+      {
+        "id": "D4",
+        "decision": "smooth shading per B-rep face; hard edges at B-rep edges > 30 deg, part seams, features"
+      },
+      {
+        "id": "D5",
+        "decision": "voxel fold fixes paused until migration step 4"
+      }
+    ]
+  }
+}
