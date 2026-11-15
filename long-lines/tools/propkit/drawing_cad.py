@@ -71,6 +71,9 @@ def write(record, masks, destination, name):
         sw, sh = size[SPAN[view][0]], size[SPAN[view][1]]
         pts = [(*to_mm(view, x, y)[:2], -b) for x, y, b in prof['vertices_px']]   # y flip reverses arcs
         msp.add_lwpolyline(pts, format='xyb', close=True, dxfattribs={'layer': 'OUTLINE'})
+        for opening in prof.get('openings', []):
+            pts = [(*to_mm(view, x, y)[:2], -b) for x, y, b in opening]
+            msp.add_lwpolyline(pts, format='xyb', close=True, dxfattribs={'layer': 'OUTLINE'})
         msp.add_text(view.upper() + ' VIEW', height=th * 1.1, dxfattribs={'layer': 'NOTES'}).set_placement(
             (ox + sw / 2, oy - th * 4.2), align=TextEntityAlignment.TOP_CENTER)
         sym = record['symmetry'].get(view)

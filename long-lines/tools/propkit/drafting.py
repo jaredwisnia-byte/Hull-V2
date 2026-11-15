@@ -31,7 +31,7 @@ from PIL import Image, ImageDraw
 from scipy import ndimage
 from scipy.optimize import minimize_scalar
 
-from .silhouette import silhouette
+from .silhouette import observed_silhouettes, silhouette
 
 # how each view's image axes map to the object (hull frame: x left->right, y front->back,
 # z up). cols/rows: which object axis runs along image columns/rows, and its direction.
@@ -206,7 +206,12 @@ def fit_profile(mask, tol=FIT_TOL_PX):
     """The outline as CAD entities: a closed list of vertices (x, y px), each with the bulge of
     the segment that leaves it (0 = straight line, tan(sweep/4) = arc). Also the deviation."""
     C = _outline(mask)
-    scale = float(max(mask.shape))
+    return _fit_contour(C, mask.shape, tol)
+
+
+def _fit_contour(C, shape, tol=FIT_TOL_PX):
+    """Fit one traced, closed pixel contour with the exterior's line/arc algorithm."""
+    scale = float(max(shape))
     # start at the sharpest corner so no entity straddles it
     k = 5
     v1 = np.roll(C, -k, 0) - C
@@ -318,13 +323,76 @@ def polyline_points(verts):
     return np.array(pts)
 
 
-def rasterize(verts, shape, supersample=4):
+def rasterize(verts, shape, supersample=4, openings=()):
     """The drawn profile as a mask on the view's pixel grid (what the build carves with)."""
     h, w = shape
     im = Image.new('L', (w * supersample, h * supersample), 0)
     pts = polyline_points(verts) * supersample + (supersample - 1) / 2
     ImageDraw.Draw(im).polygon([tuple(p) for p in pts], fill=255)
+    for opening in openings:
+        pts = polyline_points(np.asarray(opening)) * supersample + (supersample - 1) / 2
+        ImageDraw.Draw(im).polygon([tuple(p) for p in pts], fill=0)
     return np.asarray(im.resize((w, h), Image.Resampling.BOX)) >= 128
+
+
+def _source_openings(views, raw):
+    """Observe opposed-mask openings or enclosed sheet-background regions >=0.5% of a view.
+
+    Background uses the silhouette station's border-median RGB and L1 tolerance (30).
+    Reconciliation pockets never enter this evidence: candidates come from original pixels.
+    A matching painted mark remains an uncertain opening candidate, not a verified bore.
+    """
+    observed, _ = observed_silhouettes(views)
+    result = {}
+    for view, path in views.items():
+        outer, painting, _ = raw[view]
+        opening = outer & ~observed[view][0]
+        methods = ['opposed_hole_mask'] if opening.any() else []
+        with Image.open(path) as source:
+            full = np.asarray(source.convert('RGB')).astype(np.int32)
+        border = np.concatenate([full[0], full[-1], full[:, 0], full[:, -1]])
+        bg = np.median(border, axis=0)
+        bg_like = np.abs(np.asarray(painting).astype(np.int32) - bg).sum(2) <= 30
+        labels, count = ndimage.label(bg_like)
+        for index, box in enumerate(ndimage.find_objects(labels), 1):
+            if box is None or box[0].start == 0 or box[1].start == 0 or \
+                    box[0].stop == outer.shape[0] or box[1].stop == outer.shape[1]:
+                continue
+            region = labels == index
+            if region.sum() < 0.005 * outer.size or not outer[region].all():
+                continue
+            if not opening[region].all():
+                methods.append('enclosed_sheet_background')
+            opening |= region
+        result[view] = opening, sorted(set(methods))
+    return result
+
+
+def _fit_openings(outer, evidence, view, path, source_box, orientation):
+    """Trace only evidenced inner loops (CCOMP); ignore reconciliation-created pockets."""
+    import cv2
+    topology = ndimage.binary_fill_holes(outer) & ~evidence
+    contours, hierarchy = cv2.findContours(np.pad(topology.astype(np.uint8), 2),
+                                         cv2.RETR_CCOMP, cv2.CHAIN_APPROX_NONE)
+    openings, traces = [], []
+    if hierarchy is None:
+        return openings, traces
+    for contour, relation in zip(contours, hierarchy[0]):
+        if relation[3] < 0:
+            continue
+        points = contour[:, 0, :].astype(float) - 2
+        smooth = np.c_[ndimage.gaussian_filter1d(points[:, 0], 1.2, mode='wrap'),
+                       ndimage.gaussian_filter1d(points[:, 1], 1.2, mode='wrap')]
+        verts, _ = _fit_contour(smooth, outer.shape)
+        verts = snap_square(verts)
+        openings.append(verts.round(3).tolist())
+        traces.append({'source_view': view, 'source_image': str(path),
+                       'source_crop_xyxy': list(map(int, source_box)),
+                       'pixel_frame': 'oriented_source_crop', 'orientation': orientation,
+                       'traced_pixels_xy': points.tolist(), 'method': 'cv2.RETR_CCOMP',
+                       'max_deviation_px': round(_outline_deviation(points, verts), 2),
+                       'physical_opening_verified': False})
+    return openings, traces
 
 
 # ---------------------------------------------------------------- circles
@@ -484,13 +552,14 @@ def reconcile_opposites(masks, W, D, H, res=320):
 
 
 def prepare(views, destination, height_m, width_m=None, depth_m=None, name='part', scale_note='',
-            pictorials=()):
+            pictorials=(), keep_openings=True):
     """Make the drawing from the views. views: {name: image path}. Returns the record, with
     'views' (paths to build and paint from, oriented), 'masks' (the drawn profiles on each
     view's pixel grid), 'size_m', 'round_sections' and the DXF/PNG paths."""
     destination = Path(destination)
     destination.mkdir(parents=True, exist_ok=True)
     raw = {k: silhouette(p, with_box=True) for k, p in views.items()}
+    source_openings = _source_openings(views, raw) if keep_openings else {}
     front = raw['front'][0]
     side_key = 'right' if 'right' in raw else 'left'
     side = raw[side_key][0]
@@ -539,11 +608,17 @@ def prepare(views, destination, height_m, width_m=None, depth_m=None, name='part
         hole = Path(path).with_name('h_%s.png' % k)
         verts, outline = fit_profile(mask_sym)
         verts = snap_square(verts)
-        drawn_mask = rasterize(verts, mask.shape)
+        opening_mask, methods = source_openings.get(k, (np.zeros_like(raw[k][0]), []))
+        orientation = record.get('orientation', {}).get(k, {}).get('chosen', {})
+        if orientation:
+            opening_mask = apply_orientation(opening_mask, orientation['turns_ccw'], orientation['mirrored'])
+        openings, traces = _fit_openings(mask_sym, opening_mask, k, path, box, orientation)
+        drawn_mask = rasterize(verts, mask.shape, openings=openings)
         dev = _outline_deviation(outline, verts)
         record['profiles'][k] = {'vertices_px': verts.round(3).tolist(), 'image_px': list(mask.shape[::-1]),
                                  'entities': int(len(verts)), 'arcs': int((np.abs(verts[:, 2]) > 1e-9).sum()),
-                                 'max_deviation_px': round(dev, 2)}
+                                 'max_deviation_px': round(dev, 2), 'openings': openings,
+                                 'opening_traces': traces, 'opening_evidence': methods}
         img = Image.fromarray(arr)
         record['circles'][k] = find_circles(img, drawn_mask)
         out = destination / ('v_%s.png' % k)

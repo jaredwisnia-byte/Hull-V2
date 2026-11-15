@@ -63,7 +63,7 @@ def _drawn_mask(record, view, scale):
     size = {k: v * 1000 for k, v in record['size_m'].items()}
     su = {'front': 'width', 'back': 'width', 'right': 'depth', 'left': 'depth', 'top': 'width', 'bottom': 'width'}[view]
     sv = {'front': 'height', 'back': 'height', 'right': 'height', 'left': 'height', 'top': 'depth', 'bottom': 'depth'}[view]
-    m = rasterize(np.asarray(prof['vertices_px']), (h, w))
+    m = rasterize(np.asarray(prof['vertices_px']), (h, w), openings=prof.get('openings', ()))
     gw, gh = max(2, int(round(size[su] / scale))), max(2, int(round(size[sv] / scale)))
     return np.asarray(Image.fromarray(m.astype(np.uint8) * 255).resize((gw, gh), Image.Resampling.BILINEAR)) >= 128
 

@@ -3,6 +3,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 import numpy as np
 from PIL import Image, ImageDraw
@@ -45,6 +46,58 @@ def _sheet(folder, top_turned=True):
 
 
 class Drafting(unittest.TestCase):
+    def test_ring_opening_survives_mask_dxf_qa_and_cad(self):
+        import ezdxf
+        from propkit import cad_model, drawing_qa
+        with tempfile.TemporaryDirectory() as t:
+            views = _sheet(t)
+            for view in ('front', 'back'):
+                with Image.open(views[view]) as source:
+                    image = source.copy()
+                ImageDraw.Draw(image).ellipse((40, 40, 80, 80), fill=(230, 230, 230))
+                image.save(views[view])
+                holes = Image.new('L', image.size)
+                ImageDraw.Draw(holes).ellipse((40, 40, 80, 80), fill=255)
+                holes.save(Path(t) / ('h_%s.png' % view))
+            rec = drafting.prepare(views, Path(t) / 'out', 0.24)
+            for view in ('front', 'back'):
+                prof = rec['profiles'][view]
+                self.assertEqual(len(prof['openings']), 1)
+                self.assertFalse(rec['masks'][view][50, 50])
+                self.assertIn('opposed_hole_mask', prof['opening_evidence'])
+                self.assertTrue(prof['opening_traces'][0]['traced_pixels_xy'])
+                self.assertFalse(drawing_qa._drawn_mask(rec, view, 1.0)[50, 50])
+            doc = ezdxf.readfile(rec['dxf'])
+            loops = list(doc.modelspace().query('LWPOLYLINE[layer=="OUTLINE"]'))
+            self.assertEqual(len(loops), len(rec['profiles']) + 2)
+            size = {k: v * 1000 for k, v in rec['size_m'].items()}
+            face = cad_model._face(rec, 'front', size)
+            self.assertEqual(len(face.inner_wires()), 1)
+
+    def test_reconciliation_pocket_needs_source_evidence(self):
+        real = drafting.reconcile_opposites
+
+        def pocket(masks, *args):
+            masks, report = real(masks, *args)
+            masks['front'] = masks['front'].copy()
+            masks['front'][35:45, 40:50] = False
+            return masks, report
+
+        with tempfile.TemporaryDirectory() as t, patch.object(drafting, 'reconcile_opposites', pocket):
+            rec = drafting.prepare(_sheet(t), Path(t) / 'out', 0.24)
+            self.assertEqual(rec['profiles']['front']['openings'], [])
+
+    def test_unopposed_dark_paint_is_not_an_opening(self):
+        with tempfile.TemporaryDirectory() as t:
+            views = _sheet(t)
+            with Image.open(views['front']) as source:
+                image = source.copy()
+            ImageDraw.Draw(image).ellipse((35, 35, 85, 85), fill=(35, 35, 35))
+            image.save(views['front'])
+            raw = {k: drafting.silhouette(p, with_box=True) for k, p in views.items()}
+            openings = drafting._source_openings(views, raw)
+            self.assertFalse(openings['front'][0].any())
+
     def test_turned_top_view_is_turned_back(self):
         with tempfile.TemporaryDirectory() as t:
             views = _sheet(t)
