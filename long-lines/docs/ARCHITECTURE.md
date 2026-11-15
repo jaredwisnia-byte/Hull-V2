@@ -94,6 +94,16 @@ dependency.
 Known open items at the start: measured roundness adds folds on the hair dryer (dense 49 -> 238;
 stop fixing in the voxel path, step 4 removes the cause).
 
+## Record of runs (archive)
+
+Each finished Codex run is filed into the run archive before anything from it is merged:
+orders, report, baseline, per-attempt evidence, QA results, and every model GLB stored once
+by SHA-1, indexed in a SQLite file (`hull.db`). The tool is in git
+(`tools/hull_archive.py`); the archive (evidence and GLBs) sits beside the repository, not
+in it. Determinism (R9) is what keeps it small: intermediates are not kept, because the
+recorded commit rebuilds them byte for byte. Filing only copies and never overwrites.
+Plan, tables, procedure and phases: [ARCHIVE.md](ARCHIVE.md).
+
 ## How QA compares the result with the sheet (state on 2026-11-14)
 
 1. **Old outline check** (`qa.py`): rays cast from the six orthographic directions give the mesh's
