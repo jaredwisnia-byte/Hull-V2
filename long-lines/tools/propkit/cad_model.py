@@ -112,9 +112,31 @@ def build_solid(record, masks):
         bodies[a] = body
         solid = body if solid is None else solid & body
         used.append(view)
-    report = {'profiles_used': used, 'round_lofts': []}
+    report = {'profiles_used': used, 'round_lofts': [], 'opposite_profiles': []}
+    # Opposed profiles carry independent traced constraints. A contradiction is
+    # reported rather than silently sacrificing an already supported outline.
+    for a, b, direction, depth in picks:
+        if a not in record['profiles'] or b not in record['profiles']:
+            continue
+        body = extrude(_face(record, b, size), amount=depth, dir=direction)
+        candidate = solid & body
+        accepted, detail = _replacement_check(solid, candidate, record)
+        item = {'view': b, **detail}
+        if accepted:
+            solid = candidate
+            bodies[a] = bodies[a] & body
+            used.append(b)
+        else:
+            item['skipped'] = 'opposed traced profiles conflict: ' + detail['reason']
+        report['opposite_profiles'].append(item)
     extruded = solid
+    measured_axes = {axis for axis, parts in
+                     ((record.get('roundness') or {}).get('exponents') or {}).items() if parts}
     for rs in record.get('round_sections', []):
+        if rs['axis'] in measured_axes:
+            report['round_lofts'].append({'axis': rs['axis'],
+                'skipped': 'measured sections supersede the circular end-view approximation'})
+            continue
         if rs['axis'] != 'y' or 'top' not in masks or not ({'right', 'left'} & set(masks)):
             continue
         cu, cz = rs['center_m'][0] * 1000, rs['center_m'][1] * 1000
@@ -158,26 +180,38 @@ def build_solid(record, masks):
             if 'right' in bodies:
                 trim = bodies['right'] if trim is None else trim & bodies['right']
             inside = (trim & cyl & loft) if trim is not None else (cyl & loft)
-            solid = (solid - cyl) + inside
-            report['round_lofts'].append({'axis': 'y', 'stations': len(wires), 'radius_mm': round(r, 1)})
+            candidate = (solid - cyl) + inside
+            accepted, detail = _replacement_check(solid, candidate, record)
+            item = {'axis': 'y', 'stations': len(wires), 'radius_mm': round(r, 1), **detail}
+            if accepted:
+                solid = candidate
+            else:
+                item['skipped'] = detail['reason']
+            report['round_lofts'].append(item)
         except Exception as exc:          # a failed loft keeps the extruded solid, and says so
             report['round_lofts'].append({'axis': 'y', 'failed': str(exc)})
     # measured round parts (propkit/rounding.py): each part is lofted through superellipse
     # sections at its own stations and replaces the square-cornered extrusion inside its box
+    section_cell = _section_cell_mm(record)
     for axis, parts in ((record.get('roundness') or {}).get('exponents') or {}).items():
         for part in parts or []:
             try:
-                lofted = _round_part(axis, part, size)
+                lofted = _round_part(axis, part, size, section_cell)
             except Exception as exc:
-                report.setdefault('round_parts', []).append({'axis': axis, 'failed': str(exc)})
+                report.setdefault('round_parts', []).append({'axis': axis, 'n': part['n'],
+                    'box': part['box'], 'failed': str(exc)})
                 continue
             if lofted is None:
+                report.setdefault('round_parts', []).append({'axis': axis, 'n': part['n'],
+                    'skipped': 'fewer than three valid section stations'})
                 continue
             slab, loft, prism_volume = lofted
-            if axis == 'y' and report['round_lofts']:
-                continue          # the round end view's loft already shaped this axis
             try:
                 here = solid & slab
+                if here.volume <= 1e-6:
+                    report.setdefault('round_parts', []).append({'axis': axis, 'n': part['n'],
+                        'skipped': 'no solid material in the measured section slab'})
+                    continue
                 # only a part that is alone in its box is replaced (other material in the box
                 # would be cut by the loft); otherwise the extrusion stands and says so
                 if here.volume > 1.3 * prism_volume:
@@ -185,23 +219,33 @@ def build_solid(record, masks):
                         'axis': axis, 'n': part['n'], 'skipped': 'other material inside its box'})
                     continue
                 inside = here & loft
-                candidate = (solid - slab) + inside
-                # outlines are kept: the replacement must not change any view's outline
-                before, after = _outline_iou(solid, record), _outline_iou(candidate, record)
-                worst = min(after[v] - before[v] for v in before)
-                b0, b1 = solid.bounding_box(), candidate.bounding_box()
-                size_change = max(abs(b0.size.X - b1.size.X), abs(b0.size.Y - b1.size.Y), abs(b0.size.Z - b1.size.Z))
-                if size_change > 1.0 or len(candidate.solids()) > len(solid.solids()):
-                    worst = min(worst, -1.0)
-                if worst < -0.003:
-                    report.setdefault('round_parts', []).append({
-                        'axis': axis, 'n': part['n'], 'skipped': 'would change a view outline (%.3f)' % worst})
+                if inside.volume <= 1e-6:
+                    report.setdefault('round_parts', []).append({'axis': axis, 'n': part['n'],
+                        'skipped': 'measured loft does not intersect local material'})
                     continue
+                candidate = ((solid - slab) + inside).clean()
+                accepted, detail = _replacement_check(solid, candidate, record)
+                removed = float(solid.volume - candidate.volume)
+                epsilon = max(1e-6, abs(float(solid.volume)) * 1e-9)
+                detail.update(volume_removed_mm3=removed, volume_epsilon_mm3=epsilon)
+                if removed <= epsilon:
+                    report.setdefault('round_parts', []).append({
+                        'axis': axis, 'n': part['n'], 'box': part['box'], **detail,
+                        'skipped': ('no measurable volume removed' if removed >= -epsilon else
+                                    'subtractive round part would add material')})
+                    continue
+                if not accepted:
+                    report.setdefault('round_parts', []).append({
+                        'axis': axis, 'n': part['n'], 'skipped': detail['reason'], **detail})
+                    continue
+                sections = _mid_slab_sections(here, inside, slab, axis)
                 solid = candidate
                 report.setdefault('round_parts', []).append({'axis': axis, 'n': part['n'],
-                                                             'box': [round(v, 3) for v in part['box']]})
+                    'box': [round(v, 3) for v in part['box']],
+                    'section_cell_mm': section_cell, 'mid_slab_section': sections, **detail})
             except Exception as exc:
-                report.setdefault('round_parts', []).append({'axis': axis, 'failed': str(exc)})
+                report.setdefault('round_parts', []).append({'axis': axis, 'n': part['n'],
+                    'box': part['box'], 'failed': str(exc)})
     # local features (propkit/features.py): a bump is as wide as the painting shows it
     from build123d import Box, Location
     scale = {'x': W, 'y': D, 'z': H}
@@ -228,13 +272,14 @@ def build_solid(record, masks):
             for c in cutters:
                 candidate = candidate - c
             candidate = candidate + bump
-            before, after = _outline_iou(solid, record), _outline_iou(candidate, record)
-            if min(after[v] - before[v] for v in before) < -0.003:
-                report.setdefault('features', []).append({'edge': f['edge'], 'skipped': 'would change a view outline'})
+            accepted, detail = _replacement_check(solid, candidate, record)
+            if not accepted:
+                report.setdefault('features', []).append({'edge': f['edge'],
+                    'skipped': detail['reason'], **detail})
                 continue
             solid = candidate
             report.setdefault('features', []).append({'edge': f['edge'], 'axis': f['axis'],
-                                                      'width_mm': round(keep_hi - keep_lo, 1)})
+                'width_mm': round(keep_hi - keep_lo, 1), **detail})
         except Exception as exc:
             report.setdefault('features', []).append({'edge': f['edge'], 'failed': str(exc)})
     # boolean slivers (a fin where two profiles barely overlap) are not part of the object
@@ -248,13 +293,114 @@ def build_solid(record, masks):
     return solid, report
 
 
-def _outline_iou(solid, record):
-    """Each drawing view's outline overlap with the solid's projection (propkit/drawing_qa.py)."""
+def drawing_floor_mm(record, view):
+    """Resolvable outline displacement: mm, shared by construction and later QA.
+
+    Use the coarser of the two source axes. A dense QA raster cannot recover
+    information absent from the original sheet's pixels.
+    """
+    from .drawing_qa import GRID_MM
+    profile = record['profiles'][view]
+    source_mm = [record['size_m'][key] * 1000 / pixels
+                 for key, pixels in zip(SPAN[view], profile['image_px'])]
+    return max(1.0, 2 * GRID_MM, 1.5 * max(source_mm))
+
+
+def _construction_tolerance_m(record):
+    """Use the order's existing game-prop screen budget, without importing Blender."""
+    from .simplification import screen_tolerance
+    standards = json.loads((Path(__file__).resolve().parents[2] /
+                            'factory/standards.json').read_text(encoding='utf-8'))
+    tolerance = screen_tolerance(standards, record.get('kind', 'static'),
+                                 record.get('view_distance_m'))
+    if tolerance is None or tolerance <= 0:
+        raise ValueError('CAD construction requires a positive screen tolerance')
+    return tolerance
+
+
+def _replacement_check(before, candidate, record):
+    """Judge each candidate against traced evidence in mm, retaining every gauge.
+
+    The old solid is only a non-regression check; it is not the drawing. Final
+    drawing QA retains its existing thresholds independently of this guard.
+    """
+    from OCP.BRepCheck import BRepCheck_Analyzer
+    from .drawing_qa import GRID_MM
+    if candidate is None or not candidate.solids():
+        return False, {'reason': 'construction produced no solid', 'guard_pass': False}
+    if not BRepCheck_Analyzer(candidate.wrapped).IsValid():
+        return False, {'reason': 'construction produced an invalid B-rep', 'guard_pass': False}
+    old, new = _outline_metrics(before, record), _outline_metrics(candidate, record)
+    tolerance = _construction_tolerance_m(record)
+    deltas, measurements, reasons = {}, {}, []
+    for view in old:
+        floor = drawing_floor_mm(record, view)
+        limit = max(2 * tolerance * 1000, floor)
+        p0, p1 = old[view]['outline_p95_mm'], new[view]['outline_p95_mm']
+        delta = new[view]['iou'] - old[view]['iou']
+        deltas[view] = round(delta, 6)
+        measurements[view] = {'before': old[view], 'after': new[view],
+                              'floor_mm': floor, 'limit_mm': limit,
+                              'p95_growth_mm': round(p1 - p0, 6),
+                              'iou_delta': round(delta, 6)}
+        if p1 > limit + 1e-9:
+            reasons.append('%s p95 %.2f mm exceeds drawing limit %.2f mm' % (view, p1, limit))
+        if p1 - p0 > GRID_MM + 1e-9:
+            reasons.append('%s p95 grows %.2f mm (limit %.2f mm)' % (view, p1 - p0, GRID_MM))
+        if delta < -0.02 - 1e-9:
+            reasons.append('%s IoU drops %.3f (limit 0.020)' % (view, -delta))
+    b0, b1 = before.bounding_box(), candidate.bounding_box()
+    size_change = max(abs(a - b) for a, b in zip(b0.size, b1.size))
+    counts = [len(before.solids()), len(candidate.solids())]
+    if size_change > 1.0:
+        reasons.append('bounding size changes by %.3f mm' % size_change)
+    if counts[1] > counts[0]:
+        reasons.append('solid count increases from %d to %d' % tuple(counts))
+    return not reasons, {
+        'reason': '; '.join(reasons) if reasons else 'drawing distance, regression, size and connectivity guards passed',
+        'guard_pass': not reasons, 'views': measurements, 'tolerance_m': tolerance,
+        'old_iou_guard_would_reject': min(deltas.values(), default=0) < -0.003,
+        'outline_iou_delta': deltas, 'size_change_mm': round(size_change, 4),
+        'solid_counts': counts}
+
+
+def _outline_metrics(solid, record):
+    """The unchanged drawing gauge, at the established 0.4 mm tessellation."""
     from .drawing_qa import against_drawing
     verts, tris = solid.tessellate(0.4)
     V = np.array([(v.X, v.Y, v.Z) for v in verts]) / 1000.0
     m, _ = against_drawing(V, np.array(tris), record)
-    return {k: v['iou'] for k, v in m.get('views', {}).items()}
+    return m.get('views', {})
+
+
+def _outline_iou(solid, record):
+    return {view: values['iou'] for view, values in _outline_metrics(solid, record).items()}
+
+
+def _mid_slab_sections(before, after, slab, axis):
+    """Diagnostic local B-rep sections in mm; no image-derived geometry is added."""
+    from build123d import Plane, section
+    box = slab.bounding_box()
+    coordinate = {'x': 0, 'y': 1, 'z': 2}[axis]
+    level = list(box.center())[coordinate]
+    plane, axes = {'x': (Plane.YZ.offset(level), (1, 2)),
+                   'y': (Plane.XZ.offset(-level), (0, 2)),
+                   'z': (Plane.XY.offset(level), (0, 1))}[axis]
+
+    def paths(shape):
+        result = []
+        for face in section(shape, section_by=plane).faces():
+            for index, wire in enumerate([face.outer_wire(), *face.inner_wires()]):
+                points = [list(wire.position_at(t)) for t in np.linspace(0, 1, 257)]
+                result.append({'hole': index > 0,
+                               'points_mm': [[p[a] for a in axes] for p in points]})
+        if not result:
+            raise ValueError('no mid-slab section at %.4f mm on %s' % (level, axis))
+        return result
+
+    return {'axis': axis, 'level_mm': level, 'plane_axes': list(axes), 'units': 'mm',
+            'bounds_mm': [[list(box.min)[a], list(box.max)[a]] for a in axes],
+            'before': paths(before), 'after': paths(after)}
 
 
 def _superellipse_points(ca, cb, ra, rb, n, count=40):
@@ -266,12 +412,74 @@ def _superellipse_points(ca, cb, ra, rb, n, count=40):
     return pts
 
 
-def _round_part(axis, part, size):
+def _section_cell_mm(record):
+    """Recover the section writer's grid, not a shape-specific rounding margin.
+
+    Legacy drawings omit ``roundness.grid``. For those, use the same producer's
+    declared default resolution and aspect-ratio rule. These are sampled cells,
+    not exact edge locations; rounding._cells already allows half-cell slack.
+    """
+    import inspect
+    from . import rounding
+    sizes = [1000 * record['size_m'][k] for k in ('width', 'depth', 'height')]
+    grid = (record.get('roundness') or {}).get('grid')
+    if grid is None:
+        resolution = inspect.signature(rounding.estimate).parameters['res'].default
+        grid = [max(8, int(round(resolution * s / max(sizes)))) for s in sizes]
+    return {k: s / count for k, s, count in zip(('width', 'depth', 'height'), sizes, grid)}
+
+
+def _section_wire(axis, along, ca, cb, ra, rb, n, slack_a=0.0, slack_b=0.0):
+    """Closed section in mm, with the producer's axis-aligned half-cell offset.
+
+    rounding._cells tests (max(abs(u-ca)-slack_a, 0)/ra)**n +
+    (max(abs(v-cb)-slack_b, 0)/rb)**n <= 1. This is the Minkowski sum
+    of a superellipse and a rectangle, not a superellipse with larger radii.
+    Four translated quadrants and their tangent straight joins encode that sum.
+    The eventual intersection with the original solid keeps traced boundaries.
+    """
+    from build123d import Edge, Wire, Vector
+
+    def point(u, v, position=along):
+        return Vector(*{'z': (u, v, position), 'x': (position, u, v),
+                        'y': (u, position, v)}[axis])
+
+    if not slack_a and not slack_b:
+        return Wire([Edge.make_spline(
+            [point(u, v) for u, v in _superellipse_points(ca, cb, ra, rb, n)], periodic=True)])
+    signs = ((1, 1), (-1, 1), (-1, -1), (1, -1))
+    tangents = ((0, 1), (-1, 0), (0, -1), (1, 0))
+    quadrants = []
+    for q, (sa, sb) in enumerate(signs):
+        points = []
+        for t in np.linspace(q * math.pi / 2, (q + 1) * math.pi / 2, 21):
+            c, s = math.cos(t), math.sin(t)
+            c = 0.0 if abs(c) < 1e-12 else c
+            s = 0.0 if abs(s) < 1e-12 else s
+            u = ca + ra * math.copysign(abs(c) ** (2 / n), c) + sa * slack_a
+            v = cb + rb * math.copysign(abs(s) ** (2 / n), s) + sb * slack_b
+            points.append(point(u, v))
+        directions = [point(*tangents[q], position=0),
+                      point(*tangents[(q + 1) % 4], position=0)]
+        quadrants.append((points, Edge.make_spline(points, tangents=directions)))
+    edges = []
+    for q, (points, curve) in enumerate(quadrants):
+        edges.append(curve)
+        following = quadrants[(q + 1) % 4][0][0]
+        if (points[-1] - following).length > 1e-7:
+            edges.append(Edge.make_line(points[-1], following))
+    return Wire(edges)
+
+
+def _round_part(axis, part, size, cell_mm=None):
     """(slab, loft) for one measured round part, or None. Stations are normalised
     (along, a0, a1, b0, b1); axis z: a = x, b = y; axis x: a = y, b = z; axis y: a = x, b = z."""
     from build123d import Edge, Wire, Solid, Box, Location, Vector
     W, D, H = size['width'], size['depth'], size['height']
     span = {'z': (H, W, D), 'x': (W, D, H), 'y': (D, W, H)}[axis]
+    keys = {'z': ('height', 'width', 'depth'), 'x': ('width', 'depth', 'height'),
+            'y': ('depth', 'width', 'height')}[axis]
+    slack = [0.5 * (cell_mm or {}).get(k, 0.0) for k in keys]
     by_station = {}
     for st in part.get('stations', []):
         key = round(st[0], 6)
@@ -281,20 +489,17 @@ def _round_part(axis, part, size):
     stations = [v[1] for _, v in sorted(by_station.items())]
     if len(stations) < 3:
         return None
-    # a fair surface: centres and half-widths vary smoothly along the part (the painting's
-    # wobble is not geometry)
-    from scipy.ndimage import gaussian_filter1d
-    arr = np.array(stations, float)
-    c = np.c_[(arr[:, 1] + arr[:, 2]) / 2, (arr[:, 3] + arr[:, 4]) / 2]
-    r = np.c_[(arr[:, 2] - arr[:, 1]) / 2, (arr[:, 4] - arr[:, 3]) / 2]
-    sig = max(1.0, len(arr) / 12)
-    c = gaussian_filter1d(c, sig, axis=0, mode='nearest')
-    r = gaussian_filter1d(r, sig, axis=0, mode='nearest')
-    stations = [[a[0], ci[0] - ri[0], ci[0] + ri[0], ci[1] - ri[1], ci[1] + ri[1]] for a, ci, ri in zip(arr, c, r)]
-    step = max(1, len(stations) // 16)
-    chosen = stations[::step]
-    if chosen[-1] != stations[-1]:
-        chosen.append(stations[-1])
+    # These stations already summarize traced profiles. Smoothing or discarding
+    # extrema here shrinks feet and caps before the outline guard can inspect them.
+    # Ruled spans preserve their bounds and avoid unconstrained longitudinal ringing.
+    chosen = list(stations)
+    # Overrun both slab ends before clipping to local material. Adjacent slabs
+    # then meet on a stable interior section rather than an interpolated loft cap.
+    if slack[0]:
+        first_cap, last_cap = list(stations[0]), list(stations[-1])
+        first_cap[0] -= slack[0] / span[0]
+        last_cap[0] += slack[0] / span[0]
+        chosen = [first_cap, *chosen, last_cap]
     n = float(part['n'])
 
     def to3d(along, a, b):
@@ -303,13 +508,12 @@ def _round_part(axis, part, size):
     for along, a0, a1, b0, b1 in chosen:
         L, A, B = along * span[0], (a0 + a1) / 2 * span[1], (b0 + b1) / 2 * span[2]
         ra, rb = (a1 - a0) / 2 * span[1], (b1 - b0) / 2 * span[2]
-        if ra < 0.3 or rb < 0.3:
+        if ra + slack[1] < 0.3 or rb + slack[2] < 0.3:
             continue
-        pts = [Vector(*to3d(L, u, v)) for u, v in _superellipse_points(A, B, ra, rb, n)]
-        wires.append(Wire([Edge.make_spline(pts + [pts[0]], periodic=False)]))
+        wires.append(_section_wire(axis, L, A, B, ra, rb, n, slack[1], slack[2]))
     if len(wires) < 3:
         return None
-    loft = Solid.make_loft(wires)
+    loft = Solid.make_loft(wires, ruled=True)
     k0, k1, a0, a1, b0, b1 = part['box']
     lo = to3d(k0 * span[0], a0 * span[1], b0 * span[2])
     hi = to3d(k1 * span[0], a1 * span[1], b1 * span[2])
@@ -317,7 +521,7 @@ def _round_part(axis, part, size):
     centre = [(l + h) / 2 for l, h in zip(lo, hi)]
     # the slab spans the part's own stations only, so the loft (which starts and ends there)
     # replaces exactly what it covers
-    first, last = chosen[0][0] * span[0], chosen[-1][0] * span[0]
+    first, last = stations[0][0] * span[0], stations[-1][0] * span[0]
     ax = {'z': 2, 'x': 0, 'y': 1}[axis]
     dims[ax] = max(0.5, last - first)
     centre[ax] = (first + last) / 2
