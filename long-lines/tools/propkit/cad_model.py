@@ -27,13 +27,15 @@ SPAN = {'front': ('width', 'height'), 'back': ('width', 'height'), 'right': ('de
         'left': ('depth', 'height'), 'top': ('width', 'depth'), 'bottom': ('width', 'depth')}
 
 
-def _profile_mm(record, view):
+def _profile_mm(record, view, vertices=None):
     """(u, v, bulge) in mm in the view's drawing plane (v up), bulge sign for v up."""
     prof = record['profiles'][view]
     w, h = prof['image_px']
     size = {k: v * 1000 for k, v in record['size_m'].items()}
     su, sv = size[SPAN[view][0]] / w, size[SPAN[view][1]] / h
-    return [(x * su, (h - y) * sv, -b) for x, y, b in prof['vertices_px']]
+    if vertices is None:
+        vertices = prof['vertices_px']
+    return [(x * su, (h - y) * sv, -b) for x, y, b in vertices]
 
 
 def _to3d(view, u, v, size):
@@ -42,9 +44,9 @@ def _to3d(view, u, v, size):
             'top': (u, v, 0.0), 'bottom': (u, D - v, 0.0)}[view]
 
 
-def _face(record, view, size):
-    from build123d import Edge, Wire, Face, Vector
-    pts = _profile_mm(record, view)
+def _profile_wire(record, view, size, vertices):
+    from build123d import Edge, Wire, Vector
+    pts = _profile_mm(record, view, vertices)
     edges = []
     n = len(pts)
     for i in range(n):
@@ -66,7 +68,15 @@ def _face(record, view, size):
             sag = r - r * math.cos(abs(sweep) / 2)
             pm = mid - nrm * sag * (1 if sweep > 0 else -1)
             edges.append(Edge.make_three_point_arc(p0, Vector(*_to3d(view, pm[0], pm[1], size)), p1))
-    return Face(Wire(edges))
+    return Wire(edges)
+
+
+def _face(record, view, size):
+    from build123d import Face
+    profile = record['profiles'][view]
+    outer = _profile_wire(record, view, size, profile['vertices_px'])
+    inner = [_profile_wire(record, view, size, vertices) for vertices in profile.get('openings', [])]
+    return Face(outer, inner)
 
 
 def _extents(mask, along_cols, lo, hi, stations):
