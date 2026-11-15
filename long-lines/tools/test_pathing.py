@@ -1,5 +1,6 @@
 """Windows path handling for diagnostic images saved inside Blender."""
 
+import ntpath
 import os
 import unittest
 from unittest.mock import patch
@@ -13,12 +14,18 @@ class IOPathContracts(unittest.TestCase):
     def test_short_path_is_unchanged(self):
         self.assertEqual(io_path('image.png'), 'image.png')
 
-    @unittest.skipUnless(os.name == 'nt', 'Windows path contract')
+    def test_non_windows_path_is_unchanged(self):
+        path = '/hull/' + 'x' * 300 + '.png'
+        self.assertEqual(io_path(path, windows=False), path)
+
     def test_long_absolute_path_uses_extended_prefix(self):
-        path = os.path.join(os.getcwd(), 'nested', 'x' * 220 + '.png')
+        path = ntpath.join('C:\\hull', 'nested', 'x' * 240 + '.png')
         self.assertGreaterEqual(len(path), 248)
-        self.assertEqual(io_path(path), '\\\\?\\' + path)
-        self.assertEqual(io_path(io_path(path)), io_path(path))
+        extended = io_path(path, windows=True)
+        self.assertEqual(extended, '\\\\?\\' + path)
+        self.assertEqual(io_path(extended, windows=True), extended)
+        unc = '\\\\server\\share\\' + 'y' * 250 + '.png'
+        self.assertEqual(io_path(unc, windows=True), '\\\\?\\UNC\\' + unc[2:])
 
     def test_long_asset_name_fails_before_creating_output(self):
         import tempfile
@@ -58,19 +65,17 @@ class IOPathContracts(unittest.TestCase):
             check_blender_export_paths('C:/hull', name, windows=True)
         self.assertIn(str(_windows_code_units(target)), str(error.exception))
 
-    @unittest.skipUnless(os.name == 'nt', 'Windows path contract')
     def test_non_bmp_python_io_path_uses_extended_prefix(self):
-        path = os.path.join('C:/hull', chr(0x1F4F7) * 130)
+        path = ntpath.join('C:\\hull', chr(0x1F4F7) * 130)
         self.assertLess(len(path), 248)
         self.assertGreaterEqual(_windows_code_units(path), 248)
-        self.assertTrue(io_path(path).startswith('\\\\?\\'))
+        self.assertTrue(io_path(path, windows=True).startswith('\\\\?\\'))
 
-    @unittest.skipUnless(os.name == 'nt', 'Windows path contract')
     def test_short_relative_name_under_long_root_uses_extended_prefix(self):
-        absolute = os.path.normpath(os.path.join('C:/', 'x' * 240, 'image.png'))
+        absolute = ntpath.normpath(ntpath.join('C:\\', 'x' * 240, 'image.png'))
         self.assertGreaterEqual(_windows_code_units(absolute), 248)
-        with patch('propkit.pathing.os.path.abspath', return_value=absolute):
-            self.assertEqual(io_path('image.png'), '\\\\?\\' + absolute)
+        with patch('propkit.pathing.ntpath.abspath', return_value=absolute):
+            self.assertEqual(io_path('image.png', windows=True), '\\\\?\\' + absolute)
 
 
 if __name__ == '__main__':
