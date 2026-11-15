@@ -332,3 +332,30 @@ proportion by 9-15 %). Registering views piecewise along each shared axis by the
 outline breakpoints (a monotone piecewise-linear map, as the drawing stage's view reconciliation
 already does for outlines) should bring tolerance near a pixel where outlines agree, which shrinks
 every chance probability by the same factor. That comes before trusting any construction.
+
+**2026-11-15, registration: views mapped piecewise before they are compared.** `curve_views`
+now matches outline breakpoints between two views on a shared axis (same sense of change,
+mutual nearest, made monotone so one stray pair cannot fold the map), builds a monotone
+piecewise-linear map from them (stretch kept between 0.5 and 2), and compares every curve,
+`through`, `cylinder` and `plane` after the map. The tolerance is now the 95th percentile of the
+**leave-one-out** residual: each anchor predicted from a map built without it, so a map that
+only memorises its anchors does not look precise. With fewer than two anchors, or no gain over
+box-only alignment, a pair stays rigid. Neighbouring breakpoints of the same sense (one step two
+rows tall) are merged. Tests: an uneven stretch is recovered; opposite-sense breakpoints never
+match; crossed matches cannot fold the map; a stepped tower drawn with 5 % uneven proportions
+gives a plane at the groove only after registration (rigid: tolerance 0.048, no evidence).
+
+On the seven objects (median tolerance, rigid -> registered; consistent curves; pairs
+registered piecewise of 18): toaster 3.8 -> 1.6 % (91; 14), mixer 6.0 -> 1.8 % (102; 15), dryer
+3.4 -> 2.0 % (115; 8), clock 3.9 -> 2.3 % (109; 11), cassette 5.2 -> 3.1 % (49; 11), typewriter
+5.8 -> 4.0 % (33; 10), camera 6.0 -> 5.8 % (39; 4). What survives looks right where it is
+interior: the toaster's panel band front and back, the dryer's colour band in three views, the
+mixer bowl through left and right, the camera's bellows lines through left and right. Two honest
+limits: most consistent curves are still outline fragments (the outline agrees with itself
+after registration, which says little), and the camera barely registers: its views disagree by
+more than the 10 % matching window, so few breakpoints pair. One false positive is visible (a
+diagonal across the cassette's window). Features seen in one view only (the toaster's dial, the
+clock face) stay seen once, as they should; they are the crutch's business.
+
+Next: count outline fragments separately from interior evidence, then try a two-stage match for
+the camera (coarse scale from the whole profile, then breakpoints), before automatic parts.

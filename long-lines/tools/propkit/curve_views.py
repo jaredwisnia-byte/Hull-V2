@@ -7,9 +7,12 @@ by propkit/curves.py. Here the curves meet:
    view convention of propkit/hull.py (front: u -> X, v -> 1 - Z; right: u -> Y; top: v -> 1 - Y;
    back and left mirrored). Two views share an axis: front and right share height Z, front and
    top share width X, right and top share depth Y; opposite views share both.
-2. Tolerance, measured, never guessed. On a shared axis, the outlines' abrupt width changes
-   (breakpoints) must coincide in both views. The 95th percentile of their disagreement is the
-   registration tolerance for that pair of views (floored at 1.5 pixels of the coarser view).
+2. Registration and tolerance, measured, never guessed. On a shared axis, the outlines' abrupt
+   width changes (breakpoints) are the same steps seen in both views. Matched ones anchor a
+   monotone piecewise-linear map between the two views (painted views disagree in proportion
+   unevenly), and every comparison happens after that map. The tolerance is the 95th percentile
+   of the leave-one-out disagreement left after it (floored at 1.5 pixels of the coarser view);
+   with too few anchors, or no gain, the views stay registered by their boxes alone.
 3. Agreement. A curve is *consistent* when another view shows a curve with the same extent on
    the shared axis (both ends within tolerance), or, for a curve that is a single coordinate on
    that axis (a line across it), a line across it at the same coordinate. Otherwise it is *seen
@@ -47,6 +50,7 @@ VIEWS = {
 OPPOSITE = (('front', 'back'), ('right', 'left'), ('top', 'bottom'))
 TOL_FLOOR_PX = 1.5
 ACROSS = 0.25        # a curve spanning less than this many tolerances on an axis is a coordinate there
+MERGE_SAMPLES = 4    # breakpoints this close (of 200 samples) with the same sense are one step
 ALPHA = 0.05         # largest chance probability at which an agreement still counts as evidence
 
 
@@ -90,28 +94,147 @@ def _profile(mask, bbox, view, axis, samples=200):
     return s, np.interp(s, pos, width)
 
 
-def breakpoints(s, width):
-    """Positions where the outline width changes abruptly (local maxima of the change)."""
-    g = np.abs(np.gradient(width, s))
+def breakpoints(s, width, signed=False):
+    """Positions where the outline width changes abruptly (local maxima of the change). With
+    `signed`, also the sign of each change (+1 the outline widens, -1 it narrows)."""
+    dg = np.gradient(width, s)
+    g = np.abs(dg)
     level = max(3 * float(np.median(g)), 0.5)
     peaks = [i for i in range(1, len(g) - 1) if g[i] >= level and g[i] >= g[i - 1] and g[i] >= g[i + 1]]
+    # one step can show as two neighbouring peaks (a step two pixel rows tall): keep the stronger
+    kept = []
+    for i in peaks:
+        if kept and i - kept[-1] <= MERGE_SAMPLES and np.sign(dg[i]) == np.sign(dg[kept[-1]]):
+            if g[i] > g[kept[-1]]:
+                kept[-1] = i
+        else:
+            kept.append(i)
+    peaks = kept
+    if signed:
+        return s[peaks], np.sign(dg[peaks])
     return s[peaks]
 
 
+MATCH_WINDOW = 0.1   # largest normalised disagreement at which two breakpoints can be one feature
+SLOPE = (0.5, 2.0)   # a view's stretch between anchors stays within this (no folding, no collapse)
+
+
+def match_breakpoints(pa, sa, pb, sb, window=MATCH_WINDOW):
+    """Order-preserving one-to-one matches between breakpoints of two views on a shared axis.
+
+    A pair counts only if both change the outline the same way (both widen or both narrow) and
+    each is the other's nearest such breakpoint (mutual nearest neighbours, within `window`).
+    The matches are then made monotone (the longest chain increasing in both views) so that one
+    stray pair cannot fold the map. Returns [(position in a, position in b), ...] sorted."""
+    pairs = []
+    for i, (x, s) in enumerate(zip(pa, sa)):
+        cand = [j for j in range(len(pb)) if sb[j] == s]
+        if not cand:
+            continue
+        j = min(cand, key=lambda j: abs(pb[j] - x))
+        if abs(pb[j] - x) > window:
+            continue
+        back = [k for k in range(len(pa)) if sa[k] == sb[j]]
+        if min(back, key=lambda k: abs(pa[k] - pb[j])) == i:
+            pairs.append((float(x), float(pb[j])))
+    pairs.sort()
+    # longest chain increasing in b (pairs are already increasing in a); O(n^2) is fine here
+    best, prev = [1] * len(pairs), [-1] * len(pairs)
+    for i in range(len(pairs)):
+        for k in range(i):
+            if pairs[k][1] < pairs[i][1] and pairs[k][0] < pairs[i][0] and best[k] + 1 > best[i]:
+                best[i], prev[i] = best[k] + 1, k
+    if not pairs:
+        return []
+    i = int(np.argmax(best))
+    chain = []
+    while i >= 0:
+        chain.append(pairs[i])
+        i = prev[i]
+    return chain[::-1]
+
+
+def _anchors(pairs):
+    """Monotone anchors (b -> a) including the box ends, keeping each stretch within SLOPE."""
+    xs_b, xs_a = [0.0], [0.0]
+    for xa, xb in pairs:
+        if not (xs_b[-1] < xb < 1 and xs_a[-1] < xa < 1):
+            continue
+        slope = (xa - xs_a[-1]) / (xb - xs_b[-1])
+        if SLOPE[0] <= slope <= SLOPE[1]:
+            xs_b.append(xb)
+            xs_a.append(xa)
+    xs_b.append(1.0)
+    xs_a.append(1.0)
+    # the last stretch must also respect SLOPE; drop interior anchors from the end until it does
+    while len(xs_b) > 2:
+        slope = (xs_a[-1] - xs_a[-2]) / (xs_b[-1] - xs_b[-2])
+        if SLOPE[0] <= slope <= SLOPE[1]:
+            break
+        del xs_b[-2], xs_a[-2]
+    return xs_b, xs_a
+
+
+class Registration:
+    """Map between two views on one shared axis: b's normalised coordinate -> a's.
+
+    The views are painted, not photographed through one lens, so their proportions disagree along
+    an axis by a few percent, unevenly (the camera's views by 9-15 %). Normalising each view to
+    its outline box aligns only the ends. Matched outline breakpoints (the same step in the
+    outline, seen in both views) are anchors of a monotone piecewise-linear map, the same idea as
+    the drawing stage's view reconciliation. The tolerance is what is left after the map,
+    measured honestly: each anchor is predicted from a map built without it (leave-one-out), so
+    a map that only memorises its anchors does not look precise."""
+
+    def __init__(self, pairs, floor, rigid_tolerance):
+        self.pairs = pairs
+        self.xs_b, self.xs_a = _anchors(pairs)
+        self.floor = floor
+        residuals = []
+        for xa, xb in pairs:
+            rest = [p for p in pairs if p != (xa, xb)]
+            fb, fa = _anchors(rest)
+            residuals.append(abs(float(np.interp(xb, fb, fa)) - xa))
+        self.residuals = residuals
+        learned = (max(floor, float(np.percentile(residuals, 95)))
+                   if len(self.xs_b) - 2 >= 2 and len(residuals) >= 3 else None)
+        if learned is not None and learned < rigid_tolerance:
+            self.tolerance = learned
+            self.piecewise = True
+        else:                                  # too few anchors, or no better than rigid: stay rigid                                  # too few anchors to learn a map: stay rigid
+            self.xs_b, self.xs_a = [0.0, 1.0], [0.0, 1.0]
+            self.tolerance = rigid_tolerance
+            self.piecewise = False
+
+    def to_a(self, values):
+        return np.interp(np.asarray(values, np.float64), self.xs_b, self.xs_a)
+
+    def to_b(self, values):
+        return np.interp(np.asarray(values, np.float64), self.xs_a, self.xs_b)
+
+    def summary(self):
+        return {'tolerance': round(self.tolerance, 5), 'floor': round(self.floor, 5),
+                'piecewise': self.piecewise, 'anchors': len(self.xs_b) - 2,
+                'matched_breakpoints': len(self.pairs)}
+
+
 def registration(traces, masks, a, b, axis):
-    """Measured tolerance (normalised) between views a and b on their shared `axis`."""
-    pa = breakpoints(*_profile(masks[a], traces[a]['bbox'], a, axis))
-    pb = breakpoints(*_profile(masks[b], traces[b]['bbox'], b, axis))
+    """Register views a and b on their shared `axis`; returns a Registration (b -> a)."""
+    pa, sa = breakpoints(*_profile(masks[a], traces[a]['bbox'], a, axis), signed=True)
+    pb, sb = breakpoints(*_profile(masks[b], traces[b]['bbox'], b, axis), signed=True)
     px = []
     for v in (a, b):
         x0, y0, x1, y1 = traces[v]['bbox']
         u_axis, _, _, _, _ = VIEWS[v]
         px.append((x1 - x0) if axis == u_axis else (y1 - y0))
     floor = TOL_FLOOR_PX / max(min(px), 1)
+    # rigid tolerance, as before: nearest breakpoint disagreement with only the box ends aligned
     d = [float(np.min(np.abs(pb - x))) for x in pa if len(pb)]
-    d = [x for x in d if x <= 0.1]
-    tol = max(floor, float(np.percentile(d, 95))) if d else max(floor, 0.02)
-    return {'tolerance': round(tol, 5), 'matched_breakpoints': len(d), 'floor': round(floor, 5)}
+    d = [x for x in d if x <= MATCH_WINDOW]
+    rigid = max(floor, float(np.percentile(d, 95))) if d else max(floor, 0.02)
+    reg = Registration(match_breakpoints(pa, sa, pb, sb), floor, rigid)
+    reg.rigid_tolerance = rigid
+    return reg
 
 
 def analyse(images):
@@ -124,15 +247,14 @@ def analyse(images):
         masks[view] = _curves.object_mask(image)
         world[view] = [to_world(view, traces[view]['bbox'], c['points']) for c in traces[view]['curves']]
     names = sorted(traces)
-    tolerances = {}
+    regs = {}
     for i, a in enumerate(names):
         for b in names[i + 1:]:
             for axis in sorted(set(axes(a)) & set(axes(b))):
-                tolerances[(a, b, axis)] = registration(traces, masks, a, b, axis)
-
-    def tol(a, b, axis):
-        key = (a, b, axis) if (a, b, axis) in tolerances else (b, a, axis)
-        return tolerances[key]['tolerance']
+                regs[(a, b, axis)] = registration(traces, masks, a, b, axis)
+    tol, into = _registered(regs)
+    rigid = {k: r.rigid_tolerance for k, r in regs.items()}
+    tolerances = {k: dict(r.summary(), rigid_tolerance=round(rigid[k], 5)) for k, r in regs.items()}
 
     # candidates per view and axis, for the chance of a coincidental match
     def is_across(view, m, axis, t):
@@ -153,7 +275,7 @@ def analyse(images):
                     n_extent = len(traces[b]['curves']) - n_across
                     p_coord, p_ext = chance(n_across, t), chance(n_extent, t, ends=2)
                     for m, d in enumerate(traces[b]['curves']):
-                        cb = world[b][m][axis]
+                        cb = into(a, b, axis, world[b][m][axis])
                         blo, bhi = float(cb.min()), float(cb.max())
                         if hi - lo < ACROSS * 4 * t:          # a coordinate on this axis
                             if bhi - blo < ACROSS * 4 * t and abs((lo + hi) / 2 - (blo + bhi) / 2) <= t:
@@ -175,7 +297,8 @@ def analyse(images):
                                 else 'decoration_or_unconfirmed')
             else:
                 c['reading'] = 'outline'
-    constructions = _through(traces, world, tol) + _cylinders(traces, world, tol) + _planes(traces, world, tol)
+    constructions = (_through(traces, world, tol, into) + _cylinders(traces, world, tol, into)
+                     + _planes(traces, world, tol, into))
     return {'traces': traces,
             'tolerances': {'%s|%s|%s' % k: v for k, v in sorted(tolerances.items())},
             'constructions': constructions,
@@ -185,7 +308,23 @@ def analyse(images):
                        for v in names}}
 
 
-def _through(traces, world, tol, max_mean=1.0):
+def _registered(regs):
+    """tol(a, b, axis) and into(a, b, axis, values): b's coordinates in a's frame."""
+    def tol(a, b, axis):
+        return (regs.get((a, b, axis)) or regs[(b, a, axis)]).tolerance
+
+    def into(a, b, axis, values):
+        if (a, b, axis) in regs:
+            return regs[(a, b, axis)].to_a(values)
+        return regs[(b, a, axis)].to_b(values)
+    return tol, into
+
+
+def _identity_into(a, b, axis, values):
+    return np.asarray(values, np.float64)
+
+
+def _through(traces, world, tol, into=_identity_into, max_mean=1.0):
     """Same curve in opposite views (the far view mirrored by its frame): nothing changes in between."""
     out = []
     for a, b in OPPOSITE:
@@ -205,7 +344,7 @@ def _through(traces, world, tol, max_mean=1.0):
             for m, d in enumerate(traces[b]['curves']):
                 if d['kind'] == 'outline':
                     continue
-                pb = np.column_stack([world[b][m][ua], world[b][m][va]])
+                pb = np.column_stack([into(a, b, ua, world[b][m][ua]), into(a, b, va, world[b][m][va])])
                 if abs(pa[:, 0].min() - pb[:, 0].min()) > ta or abs(pa[:, 1].min() - pb[:, 1].min()) > tb:
                     continue
                 dist = np.hypot((pa[:, None, 0] - pb[None, :, 0]) / ta, (pa[:, None, 1] - pb[None, :, 1]) / tb)
@@ -219,7 +358,7 @@ def _through(traces, world, tol, max_mean=1.0):
     return out
 
 
-def _cylinders(traces, world, tol):
+def _cylinders(traces, world, tol, into=_identity_into):
     """A circle in one view and two lines along its viewing axis at its extreme coordinates."""
     out = []
     for a in traces:
@@ -238,7 +377,7 @@ def _cylinders(traces, world, tol):
                     for m, d in enumerate(traces[b]['curves']):
                         if d['type'] != 'line':
                             continue
-                        ws, wn = world[b][m][s], world[b][m][n]
+                        ws, wn = into(a, b, s, world[b][m][s]), world[b][m][n]
                         if np.ptp(ws) > ACROSS * 4 * t or np.ptp(wn) < 4 * t:
                             continue                      # must run along the viewing axis n
                         along += 1
@@ -256,7 +395,7 @@ def _cylinders(traces, world, tol):
     return out
 
 
-def _planes(traces, world, tol):
+def _planes(traces, world, tol, into=_identity_into):
     """Lines across a shared axis at the same coordinate in two views: a face or step there."""
     out, seen = [], set()
     names = sorted(traces)
@@ -279,7 +418,7 @@ def _planes(traces, world, tol):
                     for m, d in enumerate(traces[b]['curves']):
                         if d['type'] != 'line' or d['kind'] == 'outline':
                             continue
-                        wb = world[b][m][s]
+                        wb = into(a, b, s, world[b][m][s])
                         if np.ptp(wb) > ACROSS * 4 * t or abs(float(wa.mean() - wb.mean())) > t:
                             continue
                         key = (s, round(float(wa.mean()) / t))

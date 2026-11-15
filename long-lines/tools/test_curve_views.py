@@ -117,5 +117,68 @@ class Coincidence(unittest.TestCase):
         self.assertFalse([c for c in result['constructions'] if c['construction'] == 'plane'])
 
 
+def _warp(z):
+    """A painter's uneven proportions: the lower half drawn 20 % tall, the upper half squeezed."""
+    z = np.asarray(z, np.float64)
+    return np.where(z < 0.5, z * 1.2, 0.6 + (z - 0.5) * 0.8)
+
+
+class Registration(unittest.TestCase):
+    def test_matched_breakpoints_recover_an_uneven_stretch(self):
+        pa = np.array([0.1, 0.2, 0.35, 0.45, 0.6, 0.7, 0.85, 0.95])
+        sa = np.array([1, -1, 1, -1, 1, -1, 1, -1])
+        pb = _warp(pa)
+        reg = curve_views.Registration(curve_views.match_breakpoints(pa, sa, pb, sa), 0.003, 0.08)
+        self.assertTrue(reg.piecewise)
+        self.assertEqual(reg.summary()['anchors'], 8)
+        np.testing.assert_allclose(reg.to_a(_warp(np.array([0.3, 0.75]))), [0.3, 0.75], atol=0.01)
+        np.testing.assert_allclose(reg.to_b(reg.to_a([0.42])), [0.42], atol=1e-9)
+        self.assertLess(reg.tolerance, 0.02)          # leave-one-out, not zero
+
+    def test_breakpoints_of_opposite_sense_are_not_matched(self):
+        pairs = curve_views.match_breakpoints(np.array([0.3]), np.array([1]), np.array([0.31]), np.array([-1]))
+        self.assertEqual(pairs, [])
+
+    def test_one_stray_match_cannot_fold_the_map(self):
+        pa = np.array([0.2, 0.4, 0.6, 0.8])
+        pb = np.array([0.2, 0.62, 0.4, 0.8])            # the middle two crossed
+        s = np.array([1, 1, 1, 1])
+        pairs = curve_views.match_breakpoints(pa, s, pb, s, window=0.3)
+        self.assertTrue(all(b1 < b2 for (_, b1), (_, b2) in zip(pairs, pairs[1:])))
+
+    def test_too_few_anchors_stay_rigid(self):
+        reg = curve_views.Registration([(0.5, 0.52)], 0.003, 0.04)
+        self.assertFalse(reg.piecewise)
+        self.assertEqual(reg.tolerance, 0.04)
+        np.testing.assert_allclose(reg.to_a([0.3]), [0.3])
+
+    def test_registered_views_agree_where_box_normalised_ones_do_not(self):
+        """A stepped tower 300 px tall drawn with uneven, smooth proportions in its side view
+        (up to 5 % of its height): the groove at the same height agrees only after registration,
+        and the measured tolerance falls."""
+        ht, wf, wr = 300, 200, 120
+        steps = [k / 10 for k in range(10)]
+
+        def bend(z):
+            return np.asarray(z, np.float64) + 0.05 * np.sin(np.pi * np.asarray(z, np.float64))
+
+        def tower(w, warp):
+            im = np.full((ht + 2 * M, w + 2 * M, 3), BG, np.float64)
+            for k, z0 in enumerate(steps):
+                z1 = steps[k + 1] if k + 1 < len(steps) else 1.0
+                r0, r1 = M + ht - int(round(ht * warp(z1))), M + ht - int(round(ht * warp(z0)))
+                half = int(round(w * (1 - 0.06 * k) / 2))
+                im[r0:r1, M + w // 2 - half:M + w // 2 + half] = BODY
+            r = M + ht - int(round(ht * warp(0.45)))
+            im[r - 1:r + 1, M + w // 2 - w // 6:M + w // 2 + w // 6] = GROOVE
+            return im
+        result = curve_views.analyse({'front': tower(wf, lambda z: np.asarray(z, np.float64)),
+                                      'right': tower(wr, bend)})
+        t = result['tolerances']['front|right|z']
+        self.assertTrue(t['piecewise'], t)
+        self.assertLess(t['tolerance'], t['rigid_tolerance'] / 2)
+        planes = [c['at'] for c in result['constructions'] if c['construction'] == 'plane' and c['axis'] == 'z']
+        self.assertTrue(planes and all(abs(a - 0.45) < 0.02 for a in planes), (planes, t))
+
 if __name__ == '__main__':
     unittest.main()
