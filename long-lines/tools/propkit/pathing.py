@@ -1,5 +1,6 @@
 """Filesystem paths accepted by Blender's embedded Python on Windows."""
 
+import ntpath
 import os
 
 
@@ -39,16 +40,20 @@ def check_blender_export_paths(out_root, name, windows=None):
             (units, BLENDER_WINDOWS_PATH_LIMIT, excess, longest))
 
 
-def io_path(path):
+def io_path(path, windows=None):
     """Return an extended path when Blender's Windows process hits MAX_PATH.
 
     Keep ordinary paths in reports and manifests. This form is for Python
     file I/O only; Blender operators may not accept the extended prefix.
+    `windows` defaults to the running platform. Windows rules use `ntpath`,
+    so this contract is tested on every platform instead of skipped off Windows.
     """
     value = os.fspath(path)
-    if os.name != 'nt' or value.startswith('\\\\?\\'):
+    if windows is None:
+        windows = os.name == 'nt'
+    if not windows or value.startswith('\\\\?\\'):
         return value
-    absolute = os.path.abspath(value)
+    absolute = ntpath.abspath(value)
     if _windows_code_units(absolute) < 248:
         return value
     if absolute.startswith('\\\\'):
