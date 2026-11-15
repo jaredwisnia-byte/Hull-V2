@@ -790,3 +790,23 @@ rather than compare their output. Preserve those failure records.
   loose shell); a meshed body with negative signed volume is flipped back outward.
 - Rule: before blaming a numerical stage for a missing part, intersect the masks by hand with and
   without each view; the culprit is often one view that disagrees with the rest.
+
+## Same photo, different mesh: three hidden sources of variation (2026-11-14)
+- Rule R9 (ARCHITECTURE.md): two builds of the same input must give byte-identical GLBs. Codex's
+  Order 2 runs stopped twice on repeat builds that differed.
+- 1. Shared learning memory (`.hull-memory`): every build changed a database later builds read,
+  including cached relief regions under a per-build budget. The camera came out 8 mm taller from
+  an identical drawing. Fix: `reconstruction_memory_mode` is `off` by default (`447a747`).
+- 2. Blender's tangents: Blender 5.2 computes MikkTSpace tangents with a parallel sum whose order
+  varies (20 calls on one mesh, 20 tangent sets). A tangent-space normal-map value on a rounding
+  boundary then flips by one level (typewriter, mixer: one value in 12.6 million). The scene's
+  render-thread setting does not help; only the command-line thread count does. Fix: the normal
+  bake runs in a single-threaded Blender (`blender -t 1`, propkit/bake_normal_worker.py); about
+  3 s per build; guard test `test_bake_repeatable.py`.
+- 3. Open: Blender's Decimate modifier gives a different mesh on every call, even single
+  threaded (8 calls, 8 meshes). Production simplifies with pyfqmr (repeatable) and falls back to
+  Decimate only when pyfqmr misses the error bound or the mesh carries extra attributes; the
+  seven image-only objects repeat exactly, but the fallback must be replaced before it is
+  trusted. `test_simplification.py` (UV sphere, Decimate path) varies between runs for this reason.
+- Rule: compare repeat builds by hash, and when they differ, diff the GLB part by part (geometry,
+  UVs, each texture) before guessing; then test the suspect call repeatedly in one session.

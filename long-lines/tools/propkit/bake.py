@@ -119,6 +119,41 @@ def combine_high_sources(parts, name):
     return combined
 
 
+def _bake_normal_repeatable(obj, high, image, path, cage_extrusion, max_ray_distance):
+    """Bake the tangent-space normal map in a single-threaded Blender and read it back.
+
+    Rule R9 (same photo, same mesh). Blender 5.2's MikkTSpace tangents vary from call to call when
+    computed in parallel (twenty calls, twenty tangent sets), so a normal-map value lying on a
+    rounding boundary flipped by one level between identical typewriter builds. Only the
+    command-line thread count makes the tangents repeatable; the scene's render-thread setting
+    does not. The scene is saved as a copy and propkit/bake_normal_worker.py bakes it with
+    `-t 1`; the rest of the build keeps every thread.
+    """
+    import shutil
+    import subprocess
+    import tempfile
+    tmp = tempfile.mkdtemp(prefix='hull-normal-')
+    try:
+        blend = os.path.join(tmp, 'scene.blend')
+        png = os.path.join(tmp, 'normal.png')
+        bpy.ops.wm.save_as_mainfile(filepath=blend, copy=True, check_existing=False)
+        args = {'object': obj.name, 'high': high.name if high else None, 'image': image.name,
+                'output': png, 'cage_extrusion': cage_extrusion, 'max_ray_distance': max_ray_distance}
+        worker = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'bake_normal_worker.py')
+        cmd = [bpy.app.binary_path, '-b', '--factory-startup', '-t', '1', blend,
+               '--python', worker, '--', json.dumps(args)]
+        done = subprocess.run(cmd, capture_output=True, text=True, timeout=3600)
+        if done.returncode != 0 or not os.path.exists(png):
+            raise RuntimeError('single-threaded normal bake failed:\n%s\n%s'
+                               % (done.stdout[-2000:], done.stderr[-2000:]))
+        shutil.copyfile(png, path)
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    image.filepath_raw = path
+    image.source = 'FILE'
+    image.reload()
+
+
 def finish(name, out_root, tex=1024, samples=24, tags=(), owned_projection=False):
     """Bakes albedo / normal / ORM maps for everything built since core.reset()
     and writes <out_root>/<name>/<name>.glb plus textures. Returns manifest info."""
@@ -274,20 +309,14 @@ def finish(name, out_root, tex=1024, samples=24, tags=(), owned_projection=False
         i["mat"].node_tree.links.new(
             i["bsdf"].outputs["BSDF"], i["out"].inputs["Surface"])
     scene.cycles.samples = 4
+    dims_ = max(obj.dimensions)
+    _bake_normal_repeatable(obj, high, nrm, os.path.join(out, name + "_normal.png"),
+                            0.01 * dims_, 0.03 * dims_)
     if high:
         # high to low: the dense relief's detail into the simplified mesh's normal map
-        dims_ = max(obj.dimensions)
-        high.select_set(True)
-        obj.select_set(True)
-        bpy.context.view_layer.objects.active = obj
-        bpy.ops.object.bake(type="NORMAL", normal_space="TANGENT", use_selected_to_active=True,
-                            cage_extrusion=0.01 * dims_, max_ray_distance=0.03 * dims_)
         bpy.data.objects.remove(high, do_unlink=True)
         core.select_only(obj)
         std_notes.append("normal map baked from the dense relief")
-    else:
-        bpy.ops.object.bake(type="NORMAL", normal_space="TANGENT")
-    save(nrm, name + "_normal.png")
     orm = new_img(name + "_orm", "Non-Color")
     a = np.ones(tex * tex * 4, dtype=np.float32)
     a[1::4] = px(r)[0::4]
