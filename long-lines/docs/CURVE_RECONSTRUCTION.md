@@ -182,3 +182,24 @@ Jared can review or correct it. Assumed geometry never counts as evidence for QA
 
 Gates follow `CONTRIBUTING.md`: the mixed set before and after, byte-identical repeat builds
 (rule R9), no object-name selection, clay renders inspected.
+
+## Progress
+
+**2026-11-14, preview of step 1 (no code change).** The `cad_model` solids that Order 1's builds
+already exported (`vision_*.step`) were meshed by OpenCascade at the four profile tolerances and
+rendered as clay beside the voxel meshes. The solids have no folds or crumpling, and fidelity
+works: the hair dryer is 26,778 triangles at `engineering`, 3,978 at `game_hero`, 1,778 at
+`game_prop` and 1,144 at `game_background` (voxel mesh today: 737, 100 folds per 1,000). What the
+solids lack is exactly what the curve stages add: outlines are extruded and intersected, so
+cross-sections are boxy where no round end view was found (several round parts were skipped as
+"would change a view outline"), the cassette handle is filled (Order 2), the camera has a thin
+fin, and the mixer bowl and head are one block (no parts).
+
+**2026-11-14, step 3 started: `propkit/curves.py`** (single-view statistics, test `test_curves.py`,
+registered as core check `curves`). LSD candidates, chain-level scale persistence, contrast
+coherence, symmetry votes, BIC choice between line, circle, ellipse (direct least squares) and
+B-spline; deterministic. On three views of each of the seven objects it keeps 36-60% of
+candidates. On the toaster's side view it keeps the outline, both slots, the lever slot and the
+panel edges, and rejects most chrome reflections and wear; it also keeps one highlight band and
+rejects some faint real edges, and leaves the dial ring as separate pieces. Single-view
+statistics cannot do better alone: cross-view consensus (step 4) is the decisive filter.

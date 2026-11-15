@@ -7,6 +7,11 @@
       "script": "long-lines/tools/test_pathing.py"
     },
     {
+      "id": "curves",
+      "capability": "core",
+      "script": "long-lines/tools/test_curves.py"
+    },
+    {
       "id": "sectioning",
       "capability": "core",
       "script": "long-lines/tools/test_sectioning.py",
