@@ -307,3 +307,28 @@ candidates. On the toaster's side view it keeps the outline, both slots, the lev
 panel edges, and rejects most chrome reflections and wear; it also keeps one highlight band and
 rejects some faint real edges, and leaves the dial ring as separate pieces. Single-view
 statistics cannot do better alone: cross-view consensus (step 4) is the decisive filter.
+
+**2026-11-14, steps 3-4 begun: `propkit/curve_views.py`** (tests `test_curve_views.py`, core check
+`curve-views`) and `curves.py` extensions (broken arcs joined into circles; outline / closed /
+interior labels; persistence by brightness-step retention as well as LSD, required at half of the
+eligible coarse scales). Cross-view agreement uses the `hull.py` view convention, a tolerance
+measured from the outlines' breakpoints, and constructions `through`, `cylinder` and `plane`.
+On a synthetic box with a boss, a groove and a front-only paint band it finds the cylinder, the
+groove's plane, the groove running through, and leaves the paint band as seen once.
+
+First run on the seven objects taught the most important thing so far: **without a chance test,
+cross-view agreement is meaningless on painted sheets.** 98-100 % of 340-550 curves per object
+found a partner and hundreds of cylinders and planes appeared, because tolerances are 2.5-6 % of
+the object and every view is full of lines (the sofa lesson again). Every agreement and
+construction now carries its probability of coincidence (candidates x window) and counts only at
+5 % or less. After that: 0-107 curves per object are consistent (typewriter 0, toaster 95, mixer
+107), 0-18 `through` constructions, 0-2 cylinders, no planes; the rest are marked
+`coincidental`. What survives on the toaster is plausible (the panel edge running round the
+sides, the slot openings), but several surviving cylinders are doubtful.
+
+**Next: registration, not more rules.** The limiting factor is the tolerance. Normalising each
+view to its outline box leaves the painted views 2.5-6 % apart (the camera's views disagree in
+proportion by 9-15 %). Registering views piecewise along each shared axis by their matched
+outline breakpoints (a monotone piecewise-linear map, as the drawing stage's view reconciliation
+already does for outlines) should bring tolerance near a pixel where outlines agree, which shrinks
+every chance probability by the same factor. That comes before trusting any construction.

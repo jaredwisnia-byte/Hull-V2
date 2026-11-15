@@ -12,6 +12,11 @@
       "script": "long-lines/tools/test_curves.py"
     },
     {
+      "id": "curve-views",
+      "capability": "core",
+      "script": "long-lines/tools/test_curve_views.py"
+    },
+    {
       "id": "sectioning",
       "capability": "core",
       "script": "long-lines/tools/test_sectioning.py",

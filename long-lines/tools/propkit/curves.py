@@ -12,7 +12,9 @@ Statistics (each a measured property of the curve, never an object-specific exce
   1. not an accident: -log10(NFA) > 0 (LSD's own test) and length >= MIN_LENGTH_PX;
   2. scale persistence: a real edge is found again in the view reduced 2x and 4x; wear, fabric
      and brush texture are not. Measured on the linked chain (an arc is many short LSD pieces
-     but one curve) and required at every scale the chain is long enough to survive;
+     but one curve): found again at half or more of the coarser scales the chain is long enough
+     for (with full resolution, two of three scales), so a thin painted line that fades at 4x
+     but survives 2x is kept;
   3. contrast coherence: across a real edge the brightness step keeps one sign along its length
      and varies little (coefficient of variation <= MAX_CONTRAST_CV); a highlight fades in and out;
   4. symmetry vote: on a view whose outline is mirror-symmetric, a curve whose mirror image is
@@ -106,16 +108,47 @@ def _point_segment_distance(pts, lines):
     return d.min(0)
 
 
-def chain_persistence(pts, length, coarse, cover=0.6):
-    """Persistence of a whole chain (an arc is many short LSD pieces but one curve): at every
-    coarser scale the chain is long enough for, at least `cover` of its points must lie within
-    1.5 coarse pixels of a segment found at that scale. Returns (fraction of scales, eligible)."""
-    eligible = [(s, lines) for s, lines in coarse if length >= MIN_LENGTH_PX * s]
+def _step(gray, pts, normals, scale=1.0, offset=(1.5, 3.0)):
+    """Median brightness step across a curve, sampled at `offset` pixels of the given scale."""
+    q = pts / scale
+    sides = []
+    for sign in (1, -1):
+        vals = [ndimage.map_coordinates(gray, [(q + sign * o * normals)[:, 1], (q + sign * o * normals)[:, 0]],
+                                        order=1, mode='nearest') for o in offset]
+        sides.append(np.mean(vals, axis=0))
+    return float(np.median(np.abs(sides[0] - sides[1])))
+
+
+def _normals(pts):
+    d = np.gradient(pts, axis=0)
+    n = np.column_stack([-d[:, 1], d[:, 0]])
+    return n / np.maximum(np.linalg.norm(n, axis=1, keepdims=True), 1e-9)
+
+
+def chain_persistence(pts, length, coarse, cover=0.6, gray=None, retention=0.5):
+    """Persistence of a whole chain (an arc is many short LSD pieces but one curve).
+
+    At every coarser scale the chain is long enough for, the chain persists if either
+      - at least `cover` of its points lie within 1.5 coarse pixels of a segment LSD finds at that
+        scale (long lines, including thin painted ones), or
+      - its brightness step survives the reduction: the step across the chain in the reduced view
+        is at least `retention` of the full-resolution step. A real edge keeps its step; a brush
+        stroke a pixel or two wide is averaged away. This catches small round features, whose
+        pieces are too short for LSD to find again.
+    Returns (fraction of eligible scales at which it persists, number eligible)."""
+    eligible = [c for c in coarse if length >= MIN_LENGTH_PX * c[0]]
     if not eligible:
         return None, 0
+    normals = _normals(pts)
+    fine = _step(gray, pts, normals) if gray is not None else 0.0
     found = 0
-    for s, lines in eligible:
-        found += float(np.mean(_point_segment_distance(pts, lines) <= 1.5 * s)) >= cover
+    for entry in eligible:
+        s, lines = entry[0], entry[1]
+        if float(np.mean(_point_segment_distance(pts, lines) <= 1.5 * s)) >= cover:
+            found += 1
+        elif gray is not None and len(entry) > 2 and fine > 1e-6 and \
+                _step(entry[2], pts, normals, scale=s) >= retention * fine:
+            found += 1
     return found / len(eligible), len(eligible)
 
 
@@ -334,7 +367,7 @@ def trace(image):
         small = cv2.resize(gray, (max(1, gray.shape[1] // s), max(1, gray.shape[0] // s)),
                            interpolation=cv2.INTER_AREA)
         cl, _ = _lsd(small)
-        coarse.append((s, cl * s))
+        coarse.append((s, cl * s, small))
     near = ndimage.binary_dilation(mask, iterations=2)
     axis, sym_iou = symmetry_axis(mask)
     segments = []
@@ -369,9 +402,9 @@ def trace(image):
         reasons = []
         if length < MIN_LENGTH_PX:
             reasons.append('shorter than %.0f px' % MIN_LENGTH_PX)
-        per, eligible = chain_persistence(pts, length, coarse)
-        if per is not None and per < 1.0:
-            reasons.append('vanishes at a coarser scale')
+        per, eligible = chain_persistence(pts, length, coarse, gray=gray)
+        if per is not None and per < 0.5:
+            reasons.append('vanishes at the coarser scales')
         if reasons:
             for i in ids:
                 segments[i]['accepted'] = False
@@ -382,15 +415,111 @@ def trace(image):
                      persistence_scales=eligible, bic=scores, points=pts.round(2).tolist())
         curves.append(curve)
     accepted = [s for s in segments if s['accepted']]
+    curves = join_arcs(curves)
+    _label_kinds(curves, mask)
     if axis is not None and sym_iou >= SYMMETRIC_VIEW_IOU:
         _vote_symmetry(curves, axis)
-    return {'segments': segments, 'curves': curves,
+    ys, xs = np.nonzero(mask)
+    bbox = [int(xs.min()), int(ys.min()), int(xs.max()) + 1, int(ys.max()) + 1] if len(xs) else None
+    return {'segments': segments, 'curves': curves, 'bbox': bbox,
             'symmetry': {'axis_x': axis, 'outline_iou': round(sym_iou, 4),
                          'symmetric': bool(sym_iou >= SYMMETRIC_VIEW_IOU)},
             'counts': {'candidates': len(segments), 'accepted': len(accepted),
                        'curves': len(curves),
                        'by_type': {t: sum(c['type'] == t for c in curves)
                                    for t in ('line', 'circle', 'ellipse', 'spline')}}}
+
+
+def _coverage(points, center):
+    """Fraction of the full turn the points cover around `center` (36 bins of 10 degrees)."""
+    a = np.arctan2(points[:, 1] - center[1], points[:, 0] - center[0])
+    bins = np.unique(np.floor((a + np.pi) / (2 * np.pi) * 36).astype(int) % 36)
+    return len(bins) / 36.0
+
+
+def join_arcs(curves, max_rms=1.0):
+    """Join pieces of one round edge (a dial ring traced as short arcs or chords) into one curve.
+
+    Two curves are joined when the union of their points is better explained by one circle or
+    ellipse (BIC chooses a round type, within `max_rms` px or 1.2x the pieces' own error) and
+    together they cover more of the turn than either alone. Long straight lines never join: a
+    set of collinear points also fits a circle of enormous radius, which is excluded.
+    """
+    def candidate(c):
+        return c['type'] in ('circle', 'ellipse', 'spline') or (c['type'] == 'line' and c['length_px'] < 40)
+
+    def pair(ci, cj):
+        pi, pj = np.asarray(ci['points']), np.asarray(cj['points'])
+        union = np.vstack([pi, pj])
+        span = float(np.ptp(union, axis=0).max())
+        lo_i, hi_i, lo_j, hi_j = pi.min(0), pi.max(0), pj.min(0), pj.max(0)
+        box_gap = float(np.max(np.maximum(0, np.maximum(lo_i - hi_j, lo_j - hi_i))))
+        if box_gap > 0.5 * span:
+            return None
+        from scipy.spatial import cKDTree
+        if float(cKDTree(pi).query(pj)[0].min()) > 0.5 * span:
+            return None
+        limit = max(max_rms, 1.2 * max(ci.get('rms_px', 0), cj.get('rms_px', 0)))
+        quick, res, _ = fit_circle(union)                 # cheap test before the full model choice
+        if quick['radius'] > 2 * span or quick['radius'] < 4 or                 float(np.sqrt(np.mean(res ** 2))) > 2 * limit:
+            return None
+        curve, scores = classify(union)
+        if curve['type'] not in ('circle', 'ellipse'):
+            return None
+        center = curve['center']
+        size = curve.get('radius') or max(curve['axes'])
+        if size > 2 * span or size < 4 or curve['rms_px'] > limit:
+            return None
+        gain = _coverage(union, center) - max(_coverage(pi, center), _coverage(pj, center))
+        if gain <= 0:
+            return None
+        return (curve['rms_px'], -gain), curve, scores, union
+
+    items = {k: c for k, c in enumerate(curves)}
+    next_id = len(curves)
+    cand = sorted(k for k, c in items.items() if candidate(c))
+    pairs = {}
+    for x, i in enumerate(cand):
+        for j in cand[x + 1:]:
+            r = pair(items[i], items[j])
+            if r is not None:
+                pairs[(i, j)] = r
+    while pairs:
+        (i, j), (key, curve, scores, union) = min(pairs.items(), key=lambda kv: (kv[1][0], kv[0]))
+        merged = dict(curve, bic=scores, points=union.round(2).tolist(),
+                      segments=sorted(items[i]['segments'] + items[j]['segments']),
+                      length_px=round(items[i]['length_px'] + items[j]['length_px'], 3),
+                      joined=items[i].get('joined', 1) + items[j].get('joined', 1))
+        del items[i], items[j]
+        pairs = {k: v for k, v in pairs.items() if i not in k and j not in k}
+        new = next_id
+        next_id += 1
+        for k in sorted(items):
+            if candidate(items[k]):
+                r = pair(items[k], merged)
+                if r is not None:
+                    pairs[(k, new)] = r
+        items[new] = merged
+    curves = [items[k] for k in sorted(items)]
+    return curves
+
+
+def _label_kinds(curves, mask):
+    """Label what can be told from one view: outline (on the silhouette), closed (a loop that may
+    be a part boundary) or interior. Crease versus decoration needs a second view
+    (propkit/curve_views.py): a crease agrees across views, paint does not."""
+    edge = mask & ~ndimage.binary_erosion(mask)
+    dist = ndimage.distance_transform_edt(~edge)
+    for c in curves:
+        p = np.asarray(c['points'])
+        r = np.clip(np.round(p[:, 1]).astype(int), 0, mask.shape[0] - 1)
+        k = np.clip(np.round(p[:, 0]).astype(int), 0, mask.shape[1] - 1)
+        on = float(np.mean(dist[r, k] <= 2.0))
+        c['on_outline'] = round(on, 3)
+        gap = float(np.hypot(*(p[0] - p[-1])))
+        c['closed'] = bool(c['type'] in ('circle', 'ellipse') and c.get('joined', 1) > 1
+                           or gap <= max(3.0, 0.1 * c['length_px']) and c['length_px'] > 30)
+        c['kind'] = 'outline' if on >= 0.8 else ('closed' if c['closed'] else 'interior')
 
 
 def _vote_symmetry(curves, axis, tolerance=2.0):

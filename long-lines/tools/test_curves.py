@@ -81,6 +81,26 @@ class PaintedViews(unittest.TestCase):
                      and abs(c['direction'][0]) < 0.1]
         self.assertTrue(verticals and all(c.get('mirrored') for c in verticals))
 
+    def test_broken_dial_ring_is_joined_into_one_circle(self):
+        img = canvas()
+        img[40:200, 60:260] = 200
+        yy, xx = np.mgrid[:img.shape[0], :img.shape[1]]
+        ring = np.abs(np.hypot(xx - 160, yy - 120) - 40) <= 1.5
+        angle = (np.degrees(np.arctan2(yy - 120, xx - 160)) + 360) % 45
+        img[ring & (angle > 8)] = 80                     # eight arcs with gaps between them
+        result = curves.trace(img)
+        joined = [c for c in result['curves'] if c['type'] in ('circle', 'ellipse') and c.get('joined', 1) >= 4]
+        self.assertTrue(joined, [(c['type'], c.get('joined'), c['length_px']) for c in result['curves']])
+        r = joined[0].get('radius') or np.mean(joined[0]['axes'])
+        self.assertAlmostEqual(r, 40, delta=3.0)
+        self.assertTrue(joined[0]['closed'])
+
+    def test_curves_are_labelled_outline_or_interior(self):
+        result = curves.trace(self.box)
+        kinds = {c['kind'] for c in result['curves']}
+        self.assertIn('outline', kinds)
+        self.assertTrue(kinds & {'interior', 'closed'})
+
     def test_trace_is_deterministic(self):
         self.assertEqual(curves.trace(self.box), curves.trace(self.box))
 
