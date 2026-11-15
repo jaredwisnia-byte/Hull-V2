@@ -57,7 +57,11 @@
     },
     {
       "id": "R9",
-      "rule": "Same photo, same mesh: a build is a pure function of input image, order and code version; repeat builds give byte-identical GLBs. Nothing a previous build wrote (learning memory, caches, .hull-runs) may change geometry. reconstruction_memory_mode defaults to off; learning is experiment-only and reports reproducible: false. A repeat-build difference is a defect, never a tolerance."
+      "rule": "Same photo, same mesh: a build is a pure function of input image, order and code version; repeat builds give byte-identical GLBs. Nothing a previous build wrote (learning memory, caches, .hull-runs) may change geometry. reconstruction_memory_mode defaults to off; learning is experiment-only and reports reproducible: false. A repeat-build difference is a defect, never a tolerance. Scope: same input, order, code and toolchain (Blender version, Python packages, OS); after a toolchain change rebuild baselines once, compare old vs new by measurement, record it, then require byte identity again."
+    },
+    {
+      "id": "R10",
+      "rule": "QA at the profile tolerance: a drawing view passes when its p95 outline distance <= max(2t, floor), floor = max(1 mm, 2 QA raster px, 1.5 x sheet mm per source px); size within max(3t, floor); IoU reported, backstop fail below 0.80 only; t below the floor -> unverifiable at this fidelity (reported, never a pass); mesh-health limits independent of t."
     }
   ],
   "pipeline": [

@@ -167,6 +167,106 @@ Every assumed surface is drawn on the technical drawing as a **dashed hidden lin
 engineering convention), listed in the report with its rule, and marked in the build record, so
 Jared can review or correct it. Assumed geometry never counts as evidence for QA.
 
+## Seen first, crutch second: consistent curves decide the construction (2026-11-14)
+
+Jared: *"Start with what we can see and develop a crutch for what it can't. The curve, for
+something that is consistent along multiple views, can tell Hull what it wants to do."*
+
+This is how an artist or a draughtsman reads a set of views: they do not measure brightness, they
+read which lines agree with which, and each agreement *means* a construction. Hull works in
+three tiers and never mixes them:
+
+| Tier | Evidence | Use |
+|---|---|---|
+| **Seen and consistent** | The same curve found in two or more views, agreeing on their shared axis within the measured registration tolerance | **Authoritative.** It decides the construction (table below) |
+| **Seen once** | A curve in one view only | A proposal. Used only where geometry fixes its third coordinate: a feature on a face that view sees head-on lies on that face; otherwise it is texture |
+| **Not seen** | No view shows it | The crutch: the unseen-side rules above, then the artist's regularities below. Always drawn dashed and reported |
+
+### What a consistent curve tells Hull to build
+
+Each row is a geometric fact about orthographic projection, not a rule about any kind of object.
+
+| What the views agree on | It means | Construction |
+|---|---|---|
+| The same closed profile in two opposite views (front = mirrored back) | Nothing changes through the depth | Extrude that profile |
+| A circle in one view; two parallel lines of the same length in a perpendicular view | A cylinder, hole or boss on that axis | Cylinder (cut if the circle shows background) |
+| A circle in an end view; a varying outline along the axis in the side view | A turned shape | Revolve the side outline about the circle's centre |
+| An ellipse | A circle seen at a tilt; the axis ratio gives the tilt | Circle with that axis direction |
+| Sections changing smoothly along an axis in two views | A shaped body | Loft through the superellipse sections (`rounding`) |
+| A closed seam inside the outline at the same coordinates in two views | A physical separation | Part boundary: split the part |
+| A concave corner of the outline at the same height in two views | Two bodies joined (the minima rule) | Part boundary |
+| A line at height h in one view meeting a region the other view bounds lower | A step or hollow (the couch's blade rule) | Cut the region down to h |
+| A curve on a face seen head-on, its depth visible as a step in a second view | A raised or sunken feature of known depth | Boss or pocket on that face |
+| A curve on a face seen head-on, no depth anywhere | Decoration | Texture and normal map only |
+
+Agreement is scored, not assumed: the number of supporting views, the residual on the shared axis
+(in units of the measured registration tolerance) and the fit error. A construction is accepted
+only when its curves pass step 2's statistics *and* agree across views; it records which curves
+decided it, so every face of the solid can be traced back to the lines that caused it.
+
+### Reading lines like an artist (step 1 extended)
+
+Before matching, each accepted curve is classified, because an artist treats each kind differently:
+
+- **outline**: on the view's silhouette;
+- **crease**: a sharp edge between faces; seen in two views at agreeing coordinates;
+- **part boundary**: a closed or nearly closed seam;
+- **cross-section / contour**: a curve wrapping across a curved surface; it says how the surface
+  bends (CrossShade shows that such cross-section lines determine surface normals);
+- **decoration**: paint; it changes colour but has no counterpart in another view.
+
+Broken curves are joined first (a dial ring traced as short pieces becomes one circle) by fitting
+circles and ellipses to chains of arcs, with the same a-contrario test LSD uses (as ELSDc does for
+ellipses; Hull implements the test itself rather than linking that AGPL code).
+
+### The pictorial view as a fourth witness
+
+Most sheets include a three-quarter picture. Hull currently fits a camera to it by outline only
+(`drawing_qa.against_pictorial`). Read like a perspective drawing it gives much more:
+
+- families of lines that are parallel in 3D meet at vanishing points; voting for them (RANSAC over
+  line intersections) recovers the camera directly (single-view metrology);
+- ellipses in it fix the axes of round parts;
+- it shows corners and faces between the orthographic views, so it can **confirm or veto** an
+  unseen-side assumption before it is used.
+
+It is never the only source for a construction; it is a witness that raises or lowers confidence.
+
+### The crutch: the artist's regularities
+
+Where no view decides, Hull applies the regularities designers draw with, but **selectively**: a
+regularity is enforced only where the seen curves already nearly satisfy it (True2Form's selective
+regularization), judged by robust statistics, never assumed wholesale:
+
+- parallel and perpendicular curves; coplanar curves; curves of equal length;
+- mirror symmetry: curve pairs symmetric about an axis-aligned plane fix the hidden half
+  (Cordier et al.; Hähnlein et al.);
+- cross-sections at right angles to a body's axis;
+- straight or circular continuation of a curve that leaves the view.
+
+Then the unseen-side rules above, in order. Everything the crutch adds is dashed, reported and
+excluded from QA evidence.
+
+### Drawing it back: the artist's check
+
+The finished curve network and solid are projected back into every sheet view and the pictorial
+view, as line drawings, and compared line against line with the traced curves. A missing or extra
+line is located on the drawing. This is "does it look right from there?" made measurable, and it
+uses no light.
+
+## Research behind this design
+
+| Topic | Work | What Hull takes |
+|---|---|---|
+| Solids from three orthographic views | Idesawa 1973; Wesley and Markowsky, "Fleshing out projections", IBM J. Res. Dev. 1981 (polyhedra); Sakurai and Gossard 1988 (curved faces); Liu, Hu, Chen and Sun, CAD 2001 (planar, quadric and toroidal faces via conics) | Matching curves across views, conic edges from their projections, keeping several candidates when the views are ambiguous |
+| Line detection with a known false-alarm rate | Grompone von Gioi et al., LSD (2010); Pătrăucean, Gurdjos and Grompone von Gioi, ELSD / ELSDc (2012) | The a-contrario test (NFA < 1) for lines, arcs and ellipses |
+| 3D curves from 2D sketches | Xu, Chang, Sheffer, Bousseau, McCrae and Singh, True2Form, SIGGRAPH 2014 | Selective regularity: enforce parallelism, orthogonality, planarity and symmetry only where the drawing supports them |
+| Lifting real design sketches | Gryaditskaya, Hähnlein, Liu, Sheffer and Bousseau, SIGGRAPH Asia 2020; Hähnlein et al., symmetry-driven reconstruction, SIGGRAPH 2022 | Telling true 3D intersections from accidental overlaps; symmetric curve pairs |
+| Mirror-symmetric shapes from sketches | Cordier, Seo, Melkemi and Sapidis, CAD 2013 | Lifting symmetric curve pairs; the hidden half |
+| Cross-section curves | Shao, Bousseau, Sheffer and Singh, CrossShade, SIGGRAPH 2012 | Cross-section lines determine surface normals |
+| Perspective measurement | Criminisi, Reid and Zisserman, "Single View Metrology", IJCV 2000 | Vanishing points and camera from the pictorial view |
+| Where parts begin | Hoffman and Richards, "Parts of recognition", Cognition 1984 (the minima rule) | Part boundaries at concave creases, confirmed by a second cue because negative minima alone are not always boundaries |
+
 ## Order of work (each behind a switch, each gated on the drawn set and the seven objects)
 
 1. **Drawing builds the mesh.** Mesh `cad_model`'s existing solid at the fidelity tolerance and
@@ -175,10 +275,60 @@ Jared can review or correct it. Assumed geometry never counts as evidence for QA
 2. **Automatic parts.** Turn `rounding.tracks` runs plus concave creases into parts, build each with
    `cad_model`, assemble with `parts_layout` locators and the gap guard.
 3. **Curve extraction and statistics.** LSD + arc detection, model selection, the six tests;
-   report observed / accepted / rejected curves on the drawing.
-4. **Cross-view lifting.** 3D curves and primitives; features attached to parts.
-5. **Unseen-side rules** with dashed hidden lines and the report.
-6. **Curve networks to NURBS** for parts no primitive fits; the voxel path stays the last fallback.
+   report observed / accepted / rejected curves on the drawing. Then join broken arcs and classify
+   lines (outline, crease, part boundary, cross-section, decoration).
+4. **Cross-view lifting: consistent curves decide.** Score agreement across views and apply the
+   construction table above; 3D curves and primitives; features attached to parts.
+5. **The pictorial view as a witness**: vanishing points, camera, ellipse axes; confirm or veto.
+6. **The crutch**: selective regularities, then the unseen-side rules, with dashed hidden lines.
+7. **Drawing it back**: project the result into every view and compare line against line.
+8. **Curve networks to NURBS** for parts no primitive fits; the voxel path stays the last fallback.
 
 Gates follow `CONTRIBUTING.md`: the mixed set before and after, byte-identical repeat builds
 (rule R9), no object-name selection, clay renders inspected.
+
+## Progress
+
+**2026-11-14, preview of step 1 (no code change).** The `cad_model` solids that Order 1's builds
+already exported (`vision_*.step`) were meshed by OpenCascade at the four profile tolerances and
+rendered as clay beside the voxel meshes. The solids have no folds or crumpling, and fidelity
+works: the hair dryer is 26,778 triangles at `engineering`, 3,978 at `game_hero`, 1,778 at
+`game_prop` and 1,144 at `game_background` (voxel mesh today: 737, 100 folds per 1,000). What the
+solids lack is exactly what the curve stages add: outlines are extruded and intersected, so
+cross-sections are boxy where no round end view was found (several round parts were skipped as
+"would change a view outline"), the cassette handle is filled (Order 2), the camera has a thin
+fin, and the mixer bowl and head are one block (no parts).
+
+**2026-11-14, step 3 started: `propkit/curves.py`** (single-view statistics, test `test_curves.py`,
+registered as core check `curves`). LSD candidates, chain-level scale persistence, contrast
+coherence, symmetry votes, BIC choice between line, circle, ellipse (direct least squares) and
+B-spline; deterministic. On three views of each of the seven objects it keeps 36-60% of
+candidates. On the toaster's side view it keeps the outline, both slots, the lever slot and the
+panel edges, and rejects most chrome reflections and wear; it also keeps one highlight band and
+rejects some faint real edges, and leaves the dial ring as separate pieces. Single-view
+statistics cannot do better alone: cross-view consensus (step 4) is the decisive filter.
+
+**2026-11-14, steps 3-4 begun: `propkit/curve_views.py`** (tests `test_curve_views.py`, core check
+`curve-views`) and `curves.py` extensions (broken arcs joined into circles; outline / closed /
+interior labels; persistence by brightness-step retention as well as LSD, required at half of the
+eligible coarse scales). Cross-view agreement uses the `hull.py` view convention, a tolerance
+measured from the outlines' breakpoints, and constructions `through`, `cylinder` and `plane`.
+On a synthetic box with a boss, a groove and a front-only paint band it finds the cylinder, the
+groove's plane, the groove running through, and leaves the paint band as seen once.
+
+First run on the seven objects taught the most important thing so far: **without a chance test,
+cross-view agreement is meaningless on painted sheets.** 98-100 % of 340-550 curves per object
+found a partner and hundreds of cylinders and planes appeared, because tolerances are 2.5-6 % of
+the object and every view is full of lines (the sofa lesson again). Every agreement and
+construction now carries its probability of coincidence (candidates x window) and counts only at
+5 % or less. After that: 0-107 curves per object are consistent (typewriter 0, toaster 95, mixer
+107), 0-18 `through` constructions, 0-2 cylinders, no planes; the rest are marked
+`coincidental`. What survives on the toaster is plausible (the panel edge running round the
+sides, the slot openings), but several surviving cylinders are doubtful.
+
+**Next: registration, not more rules.** The limiting factor is the tolerance. Normalising each
+view to its outline box leaves the painted views 2.5-6 % apart (the camera's views disagree in
+proportion by 9-15 %). Registering views piecewise along each shared axis by their matched
+outline breakpoints (a monotone piecewise-linear map, as the drawing stage's view reconciliation
+already does for outlines) should bring tolerance near a pixel where outlines agree, which shrinks
+every chance probability by the same factor. That comes before trusting any construction.

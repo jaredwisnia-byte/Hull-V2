@@ -28,7 +28,8 @@ surface and simplify it. The drawing is the same for every output; only the last
 6. **Texture and bake** (`texturing.py`, `bake.py`): paint projected from the views onto the
    chosen surface; what the low poly drops is baked from the exact part model into the normal map.
 7. **QA** (`qa.py`, `drawing_qa.py`): drawing in mm and pictorial checks on every output, at the
-   profile's tolerance; hygiene per part.
+   profile's tolerance (rule R10; today's thresholds are still fixed percentages until Codex's
+   Order 5 ties them to t); hygiene per part.
 8. **Exports**: GLB per fidelity; STEP and engineering drawing from the same part model.
 
 The voxel visual hull (`hull.py`) remains only as a **per-part fallback** for organic shapes whose
@@ -51,6 +52,19 @@ sections do not fit lines, arcs and superellipses within tolerance (sofa cushion
   (learning memory, caches, `.hull-runs`) may change geometry. Reconstruction memory is `off` by
   default; `learning` is for experiments only and its reports say `reproducible: false`. A
   difference between repeat builds is a defect to fix at its cause, never a tolerance.
+  **Scope:** byte identity is required for the same input, order, code *and toolchain* (Blender
+  version, Python packages, operating system). A new toolchain may legitimately change bytes (PNG
+  compression, floating-point rounding). Then rebuild the baselines once, compare old and new
+  toolchain by measurement (geometry within the fidelity tolerance, each texture within a stated
+  difference), record it, and return to byte identity on the new toolchain.
+- **QA at the profile's tolerance (R10).** Allowed error follows the fidelity the user asked for,
+  not fixed percentages. The drawing check passes a view when its 95th-percentile outline distance
+  is within max(2t, floor), where t is the profile's tolerance and the floor is what can be
+  measured: max(1 mm, two QA raster pixels, 1.5 x the sheet's millimetres per source pixel for
+  that view). Overall size: within max(3t, floor). Outline overlap (IoU) is reported and kept only
+  as a backstop for gross errors (fail below 0.80), because it punishes thin parts for a one-pixel
+  error. A profile asking for t below the floor gets "unverifiable at this fidelity", reported,
+  never a pass. Mesh-health limits (folds, components) do not depend on t.
 - **No new Blender dependencies.** New code (part model, tessellation, QA, export) is plain Python
   (numpy, scipy, build123d/OpenCascade, trimesh, xatlas) and runs without Blender. Blender is being
   replaced (see below); until each piece reaches parity it stays the default behind
