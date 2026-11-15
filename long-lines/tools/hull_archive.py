@@ -86,7 +86,13 @@ def copy_tree(db, run, kind, src, dest):
 def file_build(db, run, src):
     """One build folder: GLBs by content, result files beside them, index each object."""
     out = ROOT / 'runs' / f'run{run}' / 'builds' / src.name
-    for obj in sorted(d for d in src.iterdir() if d.is_dir()):
+    # build-level evidence (summaries, contact sheets, CAD audits, cross-sections) is kept whole
+    for p in sorted(src.iterdir()):
+        if p.is_file():
+            copy(db, run, 'build', p, out / p.name)
+        elif not (p / 'model.glb').exists():
+            copy_tree(db, run, 'build', p, out / p.name)
+    for obj in sorted(d for d in src.iterdir() if d.is_dir() and (d / 'model.glb').exists()):
         for p in sorted(obj.iterdir()):
             if p.name in BUILD_KEEP:
                 copy(db, run, 'build', p, out / obj.name / p.name)
@@ -130,14 +136,22 @@ def parse_tables(db, run, source, text):
                        (run, source, section, obj, col, value))
 
 
-def parse_report(text):
-    def grab(pattern):
-        m = re.search(pattern, text)
-        return m.group(1) if m else None
-    disposition = grab(r'\*\*((?:STOPPED|COMPLETE|PASS|FAIL)[^*]*)\*\*') or grab(r'Disposition:\s*(.+)')
-    start = grab(r'Starting (?:and final )?revision:\s*`?([0-9a-f]{7,40})')
-    final = grab(r'Final revision:\s*`?([0-9a-f]{7,40})') or start
-    return grab(r'Date:\s*([\d-]{10})'), start, final, disposition
+def parse_report(text, date=None):
+    """Date, start and final revision, disposition. Reports are prose, so several phrasings
+    are accepted; `date` (the report file's date) is the fallback when none is written."""
+    def grab(*patterns):
+        for pattern in patterns:
+            m = re.search(pattern, text, re.I | re.M)
+            if m:
+                return m.group(1).strip()
+        return None
+    sha_ = r'`?([0-9a-f]{7,40})'
+    disposition = grab(r'Disposition:\s*\*{0,2}([^*\n]+)',
+                       r'^\*\*((?:stopped|complete|pass|fail|order)[^*]*)\*\*')
+    start = grab(r'Starting (?:and final )?revision:\s*' + sha_, r'reset\b[^\n]*?\bto\s+' + sha_)
+    final = grab(r'Final revision:\s*' + sha_, r'local commit\s+' + sha_,
+                 r'Starting and final revision:\s*' + sha_) or start
+    return grab(r'Date:\s*([\d-]{10})') or date, start, final, disposition
 
 
 def file_run(run):
@@ -182,7 +196,9 @@ def _file_run(db, run):
             if src.suffix == '.md':
                 parse_tables(db, run, src.name, src.read_text(encoding='utf-8'))
     report = WORK / f'RUN_REPORT_run{run}.md'
-    info = parse_report(report.read_text(encoding='utf-8')) if report.exists() else (None,) * 4
+    info = (parse_report(report.read_text(encoding='utf-8'),
+                         time.strftime('%Y-%m-%d', time.localtime(report.stat().st_mtime)))
+            if report.exists() else (None,) * 4)
     db.execute('insert or replace into runs values(?,?,?,?,?,?)',
                (run, *info, time.strftime('%Y-%m-%d %H:%M:%S')))
     db.commit()

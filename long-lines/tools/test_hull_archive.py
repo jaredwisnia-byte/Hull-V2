@@ -21,6 +21,9 @@ def fake_run(work, run):
         (obj / 'model.blend').write_bytes(b'not kept')
         (obj / 'result.json').write_text(json.dumps(
             {'status': 'needs_review', 'qa': {'pass': False}}), encoding='utf-8')
+        (work / 'builds' / build / 'summary.json').write_text('{}', encoding='utf-8')
+        (work / 'builds' / build / 'cross-sections').mkdir()
+        (work / 'builds' / build / 'cross-sections' / 'a.png').write_bytes(b'png')
 
 
 class Archive(unittest.TestCase):
@@ -44,6 +47,9 @@ class Archive(unittest.TestCase):
         self.assertEqual(builds[0][2:], ('needs_review', 0))
         self.assertEqual(len(list((ha.ROOT / 'blobs').iterdir())), 1)
         self.assertFalse(list(ha.ROOT.rglob('*.blend')), '.blend files are not kept')
+        kept = ha.ROOT / 'runs/run7/builds/run7-baseline'
+        self.assertTrue((kept / 'summary.json').exists() and (kept / 'cross-sections/a.png').exists(),
+                        'build-level evidence is kept')
         self.assertEqual(db.execute('select order_no, attempt from attempts').fetchone(), (3, 2))
         self.assertEqual(db.execute('select object, sha1 from glb_hashes').fetchone(),
                          ('001_toaster', '`6e681abc8671a0219ad60615f351a1b7d2e819df`'))
