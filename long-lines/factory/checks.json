@@ -27,6 +27,11 @@
       "script": "long-lines/tools/test_drawing_qa_frame.py"
     },
     {
+      "id": "hull-archive",
+      "capability": "core",
+      "script": "long-lines/tools/test_hull_archive.py"
+    },
+    {
       "id": "sectioning",
       "capability": "core",
       "script": "long-lines/tools/test_sectioning.py",
