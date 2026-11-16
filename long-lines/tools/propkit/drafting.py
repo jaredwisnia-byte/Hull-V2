@@ -551,6 +551,33 @@ def reconcile_opposites(masks, W, D, H, res=320):
     return out, report
 
 
+def curve_evidence(paintings, destination=None):
+    """Trace every view's curves and match them across views (propkit/curve_views.py).
+
+    Returns a JSON-safe summary: per view, how many curves of each type were traced and how many
+    another view confirms; every construction (through, cylinder, plane) with the curves that
+    decided it; and the registration tolerances. Overlays are written beside the drawing."""
+    from . import curves as _curves, curve_views as _cv
+    try:
+        images = {k: np.asarray(p.convert('RGB')) for k, p in paintings.items() if k in _cv.VIEWS}
+        res = _cv.analyse(images)
+    except Exception as exc:                  # evidence only: a failure is recorded, never fatal
+        return {'error': '%s: %s' % (type(exc).__name__, exc)}
+    views = {}
+    for v, tr in res['traces'].items():
+        kinds = {}
+        for c in tr['curves']:
+            kinds[c['type']] = kinds.get(c['type'], 0) + 1
+        views[v] = dict(res['counts'][v], types=kinds,
+                        closed=sum(bool(c.get('closed')) for c in tr['curves']))
+        if destination is not None:
+            try:
+                _curves.overlay(images[v], tr, Path(destination) / ('curves_%s.png' % v))
+            except Exception:
+                pass
+    return {'views': views, 'constructions': res['constructions'], 'tolerances': res['tolerances']}
+
+
 def prepare(views, destination, height_m, width_m=None, depth_m=None, name='part', scale_note='',
             pictorials=(), keep_openings=True):
     """Make the drawing from the views. views: {name: image path}. Returns the record, with
@@ -690,6 +717,10 @@ def prepare(views, destination, height_m, width_m=None, depth_m=None, name='part
     except Exception as exc:
         record['features'] = []
         record['features_error'] = str(exc)
+    # curves (propkit/curves.py, propkit/curve_views.py): every view traced as true lines, arcs and
+    # ellipses with paint noise rejected by statistics, and the curves matched across views on
+    # their shared axes. Recorded as drawing evidence; it does not change the geometry yet.
+    record['curves'] = curve_evidence(paintings, destination)
     from . import drawing_cad
     record['dxf'], record['sheet'] = drawing_cad.write(record, masks, destination, name)
     (destination / 'drawing.json').write_text(json.dumps(record, indent=1))
