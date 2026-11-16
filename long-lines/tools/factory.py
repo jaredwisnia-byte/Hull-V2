@@ -274,9 +274,47 @@ def diagnostic_root(order):
     return os.path.join(order['run_directory'], 'diagnostics') if order.get('run_directory') else os.path.join(ROOT, 'docs', 'inference', order['name'])
 
 
+def _run_cad_line(order, drawing, views, options):
+    """The image-only CAD branch joins the existing line at paint projection."""
+    from pathlib import Path
+    import numpy as np
+    from propkit import cad_mesh, drafting, texturing
+    from propkit.hull_assembly import paint_views
+    from propkit.simplification import screen_tolerance
+
+    if drawing is None:
+        raise ValueError('CAD construction requires a traced technical drawing')
+    if options.get('paint') != 'project':
+        raise ValueError('CAD construction currently uses the image-only projected-paint path')
+    tolerance = screen_tolerance(STANDARDS, order.get('kind', 'static'), order.get('view_distance_m'))
+    # Match the established CAD export's mask contract. Inner wires are already
+    # part of each CAD face; these masks supply the older end-loft extents only.
+    masks = {view: drafting.rasterize(np.asarray(profile['vertices_px']), tuple(profile['image_px'][::-1]))
+             for view, profile in drawing['profiles'].items()}
+    destination = Path(order['measured']['drawing']['json']).parent
+    obj, tessellation = cad_mesh.build(drawing, masks, tolerance, order['name'], destination)
+    measured = order.setdefault('measured', {})
+    measured['cad_tessellation'] = tessellation
+    measured['construction'] = {
+        'physical_regions': 1, 'selection': 'traced drawing CAD solid',
+        'constraints_report': tessellation['construction_report'],
+        'policy': 'the accepted B-rep supplies both meshes and the STEP; no voxel or shading relief'}
+    measured['field'] = {'mode': 'cad_brep', 'interior_detail': False, 'relief_stage': 'albedo_only'}
+    width, depth, height = obj['hull_frame']
+    temporary = os.path.join(tempfile.gettempdir(), '_hull_' + order['name'])
+    texturing.project(obj, paint_views(views, temporary, 'p'), width, depth, height,
+                      others=[], name=obj.name, rough=options.get('rough', .5), camera_fit=None)
+    print('CAD_TESSELLATION', order['name'], json.dumps(tessellation), flush=True)
+
+
 def run_line(order):
     """Builds the order's geometry in the current scene. One function per line."""
     line = order["line"]
+    construction = order.get('construction', 'voxel')
+    if construction not in ('voxel', 'cad'):
+        raise ValueError('construction must be voxel or cad')
+    if construction == 'cad' and line != 'hull':
+        raise ValueError('CAD construction currently requires the single-body image-only line')
     if line == "hull_parts":     # an object from its parts, each a hull from its own views
         from propkit.hull_assembly import build as hull_parts_build
         order["measured"] = hull_parts_build(order, SRC)
@@ -324,6 +362,9 @@ def run_line(order):
                 'roundness': (drawing.get('roundness') or {}).get('exponents'),
                 'size_mm': {k: round(v * 1000, 1) for k, v in drawing['size_m'].items()}}
             print('DRAWING', json.dumps(order['measured']['drawing']))
+        if construction == 'cad':
+            _run_cad_line(order, drawing, views, hp)
+            return
         # relief_last: the shape keeps its relief and is simplified afterwards like a game
         # asset (larger polygons; forms above the screen tolerance survive); detail below
         # that tolerance reaches the asset through the normal map baked from the dense mesh.
@@ -667,6 +708,10 @@ def run_line(order):
 def correct(order, result):
     """Codified corrections for known failure modes (docs/LESSONS.md). Returns True if
     the order was changed and is worth one more attempt."""
+    if order.get('construction', 'voxel') == 'cad':
+        # A failed CAD gauge is review evidence, not permission to replace the
+        # drawing with a voxel field or an unrelated automatic correction.
+        return False
     changed = False
     fails = " ".join(result["fails"])
     if order.get('automatic_depth') and (result.get('correction_review_failure') or
@@ -905,6 +950,10 @@ def _build_candidate(order, run, samples=16):
                            for region in view.get('regional_relief',{}).get('regions',[]) if region.get('memory_key')]})
     result.update(attempts=attempt, seconds=round(time.time()-t0, 2), stage_seconds=stages,
                   artifact_library_root=library_root)
+    if order.get('construction', 'voxel') == 'cad':
+        tessellation = order.get('measured', {}).get('cad_tessellation', {})
+        result.update(construction='cad', tolerance_m=tessellation.get('tolerance_m'),
+                      tessellation=tessellation)
     order.pop('_frozen_source_evidence', None)
     return result
 
