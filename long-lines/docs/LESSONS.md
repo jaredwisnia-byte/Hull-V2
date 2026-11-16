@@ -810,3 +810,40 @@ rather than compare their output. Preserve those failure records.
   trusted. `test_simplification.py` (UV sphere, Decimate path) varies between runs for this reason.
 - Rule: compare repeat builds by hash, and when they differ, diff the GLB part by part (geometry,
   UVs, each texture) before guessing; then test the suspect call repeatedly in one session.
+
+## A part seen from one side became a full-width shelf: read its width end on (2026-11-16)
+- Symptom: the typewriter's carriage-return lever, a thin arm on the left reaching forward over the
+  deck, was built as a slab across the whole machine in every build since at least 2026-11-12,
+  voxel and `cad` alike. Jared spotted it in the turnarounds; two Codex runs never targeted it.
+- Cause, measured on the drawing stage, not guessed:
+  1. The left and right paintings draw the lever differently. Opposite-view reconciliation keeps
+     pixels seen in either (they are supported by the other two directions), and profile fitting
+     squares the union, so the drawn side outline has a thick block where the paint has a thin arm.
+  2. Sliced front to back, that block is a separate part (y 36-64 %, z 85-100 %) above the deck.
+     Its width comes from the front outline, where the carriage fills the full width at that height.
+  3. The top view, which shows the arm's real width, is paint-only (its proportion is 12 % off,
+     widened by the lever and knobs), and `features.find` only looked for short, shallow bumps on a
+     part's edge against a running median, which cannot see a whole separate part.
+- Ruled out by build: moving painted shading to the normal map (`relief_last`, 621745c/c935c81).
+  With `RELIEF_LAST=0` the shelf stayed. The 2026-11-12 build had the shelf too; it only kept the
+  lever's outer tip as a floating island.
+- Fix (propkit/features.py, "separate parts"): for every part other than the main body that is as
+  wide as the object one way (>= 80 %) and local the other way (< 50 %), read its width in the view
+  looking down its length, end on, where it stands in front of whatever lies behind. Use that view
+  only when the outline view shows no paint between the part and it. The part's colour is the
+  median painted colour (inside the outline, unlike the background) in the view that shows its
+  outline; the columns where that colour covers at least half its peak share are the part. Nothing
+  is removed unless the painting localises it narrower than 40 %; `features.apply` restores every
+  voxel an outline needs.
+- Result: typewriter shelf gone, lever kept as an arm (2-7 % of the width); outline p95 against the
+  drawing 2.0-5.5 mm -> 1.0-1.5 mm in every view; 10,419 -> 5,706 triangles; the pictorial outline
+  failure cleared. The other six image-only objects have no such part: their drawing decisions are
+  byte-identical, and the cassette GLB repeats `2c131081...` exactly.
+- Colour alone from the top view failed: the arm's grey matches the type basket's. The end-on view
+  sees the arm against the dark carriage instead. Paintings have no alpha; "painted" must mean inside
+  the drawn outline and unlike the background, because drawn outlines can be fuller than the paint.
+- Still open: the top view does not cut. A plateau remains over the deck where the type basket's
+  hollow should be. The general answer is Jared's draftsman method: match edges along projection
+  lines in all three views (with the 45-degree mitre for depth) and build parts from matched corners.
+- Rule: look at the drawn masks (`drawing.json` profiles, rasterised) before blaming geometry. Here
+  the drawing itself was wrong, and every later stage built it faithfully.

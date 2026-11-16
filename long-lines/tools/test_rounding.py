@@ -78,6 +78,59 @@ class LocalFeatures(unittest.TestCase):
         self.assertAlmostEqual((lo + hi) / 2, 0.5, delta=0.08)
         self.assertAlmostEqual(hi - lo, 10 / 40, delta=0.1)
 
+    def _lever_sheet(self, arm_x=(5, 15), carriage=(30, 30, 30)):
+        # body 100 wide x 60 deep x 80 tall: a deck up to z 50, a full-width carriage at the back
+        # (y 40-60) up to z 80, and a thin arm on the left (x 5-15) reaching forward over the deck
+        # (y 10-40) at z 62-74. The front and side outlines alone make the arm a full-width shelf.
+        W, D, H = 100, 60, 80
+        body, arm = (200, 120, 60), (150, 150, 150)
+        z = lambda v: H - v                                    # image row of height v
+        front_m = np.ones((H, W), bool)
+        side_m = np.zeros((H, D), bool)
+        side_m[z(50):, :] = True
+        side_m[:, 40:] = True
+        side_m[z(74):z(62), 10:40] = True
+        top_m = np.ones((D, W), bool)
+        front = Image.new('RGB', (W, H), body)
+        dr = ImageDraw.Draw(front)
+        dr.rectangle([0, 0, W - 1, z(50) - 1], fill=carriage)
+        dr.rectangle([arm_x[0], z(74), arm_x[1] - 1, z(62) - 1], fill=arm)
+        side = Image.new('RGB', (D, H), (0, 0, 0))
+        ds = ImageDraw.Draw(side)
+        ds.rectangle([0, z(50), D - 1, H - 1], fill=body)
+        ds.rectangle([40, 0, D - 1, H - 1], fill=carriage)
+        ds.rectangle([10, z(74), 39, z(62) - 1], fill=arm)
+        top = Image.new('RGB', (W, D), body)
+        masks = {'front': front_m, 'right': side_m, 'top': top_m}
+        return masks, {'front': front, 'right': side, 'top': top}, (W, D, H)
+
+    def test_separate_part_is_as_wide_as_the_end_view_paints_it(self):
+        masks, paintings, (W, D, H) = self._lever_sheet()
+        size = {'width': W / 1000, 'depth': D / 1000, 'height': H / 1000}
+        feats = features.find(masks, paintings, size, res=100)
+        arm = [f for f in feats if f.get('kind') == 'part' and f.get('keep')]
+        self.assertEqual(len(arm), 1, feats)
+        lo, hi = arm[0]['keep']
+        self.assertAlmostEqual(lo, 0.05, delta=0.04)
+        self.assertAlmostEqual(hi, 0.15, delta=0.04)
+        self.assertEqual(arm[0]['measured_in'], 'front')
+        # the trim removes the shelf and keeps the arm and every outline
+        Fm, Sm, Tm = rounding.view_masks(masks['front'], masks['right'], masks['top'], (W, D, H))
+        keep = Fm[:, None, :] & Sm[None, :, :] & Tm[:, :, None]
+        out = features.apply(keep, masks['front'], masks['right'], masks['top'], feats)
+        self.assertTrue(keep[50, 25, 68] and not out[50, 25, 68])     # shelf above the deck: gone
+        self.assertTrue(out[10, 25, 68])                              # the arm: kept
+        self.assertTrue(out[50, 50, 68] and out[50, 25, 30])          # carriage and deck: kept
+        for ax, want in ((1, Fm), (0, Sm), (2, Tm)):
+            self.assertTrue((out.any(ax) == keep.any(ax)).all())      # outlines unchanged
+
+    def test_separate_part_without_a_distinct_colour_is_left_alone(self):
+        # the arm painted like the carriage: no evidence of its width, so nothing is removed
+        masks, paintings, (W, D, H) = self._lever_sheet(carriage=(150, 150, 150))
+        size = {'width': W / 1000, 'depth': D / 1000, 'height': H / 1000}
+        feats = features.find(masks, paintings, size, res=100)
+        self.assertFalse([f for f in feats if f.get('kind') == 'part' and f.get('keep')], feats)
+
 
 if __name__ == '__main__':
     unittest.main()
