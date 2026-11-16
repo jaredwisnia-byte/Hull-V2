@@ -179,6 +179,32 @@ class ProcessPlannerTests(unittest.TestCase):
         self.assertEqual(report['choice'], 'continuous_field')
         self.assertIn('bad profile', report['planner_error'])
 
+    def test_round_body_opening_matches_scipy_and_stays_small(self):
+        """The distance-transform opening equals scipy's footprint opening, pixel for pixel,
+        including masks that touch the border; a large disk no longer costs gigabytes."""
+        from scipy import ndimage
+        from propkit import revolve
+        rng = np.random.default_rng(7)
+        masks = []
+        box = np.zeros((90, 140), bool)
+        box[5:85, 10:120] = True
+        box[30:50, 120:140] = True                       # a handle that reaches the border
+        masks.append(box)
+        yy, xx = np.mgrid[0:80, 0:80]
+        masks.append((xx - 40) ** 2 / 38 ** 2 + (yy - 40) ** 2 / 30 ** 2 <= 1)
+        blobs = ndimage.gaussian_filter(rng.random((70, 110)), 4) > 0.5
+        masks.append(blobs)
+        for m in masks:
+            for r in (1, 3, 7.9, 12, 21):
+                expected = ndimage.binary_opening(m, structure=revolve._disk(r))
+                self.assertTrue(np.array_equal(revolve._open_disk(m, r), expected), r)
+        # a near-square 380 px view with a ~110 px disk: scipy needs gigabytes, this is instant
+        big = np.zeros((380, 390), bool)
+        big[2:378, 2:388] = True
+        opened = revolve._open_disk(big, 110)
+        self.assertEqual(opened.shape, big.shape)
+        self.assertTrue(opened[190, 195])
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -21,6 +21,24 @@ def _disk(r):
     return xx * xx + yy * yy <= r * r
 
 
+def _open_disk(mask, r):
+    """Binary opening of `mask` by _disk(r), outside the image counted as background.
+
+    Identical to ndimage.binary_opening(mask, structure=_disk(r)), computed from exact
+    Euclidean distance transforms. A pixel survives erosion when every pixel within the disk
+    (x^2 + y^2 <= r^2) is inside, i.e. its nearest background pixel is farther than r; the
+    dilation keeps a pixel when some eroded pixel lies within r. scipy's footprint erosion
+    needs memory that grows with the fourth power of the disk diameter (about 12 GB for a
+    219-pixel disk on a near-square front view); this needs memory proportional to the image.
+    """
+    r = max(1, int(r))
+    pad = r + 2
+    m = np.pad(np.asarray(mask, dtype=bool), pad)
+    eroded = ndimage.distance_transform_edt(m) ** 2 > r * r
+    opened = ndimage.distance_transform_edt(~eroded) ** 2 <= r * r
+    return opened[pad:-pad, pad:-pad]
+
+
 def round_body(top_mask):
     """The top view's main round body as {cx, cy, ax, ay (pixels), iou, core}, or None."""
     P = 2                                       # silhouettes are cropped tight: pad so the edge is background
@@ -28,7 +46,7 @@ def round_body(top_mask):
     if m.sum() < 50:
         return None
     r = ndimage.distance_transform_edt(m).max()
-    core = ndimage.binary_opening(m, structure=_disk(0.6 * r))     # thin parts (handle, spout) go
+    core = _open_disk(m, 0.6 * r)                                  # thin parts (handle, spout) go
     lab, n = ndimage.label(core)
     if not n:
         return None
