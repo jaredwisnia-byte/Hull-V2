@@ -553,13 +553,6 @@ def run_line(order):
         from propkit.hull import HULL_REPORT
         HULL_REPORT.pop("sections", None)
         obj = hull_prop(views, height, name=order["name"], **hp)
-        # parts the draftsman stage confirmed along projection lines, as solids merged with the body
-        # (propkit/part_solids.py); before texturing, so the views are projected onto them too
-        if drawing is not None and (drawing.get('draftsman') or {}).get('rows') and                 os.environ.get('HULL_PART_SOLIDS', '0') == '1':
-            from propkit import part_solids
-            psrep = order.setdefault('measured', {}).setdefault('part_solids', {})
-            obj = part_solids.add_rows(obj, drawing['draftsman']['rows'], hp['width_m'], hp['depth_m'], height, psrep)
-            print('PART_SOLIDS', order['name'], psrep, flush=True)
         relief_report = order.get('measured', {}).get('relief', {})
         if relief_last and relief_report.get('probes'):
             # Relief as the last step: fine detail reaches the asset through the normal map,

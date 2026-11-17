@@ -533,45 +533,7 @@ def _apply_end_shape(out, f, Fm, Sm, Tm):
 def apply(keep, front, side, top, feats, report=None):
     """Remove each localised bump's material outside its measured width (outlines kept)."""
     shapes = [f for f in feats or [] if f.get('kind') == 'end_shape' and f.get('keep')]
-    rowfs = [f for f in feats or [] if f.get('kind') == 'row' and f.get('keep')]
-    feats = [f for f in feats or [] if f.get('keep') and f.get('kind') not in ('end_shape', 'row')]
-    if rowfs:
-        Fm0, Sm0, Tm0 = view_masks(front, side, top, keep.shape)
-        cut = keep.copy()
-        n = {'x': keep.shape[0], 'y': keep.shape[1], 'z': keep.shape[2]}
-        axis_index = {'x': 0, 'y': 1, 'z': 2}
-        for f in rowfs:
-            along = f['along']
-            sl = [slice(None)] * 3
-            for d, (lo, hi) in f['band'].items():
-                if d == 'z':
-                    lo = min(lo, f.get('floor', lo))      # the gaps go down to what the painting shows below
-                    hi = 1.0                              # and nothing stands above the row between instances
-                sl[axis_index[d]] = slice(int(lo * n[d]), max(int(lo * n[d]) + 1, int(np.ceil(hi * n[d]))))
-            inst = f['instances']
-            a0 = int(inst[0][0] * n[along])
-            a1 = int(np.ceil(inst[-1][1] * n[along]))
-            gap = np.zeros(n[along], bool)
-            gap[a0:a1] = True
-            for lo, hi in inst:
-                gap[int(lo * n[along]):int(np.ceil(hi * n[along]))] = False
-            sl[axis_index[along]] = gap
-            cut[tuple(sl)] = False
-            # each instance is solid over its own box (a key cap stands to its full height)
-            for lo, hi in inst:
-                isl = [slice(None)] * 3
-                for d, (blo, bhi) in f['band'].items():
-                    isl[axis_index[d]] = slice(int(blo * n[d]), max(int(blo * n[d]) + 1, int(np.ceil(bhi * n[d]))))
-                isl[axis_index[along]] = slice(int(lo * n[along]), max(int(lo * n[along]) + 1, int(np.ceil(hi * n[along]))))
-                cut[tuple(isl)] = True
-        removed = keep & ~cut
-        for ax, want in ((1, Fm0), (0, Sm0), (2, Tm0)):
-            lost = want & ~cut.any(ax) & keep.any(ax)
-            if lost.any():
-                cut |= removed & np.expand_dims(lost, ax)
-        if report is not None:
-            report['rows'] = {'rows': len(rowfs), 'voxels_removed': int((keep & ~cut).sum())}
-        keep = cut
+    feats = [f for f in feats or [] if f.get('keep') and f.get('kind') != 'end_shape']
     if shapes:
         Fm0, Sm0, Tm0 = view_masks(front, side, top, keep.shape)
         cut = keep.copy()

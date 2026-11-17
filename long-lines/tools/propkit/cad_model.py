@@ -252,6 +252,8 @@ def build_solid(record, masks):
     for f in record.get('features', []):
         if not f.get('keep'):
             continue
+        if f.get('kind') == 'end_shape':
+            continue                     # draftsman constructions: not width-limited bumps
         along_dim = {'z': 'z', 'x': 'x', 'y': 'y'}[f['axis']]
         rng = {d: (0.0, scale[d]) for d in 'xyz'}
         rng[along_dim] = (f['along'][0] * scale[along_dim], f['along'][1] * scale[along_dim])
@@ -259,6 +261,18 @@ def build_solid(record, masks):
         cut = f['cut'] * scale[bd]
         beyond = (cut, scale[bd]) if f['outward'] > 0 else (0.0, cut)
         keep_lo, keep_hi = f['keep'][0] * scale[f['width_dim']], f['keep'][1] * scale[f['width_dim']]
+        # A separate part's trim (draftsman 'part'): only above the body itself, where the body lies
+        # under it; beyond the body's edge the material is what that view's outline shows, kept.
+        body_lo, body_hi = 0.0, scale[f['width_dim']]
+        if f.get('kind') == 'part':
+            view_for = {'x': 'front', 'y': 'right'}.get(f['width_dim'])
+            m = np.asarray(masks.get(view_for)) if view_for in masks else None
+            if m is not None and m.ndim == 2:
+                cover = m.mean(0)
+                on = np.nonzero(cover >= 0.5 * cover.max())[0]
+                if on.size:
+                    body_lo = on.min() / len(cover) * scale[f['width_dim']]
+                    body_hi = (on.max() + 1) / len(cover) * scale[f['width_dim']]
 
         def box(r):
             dims = [max(0.05, r[d][1] - r[d][0]) for d in 'xyz']
@@ -266,8 +280,8 @@ def build_solid(record, masks):
         try:
             band = dict(rng, **{bd: beyond})
             bump = extruded & box(dict(band, **{f['width_dim']: (keep_lo, keep_hi)}))
-            cutters = [box(dict(band, **{f['width_dim']: (0.0, keep_lo)})),
-                       box(dict(band, **{f['width_dim']: (keep_hi, scale[f['width_dim']])}))]
+            spans = [(body_lo, keep_lo), (keep_hi, body_hi)] if f.get('kind') == 'part' else                 [(0.0, keep_lo), (keep_hi, scale[f['width_dim']])]
+            cutters = [box(dict(band, **{f['width_dim']: sp})) for sp in spans if sp[1] - sp[0] > 0.1]
             candidate = solid
             for c in cutters:
                 candidate = candidate - c

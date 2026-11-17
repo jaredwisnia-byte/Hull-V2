@@ -559,7 +559,6 @@ def draftsman_evidence(paintings, masks, size_m, destination=None):
         res = draftsman.analyse(paintings, masks, _os.environ.get('HULL_FEATURE_BACKEND', 'auto'))
         rec = draftsman.summary(res)
         if 'error' not in res:
-            rec['rows'] = draftsman.validated_rows(res, paintings, masks)
             rec['texture_maps'] = draftsman.texture_maps(res)
         if destination is not None and 'error' not in res:
             rec['feature_images'] = draftsman.feature_images(paintings, res['features'], destination)
@@ -750,16 +749,6 @@ def prepare(views, destination, height_m, width_m=None, depth_m=None, name='part
     # in every view, the views aligned, features matched along projection lines; images beside the
     # drawing (features_<view>.png, draftsman.png). Evidence for the build; the outlines stay the body.
     record['draftsman'] = draftsman_evidence(paintings, masks, record['size_m'], destination)
-    # repeated parts confirmed along projection lines become construction: each row's instances are
-    # separate parts, so what lies between them in the row's band is not one of them
-    try:
-        for row in (record['draftsman'].get('rows', []) if os.environ.get('HULL_PART_ROWS', '0') == '1' else []):
-            row.update(kind='row', keep=True)
-            record['features'].append(row)
-            record['decisions'].append('row of %d repeated parts along %s (draftsman): built as separate parts, '
-                                       'the gaps between them cut over their band' % (len(row['instances']), row['along']))
-    except Exception as exc:
-        record['rows_error'] = str(exc)
     from . import drawing_cad
     record['dxf'], record['sheet'] = drawing_cad.write(record, masks, destination, name)
     (destination / 'drawing.json').write_text(json.dumps(record, indent=1))
