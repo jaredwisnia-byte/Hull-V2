@@ -429,25 +429,6 @@ def _section_cell_mm(record):
     return {k: s / count for k, s, count in zip(('width', 'depth', 'height'), sizes, grid)}
 
 
-def _section_parameters(n, periodic=False):
-    """Common dimensionless chord parameters, independent of section size.
-
-    Corresponding loft sections must share a spline basis. Physical chord
-    lengths change that basis with aspect ratio and multiply the compatible
-    control net. Unit-superellipse chords preserve every interpolation point
-    while keeping the same parameters at every station and on every axis.
-    """
-    if periodic:
-        points = _superellipse_points(0, 0, 1, 1, n)
-        points.append(points[0])
-    else:
-        points = [(math.cos(t) ** (2 / n), math.sin(t) ** (2 / n))
-                  for t in np.linspace(0, math.pi / 2, 21)]
-    lengths = np.linalg.norm(np.diff(np.asarray(points), axis=0), axis=1)
-    parameters = np.concatenate(([0.0], np.cumsum(lengths)))
-    return (parameters / parameters[-1]).tolist()
-
-
 def _section_wire(axis, along, ca, cb, ra, rb, n, slack_a=0.0, slack_b=0.0):
     """Closed section in mm, with the producer's axis-aligned half-cell offset.
 
@@ -456,8 +437,6 @@ def _section_wire(axis, along, ca, cb, ra, rb, n, slack_a=0.0, slack_b=0.0):
     of a superellipse and a rectangle, not a superellipse with larger radii.
     Four translated quadrants and their tangent straight joins encode that sum.
     The eventual intersection with the original solid keeps traced boundaries.
-    Corresponding sections use one unit-curve parameterization; their measured
-    points and tangents stay fixed without expanding the spline basis per size.
     """
     from build123d import Edge, Wire, Vector
 
@@ -467,12 +446,10 @@ def _section_wire(axis, along, ca, cb, ra, rb, n, slack_a=0.0, slack_b=0.0):
 
     if not slack_a and not slack_b:
         return Wire([Edge.make_spline(
-            [point(u, v) for u, v in _superellipse_points(ca, cb, ra, rb, n)],
-            periodic=True, parameters=_section_parameters(n, periodic=True))])
+            [point(u, v) for u, v in _superellipse_points(ca, cb, ra, rb, n)], periodic=True)])
     signs = ((1, 1), (-1, 1), (-1, -1), (1, -1))
     tangents = ((0, 1), (-1, 0), (0, -1), (1, 0))
     quadrants = []
-    parameters = _section_parameters(n)
     for q, (sa, sb) in enumerate(signs):
         points = []
         for t in np.linspace(q * math.pi / 2, (q + 1) * math.pi / 2, 21):
@@ -484,7 +461,7 @@ def _section_wire(axis, along, ca, cb, ra, rb, n, slack_a=0.0, slack_b=0.0):
             points.append(point(u, v))
         directions = [point(*tangents[q], position=0),
                       point(*tangents[(q + 1) % 4], position=0)]
-        quadrants.append((points, Edge.make_spline(points, tangents=directions, parameters=parameters)))
+        quadrants.append((points, Edge.make_spline(points, tangents=directions)))
     edges = []
     for q, (points, curve) in enumerate(quadrants):
         edges.append(curve)
@@ -494,135 +471,9 @@ def _section_wire(axis, along, ca, cb, ra, rb, n, slack_a=0.0, slack_b=0.0):
     return Wire(edges)
 
 
-def _fair_stations(stations, span, slack):
-    """Minimum-bending section regression inside measured half-cell intervals.
-
-    Longitudinal positions stay fixed. For each transverse bound, minimise
-    second differences on the actual station spacing, with a weak (1e-3)
-    nearest-observation tie-break. Box constraints enforce the source half-cell
-    uncertainty. The same geometric rule applies to every axis and object;
-    smooth lofts no longer have to interpolate resolvable grid jitter. The final
-    solid still must pass the unchanged traced-drawing construction guard.
-    """
-    from scipy.optimize import lsq_linear
-    values = np.asarray(stations, dtype=float).copy()
-    if len(values) < 3:
-        return values.tolist()
-    positions = values[:, 0] * span[0]
-    spacing = np.diff(positions)
-    if np.any(spacing <= 0):
-        raise ValueError('Section stations must be strictly increasing')
-    steps = spacing / np.median(spacing)
-    bending = np.zeros((len(values) - 2, len(values)))
-    for i, (left, right) in enumerate(zip(steps[:-1], steps[1:])):
-        bending[i, i:i + 3] = np.asarray((1 / left, -1 / left - 1 / right, 1 / right)) * 2 / (left + right)
-    system = np.vstack((bending, .001 * np.eye(len(values))))
-    for column, dimension in ((1, 1), (2, 1), (3, 2), (4, 2)):
-        uncertainty = slack[dimension] / span[dimension]
-        if uncertainty <= 0:
-            continue
-        observed = values[:, column].copy()
-        target = np.concatenate((np.zeros(len(bending)), .001 * observed))
-        fit = lsq_linear(system, target, bounds=(observed - uncertainty, observed + uncertainty),
-                         tol=1e-12, max_iter=200)
-        if not fit.success:
-            raise ValueError('Bounded section fairing did not converge: ' + fit.message)
-        values[:, column] = fit.x
-    return values.tolist()
-
-
-
-def _station_subset(stations, span, slack):
-    """Largest-error-first linear selector, with position breaking exact ties."""
-    values = np.asarray(stations, float)
-    scales = np.asarray([span[1], span[1], span[2], span[2]])
-    tolerance = np.maximum([slack[1], slack[1], slack[2], slack[2]], 1e-7)
-    kept = {0, len(values) - 1}
-    while True:
-        errors = np.zeros(len(values))
-        indices = sorted(kept)
-        for left, right in zip(indices[:-1], indices[1:]):
-            f = (values[left:right + 1, 0] - values[left, 0]) / (values[right, 0] - values[left, 0])
-            prediction = values[left, 1:] + f[:, None] * (values[right, 1:] - values[left, 1:])
-            errors[left:right + 1] = np.max(abs(prediction - values[left:right + 1, 1:]) * scales / tolerance, axis=1)
-        worst = int(np.argmax(errors))
-        if errors[worst] <= 1 + 1e-9:
-            break
-        kept.add(worst)
-    if len(kept) == 2 and len(values) > 2:
-        kept.add(len(values) // 2)
-    return sorted(kept)
-
-
-def _section_error(loft, axis, station, span, slack):
-    """Actual CAD section-bound error in units of the existing half cell."""
-    from build123d import Plane, section
-    along, a0, a1, b0, b1 = station
-    level = along * span[0]
-    plane, axes = {'x': (Plane.YZ.offset(level), (1, 2)),
-                   'y': (Plane.XZ.offset(-level), (0, 2)),
-                   'z': (Plane.XY.offset(level), (0, 1))}[axis]
-    cut = section(loft, section_by=plane)
-    if not cut.faces():
-        return float('inf')
-    box = cut.bounding_box()
-    low, high = list(box.min), list(box.max)
-    got = np.asarray([low[axes[0]], high[axes[0]], low[axes[1]], high[axes[1]]])
-    wanted = np.asarray([a0 * span[1] - slack[1], a1 * span[1] + slack[1],
-                         b0 * span[2] - slack[2], b1 * span[2] + slack[2]])
-    tolerance = np.maximum([slack[1], slack[1], slack[2], slack[2]], 1e-7)
-    return float(np.max(abs(got - wanted) / tolerance))
-
-
-def _measured_loft(axis, stations, span, slack, exponent):
-    """Sparse interpolation validated against every removed physical section.
-
-    A linear selector proposes the subset. Actual OpenCascade planar sections
-    then test the loft, rather than assuming linear bounds also bound a spline.
-    The largest violating measurement is added, with ties by station position.
-    No measured coordinate is moved and the existing half-cell allowance is not
-    enlarged. If necessary all stations are retained. Every object and axis use
-    the same rule. Returns the solid, overrun positions and retained indices.
-    """
-    from build123d import Solid
-    kept = _station_subset(stations, span, slack)
-    while True:
-        selected = [stations[i] for i in kept]
-        if slack[0]:
-            first, last = list(selected[0]), list(selected[-1])
-            first[0] -= slack[0] / span[0]
-            last[0] += slack[0] / span[0]
-            selected = [first, *selected, last]
-        wires, positions = [], []
-        for along, a0, a1, b0, b1 in selected:
-            ra, rb = (a1 - a0) / 2 * span[1], (b1 - b0) / 2 * span[2]
-            if ra + slack[1] < .3 or rb + slack[2] < .3:
-                continue
-            wires.append(_section_wire(axis, along * span[0], (a0 + a1) / 2 * span[1],
-                                       (b0 + b1) / 2 * span[2], ra, rb, exponent,
-                                       slack[1], slack[2]))
-            positions.append(along * span[0])
-        if len(wires) < 3:
-            return None, positions, kept
-        loft = Solid.make_loft(wires, ruled=False)
-        errors = [0.0 if i in kept else _section_error(loft, axis, st, span, slack)
-                  for i, st in enumerate(stations)]
-        worst = int(np.argmax(errors))
-        if errors[worst] <= 1 + 1e-7:
-            return loft, positions, kept
-        kept = sorted([*kept, worst])
-
-
 def _round_part(axis, part, size, cell_mm=None):
-    """(slab, loft, prism volume) for a measured round part, or None.
-
-    Stations are normalised cell centres (along, a0, a1, b0, b1). The replacement
-    slab covers the same half-cell support already built into the loft, clipped
-    to the declared part box and to sections actually used. Clipping at centres
-    leaves unrounded half-cell rims and artificial sharp joins. This measured
-    support rule is identical for every object and axis; no drawing is changed.
-    Axis z: a=x, b=y; axis x: a=y, b=z; axis y: a=x, b=z.
-    """
+    """(slab, loft) for one measured round part, or None. Stations are normalised
+    (along, a0, a1, b0, b1); axis z: a = x, b = y; axis x: a = y, b = z; axis y: a = x, b = z."""
     from build123d import Edge, Wire, Solid, Box, Location, Vector
     W, D, H = size['width'], size['depth'], size['height']
     span = {'z': (H, W, D), 'x': (W, D, H), 'y': (D, W, H)}[axis]
@@ -638,34 +489,45 @@ def _round_part(axis, part, size, cell_mm=None):
     stations = [v[1] for _, v in sorted(by_station.items())]
     if len(stations) < 3:
         return None
-    # Measured half-cell intervals bound the station fairing. A smooth loft joins
-    # these sections; ruled spans turn quantized section jitter into sharp ridges.
-    chosen = _fair_stations(stations, span, slack)
-    loft, wire_positions, _ = _measured_loft(axis, chosen, span, slack, float(part['n']))
-    if loft is None:
-        return None
+    # These stations already summarize traced profiles. Smoothing or discarding
+    # extrema here shrinks feet and caps before the outline guard can inspect them.
+    # Ruled spans preserve their bounds and avoid unconstrained longitudinal ringing.
+    chosen = list(stations)
+    # Overrun both slab ends before clipping to local material. Adjacent slabs
+    # then meet on a stable interior section rather than an interpolated loft cap.
+    if slack[0]:
+        first_cap, last_cap = list(stations[0]), list(stations[-1])
+        first_cap[0] -= slack[0] / span[0]
+        last_cap[0] += slack[0] / span[0]
+        chosen = [first_cap, *chosen, last_cap]
+    n = float(part['n'])
 
     def to3d(along, a, b):
         return {'z': (a, b, along), 'x': (along, a, b), 'y': (a, along, b)}[axis]
+    wires = []
+    for along, a0, a1, b0, b1 in chosen:
+        L, A, B = along * span[0], (a0 + a1) / 2 * span[1], (b0 + b1) / 2 * span[2]
+        ra, rb = (a1 - a0) / 2 * span[1], (b1 - b0) / 2 * span[2]
+        if ra + slack[1] < 0.3 or rb + slack[2] < 0.3:
+            continue
+        wires.append(_section_wire(axis, L, A, B, ra, rb, n, slack[1], slack[2]))
+    if len(wires) < 3:
+        return None
+    loft = Solid.make_loft(wires, ruled=True)
     k0, k1, a0, a1, b0, b1 = part['box']
     lo = to3d(k0 * span[0], a0 * span[1], b0 * span[2])
     hi = to3d(k1 * span[0], a1 * span[1], b1 * span[2])
     dims = [max(0.5, h - l) for l, h in zip(lo, hi)]
     centre = [(l + h) / 2 for l, h in zip(lo, hi)]
-    # The sampling box bounds cells, not their centres. Use the loft's existing
-    # measured overrun without crossing the part box or skipped end sections.
-    station_first = stations[0][0] * span[0]
-    station_last = stations[-1][0] * span[0]
-    first = max(k0 * span[0], wire_positions[0])
-    last = min(k1 * span[0], wire_positions[-1])
-    if last <= first:
-        raise ValueError('Measured round region does not overlap its valid loft stations')
+    # the slab spans the part's own stations only, so the loft (which starts and ends there)
+    # replaces exactly what it covers
+    first, last = stations[0][0] * span[0], stations[-1][0] * span[0]
     ax = {'z': 2, 'x': 0, 'y': 1}[axis]
     dims[ax] = max(0.5, last - first)
     centre[ax] = (first + last) / 2
     slab = Box(*dims).moved(Location(tuple(centre)))
     # the part's own volume if it were square-cornered: its station rectangles times spacing
-    step_len = (station_last - station_first) / max(1, len(stations) - 1)
+    step_len = (last - first) / max(1, len(stations) - 1)
     prism = sum((st[2] - st[1]) * span[1] * (st[4] - st[3]) * span[2] for st in stations) * step_len
     return slab, loft, prism
 
@@ -682,13 +544,12 @@ def properties(solid, material='ABS'):
             'note': 'mass as a solid body; real moulded parts are shells (wall thickness not observable)'}
 
 
-def export(record, masks, destination, name, material='ABS', *, prebuilt=None):
-    """STEP/STL and engineering drawing; optionally reuse the mesh's exact B-rep."""
+def export(record, masks, destination, name, material='ABS'):
+    """STEP + STL of the CAD solid and the engineering drawing (DXF + PNG). Returns a report."""
     from build123d import export_step, export_stl
     destination = Path(destination)
     destination.mkdir(parents=True, exist_ok=True)
-    solid, rep = build_solid(record, masks) if prebuilt is None else prebuilt
-    rep = dict(rep)
+    solid, rep = build_solid(record, masks)
     if solid is None:
         return {'cad_failure': 'no profiles to build from'}
     step = destination / (name + '.step')

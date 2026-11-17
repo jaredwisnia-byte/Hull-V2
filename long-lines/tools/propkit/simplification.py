@@ -4,10 +4,6 @@ import numpy as np
 
 def refresh_normals(obj, sharp_angle=35, planar=False):
     """Discard stale split normals after topology changes, then mark sharp edges."""
-    if obj.get('cad_surface_normals'):
-        from .cad_mesh import restore_normals
-        restore_normals(obj)
-        return
     from .core import smooth
     if obj.data.has_custom_normals:
         obj.data.normals_split_custom_set([(0, 0, 0)] * len(obj.data.loops))

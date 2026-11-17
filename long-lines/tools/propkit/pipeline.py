@@ -89,10 +89,6 @@ def _build_image(image, output, *, build_order, library_root, render_script, exp
         result["inference_warnings"] = warnings
         build_started_ns = time.time_ns()
         result["qa"] = build_order(order)
-        result['construction'] = order.get('construction', 'voxel')
-        if result['construction'] == 'cad':
-            result['tolerance_m'] = result['qa'].get('tolerance_m')
-            result['tessellation'] = result['qa'].get('tessellation')
         warnings.extend(order.get('inference_warnings', []))
         warnings.extend(result['qa'].get('inference_warnings', []))
         library_root = result['qa'].get('artifact_library_root', library_root)
@@ -133,19 +129,6 @@ def _drawing_exports(library_root, name, destination):
             shutil.copy(record[key], target)
             out['drawing_' + key] = str(target)
     try:
-        cad_source = drawing_json.parent / (name + '_cad.json')
-        source_report = json.loads(cad_source.read_text()) if cad_source.is_file() else {}
-        if source_report.get('mesh_source') == 'cad':
-            # This solid was built and exported before its mesh. Reuse those
-            # artifacts, rather than reconstructing a second source of truth.
-            for key in ('step', 'stl', 'drawing_dxf', 'drawing_png'):
-                source = Path(source_report[key])
-                target = destination / source.name
-                shutil.copy2(source, target)
-                source_report[key] = str(target)
-            (destination / (name + '_cad.json')).write_text(json.dumps(source_report, indent=1))
-            out['cad'] = source_report
-            return out
         from .drafting import rasterize
         from . import cad_model
         masks = {k: rasterize(np.asarray(p['vertices_px']), tuple(p['image_px'][::-1]))
