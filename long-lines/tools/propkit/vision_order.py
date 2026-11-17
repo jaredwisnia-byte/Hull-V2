@@ -156,7 +156,10 @@ def generic_order(report, image, background, output, assembly, groups):
              'height_m': front.height*scale, 'budget': 'screen', 'rough': .65,
              # relief_last: painted shading reaches the asset as a baked normal map only;
              # the shape stays the clean hull (embossed numerals, lumpy panels otherwise).
-             'hull': {'paint': 'project', 'relief': True, 'relief_last': True},
+             # blades: each top-view region facing the front is cut down to the top edge the
+             # front view paints across it, if no outline changes (propkit/blades.py).
+             'hull': {'paint': 'project', 'relief': True, 'relief_last': True,
+                      'blades': __import__('os').environ.get('HULL_BLADES', '0') == '1'},   # off until it beats the current build
              'automatic_depth': True, 'vision_generated': True,
              'build_scope': 'outer_body_only',
              'unresolved_component_regions': unresolved,

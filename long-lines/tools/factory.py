@@ -553,6 +553,13 @@ def run_line(order):
         from propkit.hull import HULL_REPORT
         HULL_REPORT.pop("sections", None)
         obj = hull_prop(views, height, name=order["name"], **hp)
+        # parts the draftsman stage confirmed along projection lines, as solids merged with the body
+        # (propkit/part_solids.py); before texturing, so the views are projected onto them too
+        if drawing is not None and (drawing.get('draftsman') or {}).get('rows') and                 os.environ.get('HULL_PART_SOLIDS', '0') == '1':
+            from propkit import part_solids
+            psrep = order.setdefault('measured', {}).setdefault('part_solids', {})
+            obj = part_solids.add_rows(obj, drawing['draftsman']['rows'], hp['width_m'], hp['depth_m'], height, psrep)
+            print('PART_SOLIDS', order['name'], psrep, flush=True)
         relief_report = order.get('measured', {}).get('relief', {})
         if relief_last and relief_report.get('probes'):
             # Relief as the last step: fine detail reaches the asset through the normal map,
@@ -580,6 +587,10 @@ def run_line(order):
             HULL_REPORT.get('field', {}))
         print('RECONSTRUCTION_FIELD',
               order['name'], order['measured']['field'], flush=True)
+        # what each optional construction step decided (kept, not discarded with HULL_REPORT)
+        stages = {k: HULL_REPORT[k] for k in ('blades', 'local_features', 'roundness') if k in HULL_REPORT}
+        order.setdefault('measured', {})['stages'] = json.loads(json.dumps(stages, default=str))
+        print('CONSTRUCTION_STAGES', order['name'], json.dumps(stages, default=str)[:4000], flush=True)
         if HULL_REPORT.get("sections"):
             # inferred cross-sections: summary in the order, overlays (the fitted sections drawn in each view's
             # pixels, transparent) in docs/inference/<name>/ for switching on over the painting
@@ -654,11 +665,14 @@ def run_line(order):
             tmp = os.path.join(tempfile.gettempdir(), "_hull_" + order["name"])
             for part in manufactured:
                 W, D, H = part["hull_frame"]
+                tex_maps = None
+                if drawing is not None and os.environ.get('HULL_TEXTURE_REGISTERED', '0') == '1':
+                    tex_maps = (drawing.get('draftsman') or {}).get('texture_maps')
                 texturing.project(part, paint_views(views, tmp, "p"), W, D, H,
                                   others=[
                                       other for other in manufactured if other != part],
                                   name=part.name, rough=hp.get("rough", .5),
-                                  camera_fit=None)
+                                  camera_fit=None, maps=tex_maps)
     elif line == "car":
         from props.cars_painted import painted_car
         painted_car(order["name"], order.get("body", "car_coupe"))

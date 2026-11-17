@@ -82,10 +82,15 @@ def carve(keep, sil, report=None):
         if cols.sum() < 4:
             continue
         cx, cy = np.nonzero(cols)
-        # the region must face the front: nothing taller stands in front of it
-        if cy.min() > 0.25 * ny:
-            skipped.append((int(i), "not at the front"))
-            continue
+        # The front view sees this region's top edge only where nothing in front of it stands
+        # taller: material at smaller depth over the region's columns sets the lowest line the front
+        # view can show for it (none in front: any line).
+        # The region's own surface continuing into the next voxels is not in front of it; a stray
+        # voxel is not a wall (95th percentile).
+        gap = 2
+        in_front = top_z[np.unique(cx), :max(0, cy.min() - gap)]
+        in_front = in_front[in_front >= 0]
+        front_max = int(np.percentile(in_front, 95)) if in_front.size else -1
         # A region on the outer left/right edge is what a side view sees first: its top is the
         # side view's outline there, so it can't be cut below that.
         occupied_x = np.nonzero(keep.any((1, 2)))[0]
@@ -103,13 +108,15 @@ def carve(keep, sil, report=None):
         for r in range(fh):
             z = 1 - (r + 0.5) / fh
             zi = int(z * nz)
-            if zi >= cur - 2 or zi < 0.1 * nz:
+            if zi >= cur - 2 or zi < 0.1 * nz or zi <= front_max:
                 continue
             if cover[r] >= LINE_COVER:
                 best = zi
                 break                                                # the highest such line
         if best is None:
-            skipped.append((int(i), "no top edge in the front view (best cover %.2f)" % cover[:max(1, int((1 - cur / nz) * fh) - 2)].max()))
+            lines = [round(1 - (r + 0.5) / fh, 3) for r in range(fh) if cover[r] >= LINE_COVER]
+            skipped.append((int(i), "no top edge in the front view between z %.3f (in front) and %.3f (its top); "
+                            "lines at %s" % ((front_max + 1) / nz, cur / nz, lines[:12])))
             continue
         trial = keep.copy()
         trial[cx, cy, best + 1:] = False

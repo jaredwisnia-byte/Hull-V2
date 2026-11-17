@@ -551,6 +551,26 @@ def reconcile_opposites(masks, W, D, H, res=320):
     return out, report
 
 
+def draftsman_evidence(paintings, masks, size_m, destination=None):
+    """Run the draftsman stage and keep its record; a failure is recorded, never fatal."""
+    from . import draftsman
+    import os as _os
+    try:
+        res = draftsman.analyse(paintings, masks, _os.environ.get('HULL_FEATURE_BACKEND', 'auto'))
+        rec = draftsman.summary(res)
+        if 'error' not in res:
+            rec['rows'] = draftsman.validated_rows(res, paintings, masks)
+            rec['texture_maps'] = draftsman.texture_maps(res)
+        if destination is not None and 'error' not in res:
+            rec['feature_images'] = draftsman.feature_images(paintings, res['features'], destination)
+            rec['sheet'] = draftsman.sheet(paintings, res, str(Path(destination) / 'draftsman.png'),
+                                           (size_m['width'] * 1000, size_m['depth'] * 1000, size_m['height'] * 1000))
+        return rec
+    except Exception as exc:
+        import traceback
+        return {'error': '%s: %s' % (type(exc).__name__, exc), 'trace': traceback.format_exc()[-1500:]}
+
+
 def curve_evidence(paintings, destination=None):
     """Trace every view's curves and match them across views (propkit/curve_views.py).
 
@@ -708,7 +728,12 @@ def prepare(views, destination, height_m, width_m=None, depth_m=None, name='part
     try:
         record['features'] = _features.find(masks, paintings, record['size_m'])
         for f in record['features']:
-            if f.get('keep'):
+            if f.get('kind') == 'end_shape':
+                record['decisions'].append(
+                    'part painted in the %s view over width %.0f%%-%.0f%%: built to its traced outline '
+                    '(fills %.0f%% of its box), not the box the other outlines leave' % (
+                        f['shape_view'], 100 * f['along'][0], 100 * f['along'][1], 100 * f['fill']))
+            elif f.get('keep'):
                 record['decisions'].append(
                     'bump on the %s edge along %s (%.0f%%-%.0f%%) measured %.0f%% of the part wide in the %s '
                     'painting; built that wide, not across the whole part' % (
@@ -721,6 +746,20 @@ def prepare(views, destination, height_m, width_m=None, depth_m=None, name='part
     # ellipses with paint noise rejected by statistics, and the curves matched across views on
     # their shared axes. Recorded as drawing evidence; it does not change the geometry yet.
     record['curves'] = curve_evidence(paintings, destination)
+    # the draftsman stage (propkit/draftsman.py, docs/DRAFTSMAN_PIPELINE.md): every feature traced
+    # in every view, the views aligned, features matched along projection lines; images beside the
+    # drawing (features_<view>.png, draftsman.png). Evidence for the build; the outlines stay the body.
+    record['draftsman'] = draftsman_evidence(paintings, masks, record['size_m'], destination)
+    # repeated parts confirmed along projection lines become construction: each row's instances are
+    # separate parts, so what lies between them in the row's band is not one of them
+    try:
+        for row in (record['draftsman'].get('rows', []) if os.environ.get('HULL_PART_ROWS', '0') == '1' else []):
+            row.update(kind='row', keep=True)
+            record['features'].append(row)
+            record['decisions'].append('row of %d repeated parts along %s (draftsman): built as separate parts, '
+                                       'the gaps between them cut over their band' % (len(row['instances']), row['along']))
+    except Exception as exc:
+        record['rows_error'] = str(exc)
     from . import drawing_cad
     record['dxf'], record['sheet'] = drawing_cad.write(record, masks, destination, name)
     (destination / 'drawing.json').write_text(json.dumps(record, indent=1))

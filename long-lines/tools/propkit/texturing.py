@@ -31,8 +31,14 @@ DIRS = {"front": Vector((0, -1, 0)), "back": Vector((0, 1, 0)), "right": Vector(
 PROJECTIONS = {}
 
 
-def _uv(view, co, W, D, H):
+def _uv(view, co, W, D, H, maps=None):
     x, y, z = co
+    if maps and view in maps:
+        # registered projection (propkit/draftsman.texture_maps): body position -> this view's position
+        b = {'x': (x + W / 2) / W, 'y': (y + D / 2) / D, 'z': z / H}
+        for dim, (xs, ns) in maps[view].items():
+            b[dim] = float(np.interp(b[dim], xs, ns))
+        x, y, z = b['x'] * W - W / 2, b['y'] * D - D / 2, b['z'] * H
     if view == "front":
         return (x + W / 2) / W, z / H
     if view == "back":
@@ -60,7 +66,7 @@ def smoothed_normals(obj, iters=6):
     return n
 
 
-def project(obj, views, W, D, H, others=(), name="proj", power=4.0, rough=0.5, metal=0.0, camera_fit=None):
+def project(obj, views, W, D, H, others=(), name="proj", power=4.0, rough=0.5, metal=0.0, camera_fit=None, maps=None):
     from . import mats
     me = obj.data
     mw = obj.matrix_world
@@ -119,7 +125,7 @@ def project(obj, views, W, D, H, others=(), name="proj", power=4.0, rough=0.5, m
         a = me.color_attributes.get(
             "uvp_" + k) or me.color_attributes.new("uvp_" + k, "FLOAT_COLOR", "CORNER")
         for li, loop in enumerate(me.loops):
-            u_, v_ = _uv(k, mw @ me.vertices[loop.vertex_index].co, W, D, H)
+            u_, v_ = _uv(k, mw @ me.vertices[loop.vertex_index].co, W, D, H, maps)
             a.data[li].color = (u_, v_, 0, 1)
     packs = [names[i:i + 4] for i in range(0, len(names), 4)]
     for pi, pack in enumerate(packs):

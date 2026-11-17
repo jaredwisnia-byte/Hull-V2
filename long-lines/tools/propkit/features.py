@@ -299,12 +299,293 @@ def find(masks, paintings, size_m, res=110):
                                   'cut': float(cut), 'outward': outward, 'stands_out': float(orng[1] - orng[0]),
                                   'keep': span, 'measured_in': ev.get('measured_in'), 'kind': 'part',
                                   'evidence': ev, 'status': 'separate part localised from the painting'})
+    feats += end_shapes(masks, paintings, shape)
     return feats
+
+
+def _body_extent(cover):
+    """Where an outline's cover along an axis is at least half its largest: the main body."""
+    on = np.nonzero(cover >= 0.5 * cover.max())[0]
+    return (int(on.min()), int(on.max()) + 1) if on.size else (0, len(cover))
+
+
+def _painted_shape(painting, mask, view, box_dims, box):
+    """The painted feature filling a box of a view: the area its painted edges enclose around the
+    box's centre, holes filled. Returns (polygon in the view's normalised dims, fill of the box)
+    or (None, reason). The shape is whatever the paint shows (round, square, anything)."""
+    from skimage.feature import canny
+    from skimage.measure import find_contours
+    a = np.asarray(painting.convert('RGB')).astype(float) / 255
+    size = painting.size
+    (d0, r0), (d1, r1) = box_dims[0], box_dims[1]
+    rows, cols = _view_box(view, {d0: r0, d1: r1}, size)
+    pad_r, pad_c = max(2, (rows[1] - rows[0]) // 8), max(2, (cols[1] - cols[0]) // 8)
+    R0, R1 = max(0, rows[0] - pad_r), min(size[1], rows[1] + pad_r)
+    C0, C1 = max(0, cols[0] - pad_c), min(size[0], cols[1] + pad_c)
+    win = a[R0:R1, C0:C1]
+    if min(win.shape[:2]) < 8:
+        return None, 'too small to trace'
+    from skimage.color import rgb2lab
+    lab = rgb2lab(win)
+    sigma = max(1.0, min(win.shape[:2]) / 60)
+    edges = np.zeros(win.shape[:2], bool)
+    for c in range(3):
+        edges |= canny(lab[..., c], sigma=sigma)
+    edges = ndimage.binary_dilation(edges, iterations=1)
+    lab_regions, n = ndimage.label(~edges)
+    if n == 0:
+        return None, 'no enclosed area'
+    # the largest area the painted edges enclose inside the box (not one touching the window's rim)
+    inner = np.zeros(win.shape[:2], bool)
+    inner[rows[0] - R0:rows[1] - R0, cols[0] - C0:cols[1] - C0] = True
+    rim = set(np.unique(np.r_[lab_regions[0], lab_regions[-1], lab_regions[:, 0], lab_regions[:, -1]]))
+    sizes = ndimage.sum(inner, lab_regions, range(1, n + 1))
+    order = [i + 1 for i in np.argsort(sizes)[::-1] if i + 1 not in rim]
+    if not order:
+        return None, 'no enclosed area inside the box'
+    region = ndimage.binary_fill_holes(lab_regions == order[0])
+    region = ndimage.binary_closing(region, iterations=max(1, int(sigma)))
+    ys, xs = np.nonzero(region)
+    bh, bw = rows[1] - rows[0], cols[1] - cols[0]
+    span_r = (ys.max() - ys.min() + 1) / max(1, bh)
+    span_c = (xs.max() - xs.min() + 1) / max(1, bw)
+    if not (0.75 <= span_r <= 1.3 and 0.75 <= span_c <= 1.3):
+        return None, 'painted feature does not fill the box (%.2f x %.2f)' % (span_r, span_c)
+    fill = region.sum() / float(max(1, (ys.max() - ys.min() + 1) * (xs.max() - xs.min() + 1)))
+    cont = max(find_contours(np.pad(region, 1).astype(float), 0.5), key=len) - 1
+    poly = []
+    for r, c in cont[::max(1, len(cont) // 64)]:
+        pr, pc = r + R0, c + C0
+        out = {}
+        for dim in (d0, d1):
+            axis, flip = FRAMES[view][dim]
+            v = (pc / size[0]) if axis == 'col' else (pr / size[1])
+            out[dim] = 1 - v if flip else v
+        poly.append([round(float(out[d0]), 4), round(float(out[d1]), 4)])
+    return poly, round(float(fill), 3)
+
+
+def _closed_features(painting, mask, min_share=0.002, max_share=0.15):
+    """Closed areas a view's painted edges enclose (holes filled): each feature's own outline."""
+    a = np.asarray(painting.convert('RGB')).astype(float) / 255
+    m = np.asarray(mask, bool)
+    if m.shape != a.shape[:2]:
+        return []
+    # structural edges (propkit/feature_regions.py): the trained detector where it is configured
+    # (HULL_TRACE_BACKEND=auto), classical multiscale edges otherwise; paint cracks and brush
+    # marks are its fine candidates and never split a feature
+    from . import feature_regions
+    import os as _os
+    linear = np.where(a <= 0.04045, a / 12.92, ((a + 0.055) / 1.055) ** 2.4)
+    traced = feature_regions.trace(linear, m, _os.environ.get('HULL_FEATURE_BACKEND', 'auto'))
+    edges = ndimage.binary_closing((traced['structural_score'] > 0.5) & m, iterations=1)
+    edges = ndimage.binary_dilation(edges, iterations=1)
+    regions, n = ndimage.label(m & ~edges)
+    total = float(m.sum())
+    out = []
+    for i, sl in enumerate(ndimage.find_objects(regions), 1):
+        if sl is None:
+            continue
+        r = ndimage.binary_fill_holes(regions[sl] == i)
+        share = r.sum() / total
+        if not (min_share <= share <= max_share):
+            continue
+        if r.mean() < 0.55:                     # a ragged sliver, not a feature
+            continue
+        colour = np.median(a[sl][r], axis=0) * 255
+        out.append({'slice': sl, 'region': r, 'colour': colour, 'share': share})
+    return out
+
+
+def _same_paint(pixels, colour, chroma_tol=0.035, bright=(0.4, 1.7)):
+    """The same paint under another view's lighting: the same hue and saturation (chromaticity,
+    each channel's share of the sum) at a brightness within a range of the reference."""
+    px = np.asarray(pixels, float)
+    c = np.asarray(colour, float)
+    s_px = px.sum(-1, keepdims=True) + 1e-6
+    s_c = c.sum() + 1e-6
+    chroma = np.linalg.norm(px / s_px - c / s_c, axis=-1)
+    ratio = s_px[..., 0] / s_c
+    return (chroma < chroma_tol) & (ratio >= bright[0]) & (ratio <= bright[1])
+
+
+def _body_span(mask, view, dim):
+    """Normalised (lo, hi) of the main body along one of a view's dims: where the outline covers at
+    least half its largest cover. Views are compared in body coordinates, so a lever or knob that
+    sticks out further in one view does not stretch its frame."""
+    m = np.asarray(mask, bool)
+    axis, flip = FRAMES[view][dim]
+    cover = m.mean(0) if axis == 'col' else m.mean(1)
+    lo, hi = _body_extent(cover)
+    n = len(cover)
+    u0, u1 = lo / n, hi / n
+    return (1 - u1, 1 - u0) if flip else (u0, u1)
+
+
+def _to_body(u, span):
+    return (u - span[0]) / max(1e-6, span[1] - span[0])
+
+
+def _colour_run(painting, mask, view, band, across, colour, min_frac=0.3):
+    """Contiguous runs, across a view, where a colour fills at least min_frac of a band."""
+    a = np.asarray(painting.convert('RGB')).astype(float)
+    m = np.asarray(mask, bool)
+    band_dim, (lo, hi) = band
+    rows, cols = _view_box(view, {band_dim: (lo, hi), across: (0.0, 1.0)}, painting.size)
+    win = a[rows[0]:rows[1], cols[0]:cols[1]]
+    wm = m[rows[0]:rows[1], cols[0]:cols[1]]
+    if FRAMES[view][across][0] == 'row':
+        win, wm = win.transpose(1, 0, 2), wm.T
+    hot = (_same_paint(win, colour) & wm).mean(0) >= min_frac
+    hot = ndimage.binary_closing(hot, iterations=1)
+    lab, n = ndimage.label(hot)
+    runs = []
+    for i in range(1, n + 1):
+        idx = np.nonzero(lab == i)[0]
+        if len(idx) < 2:
+            continue
+        u0, u1 = idx[0] / len(hot), (idx[-1] + 1) / len(hot)
+        if FRAMES[view][across][1]:
+            u0, u1 = 1 - u1, 1 - u0
+        runs.append((u0, u1))
+    return runs
+
+
+def end_shapes(masks, paintings, shape):
+    """Parts painted in the view that looks along them take their cross-section from that view.
+
+    The way a draftsman reads a knob: in the side view it is a closed painted outline (here
+    round); projection lines carry its height into the front view and its depth into the top view,
+    where the same paint shows its width. When both agree, the part is the traced outline extruded
+    over that width, so whatever lies inside its box but outside its outline (a square's corners)
+    is not the part. Paint, not silhouettes, marks where a knob stops and the carriage starts."""
+    view = 'right'
+    need = (view, 'front', 'top')
+    if not all(v in paintings and v in masks for v in need):
+        return []
+    out = []
+    size = paintings[view].size
+    for f in _closed_features(paintings[view], masks[view]):
+        sl, r = f['slice'], f['region']
+        if max(f['colour']) < 25:            # the background enclosed between parts, not paint
+            continue
+        # the feature's box in world coordinates (side view: columns -> y, rows -> z, z up)
+        y0, y1 = sl[1].start / size[0], sl[1].stop / size[0]
+        z0, z1 = 1 - sl[0].stop / size[1], 1 - sl[0].start / size[1]
+        front = _colour_run(paintings['front'], masks['front'], 'front', ('z', (z0, z1)), 'x', f['colour'])
+        top = _colour_run(paintings['top'], masks['top'], 'top', ('y', (y0, y1)), 'x', f['colour'])
+        fspan = _body_span(masks['front'], 'front', 'x')
+        tspan = _body_span(masks['top'], 'top', 'x')
+        tol = 0.04
+        for u0, u1 in front:
+            if u1 - u0 > 0.15:                 # wider than a part sticking out of the body
+                continue
+            b0, b1 = _to_body(u0, fspan), _to_body(u1, fspan)
+            agree = [t for t in top if abs(_to_body(t[0], tspan) - b0) <= tol
+                     and abs(_to_body(t[1], tspan) - b1) <= tol]
+            if not agree:
+                continue
+            ys, xs = np.nonzero(r)
+            from skimage.measure import find_contours
+            cont = max(find_contours(np.pad(r, 1).astype(float), 0.5), key=len) - 1
+            poly = [[round(float((c + sl[1].start) / size[0]), 4), round(float(1 - (rr + sl[0].start) / size[1]), 4)]
+                    for rr, c in cont[::max(1, len(cont) // 64)]]
+            fill = float(r.mean())
+            out.append({'kind': 'end_shape', 'axis': 'x', 'along': [round(u0, 4), round(u1, 4)],
+                        'shape_view': view, 'box': {'y': [round(y0, 4), round(y1, 4)], 'z': [round(z0, 4), round(z1, 4)]},
+                        'section': poly, 'fill': round(fill, 3), 'keep': True,
+                        'colour': [round(float(c)) for c in f['colour']],
+                        'status': 'traced in the %s view (fills %.0f%% of its box); width from front and top paint'
+                                  % (view, 100 * fill)})
+    return out
+
+
+def _apply_end_shape(out, f, Fm, Sm, Tm):
+    """Inside the part's box and width, remove what lies outside its traced outline (dilated one voxel)."""
+    from PIL import Image as _Image, ImageDraw as _Draw
+    nx, ny, nz = out.shape
+    img = _Image.new('L', (ny, nz), 0)
+    _Draw.Draw(img).polygon([(p[0] * ny, (1 - p[1]) * nz) for p in f['section']], fill=1)
+    sec = ndimage.binary_dilation(np.asarray(img, bool)[::-1].T, iterations=1)    # [y, z]
+    box = np.zeros((ny, nz), bool)
+    y0, y1 = int(f['box']['y'][0] * ny), int(np.ceil(f['box']['y'][1] * ny))
+    z0, z1 = int(f['box']['z'][0] * nz), int(np.ceil(f['box']['z'][1] * nz))
+    box[y0:y1, z0:z1] = True
+    k0, k1 = int(round(f['along'][0] * nx)), int(round(f['along'][1] * nx))
+    if k1 <= k0:
+        f['applied'] = 'no width at this resolution'
+        return out
+    # A part sticking out stands alone over its width: most material there is inside its box.
+    # Paint on a larger body (a stripe, a plate) is not: its slices are mostly the body.
+    # Only where the part stands clear of the body: slices whose material is mostly inside its box.
+    # Paint on a larger body (a stripe, a plate) never does; a knob does over its protruding length.
+    cut = 0
+    for k in range(k0, k1):
+        sl = out[k]
+        total = sl.sum()
+        if total and (sl & box).sum() / float(total) >= 0.7:
+            out[k] &= ~(box & ~sec)
+            cut += 1
+    f['applied'] = ('cut to its outline over %d of %d slices' % (cut, k1 - k0)) if cut else         'nowhere stands clear of the body'
+    return out
 
 
 def apply(keep, front, side, top, feats, report=None):
     """Remove each localised bump's material outside its measured width (outlines kept)."""
-    feats = [f for f in feats or [] if f.get('keep')]
+    shapes = [f for f in feats or [] if f.get('kind') == 'end_shape' and f.get('keep')]
+    rowfs = [f for f in feats or [] if f.get('kind') == 'row' and f.get('keep')]
+    feats = [f for f in feats or [] if f.get('keep') and f.get('kind') not in ('end_shape', 'row')]
+    if rowfs:
+        Fm0, Sm0, Tm0 = view_masks(front, side, top, keep.shape)
+        cut = keep.copy()
+        n = {'x': keep.shape[0], 'y': keep.shape[1], 'z': keep.shape[2]}
+        axis_index = {'x': 0, 'y': 1, 'z': 2}
+        for f in rowfs:
+            along = f['along']
+            sl = [slice(None)] * 3
+            for d, (lo, hi) in f['band'].items():
+                if d == 'z':
+                    lo = min(lo, f.get('floor', lo))      # the gaps go down to what the painting shows below
+                    hi = 1.0                              # and nothing stands above the row between instances
+                sl[axis_index[d]] = slice(int(lo * n[d]), max(int(lo * n[d]) + 1, int(np.ceil(hi * n[d]))))
+            inst = f['instances']
+            a0 = int(inst[0][0] * n[along])
+            a1 = int(np.ceil(inst[-1][1] * n[along]))
+            gap = np.zeros(n[along], bool)
+            gap[a0:a1] = True
+            for lo, hi in inst:
+                gap[int(lo * n[along]):int(np.ceil(hi * n[along]))] = False
+            sl[axis_index[along]] = gap
+            cut[tuple(sl)] = False
+            # each instance is solid over its own box (a key cap stands to its full height)
+            for lo, hi in inst:
+                isl = [slice(None)] * 3
+                for d, (blo, bhi) in f['band'].items():
+                    isl[axis_index[d]] = slice(int(blo * n[d]), max(int(blo * n[d]) + 1, int(np.ceil(bhi * n[d]))))
+                isl[axis_index[along]] = slice(int(lo * n[along]), max(int(lo * n[along]) + 1, int(np.ceil(hi * n[along]))))
+                cut[tuple(isl)] = True
+        removed = keep & ~cut
+        for ax, want in ((1, Fm0), (0, Sm0), (2, Tm0)):
+            lost = want & ~cut.any(ax) & keep.any(ax)
+            if lost.any():
+                cut |= removed & np.expand_dims(lost, ax)
+        if report is not None:
+            report['rows'] = {'rows': len(rowfs), 'voxels_removed': int((keep & ~cut).sum())}
+        keep = cut
+    if shapes:
+        Fm0, Sm0, Tm0 = view_masks(front, side, top, keep.shape)
+        cut = keep.copy()
+        for f in shapes:
+            cut = _apply_end_shape(cut, f, Fm0, Sm0, Tm0)
+        removed = keep & ~cut
+        for ax, want in ((1, Fm0), (0, Sm0), (2, Tm0)):
+            lost = want & ~cut.any(ax) & keep.any(ax)
+            if lost.any():
+                cut |= removed & np.expand_dims(lost, ax)
+        if report is not None:
+            report['end_shapes'] = {'candidates': len(shapes), 'voxels_removed': int((keep & ~cut).sum()),
+                                    'decisions': [[f['along'], f['box'], f.get('applied')] for f in shapes]}
+        keep = cut
     if not feats:
         return keep
     Fm, Sm, Tm = view_masks(front, side, top, keep.shape)

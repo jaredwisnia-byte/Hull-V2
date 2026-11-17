@@ -398,9 +398,12 @@ def hull_prop(views, height, res=110, smooth_iters=4, decimate=0.35, rough=0.5, 
         HULL_REPORT["local_features"] = _frep = {}
         keep = _features.apply(keep, carve["front"][0], _side, _top, local_features, _frep)
     if blades:
+        # Blade carving reads the top view's painted regions, not its outline, so a top view
+        # kept out of the outline intersection (paint_only) still serves it.
         from . import blades as _blades
-        HULL_REPORT.clear()
-        keep = _blades.carve(keep, carve, HULL_REPORT)
+        HULL_REPORT["blades"] = _brep = {}
+        keep = _blades.carve(keep, dict(carve, **({"top": sil["top"]} if "top" in sil else {})), _brep)
+        HULL_REPORT.update(_brep)          # hull_assembly reads blade_carves at the top level
     if revolve:
         from . import revolve as _revolve
         keep = _revolve.voxel_hook(HULL_REPORT)(keep, carve, W, D, H)
