@@ -1,7 +1,7 @@
 # Optional local image-only pipeline, installed in Blender's Python; no LLM.
 rapidocr==3.10.0
 onnxruntime==1.31.1
-opencv-python-headless==5.0.0.93
+opencv-python-headless==5.1.0.95
 numpy==2.5.4
 scipy==1.18.1
 Pillow==13.0.0
